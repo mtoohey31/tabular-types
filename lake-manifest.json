@@ -1,0 +1,11 @@
+{"version": "1.0.0",
+ "packagesDir": ".lake/packages",
+ "packages":
+ [{"type": "path",
+   "name": "lott",
+   "manifestFile": "lake-manifest.json",
+   "inherited": false,
+   "dir": "./vendor/lott",
+   "configFile": "lakefile.lean"}],
+ "name": "«tabular-type-interpreter»",
+ "lakeDir": ".lake"}
