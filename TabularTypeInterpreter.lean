@@ -1,1 +1,1 @@
-import TabularTypeInterpreter.Basic
+import TabularTypeInterpreter.«F⊗⊕ω»
