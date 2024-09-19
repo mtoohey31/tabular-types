@@ -17,8 +17,71 @@ nonterminal Type', A, B :=
   | A " → " B              : arr
   | "{" sepBy(A, ", ") "}" : list
   | A " ⟦" B "⟧"           : listApp
-  | "⊕ " A                 : sum
   | "⊗ " A                 : prod
+  | "⊕ " A                 : sum
   | "(" A ")"              : paren (desugar := return A)
+
+nonterminal Environemnt, Δ :=
+  | "ε"              : empty
+  | Δ ", " a " : " K : typeExt
+
+judgement_syntax a " ≠ " a' : TypeVarNe
+
+def TypeVarNe := Ne (α := TypeVar)
+
+judgement_syntax a " : " K " ∈ " Δ : TypeVarInEnvironment
+
+judgement TypeVarInEnvironment :=
+
+──────────────── head
+a : K ∈ Δ, a : K
+
+a : K ∈ Δ
+a ≠ a'
+────────────────── typeVarExt
+a : K ∈ Δ, a' : K'
+
+judgement_syntax Δ " ⊢ " A " : " K : Kinding
+
+judgement Kinding :=
+
+a : K ∈ Δ
+───────── var
+Δ ⊢ a : K
+
+Δ, a : K₁ ⊢ A : K₂
+───────────────────────── lam
+Δ ⊢ λ a : K₁. A : K₁ ↦ K₂
+
+Δ ⊢ A : K₁ ↦ K₂
+Δ ⊢ B : K₁
+─────────────── app
+Δ ⊢ A B : K₂
+
+Δ, a : K₁ ⊢ A : K₂
+──────────────────── scheme
+Δ ⊢ ∀ a : K₁. A : K₂
+
+Δ ⊢ A : *
+Δ ⊢ B : *
+───────────── arr
+Δ ⊢ A → B : *
+
+</ Δ ⊢ As@i : K // i ∈ [0:As.length]ᶠ />
+────────────────────────────────────────────── list
+Δ ⊢ { </ As@i // i ∈ [0:As.length]ᶠ /> } : L K
+
+Δ ⊢ A : K₁ ↦ K
+Δ ⊢ B : L K₁
+──────────────── listApp
+Δ ⊢ A ⟦B⟧ : L K₂
+
+Δ ⊢ A : L *
+─────────── prod
+Δ ⊢ ⊗ A : *
+
+Δ ⊢ A : L *
+─────────── sum
+Δ ⊢ ⊕ A : *
 
 end TabularTypeInterpreter.«F⊗⊕ω»
