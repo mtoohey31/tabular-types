@@ -1,4 +1,5 @@
 import Lott
+import Lott.DSL.Elab.Nat
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
 
@@ -21,8 +22,22 @@ nonterminal Type', A, B :=
   | "⊕ " A                 : sum
   | "(" A ")"              : paren (desugar := return A)
 
+metavar TermVar, x
+
+nonterminal Term, E, F :=
+  | x                                : var
+  | "λ " x " : " A ". " E            : lam
+  | E F                              : app
+  | "Λ " a " : " K ". " E            : typeLam
+  | E " [" A "]"                     : typeApp
+  | "(" sepBy(E, ", ") ")"           : prodIntro
+  | "π " n E                         : prodElim
+  | "ι " n E                         : sumIntro
+  | "case " E "{" sepBy(F, ", ") "}" : sumElim
+
 nonterminal Environemnt, Δ :=
   | "ε"              : empty
+  | Δ ", " x " : " A : termExt
   | Δ ", " a " : " K : typeExt
 
 judgement_syntax a " ≠ " a' : TypeVarNe
@@ -35,6 +50,10 @@ judgement TypeVarInEnvironment :=
 
 ──────────────── head
 a : K ∈ Δ, a : K
+
+a : K ∈ Δ
+──────────────── termVarExt
+a : K ∈ Δ, x : A
 
 a : K ∈ Δ
 a ≠ a'
