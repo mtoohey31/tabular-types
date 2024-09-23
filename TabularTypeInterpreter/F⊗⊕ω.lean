@@ -294,4 +294,8 @@ n ∈ [0:n']
 ──────────────────────────────────────────── sumElimIntro
 case V { </ V'@i // i ∈ [:n'] /> } -> V'@n V
 
+theorem progress : [[ε ⊢ E : A]] → [[E -> E']] ∨ E.isValue := sorry
+
+theorem preservation : [[ε ⊢ E : A]] → [[E -> E']] → [[ε ⊢ E' : A]] := sorry
+
 end TabularTypeInterpreter.«F⊗⊕ω»
