@@ -38,6 +38,7 @@ nonterminal Term, E, F :=
   | "π " n E                         : prodElim
   | "ι " n E                         : sumIntro
   | "case " E "{" sepBy(F, ", ") "}" : sumElim
+  | "⦅" E "⦆"                        : paren (desugar := return E)
   -- TODO: Replace these with custom elaborations to a substitution functions.
   | E " [" a " ↦ " B "]"             : tySubst
   | E " [" x " ↦ " F "]"             : tmSubst
@@ -240,5 +241,57 @@ n ∈ [0:n']
 Δ ⊢ A ≡ B
 ───────── equiv
 Δ ⊢ E : B
+
+nonterminal (parent := Term) Value, V :=
+  | "λ " x " : " A ". " E  : lam
+  | "Λ " a " : " K ". " E  : typeLam
+  | "(" sepBy(V, ", ") ")" : prodIntro
+  | "ι " n V               : sumIntro
+
+judgement_syntax E " -> " F : OperationalSemantics
+
+judgement OperationalSemantics :=
+
+E -> E'
+─────────── appL
+E F -> E' F
+
+F -> F'
+─────────── appR
+V F -> V F'
+
+─────────────────────────── lamApp
+⦅λ x : A. E⦆ V -> E [x ↦ V]
+
+E -> E'
+─────────────── typeApp
+E [A] -> E' [A]
+
+───────────────────────────── typeAbsApp
+⦅Λ a : K. E⦆ [A] -> E [a ↦ A]
+
+E -> E'
+─────────────────────────────────────────────────────────────────────────────────────────────────────────── prodIntro
+( </ V@i // i ∈ [:n] />, E, </ F@j // j ∈ [:m] /> ) -> ( </ V@i // i ∈ [:n] />, E', </ F@j // j ∈ [:m] /> )
+
+n ∈ [0:n']
+───────────────────────────────────── prodElimIntro
+π n ( </ V@i // i ∈ [:n'] /> ) -> V@n
+
+E -> E'
+─────────────── sumIntro
+ι n E -> ι n E'
+
+E -> E'
+───────────────────────────────────────────────────────────────────── sumElimL
+case E { </ F@i // i ∈ [:n] /> } -> case E' { </ F@i // i ∈ [:n] /> }
+
+E -> E'
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── sumElimR
+case V { </ V'@i // i ∈ [:n] />, E, </ F@j // j ∈ [:m] /> } -> case V { </ V'@i // i ∈ [:n] />, E', </ F@j // j ∈ [:m] /> }
+
+n ∈ [0:n']
+──────────────────────────────────────────── sumElimIntro
+case V { </ V'@i // i ∈ [:n'] /> } -> V'@n V
 
 end TabularTypeInterpreter.«F⊗⊕ω»
