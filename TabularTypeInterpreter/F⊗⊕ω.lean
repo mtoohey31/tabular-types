@@ -14,35 +14,31 @@ metavar TypeVar, a
 
 nonterminal Type', A, B :=
   | a                      : var
-  | "λ " a " : " K ". " A  : lam
+  | "λ " a " : " K ". " A  : lam (bind a in A)
   | A B                    : app
-  | "∀ " a " : " K ". " A  : forall'
+  | "∀ " a " : " K ". " A  : forall' (bind a in A)
   | A " → " B              : arr
   | "{" sepBy(A, ", ") "}" : list
   | A " ⟦" B "⟧"           : listApp
   | "⊗ " A                 : prod
   | "⊕ " A                 : sum
   | "(" A ")"              : paren (desugar := return A)
-  -- TODO: Replace this with a custom elaboration to a substitution function.
-  | A " [" a " ↦ " B "]"   : subst
 
 metavar TermVar, x
 
 nonterminal Term, E, F :=
   | x                                : var
-  | "λ " x " : " A ". " E            : lam
+  | "λ " x " : " A ". " E            : lam (bind x in E)
   | E F                              : app
-  | "Λ " a " : " K ". " E            : typeLam
+  | "Λ " a " : " K ". " E            : typeLam (bind a in E)
   | E " [" A "]"                     : typeApp
   | "(" sepBy(E, ", ") ")"           : prodIntro
   | "π " n E                         : prodElim
   | "ι " n E                         : sumIntro
   | "case " E "{" sepBy(F, ", ") "}" : sumElim
   | "⦅" E "⦆"                        : paren (desugar := return E)
-  -- TODO: Replace these with custom elaborations to a substitution functions.
-  | E " [" a " ↦ " B "]"             : tySubst
-  | E " [" x " ↦ " F "]"             : tmSubst
 
+nosubst
 nonterminal Environment, Δ :=
   | "ε"              : empty
   | Δ ", " x " : " A : termExt
@@ -144,11 +140,11 @@ judgement TypeEquivalence :=
 
 Δ ⊢ B : K
 ────────────────────────────── lamApp
-Δ ⊢ (λ a : K. A) B ≡ A [a ↦ B]
+Δ ⊢ (λ a : K. A) B ≡ A [B / a]
 
 </ Δ ⊢ B@i : K // i ∈ [:n] />
 ──────────────────────────────────────────────────────────────────────────────── lamListApp
-Δ ⊢ (λ a : K. A) ⟦{ </ B@i // i ∈ [:n] /> }⟧ ≡ { </ A [a ↦ B@i] // i ∈ [:n] /> }
+Δ ⊢ (λ a : K. A) ⟦{ </ B@i // i ∈ [:n] /> }⟧ ≡ { </ A [B@i / a] // i ∈ [:n] /> }
 
 Δ, a : K ⊢ A ≡ B
 ─────────────────────────── lam
@@ -216,7 +212,7 @@ x : A ∈ Δ
 Δ ⊢ E : ∀ a : K. A
 Δ ⊢ B : K
 ───────────────────── typeApp
-Δ ⊢ E [B] : A [a ↦ B]
+Δ ⊢ E [B] : A [B / a]
 
 </ Δ ⊢ E@i : A@i // i ∈ [:n] />
 ─────────────────────────────────────────────────────────── prodIntro
@@ -261,14 +257,14 @@ F -> F'
 V F -> V F'
 
 ─────────────────────────── lamApp
-⦅λ x : A. E⦆ V -> E [x ↦ V]
+⦅λ x : A. E⦆ V -> E [V / x]
 
 E -> E'
 ─────────────── typeApp
 E [A] -> E' [A]
 
 ───────────────────────────── typeAbsApp
-⦅Λ a : K. E⦆ [A] -> E [a ↦ A]
+⦅Λ a : K. E⦆ [A] -> E [A / a]
 
 E -> E'
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────── prodIntro
@@ -294,7 +290,7 @@ n ∈ [0:n']
 ──────────────────────────────────────────── sumElimIntro
 case V { </ V'@i // i ∈ [:n'] /> } -> V'@n V
 
-theorem progress : [[ε ⊢ E : A]] → [[E -> E']] ∨ E.isValue := sorry
+theorem progress : [[ε ⊢ E : A]] → [[E -> E']] ∨ E.IsValue := sorry
 
 theorem preservation : [[ε ⊢ E : A]] → [[E -> E']] → [[ε ⊢ E' : A]] := sorry
 
