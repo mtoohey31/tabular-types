@@ -2,6 +2,7 @@ import Lott
 import Lott.Data.List
 import Lott.Data.Range
 import Lott.DSL.Elab.JudgementComprehension
+import Lott.DSL.Elab.UniversalJudgement
 import Lott.DSL.Elab.Nat
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
@@ -11,6 +12,7 @@ nonterminal Kind, K :=
   | K₁ " ↦ " K₂ : arr
   | "L " K      : list
 
+locally_nameless
 metavar TypeVar, a
 
 nonterminal Type', A, B :=
@@ -25,6 +27,7 @@ nonterminal Type', A, B :=
   | "⊕ " A                 : sum
   | "(" A ")"              : paren (desugar := return A)
 
+locally_nameless
 metavar TermVar, x
 
 nonterminal Term, E, F :=
@@ -42,14 +45,14 @@ nonterminal Term, E, F :=
 nosubst
 nonterminal Environment, Δ :=
   | "ε"              : empty
-  | Δ ", " x " : " A : termExt
-  | Δ ", " a " : " K : typeExt
+  | Δ ", " a " : " K : typeExt (id a)
+  | Δ ", " x " : " A : termExt (id x)
 
-judgement_syntax a " ≠ " a' : TypeVarNe
+judgement_syntax a " ≠ " a' : TypeVarNe (id a, a')
 
-def TypeVarNe := Ne (α := TypeVar)
+def TypeVarNe := Ne (α := TypeVarId)
 
-judgement_syntax a " : " K " ∈ " Δ : TypeVarInEnvironment
+judgement_syntax a " : " K " ∈ " Δ : TypeVarInEnvironment (id a)
 
 judgement TypeVarInEnvironment :=
 
@@ -57,13 +60,13 @@ judgement TypeVarInEnvironment :=
 a : K ∈ Δ, a : K
 
 a : K ∈ Δ
-──────────────── termVarExt
-a : K ∈ Δ, x : A
-
-a : K ∈ Δ
 a ≠ a'
 ────────────────── typeVarExt
 a : K ∈ Δ, a' : K'
+
+a : K ∈ Δ
+──────────────── termVarExt
+a : K ∈ Δ, x : A
 
 judgement_syntax Δ " ⊢ " A " : " K : Kinding
 
@@ -73,8 +76,8 @@ a : K ∈ Δ
 ───────── var
 Δ ⊢ a : K
 
-Δ, a : K₁ ⊢ A : K₂
-───────────────────────── lam
+∀ a ∉ (I : List _), Δ, a : K₁ ⊢ A^a : K₂
+──────────────────────────────────────── lam
 Δ ⊢ λ a : K₁. A : K₁ ↦ K₂
 
 Δ ⊢ A : K₁ ↦ K₂
@@ -82,8 +85,8 @@ a : K ∈ Δ
 ─────────────── app
 Δ ⊢ A B : K₂
 
-Δ, a : K₁ ⊢ A : K₂
-──────────────────── scheme
+∀ a ∉ (I : List _), Δ, a : K₁ ⊢ A^a : K₂
+──────────────────────────────────────── scheme
 Δ ⊢ ∀ a : K₁. A : K₂
 
 Δ ⊢ A : *
@@ -108,11 +111,11 @@ a : K ∈ Δ
 ─────────── sum
 Δ ⊢ ⊕ A : *
 
-judgement_syntax x " ≠ " x' : TermVarNe
+judgement_syntax x " ≠ " x' : TermVarNe (id x, x')
 
-def TermVarNe := Ne (α := TermVar)
+def TermVarNe := Ne (α := TermVarId)
 
-judgement_syntax x " : " A " ∈ " Δ : TermVarInEnvironment
+judgement_syntax x " : " A " ∈ " Δ : TermVarInEnvironment (id x)
 
 judgement TermVarInEnvironment :=
 
@@ -120,13 +123,13 @@ judgement TermVarInEnvironment :=
 x : A ∈ Δ, x : A
 
 x : A ∈ Δ
+──────────────── typeVarExt
+x : A ∈ Δ, a : K
+
+x : A ∈ Δ
 x ≠ x'
 ───────────────── termVarExt
 x : A ∈ Δ, x' : B
-
-x : A ∈ Δ
-──────────────── typeVarExt
-x : A ∈ Δ, a : K
 
 judgement_syntax Δ " ⊢ " A " ≡ " B : TypeEquivalence
 
@@ -136,23 +139,23 @@ judgement TypeEquivalence :=
 Δ ⊢ A ≡ A
 
 Δ ⊢ B : K
-────────────────────────────── lamAppL
-Δ ⊢ (λ a : K. A) B ≡ A [B / a]
+───────────────────────── lamAppL
+Δ ⊢ (λ a : K. A) B ≡ A^^B
 
 Δ ⊢ B : K
-────────────────────────────── lamAppR
-Δ ⊢ A [B / a] ≡ (λ a : K. A) B
+───────────────────────── lamAppR
+Δ ⊢ A^^B ≡ (λ a : K. A) B
 
 </ Δ ⊢ B@i : K // i ∈ [:n] />
-──────────────────────────────────────────────────────────────────────────────── lamListAppL
-Δ ⊢ (λ a : K. A) ⟦{ </ B@i // i ∈ [:n] /> }⟧ ≡ { </ A [B@i / a] // i ∈ [:n] /> }
+─────────────────────────────────────────────────────────────────────────── lamListAppL
+Δ ⊢ (λ a : K. A) ⟦{ </ B@i // i ∈ [:n] /> }⟧ ≡ { </ A^^B@i // i ∈ [:n] /> }
 
 </ Δ ⊢ B@i : K // i ∈ [:n] />
-──────────────────────────────────────────────────────────────────────────────── lamListAppR
-Δ ⊢ { </ A [B@i / a] // i ∈ [:n] /> } ≡ (λ a : K. A) ⟦{ </ B@i // i ∈ [:n] /> }⟧
+─────────────────────────────────────────────────────────────────────────── lamListAppR
+Δ ⊢ { </ A^^B@i // i ∈ [:n] /> } ≡ (λ a : K. A) ⟦{ </ B@i // i ∈ [:n] /> }⟧
 
-Δ, a : K ⊢ A ≡ B
-─────────────────────────── lam
+∀ a ∉ (I : List _), Δ, a : K ⊢ A^a ≡ B^a
+──────────────────────────────────────── lam
 Δ ⊢ λ a : K. A ≡ λ a : K. B
 
 Δ ⊢ A₁ ≡ A₂
@@ -160,8 +163,8 @@ judgement TypeEquivalence :=
 ───────────────── app
 Δ ⊢ A₁ B₁ ≡ A₂ B₂
 
-Δ, a : K ⊢ A ≡ B
-─────────────────────────── scheme
+∀ a ∉ (I : List _), Δ, a : K ⊢ A^a ≡ B^a
+──────────────────────────────────────── scheme
 Δ ⊢ ∀ a : K. A ≡ ∀ a : K. B
 
 Δ ⊢ A₁ ≡ A₂
@@ -193,14 +196,17 @@ def TypeEquivalence.symm : [[Δ ⊢ A ≡ B]] → [[Δ ⊢ B ≡ A]]
   | .lamAppR h => .lamAppL h
   | .lamListAppL h => .lamListAppR h
   | .lamListAppR h => .lamListAppL h
-  | .lam h => .lam h.symm
+  | .lam h => .lam fun a mem => (h a mem).symm
   | .app h₁ h₂ => .app h₁.symm h₂.symm
-  | .scheme h => .scheme h.symm
+  | .scheme h => .scheme fun a mem => (h a mem).symm
   | .arr h₁ h₂ => .arr h₁.symm h₂.symm
-  | .list h => .list (fun i mem => (h i mem).symm)
+  | .list h => .list fun i mem => (h i mem).symm
   | .listApp h₁ h₂ => .listApp h₁.symm h₂.symm
   | .prod h => .prod h.symm
   | .sum h => .sum h.symm
+
+private
+def TypeEquivalence.trans : [[Δ ⊢ A₀ ≡ A₁]] → [[Δ ⊢ A₁ ≡ A₂]] → [[Δ ⊢ A₀ ≡ A₂]] := sorry
 
 judgement_syntax Δ " ⊢ " A " ≢ " B : TypeInequivalence
 
@@ -243,6 +249,64 @@ theorem prod_sum : [[Δ ⊢ ⊗ A ≢ ⊕ B]] := fun equ => by
 
 end TypeInequivalence
 
+judgement_syntax a " ∈ " "dom" "(" Δ ")" : TypeVarInEnvironmentDomain (id a)
+
+judgement TypeVarInEnvironmentDomain :=
+
+───────────────── head
+a ∈ dom(Δ, a : K)
+
+a ∈ dom(Δ)
+a ≠ a'
+────────────────── typeVarExt
+a ∈ dom(Δ, a' : K)
+
+a ∈ dom(Δ)
+───────────────── termVarExt
+a ∈ dom(Δ, x : A)
+
+judgement_syntax a " ∉ " "dom" "(" Δ ")" : TypeVarNotInEnvironmentDomain (id a)
+
+def TypeVarNotInEnvironmentDomain a Δ := ¬[[a ∈ dom(Δ)]]
+
+judgement_syntax x " ∈ " "dom" "(" Δ ")" : TermVarInEnvironmentDomain (id x)
+
+judgement TermVarInEnvironmentDomain :=
+
+───────────────── head
+x ∈ dom(Δ, x : A)
+
+x ∈ dom(Δ)
+───────────────── typeVarExt
+x ∈ dom(Δ, a : K)
+
+x ∈ dom(Δ)
+x ≠ x'
+────────────────── termVarExt
+x ∈ dom(Δ, x' : A)
+
+judgement_syntax x " ∉ " "dom" "(" Δ ")" : TermVarNotInEnvironmentDomain (id x)
+
+def TermVarNotInEnvironmentDomain x Δ := ¬[[x ∈ dom(Δ)]]
+
+judgement_syntax "⊢ " Δ : EnvironmentWellFormedness
+
+judgement EnvironmentWellFormedness :=
+
+─── empty
+⊢ ε
+
+⊢ Δ
+a ∉ dom(Δ)
+────────── typeVarExt
+⊢ Δ, a : K
+
+⊢ Δ
+x ∉ dom(Δ)
+Δ ⊢ A : *
+────────── termVarExt
+⊢ Δ, x : A
+
 judgement_syntax n " ∈ " "[" n_start ":" n_stop "]" : NatInRange
 
 def NatInRange (n start stop : Nat) := n ∈ [start:stop]
@@ -251,12 +315,13 @@ judgement_syntax Δ " ⊢ " E " : " A : Typing
 
 judgement Typing :=
 
+⊢ Δ
 x : A ∈ Δ
 ───────── var
 Δ ⊢ x : A
 
-Δ, x : A ⊢ E : B
-────────────────────── lam
+∀ x ∉ (I : List _), Δ, x : A ⊢ E^a : B
+────────────────────────────────────── lam
 Δ ⊢ λ x : A. E : A → B
 
 Δ ⊢ E : A → B
@@ -264,14 +329,14 @@ x : A ∈ Δ
 ─────────────── app
 Δ ⊢ E F : A → B
 
-Δ, a : K ⊢ E : A
-─────────────────────────── typeLam
+∀ a ∉ (I : List _), Δ, a : K ⊢ E^a : A^a
+──────────────────────────────────────── typeLam
 Δ ⊢ Λ a : K. E : ∀ a : K. A
 
 Δ ⊢ E : ∀ a : K. A
 Δ ⊢ B : K
-───────────────────── typeApp
-Δ ⊢ E [B] : A [B / a]
+────────────────── typeApp
+Δ ⊢ E [B] : A^^B
 
 </ Δ ⊢ E@i : A@i // i ∈ [:n] />
 ─────────────────────────────────────────────────────────── prodIntro
@@ -298,8 +363,8 @@ n ∈ [0:n']
 Δ ⊢ E : B
 
 nonterminal (parent := Term) Value, V :=
-  | "λ " x " : " A ". " E  : lam
-  | "Λ " a " : " K ". " E  : typeLam
+  | "λ " x " : " A ". " E  : lam (bind x in E)
+  | "Λ " a " : " K ". " E  : typeLam (bind a in E)
   | "(" sepBy(V, ", ") ")" : prodIntro
   | "ι " n V               : sumIntro
 
@@ -315,15 +380,15 @@ F -> F'
 ─────────── appR
 V F -> V F'
 
-─────────────────────────── lamApp
-⦅λ x : A. E⦆ V -> E [V / x]
+────────────────────── lamApp
+⦅λ x : A. E⦆ V -> E^^V
 
 E -> E'
 ─────────────── typeApp
 E [A] -> E' [A]
 
-───────────────────────────── typeLamApp
-⦅Λ a : K. E⦆ [A] -> E [A / a]
+──────────────────────── typeLamApp
+⦅Λ a : K. E⦆ [A] -> E^^A
 
 E -> E'
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────── prodIntro
@@ -350,16 +415,16 @@ E -> E'
 case V { </ V'@i // i ∈ [:n] />, E, </ F@j // j ∈ [:m] /> } -> case V { </ V'@i // i ∈ [:n] />, E', </ F@j // j ∈ [:m] /> }
 
 n ∈ [0:n']
-──────────────────────────────────────────── sumElimIntro
-case V { </ V'@i // i ∈ [:n'] /> } -> V'@n V
+────────────────────────────────────────────────────── sumElimIntro
+case ι n V { </ V'@i // i ∈ [:n'] /> } -> V'@n ⦅ι n V⦆
 
 private
 theorem Value.eq_lam_of_ty_arr (VtyAarrB : [[ε ⊢ V : A → B]])
-  : ∃ x A' E, V.1 = [[λ x : A'. E]] := sorry
+  : ∃ A' E, V.1 = [[λ x : A'. E]] := sorry
 
 private
 theorem Value.eq_typeApp_of_ty_forall (Vty : [[ε ⊢ V : ∀ a : K. A]])
-  : ∃ a K E, V.1 = [[Λ a : K. E]] := sorry
+  : ∃ K E, V.1 = [[Λ a : K. E]] := sorry
 
 private
 theorem Value.eq_prodIntro_of_ty_prod (Vty : [[ε ⊢ V : ⊗ { </ A@i // i ∈ [0:n] /> }]])
@@ -367,7 +432,7 @@ theorem Value.eq_prodIntro_of_ty_prod (Vty : [[ε ⊢ V : ⊗ { </ A@i // i ∈ 
 
 private
 theorem Value.eq_sumIntro_of_ty_sum (Vty : [[ε ⊢ V : ⊕ { </ A@i // i ∈ [0:n'] /> }]])
-  : ∃ n ∈ [0:n'], ∃ E, V.1 = [[ι n E]] := sorry
+  : ∃ n ∈ [0:n'], ∃ V', V.1 = [[ι n V']] := sorry
 
 open Std
 
@@ -431,16 +496,16 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
       | .inr FIsValue =>
         let VE' : Value := ⟨E', E'IsValue⟩
         have : E' = VE'.1 := rfl
-        have ⟨_, _, _, VE'eq⟩ := VE'.eq_lam_of_ty_arr E'tyA'arrB
+        have ⟨_, _, VE'eq⟩ := VE'.eq_lam_of_ty_arr E'tyA'arrB
         rw [this, VE'eq]
         exact .inl <| .intro _ <| .lamApp (V := ⟨F, FIsValue⟩)
   · case typeLam => exact .inr .typeLam
-  · case typeApp E' a K _ A' E'ty _ ih => match ih rfl with
+  · case typeApp E' K _ _ E'ty _ ih => match ih rfl with
     | .inl ⟨E'', E'toE''⟩ => exact .inl <| .intro _ <| .typeApp E'toE''
     | .inr E'IsValue =>
       let V : Value := ⟨E', E'IsValue⟩
       have : E' = V.1 := rfl
-      have ⟨_, _, _, Veq⟩ := V.eq_typeApp_of_ty_forall E'ty
+      have ⟨_, _, Veq⟩ := V.eq_typeApp_of_ty_forall E'ty
       rw [this, Veq]
       exact .inl <| .intro _ <| .typeLamApp
   · case prodIntro n E' A E'ty ih => match progress.fold E'ty (fun i mem => ih i mem rfl) with
@@ -474,7 +539,8 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
     | .inl ⟨E'', E'toE''⟩ => exact .inl <| .intro _ <| .sumElimL E'toE''
     | .inr E'IsValue =>
       let VE' : Value := ⟨E', E'IsValue⟩
-      have ⟨_, mem, _⟩ := VE'.eq_sumIntro_of_ty_sum E'ty
+      have ⟨n', mem, VE'', VE'_eq⟩ := VE'.eq_sumIntro_of_ty_sum E'ty
+      cases VE'_eq
       match progress.fold Fty (fun i mem => ih₂ i mem rfl) with
       | .inl ⟨j, ⟨_, jltn⟩, IsValue, F', toF'⟩ =>
         let VF k : Value := if h' : k < j then ⟨F k, IsValue k ⟨Nat.zero_le _, h'⟩⟩ else default
@@ -492,7 +558,7 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
           dsimp only [VF]
           rw [dif_pos mem.upper]
         ), ← List.map_singleton_join]
-        exact .inl <| .intro _ <| .sumElimIntro (V := VE') mem
+        exact .inl <| .intro _ <| .sumElimIntro mem
   · case equiv ih => exact ih rfl
 
 theorem preservation : [[ε ⊢ E : A]] → [[E -> E']] → [[ε ⊢ E' : A]] := sorry
