@@ -471,9 +471,9 @@ theorem progress.fold {E : Nat → Term} (EtyA : ∀ i ∈ [0:n], [[ε ⊢ E@i :
           exact IsValue i ⟨Nat.zero_le _, Nat.lt_of_le_of_ne (Nat.le_of_lt_succ mem.upper) h⟩
 
 private
-theorem progress.sandwich {f : Nat → α} (h : i < n) : (List.map (fun j => [f j]) [0:n]).join =
-  (List.map (fun j => [f j]) [0:i]).join ++
-    f i :: (List.map (fun j => [f (j + (i + 1))]) [(i + 1) - (i + 1):n - (i + 1)]).join := by
+theorem progress.sandwich {f : Nat → α} (h : i < n) : (List.map (fun j => [f j]) [0:n]).flatten =
+  (List.map (fun j => [f j]) [0:i]).flatten ++
+    f i :: (List.map (fun j => [f (j + (i + 1))]) [(i + 1) - (i + 1):n - (i + 1)]).flatten := by
   simp only [List.map_singleton_join]
   congr
   rw [← List.singleton_append, Range.map_shift (Nat.le_refl _)]
