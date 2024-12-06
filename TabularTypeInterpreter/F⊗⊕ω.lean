@@ -15,11 +15,11 @@ nonterminal Kind, K :=
 locally_nameless
 metavar TypeVar, a
 
-nonterminal Type', A, B :=
+nonterminal «Type», A, B :=
   | a                      : var
   | "λ " a " : " K ". " A  : lam (bind a in A)
   | A B                    : app
-  | "∀ " a " : " K ". " A  : forall' (bind a in A)
+  | "∀ " a " : " K ". " A  : «forall» (bind a in A)
   | A " → " B              : arr
   | "{" sepBy(A, ", ") "}" : list
   | A " ⟦" B "⟧"           : listApp
