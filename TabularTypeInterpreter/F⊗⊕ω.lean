@@ -27,6 +27,18 @@ nonterminal «Type», A, B :=
   | "⊕ " A                 : sum
   | "(" A ")"              : paren (desugar := return A)
 
+def «Type».fv : «Type» → List TypeVarId
+  | var (.free a) => [a]
+  | var _ => []
+  | lam _ A => A.fv
+  | app A B => A.fv ++ B.fv
+  | «forall» _ A => A.fv
+  | arr A B => A.fv ++ B.fv
+  | list As => As.mapMem (fun A _ => A.fv) |>.flatten
+  | listApp A B => A.fv ++ B.fv
+  | prod A => A.fv
+  | sum A => A.fv
+
 locally_nameless
 metavar TermVar, x
 
