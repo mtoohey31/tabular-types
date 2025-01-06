@@ -11,6 +11,7 @@ nonterminal Kind, K :=
   | "*"         : star
   | K₁ " ↦ " K₂ : arr
   | "L " K      : list
+  | "(" K ")"   : paren (desugar := return K)
 
 locally_nameless
 metavar TypeVar, a
@@ -27,7 +28,9 @@ nonterminal «Type», A, B :=
   | "⊕ " A                 : sum
   | "(" A ")"              : paren (desugar := return A)
 
-def «Type».fv : «Type» → List TypeVarId
+namespace «Type»
+
+def fv : «Type» → List TypeVarId
   | var (.free a) => [a]
   | var _ => []
   | lam _ A => A.fv
@@ -38,6 +41,214 @@ def «Type».fv : «Type» → List TypeVarId
   | listApp A B => A.fv ++ B.fv
   | prod A => A.fv
   | sum A => A.fv
+
+@[simp]
+theorem TypeVar_open_sizeOf (A : «Type») : sizeOf (A.TypeVar_open a n) = sizeOf A := by
+  match A with
+  | var (.bound _) =>
+    rw [TypeVar_open]
+    split
+    · case isTrue h' =>
+      dsimp only [sizeOf]
+      rw [← h', _sizeOf_1, _sizeOf_1]
+      dsimp only [sizeOf]
+      rw [default.sizeOf, default.sizeOf]
+    · case isFalse => rfl
+  | var (.free _) =>
+    rw [TypeVar_open]
+    split <;> rfl
+  | lam _ A' =>
+    dsimp only [sizeOf]
+    rw [TypeVar_open, _sizeOf_1, _sizeOf_1]
+    simp only
+    rw [← _sizeOf_1, ← _sizeOf_1, rev (A'.TypeVar_open _ _), rev A', A'.TypeVar_open_sizeOf]
+  | app A' B =>
+    dsimp only [sizeOf]
+    rw [TypeVar_open, _sizeOf_1, _sizeOf_1]
+    simp only
+    rw [← _sizeOf_1, ← _sizeOf_1, ← _sizeOf_1, ← _sizeOf_1, rev (A'.TypeVar_open _ _),
+        rev (B.TypeVar_open _ _), rev A', rev B, A'.TypeVar_open_sizeOf, B.TypeVar_open_sizeOf]
+  | «forall» _ A' =>
+    dsimp only [sizeOf]
+    rw [TypeVar_open, _sizeOf_1, _sizeOf_1]
+    simp only
+    rw [← _sizeOf_1, ← _sizeOf_1, rev (A'.TypeVar_open _ _), rev A', A'.TypeVar_open_sizeOf]
+  | arr A' B =>
+    dsimp only [sizeOf]
+    rw [TypeVar_open, _sizeOf_1, _sizeOf_1]
+    simp only
+    rw [← _sizeOf_1, ← _sizeOf_1, ← _sizeOf_1, ← _sizeOf_1, rev (A'.TypeVar_open _ _),
+        rev (B.TypeVar_open _ _), rev A', rev B, A'.TypeVar_open_sizeOf, B.TypeVar_open_sizeOf]
+  | list A's =>
+    match A's with
+    | [] =>
+      rw [TypeVar_open]
+      show sizeOf (list []) = _
+      dsimp only [sizeOf]
+    | A' :: A's' =>
+      rw [TypeVar_open]
+      show sizeOf (list (_ :: _)) = _
+      dsimp only [sizeOf]
+      rw [_sizeOf_1, _sizeOf_1]
+      simp only
+      rw [← _sizeOf_1, ← _sizeOf_1, ← _sizeOf_2, ← _sizeOf_2, rev (A'.TypeVar_open _ _), rev A',
+          A'.TypeVar_open_sizeOf]
+      have h := (list A's').TypeVar_open_sizeOf (a := a) (n := n)
+      dsimp only [sizeOf] at h
+      rw [TypeVar_open, _sizeOf_1, _sizeOf_1] at h
+      simp only at h
+      rw [← _sizeOf_2, ← _sizeOf_2, Nat.add_comm, Nat.add_comm (m := _sizeOf_2 A's')] at h
+      rw [Nat.add_one_inj.mp h]
+  | listApp A' B =>
+    dsimp only [sizeOf]
+    rw [TypeVar_open, _sizeOf_1, _sizeOf_1]
+    simp only
+    rw [← _sizeOf_1, ← _sizeOf_1, ← _sizeOf_1, ← _sizeOf_1, rev (A'.TypeVar_open _ _),
+        rev (B.TypeVar_open _ _), rev A', rev B, A'.TypeVar_open_sizeOf, B.TypeVar_open_sizeOf]
+  | prod A' =>
+    dsimp only [sizeOf]
+    rw [TypeVar_open, _sizeOf_1, _sizeOf_1]
+    simp only
+    rw [← _sizeOf_1, ← _sizeOf_1, rev (A'.TypeVar_open _ _), rev A', A'.TypeVar_open_sizeOf]
+  | sum A' =>
+    dsimp only [sizeOf]
+    rw [TypeVar_open, _sizeOf_1, _sizeOf_1]
+    simp only
+    rw [← _sizeOf_1, ← _sizeOf_1, rev (A'.TypeVar_open _ _), rev A', A'.TypeVar_open_sizeOf]
+where
+  rev : ∀ a : «Type», a._sizeOf_1 = sizeOf a := fun _ => by dsimp only [sizeOf]
+
+namespace TypeVarLocallyClosed
+
+theorem weaken {A : «Type»} : A.TypeVarLocallyClosed m → A.TypeVarLocallyClosed (m + n)
+  | var_free => var_free
+  | var_bound h => var_bound <| Nat.lt_add_right _ h
+  | lam A'lc => by
+    have := A'lc.weaken (n := n)
+    rw [Nat.add_assoc, Nat.add_comm (n := 1), ← Nat.add_assoc] at this
+    exact this.lam
+  | app A'lc Blc => app A'lc.weaken Blc.weaken
+  | «forall» A'lc => by
+    have := A'lc.weaken (n := n)
+    rw [Nat.add_assoc, Nat.add_comm (n := 1), ← Nat.add_assoc] at this
+    exact this.forall
+  | arr A'lc Blc => arr A'lc.weaken Blc.weaken
+  | list A'lc => list (A'lc · · |>.weaken)
+  | listApp A'lc Blc => listApp A'lc.weaken Blc.weaken
+  | prod A'lc => prod A'lc.weaken
+  | sum A'lc => sum A'lc.weaken
+
+theorem TypeVar_open_drop {A : «Type»} (h : m < n)
+  (Aoplc : (A.TypeVar_open a m).TypeVarLocallyClosed n) : A.TypeVarLocallyClosed n := by
+  match A with
+  | .var _ =>
+    rw [TypeVar_open] at Aoplc
+    split at Aoplc
+    · case isTrue h' =>
+      rw [← h']
+      exact var_bound h
+    · case isFalse h' => exact Aoplc
+  | .lam .. =>
+    rw [TypeVar_open] at Aoplc
+    let .lam A'oplc := Aoplc
+    exact lam <| A'oplc.TypeVar_open_drop <| Nat.add_lt_add_iff_right.mpr h
+  | .app A' B =>
+    rw [TypeVar_open] at Aoplc
+    let .app A'oplc Boplc := Aoplc
+    exact app (A'oplc.TypeVar_open_drop h) (Boplc.TypeVar_open_drop h)
+  | .forall .. =>
+    rw [TypeVar_open] at Aoplc
+    let .forall A'oplc := Aoplc
+    exact «forall» <| A'oplc.TypeVar_open_drop <| Nat.add_lt_add_iff_right.mpr h
+  | .arr .. =>
+    rw [TypeVar_open] at Aoplc
+    let .arr A'oplc Boplc := Aoplc
+    exact arr (A'oplc.TypeVar_open_drop h) (Boplc.TypeVar_open_drop h)
+  | .list A's =>
+    rw [TypeVar_open] at Aoplc
+    match h' : A's with
+    | [] => exact .list fun _ => (nomatch ·)
+    | A' :: A's' =>
+      apply list
+      intro A'' A''in
+      let .list A'oplc := Aoplc
+      match A''in with
+      | .head _ => exact A'oplc (A''.TypeVar_open _ _) (.head _) |>.TypeVar_open_drop h
+      | .tail _ A''inA's' =>
+        have := list <| fun A''' A'''in => A'oplc A''' <| .tail _ A'''in
+        rw [← TypeVar_open] at this
+        let .list A's'lc := this.TypeVar_open_drop h
+        exact A's'lc A'' A''inA's'
+  | .listApp A' B =>
+    rw [TypeVar_open] at Aoplc
+    let .listApp A'oplc Boplc := Aoplc
+    exact listApp (A'oplc.TypeVar_open_drop h) (Boplc.TypeVar_open_drop h)
+  | .prod A' =>
+    rw [TypeVar_open] at Aoplc
+    let .prod A'oplc := Aoplc
+    exact prod <| A'oplc.TypeVar_open_drop h
+  | .sum A' =>
+    rw [TypeVar_open] at Aoplc
+    let .sum A'oplc := Aoplc
+    exact sum <| A'oplc.TypeVar_open_drop h
+termination_by sizeOf A
+decreasing_by
+  all_goals simp_arith
+  · apply Nat.le_of_lt
+    apply List.sizeOf_lt_of_mem
+    have : A's = A' :: A's' := by assumption
+    cases this
+    exact A''in
+  · have : A's = A' :: A's' := by assumption
+    cases this
+    simp_arith
+
+theorem TypeVar_open_eq {A : «Type»} (Alc : A.TypeVarLocallyClosed n) : A.TypeVar_open a n = A := by
+  match A with
+  | var (.free _) => rw [TypeVar_open, if_neg (nomatch ·)]
+  | var (.bound _) =>
+    rw [TypeVar_open]
+    split
+    · case isTrue h =>
+      cases h
+      let .var_bound nltn := Alc
+      nomatch Nat.ne_of_lt nltn
+    · case isFalse => rfl
+  | .lam .. => let .lam A'lc := Alc; rw [TypeVar_open, A'lc.TypeVar_open_eq]
+  | .app .. =>
+    let .app A'lc Blc := Alc
+    rw [TypeVar_open, A'lc.TypeVar_open_eq, Blc.TypeVar_open_eq]
+  | .forall .. =>
+    let .forall A'lc := Alc
+    rw [TypeVar_open, A'lc.TypeVar_open_eq]
+  | .arr .. =>
+    let .arr A'lc Blc := Alc
+    rw [TypeVar_open, A'lc.TypeVar_open_eq, Blc.TypeVar_open_eq]
+  | .list A's =>
+    match h : A's with
+    | [] => rw [TypeVar_open]; rfl
+    | A' :: A's' =>
+      let .list A'slc := Alc
+      rw [TypeVar_open]
+      apply (Type.list.injEq _ _).mpr
+      show (_ :: _) = _
+      apply (List.cons.injEq _ _ _ _).mpr
+      constructor
+      · exact A'slc A' (.head _) |>.TypeVar_open_eq
+      · have := TypeVar_open_eq (A := .list A's') (a := a) (n := n) <| .list ?h
+        rw [TypeVar_open] at this
+        apply Type.list.inj this
+        intro A'' A''in
+        exact A'slc A'' <| .tail _ A''in
+  | .listApp .. =>
+    let .listApp A'lc Blc := Alc
+    rw [TypeVar_open, A'lc.TypeVar_open_eq, Blc.TypeVar_open_eq]
+  | .prod .. => let .prod A'lc := Alc; rw [TypeVar_open, A'lc.TypeVar_open_eq]
+  | .sum .. => let .sum A'lc := Alc; rw [TypeVar_open, A'lc.TypeVar_open_eq]
+
+end TypeVarLocallyClosed
+
+end «Type»
 
 locally_nameless
 metavar TermVar, x
@@ -54,11 +265,43 @@ nonterminal Term, E, F :=
   | "case " E "{" sepBy(F, ", ") "}" : sumElim
   | "⦅" E "⦆"                        : paren (desugar := return E)
 
+private
+def Environment.appendExpr : Lean.Expr :=
+  .const `TabularTypeInterpreter.«F⊗⊕ω».Environment.append []
+
+private
+def Environment.TypeVar_substExpr : Lean.Expr :=
+  .const `TabularTypeInterpreter.«F⊗⊕ω».Environment.TypeVar_subst []
+
 nosubst
 nonterminal Environment, Δ :=
-  | "ε"              : empty
-  | Δ ", " a " : " K : typeExt (id a)
-  | Δ ", " x " : " A : termExt (id x)
+  | "ε"                  : empty
+  | Δ ", " a " : " K     : typeExt (id a)
+  | Δ ", " x " : " A     : termExt (id x)
+  | "(" Δ ")"            : paren (desugar := return Δ)
+  | Δ ", " Δ'            : append (elab := return Lean.mkApp2 Environment.appendExpr Δ Δ')
+  | Δ " [" A " / " a "]" : subst (id a) (elab := return Lean.mkApp3 Environment.TypeVar_substExpr Δ a A)
+
+namespace Environment
+
+def append (Δ : Environment) : Environment → Environment
+  | empty => Δ
+  | typeExt Δ' a K => Δ.append Δ' |>.typeExt a K
+  | termExt Δ' x A => Δ.append Δ' |>.termExt x A
+
+theorem append_empty (Δ : Environment) : Δ.append empty = Δ := rfl
+
+theorem empty_append (Δ : Environment) : append empty Δ = Δ := by
+  match Δ with
+  | empty => rfl
+  | typeExt Δ' .. | termExt Δ' .. => rw [append, Δ'.empty_append]
+
+def TypeVar_subst (Δ : Environment) (a : TypeVarId) (A : «Type») := match Δ with
+  | empty => empty
+  | typeExt Δ' a' K => Δ'.TypeVar_subst a A |>.typeExt a' K
+  | termExt Δ' x A' => Δ'.TypeVar_subst a A |>.termExt x <| A'.TypeVar_subst a A
+
+end Environment
 
 judgement_syntax a " ≠ " a' : TypeVarNe (id a, a')
 
@@ -122,6 +365,47 @@ a : K ∈ Δ
 Δ ⊢ A : L *
 ─────────── sum
 Δ ⊢ ⊕ A : *
+
+namespace Kinding
+
+theorem TypeVarLocallyClosed_of : [[Δ ⊢ A : K]] → A.TypeVarLocallyClosed 0 := fun Aki =>
+  match A, Aki with
+  | _, var .. => .var_free
+  | .lam K A', .lam A'opki (I := I) => by
+    let ⟨a, anin⟩ := I.exists_fresh
+    have := A'opki a anin |>.TypeVarLocallyClosed_of
+    exact .lam <| this.weaken.TypeVar_open_drop <| Nat.lt_succ_self _
+  | .app A' B, .app A'opki Bopki =>
+    .app A'opki.TypeVarLocallyClosed_of Bopki.TypeVarLocallyClosed_of
+  | .forall K A', .scheme A'opki (I := I) => by
+    let ⟨a, anin⟩ := I.exists_fresh
+    have := A'opki a anin |>.TypeVarLocallyClosed_of
+    exact .forall <| this.weaken.TypeVar_open_drop <| Nat.lt_succ_self _
+  | .arr A' B, .arr A'opki Bopki =>
+    .arr A'opki.TypeVarLocallyClosed_of Bopki.TypeVarLocallyClosed_of
+  | .list A', Aki =>
+    let .list A'opki (A := A'') := Aki
+    .list fun A''' A'''in => by
+      rw [List.map_singleton_flatten] at A'''in
+      let ⟨i, mem, A'''eq⟩ := Std.Range.mem_of_mem_map A'''in
+      cases A'''eq
+      exact A'opki i mem |>.TypeVarLocallyClosed_of
+  | .listApp A' B, .listApp A'opki Bopki =>
+    .listApp A'opki.TypeVarLocallyClosed_of Bopki.TypeVarLocallyClosed_of
+  | .prod A', .prod A'opki => .prod A'opki.TypeVarLocallyClosed_of
+  | .sum A', .sum A'opki => .sum A'opki.TypeVarLocallyClosed_of
+termination_by sizeOf A
+decreasing_by
+  all_goals (simp; try simp_arith)
+  rw [List.map_singleton_flatten]
+  apply Nat.le_of_lt
+  exact List.sizeOf_lt_of_mem A'''in
+
+theorem Type_open_preservation {A : «Type»}
+  (Aki : Kinding [[(Δ, a : K, Δ')]] (A.TypeVar_open a n) K') (aninftvA : ¬A.InFreeTypeVars a)
+  (Bki : [[Δ ⊢ B : K]]) : Kinding [[(Δ, (Δ' [B / a]))]] (A.Type_open B n) K' := sorry
+
+end Kinding
 
 judgement_syntax x " ≠ " x' : TermVarNe (id x, x')
 
@@ -319,6 +603,8 @@ x ∉ dom(Δ)
 ────────── termVarExt
 ⊢ Δ, x : A
 
+theorem Kinding.weakening : [[Δ ⊢ A : K]] → [[⊢ Δ', Δ, Δ'']] → [[Δ', Δ, Δ'' ⊢ A : K]] := sorry
+
 judgement_syntax n " ∈ " "[" n_start ":" n_stop "]" : NatInRange
 
 def NatInRange (n start stop : Nat) := n ∈ [start:stop]
@@ -486,7 +772,7 @@ private
 theorem progress.sandwich {f : Nat → α} (h : i < n) : (List.map (fun j => [f j]) [0:n]).flatten =
   (List.map (fun j => [f j]) [0:i]).flatten ++
     f i :: (List.map (fun j => [f (j + (i + 1))]) [(i + 1) - (i + 1):n - (i + 1)]).flatten := by
-  simp only [List.map_singleton_join]
+  simp only [List.map_singleton_flatten]
   congr
   rw [← List.singleton_append, Range.map_shift (Nat.le_refl _)]
   have : [f i] = List.map (fun j => f j) [i:i + 1] := by
@@ -532,7 +818,7 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
       exact .inl <| .intro _ <| .prodIntro toE''
     | .inr IsValue =>
       exact .inr <| .prodIntro fun E Emem => by
-        rw [List.map_singleton_join] at Emem
+        rw [List.map_singleton_flatten] at Emem
         have ⟨i, imem, Eeq⟩ := Range.mem_of_mem_map Emem
         rw [Eeq]
         exact IsValue i imem
@@ -565,11 +851,11 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
         exact .inl <| .intro _ <| .sumElimR (V := VE') toF'
       | .inr FIsValue =>
         let VF j : Value := if h : j < n then ⟨F j, FIsValue j ⟨Nat.zero_le _, h⟩⟩ else default
-        rw [List.map_singleton_join, Range.map_eq_of_eq_of_mem' (fun i mem => by
+        rw [List.map_singleton_flatten, Range.map_eq_of_eq_of_mem' (fun i mem => by
           show F i = (VF i).val
           dsimp only [VF]
           rw [dif_pos mem.upper]
-        ), ← List.map_singleton_join]
+        ), ← List.map_singleton_flatten]
         exact .inl <| .intro _ <| .sumElimIntro mem
   · case equiv ih => exact ih rfl
 
