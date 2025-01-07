@@ -412,7 +412,7 @@ decreasing_by
   exact List.sizeOf_lt_of_mem A'''in
 
 theorem Type_open_preservation {A : «Type»}
-  (Aki : Kinding [[(Δ, a : K, Δ')]] (A.TypeVar_open a n) K') (aninftvA : ¬A.InFreeTypeVars a)
+  (Aki : Kinding [[(Δ, a : K, Δ')]] (A.TypeVar_open a n) K') (aninfvA : a ∉ A.fv)
   (Bki : [[Δ ⊢ B : K]]) : Kinding [[(Δ, (Δ' [B / a]))]] (A.Type_open B n) K' := sorry
 
 end Kinding
