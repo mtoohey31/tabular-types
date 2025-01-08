@@ -400,9 +400,9 @@ a : K ∈ Δ
 ───────────── arr
 Δ ⊢ A → B : *
 
-</ Δ ⊢ A@i : K // i ∈ [:n] />
+</ Δ ⊢ A@i : K // i in [:n] />
 ─────────────────────────────────── list
-Δ ⊢ { </ A@i // i ∈ [:n] /> } : L K
+Δ ⊢ { </ A@i // i in [:n] /> } : L K
 
 Δ ⊢ A : K₁ ↦ K
 Δ ⊢ B : L K₁
@@ -502,13 +502,13 @@ judgement TypeEquivalence :=
 ───────────────────────── lamAppR
 Δ ⊢ A^^B ≡ (λ a : K. A) B
 
-</ Δ ⊢ B@i : K // i ∈ [:n] />
+</ Δ ⊢ B@i : K // i in [:n] />
 ─────────────────────────────────────────────────────────────────────────── lamListAppL
-Δ ⊢ (λ a : K. A) ⟦{ </ B@i // i ∈ [:n] /> }⟧ ≡ { </ A^^B@i // i ∈ [:n] /> }
+Δ ⊢ (λ a : K. A) ⟦{ </ B@i // i in [:n] /> }⟧ ≡ { </ A^^B@i // i in [:n] /> }
 
-</ Δ ⊢ B@i : K // i ∈ [:n] />
+</ Δ ⊢ B@i : K // i in [:n] />
 ─────────────────────────────────────────────────────────────────────────── lamListAppR
-Δ ⊢ { </ A^^B@i // i ∈ [:n] /> } ≡ (λ a : K. A) ⟦{ </ B@i // i ∈ [:n] /> }⟧
+Δ ⊢ { </ A^^B@i // i in [:n] /> } ≡ (λ a : K. A) ⟦{ </ B@i // i in [:n] /> }⟧
 
 ∀ a ∉ (I : List _), Δ, a : K ⊢ A^a ≡ B^a
 ──────────────────────────────────────── lam
@@ -528,9 +528,9 @@ judgement TypeEquivalence :=
 ───────────────────── arr
 Δ ⊢ A₁ → B₁ ≡ A₂ → B₂
 
-</ Δ ⊢ A@i ≡ B@i // i ∈ [:n] />
+</ Δ ⊢ A@i ≡ B@i // i in [:n] />
 ───────────────────────────────────────────────────────── list
-Δ ⊢ { </ A@i // i ∈ [:n] /> } ≡ { </ B@i // i ∈ [:n] /> }
+Δ ⊢ { </ A@i // i in [:n] /> } ≡ { </ B@i // i in [:n] /> }
 
 Δ ⊢ A₁ ≡ A₂
 Δ ⊢ B₁ ≡ B₂
@@ -672,11 +672,11 @@ x : A ∈ Δ
 ────────────────── typeApp
 Δ ⊢ E [B] : A^^B
 
-</ Δ ⊢ E@i : A@i // i ∈ [:n] />
+</ Δ ⊢ E@i : A@i // i in [:n] />
 ─────────────────────────────────────────────────────────── prodIntro
-Δ ⊢ ( </ E@i // i ∈ [:n] /> ) : ⊗ { </ A@i // i ∈ [:n] /> }
+Δ ⊢ ( </ E@i // i in [:n] /> ) : ⊗ { </ A@i // i in [:n] /> }
 
-Δ ⊢ E : ⊗ { </ A@i // i ∈ [:n'] /> }
+Δ ⊢ E : ⊗ { </ A@i // i in [:n'] /> }
 n ∈ [0:n']
 ──────────────────────────────────── prodElim
 Δ ⊢ π n E : A@n
@@ -684,12 +684,12 @@ n ∈ [0:n']
 n ∈ [0:n']
 Δ ⊢ E : A@n
 ──────────────────────────────────────── sumIntro
-Δ ⊢ ι n E : ⊕ { </ A@i // i ∈ [:n'] /> }
+Δ ⊢ ι n E : ⊕ { </ A@i // i in [:n'] /> }
 
-Δ ⊢ E : ⊕ { </ A@i // i ∈ [:n] /> }
-</ Δ ⊢ F@i : A@i → B // i ∈ [:n] />
+Δ ⊢ E : ⊕ { </ A@i // i in [:n] /> }
+</ Δ ⊢ F@i : A@i → B // i in [:n] />
 ──────────────────────────────────────── sumElim
-Δ ⊢ case E { </ F@i // i ∈ [:n] /> } : B
+Δ ⊢ case E { </ F@i // i in [:n] /> } : B
 
 Δ ⊢ E : A
 Δ ⊢ A ≡ B
@@ -726,7 +726,7 @@ E [A] -> E' [A]
 
 E -> E'
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────── prodIntro
-( </ V@i // i ∈ [:n] />, E, </ F@j // j ∈ [:m] /> ) -> ( </ V@i // i ∈ [:n] />, E', </ F@j // j ∈ [:m] /> )
+( </ V@i // i in [:n] />, E, </ F@j // j in [:m] /> ) -> ( </ V@i // i in [:n] />, E', </ F@j // j in [:m] /> )
 
 E -> E'
 ───────────────────────────────────── prodElim
@@ -734,7 +734,7 @@ E -> E'
 
 n ∈ [0:n']
 ───────────────────────────────────── prodElimIntro
-π n ( </ V@i // i ∈ [:n'] /> ) -> V@n
+π n ( </ V@i // i in [:n'] /> ) -> V@n
 
 E -> E'
 ─────────────── sumIntro
@@ -742,15 +742,15 @@ E -> E'
 
 E -> E'
 ───────────────────────────────────────────────────────────────────── sumElimL
-case E { </ F@i // i ∈ [:n] /> } -> case E' { </ F@i // i ∈ [:n] /> }
+case E { </ F@i // i in [:n] /> } -> case E' { </ F@i // i in [:n] /> }
 
 E -> E'
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── sumElimR
-case V { </ V'@i // i ∈ [:n] />, E, </ F@j // j ∈ [:m] /> } -> case V { </ V'@i // i ∈ [:n] />, E', </ F@j // j ∈ [:m] /> }
+case V { </ V'@i // i in [:n] />, E, </ F@j // j in [:m] /> } -> case V { </ V'@i // i in [:n] />, E', </ F@j // j in [:m] /> }
 
 n ∈ [0:n']
 ────────────────────────────────────────────────────── sumElimIntro
-case ι n V { </ V'@i // i ∈ [:n'] /> } -> V'@n ⦅ι n V⦆
+case ι n V { </ V'@i // i in [:n'] /> } -> V'@n ⦅ι n V⦆
 
 private
 theorem Value.eq_lam_of_ty_arr (VtyAarrB : [[ε ⊢ V : A → B]])
@@ -761,11 +761,11 @@ theorem Value.eq_typeApp_of_ty_forall (Vty : [[ε ⊢ V : ∀ a : K. A]])
   : ∃ K E, V.1 = [[Λ a : K. E]] := sorry
 
 private
-theorem Value.eq_prodIntro_of_ty_prod (Vty : [[ε ⊢ V : ⊗ { </ A@i // i ∈ [0:n] /> }]])
-  : ∃ V' : Nat → Value, V.1 = [[( </ V'@i // i ∈ [0:n] /> )]] := sorry
+theorem Value.eq_prodIntro_of_ty_prod (Vty : [[ε ⊢ V : ⊗ { </ A@i // i in [0:n] /> }]])
+  : ∃ V' : Nat → Value, V.1 = [[( </ V'@i // i in [0:n] /> )]] := sorry
 
 private
-theorem Value.eq_sumIntro_of_ty_sum (Vty : [[ε ⊢ V : ⊕ { </ A@i // i ∈ [0:n'] /> }]])
+theorem Value.eq_sumIntro_of_ty_sum (Vty : [[ε ⊢ V : ⊕ { </ A@i // i in [0:n'] /> }]])
   : ∃ n ∈ [0:n'], ∃ V', V.1 = [[ι n V']] := sorry
 
 open Std
@@ -809,7 +809,6 @@ theorem progress.sandwich {f : Nat → α} (h : i < n) : (List.map (fun j => [f 
   (List.map (fun j => [f j]) [0:i]).flatten ++
     f i :: (List.map (fun j => [f (j + (i + 1))]) [(i + 1) - (i + 1):n - (i + 1)]).flatten := by
   simp only [List.map_singleton_flatten]
-  congr
   rw [← List.singleton_append, Range.map_shift (Nat.le_refl _)]
   have : [f i] = List.map (fun j => f j) [i:i + 1] := by
     rw [Range.toList, if_neg Nat.one_ne_zero, if_pos (Nat.lt_succ_self _), Range.toList,
@@ -845,7 +844,6 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
   · case prodIntro n E' A E'ty ih => match progress.fold E'ty (fun i mem => ih i mem rfl) with
     | .inl ⟨i, ⟨_, iltn⟩, IsValue, E'', toE''⟩ =>
       let V j : Value := if h' : j < i then ⟨E' j, IsValue j ⟨Nat.zero_le _, h'⟩⟩ else default
-      dsimp only [Coe.coe]
       rw [progress.sandwich iltn, Range.map_eq_of_eq_of_mem (fun j jmem => by
           show [E' j] = [(V j).val]
           dsimp only [V]
@@ -878,7 +876,6 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
       match progress.fold Fty (fun i mem => ih₂ i mem rfl) with
       | .inl ⟨j, ⟨_, jltn⟩, IsValue, F', toF'⟩ =>
         let VF k : Value := if h' : k < j then ⟨F k, IsValue k ⟨Nat.zero_le _, h'⟩⟩ else default
-        dsimp only [Coe.coe]
         rw [progress.sandwich jltn, Range.map_eq_of_eq_of_mem (fun j jmem => by
           show [F j] = [(VF j).val]
           dsimp only [VF]
@@ -887,7 +884,7 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
         exact .inl <| .intro _ <| .sumElimR (V := VE') toF'
       | .inr FIsValue =>
         let VF j : Value := if h : j < n then ⟨F j, FIsValue j ⟨Nat.zero_le _, h⟩⟩ else default
-        rw [List.map_singleton_flatten, Range.map_eq_of_eq_of_mem' (fun i mem => by
+        rw [List.map_singleton_flatten, Range.map_eq_of_eq_of_mem (fun i mem => by
           show F i = (VF i).val
           dsimp only [VF]
           rw [dif_pos mem.upper]
