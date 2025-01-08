@@ -5,8 +5,11 @@ import Lott.DSL.Elab.JudgementComprehension
 import Lott.DSL.Elab.UniversalJudgement
 import Lott.DSL.Elab.Nat
 import TabularTypeInterpreter.List
+import TabularTypeInterpreter.Tactic
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
+
+open TabularTypeInterpreter.Tactic
 
 nonterminal Kind, K :=
   | "*"         : star
