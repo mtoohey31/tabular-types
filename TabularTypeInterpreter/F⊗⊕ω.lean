@@ -4,6 +4,7 @@ import Lott.Data.Range
 import Lott.DSL.Elab.JudgementComprehension
 import Lott.DSL.Elab.UniversalJudgement
 import Lott.DSL.Elab.Nat
+import TabularTypeInterpreter.List
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
 
