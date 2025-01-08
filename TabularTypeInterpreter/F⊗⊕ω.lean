@@ -29,8 +29,33 @@ nonterminal «Type», A, B :=
   | "⊕ " A                 : sum
   | "(" A ")"              : paren (desugar := return A)
 
-namespace «Type»
+@[app_unexpander Type.TypeVar_open]
+def delabTVOpen: Lean.PrettyPrinter.Unexpander
+  | `($(_) $T $a)
+  | `($(_) $T $a 0) =>
+    `( $T^$a )
+  | `($(_) $T $a $n) =>
+    `( $T^$a @ $n )
+  | _ => throw ()
 
+@[app_unexpander Type.Type_open]
+def delabTOpen: Lean.PrettyPrinter.Unexpander
+  | `($(_) $T $a)
+  | `($(_) $T $a 0) =>
+    `( $T^^$a )
+  | `($(_) $T $a $n) =>
+    `( $T^^$a @ $n )
+  | _ => throw ()
+
+@[app_unexpander Type.TypeVar_subst]
+def delabTVSubst: Lean.PrettyPrinter.Unexpander
+  | `($(_) $T $a $A) =>
+    let info := Lean.SourceInfo.none
+    let mapsto := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "↦") }
+    `( $T[$a $mapsto $A])
+  | _ => throw ()
+
+namespace «Type»
 def fv : «Type» → List TypeVarId
   | var (.free a) => [a]
   | var _ => []
@@ -283,6 +308,21 @@ nonterminal Environment, Δ :=
   | Δ ", " Δ'            : append (elab := return Lean.mkApp2 Environment.appendExpr Δ Δ')
   | Δ " [" A " / " a "]" : subst (id a) (elab := return Lean.mkApp3 Environment.TypeVar_substExpr Δ a A)
 
+@[app_unexpander Environment.empty]
+def delabEempty : Lean.PrettyPrinter.Unexpander
+  | `($(_)) =>
+    let info := Lean.SourceInfo.none
+    let eps := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "ε") }
+    `( $eps )
+
+@[app_unexpander Environment.typeExt, app_unexpander Environment.termExt]
+def delabETypeExt : Lean.PrettyPrinter.Unexpander
+  | `($(_) $Δ $a $K) =>
+    let info := Lean.SourceInfo.none
+    let comma := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info ",") }
+    let colon := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info ":") }
+    `( $Δ $comma $a $colon $K )
+  | _ => throw ()
 namespace Environment
 
 def append (Δ : Environment) : Environment → Environment
@@ -376,6 +416,15 @@ a : K ∈ Δ
 Δ ⊢ A : L *
 ─────────── sum
 Δ ⊢ ⊕ A : *
+
+@[app_unexpander Kinding]
+def delabK: Lean.PrettyPrinter.Unexpander
+  | `($(_) $Δ $A $B) =>
+    let info := Lean.SourceInfo.none
+    let vdash := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "⊢") }
+    let colon := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info ":") }
+    `([ $Δ $vdash $A $colon $B ])
+  | _ => throw ()
 
 namespace Kinding
 
