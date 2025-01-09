@@ -803,7 +803,10 @@ theorem red_lam_inversion : ∀I: List _, [[ Δ ⊢ (λ a? : K. A) ≡> T ]] →
 
 -- TODO CRITICAL, adopted from the paper
 private
-theorem lam_intro_ex : ∀a, a ∉ A.fv → a ∉ Δ.typeVarDom → [[ Δ, a : K ⊢ A^a ≡> B^a ]] → [[ Δ ⊢ (λ a : K. A) ≡> λ a : K. B ]] := sorry
+theorem lam_intro_ex : ∀a, a ∉ A.fv → a ∉ Δ.typeVarDom → [[ Δ, a : K ⊢ A^a ≡> B^a ]] → [[ Δ ⊢ (λ a : K. A) ≡> (λ a : K. B) ]] := sorry
+
+private
+theorem forall_intro_ex : ∀a, a ∉ A.fv → a ∉ Δ.typeVarDom → [[ Δ, a : K ⊢ A^a ≡> B^a ]] → [[ Δ ⊢ (∀ a : K. A) ≡> (∀ a : K. B) ]] := sorry
 
 -- NOTE correct, but might not needed
 private
@@ -873,8 +876,12 @@ theorem TypeVarLocallyClosed_open : ∀{T: «Type»} n a, T.TypeVarLocallyClosed
 private
 theorem TypeVarLocallyClosed_openT : ∀{T A: «Type»} n, T.TypeVarLocallyClosed (n + 1) → A.TypeVarLocallyClosed n → (T.Type_open A n).TypeVarLocallyClosed n := sorry
 
+-- NOTE from the paper
+private
+theorem subst_open {A B T: «Type»} (lcT: T.TypeVarLocallyClosed) : (A.TypeVar_subst a T).Type_open (B.TypeVar_subst a T) = (A.Type_open B n).TypeVar_subst a T := sorry
+
 -- also called TypeVar_open_TypeVar_subst_eq_Type'_open_of in LottExamples
--- NOTE I'm sure this is true as is described in the paper
+-- NOTE I'm sure this is true as is described in the paper. Depends on subst_open
 private
 theorem subst_intro {A: «Type»} (nfv: a ∉ A.fv): (A.TypeVar_open a n).TypeVar_subst a B = A.Type_open B n := sorry
 
@@ -884,27 +891,33 @@ theorem subst_lc {A B: «Type»} (lcA: A.TypeVarLocallyClosed n) (lcB: B.TypeVar
 
 -- FIXME critical, trivial
 private
-theorem pred_subst_same' {A B T: «Type»} (red: [[ Δ ⊢ A ≡> B ]]) (nfv: a ∉ T.fv): ParallelReduction Δ (T.TypeVar_subst a A) (T.TypeVar_subst a B) := sorry
+theorem pred_subst_same' {A B T: «Type»} (red: [[ Δ ⊢ A ≡> B ]]) (nfvT: a ∉ T.fv): ParallelReduction Δ (T.TypeVar_subst a A) (T.TypeVar_subst a B) := sorry
 
--- FIXME critical, but I'm not sure if it's too strong: kindT
--- (or too weak? tbh we should be able to add a conclusion that Δ ⊢ T[a ↦ A]: K')
--- private
--- theorem pred_subst_same {A B T: «Type»} (red: [[ Δ ⊢ A ≡> B ]]) (kindA: [[ Δ ⊢ A: K ]]) (kindT: [[ Δ', a: K ⊢ T: K' ]]): ParallelReduction Δ (T.TypeVar_subst a A) (T.TypeVar_subst a B) := by
 private
-theorem pred_subst_same {A B T: «Type»} (red: [[ Δ ⊢ A ≡> B ]]): ParallelReduction Δ (T.TypeVar_subst a A) (T.TypeVar_subst a B) := by
-  revert red A B a Δ
-  -- FIXME motive_2 is wrong
-  induction T using «Type».rec (motive_2 := fun l => ∀T ∈ l, ∀(Δ: Environment) (A B: «Type») (K' : Kind) (a: TypeVarId) (K: Kind), [[ Δ ⊢ A ≡> B ]] → [[ Δ ⊢ A: K ]] → [[ Δ, a: K ⊢ T: K' ]] → ParallelReduction Δ (T.TypeVar_subst a A) (T.TypeVar_subst a B))
-  case var => aesop (add norm «Type».TypeVar_subst)
-  case nil => simp_all
-  case cons => sorry
+theorem subst_fresh {A T : «Type»} (fresh: a ∉ A.fv) : a ∉ (T.TypeVar_subst a A |>.fv) := sorry
+
+private
+theorem kind_subst: [[ Δ ⊢ A: K ]] → [[ Δ, a: K ⊢ T: K' ]] → Kinding Δ (T.TypeVar_subst a A) K' := sorry
+
+-- FIXME critical
+private
+theorem pred_subst_same {A B T: «Type»} (red: [[ Δ ⊢ A ≡> B ]]) (fresh: a ∉ Δ.typeVarDom ++ A.fv): ParallelReduction Δ (T.TypeVar_subst a A) (T.TypeVar_subst a B) := by
+  induction T using «Type».rec (motive_2 := fun l => ∀T ∈ l, ∀(Δ: Environment) (A B: «Type») (a: TypeVarId) (red: [[ Δ ⊢ A ≡> B ]]) (fresh: a ∉ Δ.typeVarDom ++ A.fv), ParallelReduction Δ (T.TypeVar_subst a A) (T.TypeVar_subst a B)) generalizing A B a Δ <;> (try simp [«Type».TypeVar_subst]) <;> (try aesop; done)
   . case lam K T ih =>
-    intro Δ a A B red
-    simp [«Type».TypeVar_subst]
     -- FIXME problematic
     apply (lam_intro_ex a)
-    all_goals sorry
-  all_goals sorry
+    . simp_all [subst_fresh]
+    . simp_all
+    . sorry -- NOTE direct consequence of pred_open. Need to finish that first.
+  . case «forall» K T ih =>
+    -- NOTE same as lam
+    apply (forall_intro_ex a)
+    . simp_all [subst_fresh]
+    . simp_all
+    . sorry
+  . case list Tl ih =>
+    -- TODO list
+    sorry
 
 
 -- FIXME critical, trivial
@@ -914,7 +927,21 @@ theorem pred_subst' {A B T: «Type»} (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ
 -- FIXME critical. from pred_subst_same: kindT is really annoying.. It stops us from using the lemma in
 -- (also, might be able to conclude that Δ ⊢ T[a ↦ A]: K')
 private
-theorem pred_subst {A B T: «Type»} (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ, a: K ⊢ T ≡> T' ]]) (kindA: [[ Δ ⊢ A: K ]]) (kindT: [[ Δ, a: K ⊢ T: K' ]]): ParallelReduction Δ (T.TypeVar_subst a A) (T'.TypeVar_subst a B) := sorry
+theorem pred_subst {A B T: «Type»} (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ, a: K ⊢ T ≡> T' ]]) (kindA: [[ Δ ⊢ A: K ]]) (fresh: a ∉ Δ.typeVarDom ++ A.fv) (lc: B.TypeVarLocallyClosed): ParallelReduction Δ (T.TypeVar_subst a A) (T'.TypeVar_subst a B) := by
+  generalize Δ'eq: Δ.typeExt a K = Δ' at red2
+  induction red2 generalizing Δ A B
+  . case refl Δ_ T_ =>
+    apply pred_subst_same <;> simp_all
+  . case lamApp Δ_ T2 K2 I T1 T1' T2' kindT2 redT1 redT2 ihT1 ihT2 =>
+    subst Δ_
+    simp [«Type».TypeVar_subst]
+    rw  [<- subst_open (lcT := lc)]
+    apply ParallelReduction.lamApp
+    . apply kind_subst (K := K) <;> assumption
+    . sorry -- FIXME must change definition of pred_subst to make it more generic, e.g. (Δ, a : K, Δ')
+    . aesop
+    . sorry -- metavar I, solved in subgoal 2
+  all_goals sorry
 
 -- NOTE must have for conf_lamApp: needed when using pred_subst
 private
