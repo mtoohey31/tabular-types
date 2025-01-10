@@ -887,10 +887,11 @@ theorem subst_open {A B T: «Type»} (lcT: T.TypeVarLocallyClosed n) : (A.TypeVa
   induction A using «Type».rec (motive_2 := fun l => ∀A ∈ l, ∀B T n, T.TypeVarLocallyClosed n → (A.TypeVar_subst a T).Type_open (B.TypeVar_subst a T) n = (A.Type_open B n).TypeVar_subst a T) generalizing B T n <;>
     aesop (add norm «Type».TypeVar_subst) (add norm «Type».Type_open) (add safe open_rec_lc) (add safe Type.TypeVarLocallyClosed.weaken)
 
--- also called TypeVar_open_TypeVar_subst_eq_Type'_open_of in LottExamples
--- NOTE I'm sure this is true as is described in the paper. Depends on subst_open
+-- NOTE Proof in the paper is wrong. subst_intro doesn't require lc B, while subst_open does.
 private
-theorem subst_intro {A: «Type»} (nfv: a ∉ A.fv): (A.TypeVar_open a n).TypeVar_subst a B = A.Type_open B n := sorry
+theorem subst_intro {A: «Type»} (nfv: a ∉ A.fv): (A.TypeVar_open a n).TypeVar_subst a B = A.Type_open B n := by
+  induction A using «Type».rec (motive_2 := fun l => ∀A ∈ l, ∀B n, a ∉ A.fv → (A.TypeVar_open a n).TypeVar_subst a B = A.Type_open B n) generalizing B n <;>
+    aesop (add norm Type.TypeVar_subst) (add norm Type.TypeVar_open) (add norm Type.Type_open) (add norm Type.fv)
 
 -- NOTE I'm sure this is true as is described in the paper
 private
