@@ -876,9 +876,16 @@ theorem TypeVarLocallyClosed_open : ∀{T: «Type»} n a, T.TypeVarLocallyClosed
 private
 theorem TypeVarLocallyClosed_openT : ∀{T A: «Type»} n, T.TypeVarLocallyClosed (n + 1) → A.TypeVarLocallyClosed n → (T.Type_open A n).TypeVarLocallyClosed n := sorry
 
--- NOTE from the paper
+private theorem open_rec_lc {T: «Type»} (lc: T.TypeVarLocallyClosed n) (h: m >= n): T.Type_open B m = T := by
+  induction lc generalizing m <;> simp_all [Type.Type_open]
+  . case var_bound m' n' h' =>
+    intro contra
+    simp_all [Nat.not_lt_of_ge]
+
 private
-theorem subst_open {A B T: «Type»} (lcT: T.TypeVarLocallyClosed) : (A.TypeVar_subst a T).Type_open (B.TypeVar_subst a T) = (A.Type_open B n).TypeVar_subst a T := sorry
+theorem subst_open {A B T: «Type»} (lcT: T.TypeVarLocallyClosed n) : (A.TypeVar_subst a T).Type_open (B.TypeVar_subst a T) n = (A.Type_open B n).TypeVar_subst a T := by
+  induction A using «Type».rec (motive_2 := fun l => ∀A ∈ l, ∀B T n, T.TypeVarLocallyClosed n → (A.TypeVar_subst a T).Type_open (B.TypeVar_subst a T) n = (A.Type_open B n).TypeVar_subst a T) generalizing B T n <;>
+    aesop (add norm «Type».TypeVar_subst) (add norm «Type».Type_open) (add safe open_rec_lc) (add safe Type.TypeVarLocallyClosed.weaken)
 
 -- also called TypeVar_open_TypeVar_subst_eq_Type'_open_of in LottExamples
 -- NOTE I'm sure this is true as is described in the paper. Depends on subst_open
