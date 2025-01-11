@@ -848,6 +848,12 @@ theorem lam_intro_ex : ∀a, a ∉ A.fv → a ∉ Δ.typeVarDom → [[ Δ, a : K
 private
 theorem forall_intro_ex : ∀a, a ∉ A.fv → a ∉ Δ.typeVarDom → [[ Δ, a : K ⊢ A^a ≡> B^a ]] → [[ Δ ⊢ (∀ a : K. A) ≡> (∀ a : K. B) ]] := sorry
 
+private
+theorem lam_intro_ex_k : ∀a, a ∉ A.fv → a ∉ Δ.typeVarDom → [[ Δ, a : K1 ⊢ A^a: K2 ]] → [[ Δ ⊢ (λ a : K1. A) : K1 ↦ K2 ]] := sorry
+
+private
+theorem forall_intro_ex_k : ∀a, a ∉ A.fv → a ∉ Δ.typeVarDom → [[ Δ, a : K1 ⊢ A^a: K2 ]] → [[ Δ ⊢ (∀ a : K1. A) : K2 ]] := sorry
+
 -- NOTE correct, but might not needed
 private
 theorem type_exists_close_at: ∀(T: «Type»), ∃ n, T.TypeVarLocallyClosed n := sorry
@@ -933,20 +939,46 @@ theorem subst_intro {A: «Type»} (nfv: a ∉ A.fv): (A.TypeVar_open a n).TypeVa
   induction A using «Type».rec (motive_2 := fun l => ∀A ∈ l, ∀B n, a ∉ A.fv → (A.TypeVar_open a n).TypeVar_subst a B = A.Type_open B n) generalizing B n <;>
     aesop (add norm Type.TypeVar_subst) (add norm Type.TypeVar_open) (add norm Type.Type_open) (add norm Type.fv)
 
--- NOTE I'm sure this is true as is described in the paper
 private
 theorem subst_lc {A B: «Type»} (lcA: A.TypeVarLocallyClosed n) (lcB: B.TypeVarLocallyClosed n): (A.TypeVar_subst a B).TypeVarLocallyClosed n := by
   induction lcA <;> aesop (add norm Type.TypeVar_subst) (add norm Type.TypeVarLocallyClosed.weaken)
 
--- FIXME critical, trivial
 private
-theorem pred_subst_same' {A B T: «Type»} (red: [[ Δ ⊢ A ≡> B ]]) (nfvT: a ∉ T.fv): ParallelReduction Δ (T.TypeVar_subst a A) (T.TypeVar_subst a B) := sorry
+theorem subst_open_var {T A: «Type»} (neq: x ≠ y) (lc: A.TypeVarLocallyClosed n): (T.TypeVar_open y n).TypeVar_subst x A = (T.TypeVar_subst x A).TypeVar_open y n := sorry
+
+private
+theorem subst_close_var {T A: «Type»} (neq: x ≠ y) (fresh: y ∉ A.fv): (T.TypeVar_close y n).TypeVar_subst x A = (T.TypeVar_subst x A).TypeVar_close y n := sorry
 
 private
 theorem subst_fresh {A T : «Type»} (fresh: a ∉ A.fv) : a ∉ (T.TypeVar_subst a A |>.fv) := sorry
 
 private
-theorem kind_subst: [[ Δ ⊢ A: K ]] → [[ Δ, a: K ⊢ T: K' ]] → Kinding Δ (T.TypeVar_subst a A) K' := sorry
+theorem kinding_subst' (wf: [[ ⊢ Δ, a: K, Δ' ]]) (kA: [[ Δ ⊢ A: K ]]) (kT: [[ Δ, a: K, Δ' ⊢ T: K' ]]): Kinding (Δ.append Δ') (T.TypeVar_subst a A) K' := by
+  generalize Δ'eq: (Δ.typeExt a K).append Δ' = Δ_ at kT
+  induction kT generalizing Δ Δ' a A K <;> simp_all [«Type».TypeVar_subst]
+  . case var a' K' Δ_ kIn =>
+    subst Δ_
+    -- FIXME need to prove TypeVarInEnvironment_exchange (env)
+    -- by_cases (a = a')
+    -- . case pos eq =>
+    --   simp_all
+    --   cases kIn
+    --   . assumption
+    --   . simp_all [TypeVarNe]
+    -- . case neg neq =>
+    --   simp_all
+    --   constructor
+    --   cases kIn <;> simp_all
+    sorry
+  all_goals sorry
+
+private
+theorem kinding_subst (wf: [[ ⊢ Δ, a: K ]]) (kA: [[ Δ ⊢ A: K ]]) (kT: [[ Δ, a: K ⊢ T: K' ]]): Kinding Δ (T.TypeVar_subst a A) K' :=
+ by apply kinding_subst' (Δ' := Environment.empty) <;> assumption
+
+-- FIXME critical, trivial
+private
+theorem pred_subst_same' {A B T: «Type»} (red: [[ Δ ⊢ A ≡> B ]]) (nfvT: a ∉ T.fv): ParallelReduction Δ (T.TypeVar_subst a A) (T.TypeVar_subst a B) := sorry
 
 -- FIXME critical
 private
@@ -970,13 +1002,14 @@ theorem pred_subst_same {A B T: «Type»} (red: [[ Δ ⊢ A ≡> B ]]) (fresh: a
 
 
 -- FIXME critical, trivial
+-- TODO better name, also is this really needed?
 private
-theorem pred_subst' {A B T: «Type»} (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ ⊢ T ≡> T' ]]) (nfv: a ∉ T.fv) : ParallelReduction Δ (T.TypeVar_subst a A) (T'.TypeVar_subst a B) := sorry
+theorem pred_subst_better_name {A B T: «Type»} (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ ⊢ T ≡> T' ]]) (nfv: a ∉ T.fv) : ParallelReduction Δ (T.TypeVar_subst a A) (T'.TypeVar_subst a B) := sorry
 
 -- FIXME critical. from pred_subst_same: kindT is really annoying.. It stops us from using the lemma in
 -- (also, might be able to conclude that Δ ⊢ T[a ↦ A]: K')
 private
-theorem pred_subst {A B T: «Type»} (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ, a: K ⊢ T ≡> T' ]]) (kindA: [[ Δ ⊢ A: K ]]) (fresh: a ∉ Δ.typeVarDom ++ A.fv) (lc: B.TypeVarLocallyClosed): ParallelReduction Δ (T.TypeVar_subst a A) (T'.TypeVar_subst a B) := by
+theorem pred_subst {A B T: «Type»} (wf: [[ ⊢ Δ, a: K ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ, a: K ⊢ T ≡> T' ]]) (kindA: [[ Δ ⊢ A: K ]]) (fresh: a ∉ Δ.typeVarDom ++ A.fv) (lc: B.TypeVarLocallyClosed): ParallelReduction Δ (T.TypeVar_subst a A) (T'.TypeVar_subst a B) := by
   generalize Δ'eq: Δ.typeExt a K = Δ' at red2
   induction red2 generalizing Δ A B
   . case refl Δ_ T_ =>
@@ -986,21 +1019,118 @@ theorem pred_subst {A B T: «Type»} (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ,
     simp [«Type».TypeVar_subst]
     rw  [<- subst_open (lcT := lc)]
     apply ParallelReduction.lamApp
-    . apply kind_subst (K := K) <;> assumption
+    . apply kinding_subst (K := K) <;> assumption
     . sorry -- FIXME must change definition of pred_subst to make it more generic, e.g. (Δ, a : K, Δ')
     . aesop
     . sorry -- metavar I, solved in subgoal 2
   all_goals sorry
 
+-- TODO is this lemma needed?
+private
+theorem TypeVarInEnvironment.det : [[ a: K ∈ Δ ]] → [[ a: K' ∈ Δ ]] → K = K' := by
+  intro h
+  induction h
+  . case head =>
+    intro k
+    cases k <;> simp_all [TypeVarNe]
+  . case typeVarExt =>
+    intro k
+    cases k <;> simp_all [TypeVarNe]
+  . case termVarExt =>
+    intro k
+    cases k; simp_all
+
+-- TODO is this lemma needed? probably in some env exchange lemma..
+private
+theorem Kinding.det : [[ Δ ⊢ A: K ]] → [[ Δ ⊢ A: K' ]] → K = K' := by
+  intro k
+  induction k generalizing K'
+  . case var => aesop (add safe cases Kinding) (add safe TypeVarInEnvironment.det)
+  . case lam I Δ K1 A K2 kindA ih =>
+    intro k
+    cases k
+    case lam I' K2' kindA' =>
+    simp
+    have ⟨a, notIn⟩ := (I ++ I').exists_fresh
+    apply ih a (by aesop)
+    apply kindA' a (by aesop)
+  . case app =>
+    rename_i ihA ihB
+    intro k
+    cases k
+    rename_i kB kA
+    apply ihA at kA
+    apply ihB at kB
+    simp_all
+  all_goals sorry -- TODO It's obviously provable, but very tedious
+
 -- NOTE must have for conf_lamApp: needed when using pred_subst
 private
-theorem pred_preservation : [[ Δ ⊢ A ≡> B ]] → [[ Δ ⊢ A: K ]] → [[ Δ ⊢ B: K ]] := sorry
+theorem pred_preservation : [[ ⊢ Δ ]] → [[ Δ ⊢ A ≡> B ]] → [[ Δ ⊢ A: K ]] → [[ Δ ⊢ B: K ]] := by
+  intro wf red
+  induction red generalizing K
+  . case refl => simp
+  . case lamApp Δ B KB I A A' B' kindB redA redB ihA ihB =>
+    intro k
+    cases k
+    case app _ _ k =>
+    cases k
+    case lam I' _ kindA =>
+    have ⟨a, notInI⟩ := (I ++ I' ++ A'.fv ++ Δ.typeVarDom).exists_fresh
+    have wf': [[ ⊢ Δ, a: KB ]] := by
+      constructor
+      . assumption
+      . simp [Environment.NotInTypeVarInDom, Environment.InTypeVarInDom]; aesop
+
+    have kindA' := ihA a (by aesop) wf' (kindA a (by aesop))
+    have kindB' := ihB wf kindB
+    rw [<- subst_intro (a:=a) (nfv := by aesop)]
+    apply kinding_subst <;> assumption
+  . case lamListApp => sorry
+  . case lam I Δ K1 A B red ih =>
+    intro k
+    cases k
+    case lam I' K2 kindA =>
+    have ⟨a, notIn⟩ := (I ++ I' ++ Δ.typeVarDom ++ B.fv).exists_fresh
+    have wf': [[ ⊢ Δ, a: K1 ]] := by
+      constructor
+      . assumption
+      . simp [Environment.NotInTypeVarInDom, Environment.InTypeVarInDom]; aesop
+    apply lam_intro_ex_k a <;> aesop
+  . case app =>
+    intro k
+    cases k
+    constructor <;> aesop
+  . case scheme I Δ K1 A B red ih =>
+    intro k
+    cases k
+    case scheme I' kindA =>
+    have ⟨a, notIn⟩ := (I ++ I' ++ Δ.typeVarDom ++ B.fv).exists_fresh
+    have wf': [[ ⊢ Δ, a: K1 ]] := by
+      constructor
+      . assumption
+      . simp [Environment.NotInTypeVarInDom, Environment.InTypeVarInDom]; aesop
+    apply forall_intro_ex_k a <;> aesop
+  . case arr =>
+    intro k
+    cases k
+    constructor <;> aesop
+  . case list => sorry
+  . case listApp => sorry
+  . case prod =>
+    intro k
+    cases k
+    constructor; aesop
+  . case sum =>
+    intro k
+    cases k
+    constructor; aesop
 
 -- NOTE critical
 -- if we need to have kindT in subst_intro, we need to add kinding for A as precondition
 private
-theorem pred_confluence_single : [[ Δ ⊢ A ≡> B ]] -> [[ Δ ⊢ A ≡> C ]] -> A.TypeVarLocallyClosed -> ∃ T, [[ Δ ⊢ B ≡> T ]] ∧ [[ Δ ⊢ C ≡> T ]] ∧ T.TypeVarLocallyClosed := by
-  intro red1
+theorem pred_confluence_single : [[ ⊢ Δ ]] → [[ Δ ⊢ A ≡> B ]] -> [[ Δ ⊢ A ≡> C ]] -> A.TypeVarLocallyClosed -> ∃ T, [[ Δ ⊢ B ≡> T ]] ∧ [[ Δ ⊢ C ≡> T ]] ∧ T.TypeVarLocallyClosed := by
+  intro wf red1
   revert C
   induction red1
   case lam I Δ' K A' B' red1 ih =>
@@ -1016,8 +1146,12 @@ theorem pred_confluence_single : [[ Δ ⊢ A ≡> B ]] -> [[ Δ ⊢ A ≡> C ]] 
     have freshC' : a ∉ C'.fv := by
       apply red_no_intro_fv at red2
       simp_all [«Type».fv]
+    have wf' : [[ ⊢ Δ', a: K ]] := by
+      constructor
+      . assumption
+      . simp [Environment.NotInTypeVarInDom, Environment.InTypeVarInDom]; aesop
 
-    have ⟨T', predA, predB, lcT'⟩ := ih a (by aesop) red2' (by
+    have ⟨T', predA, predB, lcT'⟩ := ih a (by aesop) wf' red2' (by
         -- NOTE if we used lc_abs_iff_body, this is trivial
         apply TypeVarLocallyClosed_open
         assumption
@@ -1064,17 +1198,21 @@ theorem pred_confluence_single : [[ Δ ⊢ A ≡> B ]] -> [[ Δ ⊢ A ≡> C ]] 
           assumption
         simp_all [TypeVarLocallyClosed_openT]
     . case lamApp I' A2 B2 redA' redB' _ =>
-      have ⟨a, notInI⟩ := (I ++ I' ++ A'.fv ++ A2.fv).exists_fresh
+      have ⟨a, notInI⟩ := (I ++ I' ++ A'.fv ++ A2.fv ++ Δ.typeVarDom ++ B'.fv).exists_fresh
+      have wf' : [[ ⊢ Δ, a: K ]] := by
+        constructor
+        . assumption
+        . simp [Environment.NotInTypeVarInDom, Environment.InTypeVarInDom]; aesop
       specialize redA' a (by simp_all)
-      have ⟨T1, redA'T, redA2T, lcT1⟩ := ihA a (by simp_all) redA'; clear redA'
+      have ⟨T1, redA'T, redA2T, lcT1⟩ := ihA a (by simp_all) wf' redA'; clear redA'
       have ⟨T2, redB'T, redB2T, lcT2⟩ := ihB redB'
       exists T1.TypeVar_subst a T2
       repeat' apply And.intro
       -- FIXME cooked. need to finish the definition of subst_intro first
       . rw [<- subst_intro (a := a) (nfv := by simp_all)]
         apply pred_subst <;> try assumption
-        . exact pred_preservation redB (by assumption)
-        . sorry -- FIXME if we decide we need kindT in subst_intro, we need to add Δ ⊢ A: K as a precondition. And also we must not use assumption because it's automatically filling the second K using K, which is apparently incorrect.
+        . exact pred_preservation wf redB (by assumption)
+        . aesop
       . rw [<- subst_intro (a := a) (nfv := by simp_all)]
         apply pred_subst
         all_goals sorry
@@ -1084,9 +1222,13 @@ theorem pred_confluence_single : [[ Δ ⊢ A ≡> B ]] -> [[ Δ ⊢ A ≡> C ]] 
       . case refl => sorry
       . case lam I' B22 redA' =>
         -- this is morally also lamApp
-        have ⟨a, notInI⟩ := (I ++ I' ++ A'.fv ++ B22.fv).exists_fresh
+        have ⟨a, notInI⟩ := (I ++ I' ++ A'.fv ++ B22.fv ++ Δ.typeVarDom).exists_fresh
+        have wf' : [[ ⊢ Δ, a: K ]] := by
+          constructor
+          . assumption
+          . simp [Environment.NotInTypeVarInDom, Environment.InTypeVarInDom]; aesop
         specialize redA' a (by simp_all)
-        have ⟨T1, redA'T, redA2T, lcT1⟩ := ihA a (by simp_all) redA'; clear redA'
+        have ⟨T1, redA'T, redA2T, lcT1⟩ := ihA a (by simp_all) wf' redA'; clear redA'
         have ⟨T2, redB'T, redB2T, lcT2⟩ := ihB redB'
         exists T1.TypeVar_subst a T2
         repeat' apply And.intro
