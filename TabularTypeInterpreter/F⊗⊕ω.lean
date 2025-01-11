@@ -431,6 +431,40 @@ def delabK: Lean.PrettyPrinter.Unexpander
     `([ $Δ $vdash $A $colon $B ])
   | _ => throw ()
 
+judgement_syntax a " ∈ " "dom" "(" Δ ")" : Environment.InTypeVarInDom (id a)
+
+def Environment.InTypeVarInDom a (Δ : Environment) := a ∈ Δ.typeVarDom
+
+judgement_syntax a " ∉ " "dom" "(" Δ ")" : Environment.NotInTypeVarInDom (id a)
+
+def Environment.NotInTypeVarInDom a Δ := ¬[[a ∈ dom(Δ)]]
+
+judgement_syntax x " ∈ " "dom" "(" Δ ")" : Environment.InTermVarInDom (id x)
+
+def Environment.InTermVarInDom x (Δ : Environment) := x ∈ Δ.termVarDom
+
+judgement_syntax x " ∉ " "dom" "(" Δ ")" : Environment.NotInTermVarInDom (id x)
+
+def Environment.NotInTermVarInDom x Δ := ¬[[x ∈ dom(Δ)]]
+
+judgement_syntax "⊢ " Δ : EnvironmentWellFormedness
+
+judgement EnvironmentWellFormedness :=
+
+─── empty
+⊢ ε
+
+⊢ Δ
+a ∉ dom(Δ)
+────────── typeVarExt
+⊢ Δ, a : K
+
+⊢ Δ
+x ∉ dom(Δ)
+Δ ⊢ A : *
+────────── termVarExt
+⊢ Δ, x : A
+
 namespace Kinding
 
 theorem TypeVarLocallyClosed_of : [[Δ ⊢ A : K]] → A.TypeVarLocallyClosed 0 := fun Aki =>
@@ -469,6 +503,12 @@ decreasing_by
 theorem Type_open_preservation {A : «Type»}
   (Aki : Kinding [[(Δ, a : K, Δ')]] (A.TypeVar_open a n) K') (aninfvA : a ∉ A.fv)
   (Bki : [[Δ ⊢ B : K]]) : Kinding [[(Δ, (Δ' [B / a]))]] (A.Type_open B n) K' := sorry
+
+-- theorem weakening1 : [[Δ, Δ'' ⊢ A : K]] → [[⊢ Δ, Δ', Δ'']] → [[Δ, Δ', Δ'' ⊢ A : K]] := sorry
+
+-- theorem weakening2 : [[Δ ⊢ A : K]] → [[⊢ Δ, Δ']] → [[Δ, Δ' ⊢ A : K]] := sorry
+
+theorem weakening : [[Δ ⊢ A : K]] → [[⊢ Δ', Δ, Δ'']] → [[Δ', Δ, Δ'' ⊢ A : K]] := sorry
 
 end Kinding
 
@@ -1106,42 +1146,6 @@ theorem prod_sum : [[Δ ⊢ ⊗ A ≢ ⊕ B]] := fun equ => by
   induction equ <;> ((try contradiction); try cases A₁eq; contradiction)
 
 end TypeInequivalence
-
-judgement_syntax a " ∈ " "dom" "(" Δ ")" : Environment.InTypeVarInDom (id a)
-
-def Environment.InTypeVarInDom a (Δ : Environment) := a ∈ Δ.typeVarDom
-
-judgement_syntax a " ∉ " "dom" "(" Δ ")" : Environment.NotInTypeVarInDom (id a)
-
-def Environment.NotInTypeVarInDom a Δ := ¬[[a ∈ dom(Δ)]]
-
-judgement_syntax x " ∈ " "dom" "(" Δ ")" : Environment.InTermVarInDom (id x)
-
-def Environment.InTermVarInDom x (Δ : Environment) := x ∈ Δ.termVarDom
-
-judgement_syntax x " ∉ " "dom" "(" Δ ")" : Environment.NotInTermVarInDom (id x)
-
-def Environment.NotInTermVarInDom x Δ := ¬[[x ∈ dom(Δ)]]
-
-judgement_syntax "⊢ " Δ : EnvironmentWellFormedness
-
-judgement EnvironmentWellFormedness :=
-
-─── empty
-⊢ ε
-
-⊢ Δ
-a ∉ dom(Δ)
-────────── typeVarExt
-⊢ Δ, a : K
-
-⊢ Δ
-x ∉ dom(Δ)
-Δ ⊢ A : *
-────────── termVarExt
-⊢ Δ, x : A
-
-theorem Kinding.weakening : [[Δ ⊢ A : K]] → [[⊢ Δ', Δ, Δ'']] → [[Δ', Δ, Δ'' ⊢ A : K]] := sorry
 
 judgement_syntax n " ∈ " "[" n_start ":" n_stop "]" : NatInRange
 
