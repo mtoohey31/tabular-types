@@ -894,19 +894,6 @@ theorem red_lam_inversion : ∀I: List _, [[ Δ ⊢ (λ a? : K. A) ≡> T ]] →
     exists a, A'
     constructor <;> aesop
 
--- TODO CRITICAL, adopted from the paper
-private
-theorem lam_intro_ex : ∀a, a ∉ A.fv → a ∉ Δ.typeVarDom → [[ Δ, a : K ⊢ A^a ≡> B^a ]] → [[ Δ ⊢ (λ a : K. A) ≡> (λ a : K. B) ]] := sorry
-
-private
-theorem forall_intro_ex : ∀a, a ∉ A.fv → a ∉ Δ.typeVarDom → [[ Δ, a : K ⊢ A^a ≡> B^a ]] → [[ Δ ⊢ (∀ a : K. A) ≡> (∀ a : K. B) ]] := sorry
-
-private
-theorem lam_intro_ex_k : ∀a, a ∉ A.fv → a ∉ Δ.typeVarDom → [[ Δ, a : K1 ⊢ A^a: K2 ]] → [[ Δ ⊢ (λ a : K1. A) : K1 ↦ K2 ]] := sorry
-
-private
-theorem forall_intro_ex_k : ∀a, a ∉ A.fv → a ∉ Δ.typeVarDom → [[ Δ, a : K1 ⊢ A^a: K2 ]] → [[ Δ ⊢ (∀ a : K1. A) : K2 ]] := sorry
-
 -- NOTE correct, but might not needed
 private
 theorem type_exists_close_at: ∀(T: «Type»), ∃ n, T.TypeVarLocallyClosed n := sorry
@@ -1202,14 +1189,15 @@ theorem Kinding.weakening_r' (fresh: ∀ a ∈ Δ'.typeVarDom, a ∉ Δ.typeVarD
         simp_all [TypeVarInEnvironment.weakening_l]
   case lam I Δ_ K1 T K2 kT ih =>
     subst Δ_
-    have ⟨a, notIn⟩ := (I ++ T.fv ++ Δ.typeVarDom ++ Δ'.typeVarDom ++ Δ''.typeVarDom).exists_fresh
-    apply lam_intro_ex_k (a := a) (by simp_all) (by simp_all [Environment.typeVarDom.app_comm])
+    apply Kinding.lam (I := I ++ Δ.typeVarDom ++ Δ'.typeVarDom ++ Δ''.typeVarDom)
+    intro a notIn
     specialize @ih a (by simp_all) Δ (Δ''.typeExt a K1)
     simp_all [Environment.append]
   case scheme I Δ_ K1 T K2 kT ih =>
     subst Δ_
     have ⟨a, notIn⟩ := (I ++ T.fv ++ Δ.typeVarDom ++ Δ'.typeVarDom ++ Δ''.typeVarDom).exists_fresh
-    apply forall_intro_ex_k (a := a) (by simp_all) (by simp_all [Environment.typeVarDom.app_comm])
+    apply Kinding.scheme (I := I ++ Δ.typeVarDom ++ Δ'.typeVarDom ++ Δ''.typeVarDom)
+    intro a notIn
     specialize @ih a (by simp_all) Δ (Δ''.typeExt a K1)
     simp_all [Environment.append]
   all_goals aesop (add safe constructors Kinding) (config := { enableSimp := false })
@@ -1283,30 +1271,26 @@ theorem kinding_subst' (wf: [[ ⊢ Δ, a: K, Δ' ]]) (kA: [[ Δ ⊢ A: K ]]) (kT
         simp_all [TypeVarInEnvironment.TypeVar_subst_noop]
   case lam I Δ_ K1 T K2 kind ih =>
     subst Δ_
-    have ⟨a', notIn⟩ := (a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom ++ T.fv ++ A.fv).exists_fresh
+    apply Kinding.lam (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom)
+    intro a' notIn
     specialize @ih a' (by simp_all) Δ a K (Δ'.typeExt a' K1) A
     simp_all [Environment.append]
-    apply lam_intro_ex_k a'
-    . apply subst_fresh'<;> simp_all
-    . simp_all [Environment.typeVarDom.app_comm, Environment.TypeVar_subst_typeVarDom]
-    . rw [<- subst_open_var (by aesop) lc]
-      apply ih
-      constructor
-      . assumption
-      . simp_all [Environment.typeVarDom, Environment.typeVarDom.app_comm]
+    rw [<- subst_open_var (by aesop) lc]
+    apply ih
+    constructor
+    . assumption
+    . simp_all [Environment.typeVarDom, Environment.typeVarDom.app_comm]
   case scheme I Δ_ K1 T K2 kind ih =>
     subst Δ_
-    have ⟨a', notIn⟩ := (a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom ++ T.fv ++ A.fv).exists_fresh
+    apply Kinding.scheme (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom)
+    intro a' notIn
     specialize @ih a' (by simp_all) Δ a K (Δ'.typeExt a' K1) A
     simp_all [Environment.append]
-    apply forall_intro_ex_k a'
-    . apply subst_fresh'<;> simp_all
-    . simp_all [Environment.typeVarDom.app_comm, Environment.TypeVar_subst_typeVarDom]
-    . rw [<- subst_open_var (by aesop) lc]
-      apply ih
-      constructor
-      . assumption
-      . simp_all [Environment.typeVarDom, Environment.typeVarDom.app_comm]
+    rw [<- subst_open_var (by aesop) lc]
+    apply ih
+    constructor
+    . assumption
+    . simp_all [Environment.typeVarDom, Environment.typeVarDom.app_comm]
   case list n Δ_ T_i K_i kind ih =>
     subst Δ_
     constructor
@@ -1317,6 +1301,13 @@ theorem kinding_subst' (wf: [[ ⊢ Δ, a: K, Δ' ]]) (kA: [[ Δ ⊢ A: K ]]) (kT
 private
 theorem kinding_subst (wf: [[ ⊢ Δ, a: K ]]) (kA: [[ Δ ⊢ A: K ]]) (kT: [[ Δ, a: K ⊢ T: K' ]]) (lc: A.TypeVarLocallyClosed): Kinding Δ (T.TypeVar_subst a A) K' :=
  by apply kinding_subst' (Δ' := Environment.empty) <;> assumption
+
+
+private
+theorem lam_intro_ex_k : ∀a, a ∉ A.fv → a ∉ Δ.typeVarDom → [[ Δ, a : K1 ⊢ A^a: K2 ]] → [[ Δ ⊢ (λ a : K1. A) : K1 ↦ K2 ]] := sorry
+
+private
+theorem forall_intro_ex_k : ∀a, a ∉ A.fv → a ∉ Δ.typeVarDom → [[ Δ, a : K1 ⊢ A^a: K2 ]] → [[ Δ ⊢ (∀ a : K1. A) : K2 ]] := sorry
 
 private
 theorem wf_subst (wf: [[ ⊢ Δ, a: K, Δ' ]]) (kA: [[ Δ ⊢ A: K ]]) (lc: A.TypeVarLocallyClosed): EnvironmentWellFormedness (Δ.append (Δ'.TypeVar_subst a A)) := by
@@ -1370,19 +1361,10 @@ private
 theorem pred_subst_same {A B T: «Type»} (red: [[ Δ ⊢ A ≡> B ]]) (fresh: a ∉ Δ.typeVarDom ++ A.fv): ParallelReduction Δ (T.TypeVar_subst a A) (T.TypeVar_subst a B) := by
   induction T using «Type».rec (motive_2 := fun l => ∀T ∈ l, ∀(Δ: Environment) (A B: «Type») (a: TypeVarId) (red: [[ Δ ⊢ A ≡> B ]]) (fresh: a ∉ Δ.typeVarDom ++ A.fv), ParallelReduction Δ (T.TypeVar_subst a A) (T.TypeVar_subst a B)) generalizing A B a Δ <;> (try simp [«Type».TypeVar_subst]) <;> (try aesop (rule_sets := [pred]); done)
   . case lam K T ih =>
-    -- FIXME problematic
-    apply (lam_intro_ex a)
-    . simp_all [subst_fresh]
-    . simp_all
-    . sorry -- NOTE direct consequence of pred_open. Need to finish that first.
+    sorry
   . case «forall» K T ih =>
-    -- NOTE same as lam
-    apply (forall_intro_ex a)
-    . simp_all [subst_fresh]
-    . simp_all
-    . sorry
+    sorry
   . case list Tl ih =>
-    -- TODO list
     sorry
 
 
@@ -1409,6 +1391,14 @@ theorem pred_subst {A B T: «Type»} (wf: [[ ⊢ Δ, a: K ]]) (red1: [[ Δ ⊢ A
     . aesop
     . sorry -- metavar I, solved in subgoal 2
   all_goals sorry
+
+-- FIXME those theorems are consequence of subst lemmas. They should not be used before those are proven
+private
+theorem lam_intro_ex : ∀a, a ∉ A.fv → a ∉ Δ.typeVarDom → [[ Δ, a : K ⊢ A^a ≡> B^a ]] → [[ Δ ⊢ (λ a : K. A) ≡> (λ a : K. B) ]] := sorry
+
+private
+theorem forall_intro_ex : ∀a, a ∉ A.fv → a ∉ Δ.typeVarDom → [[ Δ, a : K ⊢ A^a ≡> B^a ]] → [[ Δ ⊢ (∀ a : K. A) ≡> (∀ a : K. B) ]] := sorry
+
 
 -- TODO is this lemma needed?
 private
@@ -1479,7 +1469,8 @@ theorem pred_preservation (lc: A.TypeVarLocallyClosed) (wf: [[ ⊢ Δ ]]) (red: 
     intro k
     cases k
     case lam I' K2 kindA =>
-    have ⟨a, notIn⟩ := (I ++ I' ++ Δ.typeVarDom ++ B.fv).exists_fresh
+    apply Kinding.lam (I := I ++ I' ++ Δ.typeVarDom)
+    intro a notIn
     have wf': [[ ⊢ Δ, a: K1 ]] := by
       constructor
       . assumption
@@ -1487,7 +1478,7 @@ theorem pred_preservation (lc: A.TypeVarLocallyClosed) (wf: [[ ⊢ Δ ]]) (red: 
     cases lc
     case lam lc =>
     apply TypeVarLocallyClosed_open (a := a) at lc
-    apply lam_intro_ex_k a <;> aesop
+    simp_all
   . case app =>
     intro k
     cases k
@@ -1497,7 +1488,8 @@ theorem pred_preservation (lc: A.TypeVarLocallyClosed) (wf: [[ ⊢ Δ ]]) (red: 
     intro k
     cases k
     case scheme I' kindA =>
-    have ⟨a, notIn⟩ := (I ++ I' ++ Δ.typeVarDom ++ B.fv).exists_fresh
+    apply Kinding.scheme (I := I ++ I' ++ Δ.typeVarDom)
+    intro a notIn
     have wf': [[ ⊢ Δ, a: K1 ]] := by
       constructor
       . assumption
@@ -1505,7 +1497,7 @@ theorem pred_preservation (lc: A.TypeVarLocallyClosed) (wf: [[ ⊢ Δ ]]) (red: 
     cases lc
     case «forall» lc =>
     apply TypeVarLocallyClosed_open (a := a) at lc
-    apply forall_intro_ex_k a <;> aesop
+    simp_all
   . case arr =>
     intro k
     cases k
@@ -1557,6 +1549,7 @@ theorem pred_confluence_single : [[ ⊢ Δ ]] → [[ Δ ⊢ A ≡> B ]] -> [[ Δ
     exists («Type».lam K (T'.TypeVar_close a))
 
     constructor
+    -- TODO do we really need ex intro rules here?
     . apply (lam_intro_ex a) <;> aesop
     . constructor
       . apply (lam_intro_ex a) <;> aesop
