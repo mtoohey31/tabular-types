@@ -1,4 +1,5 @@
 import Lott.DSL.Elab.JudgementComprehension
+import Lott.DSL.Elab.OrJudgement
 import Lott.DSL.Elab.UniversalJudgement
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Type
 import TabularTypeInterpreter.Semantics.Kind
@@ -72,8 +73,9 @@ a : κ ∈ Γ
 </ Γc; Γ ⊢ ξ@i : L ⇝ B@i // i in [:n] />
 unique(</ ξ@i // i in [:n] />)
 </ Γc; Γ ⊢ τ@i : κ ⇝ A@i // i in [:n] />
-─────────────────────────────────────────────────────────────────────── row
-Γc; Γ ⊢ ⟨</ ξ@i ▹ τ@i // i in [:n] />⟩ : R κ ⇝ {</ A@i // i in [:n] />}
+n ≠ 0 ∨ b
+────────────────────────────────────────────────────────────────────────────────────── row
+Γc; Γ ⊢ ⟨</ ξ@i ▹ τ@i // i in [:n] /> </ : κ // b />⟩ : R κ ⇝ {</ A@i // i in [:n] />}
 
 Γc; Γ ⊢ μ : U ⇝ B
 Γc; Γ ⊢ ρ : R * ⇝ A

@@ -1,7 +1,9 @@
 import TabularTypeInterpreter.Semantics.Type.KindingAndElaboration
 import TabularTypeInterpreter.Theorems.Kind
 
-namespace TabularTypeInterpreter.ClassEnvironment.WellFormedness
+namespace TabularTypeInterpreter.ClassEnvironment
+
+namespace WellFormedness
 
 theorem ext_eliml (Γcγcw : [[⊢c Γc, γc]]) : [[⊢c Γc]] :=
   let .ext Γcw .. := Γcγcw
@@ -51,4 +53,25 @@ theorem KindingAndElaboration_of_ClassEnvironment_in {TC} (Γcw : [[⊢c Γc]])
         exact Aₛopki i inin
     ⟩
 
-end TabularTypeInterpreter.ClassEnvironment.WellFormedness
+end WellFormedness
+
+theorem In.deterministic (γc₀in : [[γc₀ ∈ Γc]]) (γc₁in : [[γc₁ ∈ Γc]]) (eq : γc₀.2 = γc₁.2)
+  : γc₀ = γc₁ := by
+  cases γc₀in
+  · case head =>
+    cases γc₁in
+    · case head => rfl
+    · case ext ne _ _ =>
+      cases eq
+      nomatch ne
+  · case ext TC' _ _ _ _ _ _ _ γc₀in' ne _ =>
+    generalize γceq : ClassEnvironmentEntry.mk _ TC' .. = γc at *
+    cases γc₁in
+    · case head =>
+      cases eq
+      cases γceq
+      nomatch ne
+    · case ext γc₁in' =>
+      exact γc₀in'.deterministic γc₁in' eq
+
+end TabularTypeInterpreter.ClassEnvironment

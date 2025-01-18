@@ -1,3 +1,4 @@
+import Aesop
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Environment
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Type
 
@@ -210,6 +211,31 @@ theorem TypeVar_open_eq {A : «Type»} (Alc : A.TypeVarLocallyClosed n) : A.Type
   | .sum .. => let .sum A'lc := Alc; rw [TypeVar_open, A'lc.TypeVar_open_eq]
 
 end TypeVarLocallyClosed
+
+@[elab_as_elim]
+def rec_uniform {motive : «Type» → Prop} (var : ∀ a : TypeVar, motive (var a))
+  (lam : ∀ K A, motive A → motive (lam K A)) (app : ∀ A B, motive A → motive B → motive (app A B))
+  («forall» : ∀ K A, motive A → motive («forall» K A))
+  (arr : ∀ A B, motive A → motive B → motive (arr A B))
+  (list : ∀ As, (∀ A ∈ As, motive A) → motive (list As))
+  (listApp : ∀ A B, motive A → motive B → motive (listApp A B))
+  (prod : ∀ A, motive A → motive (prod A)) (sum : ∀ A, motive A → motive (sum A)) (A : «Type»)
+  : motive A :=
+  rec (motive_1 := motive) var lam app «forall» arr list listApp prod sum (fun _ => (nomatch ·))
+    (fun _ _ ih₀ ih₁ _ mem => match mem with | .head _ => ih₀ | .tail _ mem' => ih₁ _ mem') A
+
+theorem TypeVar_open_not_mem_freeTypeVars_preservation_of_ne
+  : a ≠ a' → a ∉ freeTypeVars A → a ∉ (A.TypeVar_open a' n).freeTypeVars := by
+  induction A using rec_uniform generalizing n <;> aesop
+    (add simp [TypeVar_open, freeTypeVars], safe cases TypeVar)
+
+set_option maxHeartbeats 2000000 in
+theorem TypeVar_open_inj_of_not_mem_freeTypeVars (aninA : a ∉ freeTypeVars A)
+  (aninB : a ∉ freeTypeVars B) (eq : A.TypeVar_open a n = B.TypeVar_open a n) : A = B := by
+  induction A using rec_uniform generalizing B n <;>
+    induction B using rec_uniform <;> aesop
+    (add simp [TypeVar_open, freeTypeVars], safe cases TypeVar,
+      10% apply List.eq_of_map_eq_map_of_inj)
 
 end «Type»
 

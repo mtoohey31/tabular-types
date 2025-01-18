@@ -34,18 +34,17 @@ theorem Monotype.TypeVar_open_sizeOf (τ : Monotype) : sizeOf (τ.TypeVar_open a
   | .label _ => rw [TypeVar_open]
   | .floor ξ => rw [TypeVar_open, floor.sizeOf_spec, floor.sizeOf_spec, ξ.TypeVar_open_sizeOf]
   | .comm _ => rw [TypeVar_open]
-  | .row ξτs =>
+  | .row ξτs κ? =>
     rw [TypeVar_open, List.mapMem_eq_map]
     match ξτs with
     | [] => rw [List.map]
     | (ξ, τ) :: ξτs' =>
       rw [List.map, row.sizeOf_spec, row.sizeOf_spec, List.cons.sizeOf_spec, List.cons.sizeOf_spec,
           Prod.mk.sizeOf_spec, Prod.mk.sizeOf_spec, ξ.TypeVar_open_sizeOf, τ.TypeVar_open_sizeOf]
-      have : sizeOf ((row ξτs').TypeVar_open a n) = sizeOf (row ξτs') :=
-        (row ξτs').TypeVar_open_sizeOf
-      rw [TypeVar_open, List.mapMem_eq_map, row.sizeOf_spec, row.sizeOf_spec] at this
-      rw [Nat.add_comm (n := 1) (m := (1 + sizeOf ξ + _)), Nat.add_assoc, this,
-          ← Nat.add_assoc (m := 1), ← Nat.add_comm (n := 1) (m := (1 + sizeOf ξ + _))]
+      have : sizeOf ((row ξτs' κ?).TypeVar_open a n) = sizeOf (row ξτs' κ?) :=
+        (row ξτs' κ?).TypeVar_open_sizeOf
+      simp_arith [TypeVar_open] at this
+      simp_arith [this]
   | .prod μ ρ =>
     rw [TypeVar_open, prod.sizeOf_spec, prod.sizeOf_spec, μ.TypeVar_open_sizeOf,
         ρ.TypeVar_open_sizeOf]
@@ -114,18 +113,17 @@ theorem Monotype.TypeVar_open_sizeOf' (τ : Monotype) : (τ.TypeVar_open a n).si
   | .label _ => rw [TypeVar_open]
   | .floor ξ => rw [TypeVar_open, sizeOf', sizeOf', ξ.TypeVar_open_sizeOf']
   | .comm _ => rw [TypeVar_open]
-  | .row ξτs =>
+  | .row ξτs κ? =>
     rw [TypeVar_open, List.mapMem_eq_map]
     match ξτs with
     | [] => rw [List.map]
     | (ξ, τ) :: ξτs' =>
       rw [List.map, sizeOf', sizeOf', List.mapMem_eq_map, List.map_cons, List.sum_cons,
           ξ.TypeVar_open_sizeOf', τ.TypeVar_open_sizeOf']
-      have : ((row ξτs').TypeVar_open a n).sizeOf' = (row ξτs').sizeOf' :=
-        (row ξτs').TypeVar_open_sizeOf'
-      rw [TypeVar_open, List.mapMem_eq_map, sizeOf', sizeOf', List.mapMem_eq_map] at this
-      rw [← Nat.add_assoc, Nat.add_comm (n := 1), Nat.add_assoc, this, List.mapMem, List.sum_cons,
-          ← Nat.add_assoc, Nat.add_comm (m := 1), Nat.add_assoc]
+      have : ((row ξτs' κ?).TypeVar_open a n).sizeOf' = (row ξτs' κ?).sizeOf' :=
+        (row ξτs' κ?).TypeVar_open_sizeOf'
+      simp_arith [TypeVar_open] at this
+      simp_arith [this]
   | .prod μ ρ =>
     rw [TypeVar_open, sizeOf', sizeOf', μ.TypeVar_open_sizeOf', ρ.TypeVar_open_sizeOf']
   | .sum μ ρ =>
