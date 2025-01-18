@@ -9,6 +9,7 @@ import TabularTypeInterpreter.Theorems.Kind
 namespace TabularTypeInterpreter
 
 open «F⊗⊕ω»
+open Std
 
 mutual
 
@@ -59,7 +60,7 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
     let A₁k := ρ₁ke.soundness Γwe κ'e.row
     have := Kinding.list (Δ := Δ) (A := A) (K := .star) (n := 2)
       fun | 0, _ => .prj_evidence Δwf A₀k A₁k | 1, _ => .inj_evidence Δwf A₀k A₁k
-    simp [Coe.coe, Std.Range.toList, A] at this
+    simp [Range.map, Range.toList, A] at this
     exact this
   | .qual (.mono (.concat ρ₀ μ ρ₁ ρ₂)), .concat _ ρ₀ke ρ₁ke ρ₂ke κ'e containl containr (K := K')
       (A₀ := A₀) (A₁ := A₁) (A₂ := A₂) (Bₗ := Bₗ) (Bᵣ := Bᵣ) => by
@@ -81,7 +82,7 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
         | 1, _ => .elim_evidence Δwf A₀k A₁k A₂k
         | 2, _ => containl.soundness Γwe .constr
         | 3, _ => containr.soundness Γwe .constr
-    simp [Coe.coe, Std.Range.toList, A] at this
+    simp [Range.map, Range.toList, A] at this
     exact this
   | .qual (.mono (.typeClass _ τ)),
     .tc Γcw inΓc τke (κ := κ') (A := A') (Aₛ := Aₛ) (B := B) (n := n) => by
@@ -90,11 +91,10 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
     let A'' i := if i = 0 then A'.Type_open B else (Aₛ (i - 1)).Type_open B
     have := Kinding.list (Δ := Δ) (n := n + 1) (A := A'') (K := .star) ?h
     rw [List.map_singleton_flatten] at *
-    dsimp only [Coe.coe] at this
-    rw [Std.Range.toList, if_neg (nomatch ·), if_pos (Nat.zero_lt_succ _), List.map] at this
+    rw [Range.toList, if_neg (nomatch ·), if_pos (Nat.zero_lt_succ _), List.map] at this
     simp only at this
     dsimp only [A''] at this
-    rw [if_pos rfl, ← Std.Range.map_shift (Nat.le_refl 1), Nat.sub_self, Nat.add_sub_cancel] at this
+    rw [if_pos rfl, ← Range.map_shift (Nat.le_refl 1), Nat.sub_self, Nat.add_sub_cancel] at this
     exact this
     intro i ⟨_, iltnsucc⟩
     dsimp only [A'']
@@ -102,13 +102,13 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
     let Bk := τke.soundness Γwe κ'e
     split
     · case isTrue h =>
-      let ⟨a, anin⟩ := Γ.typeVarDom ++ ↑A'.fv |>.exists_fresh
+      let ⟨a, anin⟩ := Γ.typeVarDom ++ ↑A'.freeTypeVars |>.exists_fresh
       let ⟨aninΓ, aninA'⟩ := List.not_mem_append'.mp anin
       let ⟨A'k, _⟩ := Γcw.KindingAndElaboration_of_ClassEnvironment_in inΓc κ'e a
       exact A'k.weakening (Γwe.soundness.typeVarExt <| Γwe.TypeVarNotInDom_preservation aninΓ)
         (Δ'' := .empty) |>.Type_open_preservation (Δ' := .empty) aninA' Bk
     · case isFalse h =>
-      let ⟨a, anin⟩ := Γ.typeVarDom ++ ↑(Aₛ (i - 1)).fv |>.exists_fresh
+      let ⟨a, anin⟩ := Γ.typeVarDom ++ ↑(Aₛ (i - 1)).freeTypeVars |>.exists_fresh
       let ⟨aninΓ, aninAₛ⟩ := List.not_mem_append'.mp anin
       let ⟨_, Aₛke⟩ := Γcw.KindingAndElaboration_of_ClassEnvironment_in inΓc κ'e a
       rw [Nat.add_comm] at iltnsucc
@@ -165,9 +165,13 @@ decreasing_by
   all_goals simp_arith [List.mapMem]
   · case _ ξ _ τ _ _ _ _ _ _ =>
     apply Nat.le_trans <| Nat.le_add_left (τ i).sizeOf' (ξ i).sizeOf'
-    apply List.le_sum_of_mem
-    rw [List.map_singleton_flatten, List.mapMem_eq_map, List.map_map]
-    exact Std.Range.mem_map_of_mem imem
+    apply List.le_sum_of_mem'
+    rw [Std.Range.map_eq_of_eq_of_mem (by
+          intro _ _
+          simp only [Function.comp]
+          rw [List.map_singleton]
+        ), List.map_singleton_flatten]
+    exact Range.mem_map_of_mem imem
   · exact Nat.succ_le_of_lt <| Monotype.sizeOf'_pos _
 
 theorem TypeEnvironment.WellFormednessAndElaboration.soundness (Γwe : [[Γc ⊢ Γ ⇝ Δ]]) : [[⊢ Δ]] :=

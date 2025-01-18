@@ -249,14 +249,15 @@ decreasing_by
   exact List.sizeOf_lt_of_mem A'''in
 
 theorem Type_open_preservation {A : «Type»}
-  (Aki : Kinding [[(Δ, a : K, Δ')]] (A.TypeVar_open a n) K') (aninfvA : a ∉ A.fv)
+  (Aki : Kinding [[(Δ, a : K, Δ')]] (A.TypeVar_open a n) K') (aninfvA : a ∉ A.freeTypeVars)
   (Bki : [[Δ ⊢ B : K]]) : Kinding [[(Δ, (Δ' [B / a]))]] (A.Type_open B n) K' := sorry
 
 theorem weakening : [[Δ ⊢ A : K]] → [[⊢ Δ', Δ, Δ'']] → [[Δ', Δ, Δ'' ⊢ A : K]] := sorry
 
 theorem unit : [[Δ ⊢ ⊗ { } : *]] := by
   have := list (Δ := Δ) (A := fun _ => .list []) (K := .star) (n := 0) (fun _ => nomatch ·)
-  simp [Coe.coe, Std.Range.toList] at this
+  rw [List.map_singleton_flatten, Std.Range.toList, if_neg (nomatch ·),
+      if_neg (Nat.not_lt_of_le (Nat.le_refl _))] at this
   exact prod this
 
 theorem prj_evidence (Δwf : [[⊢ Δ]]) (A₀ki : [[Δ ⊢ A₀ : L K]]) (A₁ki : [[Δ ⊢ A₁ : L K]])

@@ -79,7 +79,6 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
   · case prodIntro n E' A E'ty ih => match progress.fold E'ty (fun i mem => ih i mem rfl) with
     | .inl ⟨i, ⟨_, iltn⟩, IsValue, E'', toE''⟩ =>
       let V j : Value := if h' : j < i then ⟨E' j, IsValue j ⟨Nat.zero_le _, h'⟩⟩ else default
-      dsimp only [Coe.coe]
       rw [progress.sandwich iltn, Range.map_eq_of_eq_of_mem (fun j jmem => by
           show [E' j] = [(V j).val]
           dsimp only [V]
@@ -112,7 +111,6 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
       match progress.fold Fty (fun i mem => ih₂ i mem rfl) with
       | .inl ⟨j, ⟨_, jltn⟩, IsValue, F', toF'⟩ =>
         let VF k : Value := if h' : k < j then ⟨F k, IsValue k ⟨Nat.zero_le _, h'⟩⟩ else default
-        dsimp only [Coe.coe]
         rw [progress.sandwich jltn, Range.map_eq_of_eq_of_mem (fun j jmem => by
           show [F j] = [(VF j).val]
           dsimp only [VF]
@@ -121,7 +119,7 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
         exact .inl <| .intro _ <| .sumElimR (V := VE') toF'
       | .inr FIsValue =>
         let VF j : Value := if h : j < n then ⟨F j, FIsValue j ⟨Nat.zero_le _, h⟩⟩ else default
-        rw [List.map_singleton_flatten, Range.map_eq_of_eq_of_mem' (fun i mem => by
+        rw [List.map_singleton_flatten, Range.map_eq_of_eq_of_mem (fun i mem => by
           show F i = (VF i).val
           dsimp only [VF]
           rw [dif_pos mem.upper]

@@ -8,7 +8,7 @@ theorem ext_eliml (Γcγcw : [[⊢c Γc, γc]]) : [[⊢c Γc]] :=
   Γcw
 
 theorem KindingAndElaboration_of_ClassEnvironment_in {TC} (Γcw : [[⊢c Γc]])
-  (TCin : [[(</ TCₛ@i a ⇝ Aₛ@i // i ∈ [:n] /> ⇒ TC a : κ) ↦ m : σ ⇝ A ∈ Γc]]) (κe : [[⊢ κ ⇝ K]])
+  (TCin : [[(</ TCₛ@i a ⇝ Aₛ@i // i in [:n] /> ⇒ TC a : κ) ↦ m : σ ⇝ A ∈ Γc]]) (κe : [[⊢ κ ⇝ K]])
   : ∀ a, [[ε, a : K ⊢ A^a : *]] ∧ ∀ i ∈ [:n], [[ε, a : K ⊢ Aₛ@i^a : *]] := by
   intro a
   generalize γceq : ClassEnvironmentEntry.mk

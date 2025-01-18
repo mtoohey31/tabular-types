@@ -5,18 +5,6 @@ import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Environment.Basic
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
 
-def Type.fv : «Type» → List TypeVarId
-  | var (.free a) => [a]
-  | var _ => []
-  | lam _ A => A.fv
-  | app A B => A.fv ++ B.fv
-  | «forall» _ A => A.fv
-  | arr A B => A.fv ++ B.fv
-  | list As => As.mapMem (fun A _ => A.fv) |>.flatten
-  | listApp A B => A.fv ++ B.fv
-  | prod A => A.fv
-  | sum A => A.fv
-
 judgement_syntax Δ " ⊢ " A " : " K : Kinding
 
 judgement Kinding :=
@@ -43,9 +31,9 @@ a : K ∈ Δ
 ───────────── arr
 Δ ⊢ A → B : *
 
-</ Δ ⊢ A@i : K // i ∈ [:n] />
-───────────────────────────────── list
-Δ ⊢ {</ A@i // i ∈ [:n] />} : L K
+</ Δ ⊢ A@i : K // i in [:n] />
+────────────────────────────────── list
+Δ ⊢ {</ A@i // i in [:n] />} : L K
 
 Δ ⊢ A : K₁ ↦ K
 Δ ⊢ B : L K₁
@@ -75,13 +63,13 @@ judgement TypeEquivalence :=
 ───────────────────────── lamAppR
 Δ ⊢ A^^B ≡ (λ a : K. A) B
 
-</ Δ ⊢ B@i : K // i ∈ [:n] />
-─────────────────────────────────────────────────────────────────────── lamListAppL
-Δ ⊢ (λ a : K. A) ⟦{</ B@i // i ∈ [:n] />}⟧ ≡ {</ A^^B@i // i ∈ [:n] />}
+</ Δ ⊢ B@i : K // i in [:n] />
+───────────────────────────────────────────────────────────────────────── lamListAppL
+Δ ⊢ (λ a : K. A) ⟦{</ B@i // i in [:n] />}⟧ ≡ {</ A^^B@i // i in [:n] />}
 
-</ Δ ⊢ B@i : K // i ∈ [:n] />
-─────────────────────────────────────────────────────────────────────── lamListAppR
-Δ ⊢ {</ A^^B@i // i ∈ [:n] />} ≡ (λ a : K. A) ⟦{</ B@i // i ∈ [:n] />}⟧
+</ Δ ⊢ B@i : K // i in [:n] />
+───────────────────────────────────────────────────────────────────────── lamListAppR
+Δ ⊢ {</ A^^B@i // i in [:n] />} ≡ (λ a : K. A) ⟦{</ B@i // i in [:n] />}⟧
 
 ∀ a ∉ I, Δ, a : K ⊢ A^a ≡ B^a
 ───────────────────────────── lam (I : List TypeVarId)
@@ -101,9 +89,9 @@ judgement TypeEquivalence :=
 ───────────────────── arr
 Δ ⊢ A₁ → B₁ ≡ A₂ → B₂
 
-</ Δ ⊢ A@i ≡ B@i // i ∈ [:n] />
-───────────────────────────────────────────────────── list
-Δ ⊢ {</ A@i // i ∈ [:n] />} ≡ {</ B@i // i ∈ [:n] />}
+</ Δ ⊢ A@i ≡ B@i // i in [:n] />
+─────────────────────────────────────────────────────── list
+Δ ⊢ {</ A@i // i in [:n] />} ≡ {</ B@i // i in [:n] />}
 
 Δ ⊢ A₁ ≡ A₂
 Δ ⊢ B₁ ≡ B₂
