@@ -1,0 +1,108 @@
+import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Environment
+import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Type
+import TabularTypeInterpreter.«F⊗⊕ω».Syntax.Value
+
+namespace TabularTypeInterpreter.«F⊗⊕ω»
+
+judgement_syntax Δ " ⊢ " E " : " A : Typing
+
+judgement Typing :=
+
+⊢ Δ
+x : A ∈ Δ
+───────── var
+Δ ⊢ x : A
+
+∀ x ∉ I, Δ, x : A ⊢ E^a : B
+─────────────────────────── lam (I : List TermVarId)
+Δ ⊢ λ x : A. E : A → B
+
+Δ ⊢ E : A → B
+Δ ⊢ F : A
+─────────────── app
+Δ ⊢ E F : A → B
+
+∀ a ∉ I, Δ, a : K ⊢ E^a : A^a
+───────────────────────────── typeLam (I : List TypeVarId)
+Δ ⊢ Λ a : K. E : ∀ a : K. A
+
+Δ ⊢ E : ∀ a : K. A
+Δ ⊢ B : K
+────────────────── typeApp
+Δ ⊢ E [B] : A^^B
+
+</ Δ ⊢ E@i : A@i // i ∈ [:n] />
+─────────────────────────────────────────────────────── prodIntro
+Δ ⊢ (</ E@i // i ∈ [:n] />) : ⊗ {</ A@i // i ∈ [:n] />}
+
+Δ ⊢ E : ⊗ {</ A@i // i ∈ [:n'] />}
+n ∈ [0:n']
+────────────────────────────────── prodElim
+Δ ⊢ π n E : A@n
+
+n ∈ [0:n']
+Δ ⊢ E : A@n
+────────────────────────────────────── sumIntro
+Δ ⊢ ι n E : ⊕ {</ A@i // i ∈ [:n'] />}
+
+Δ ⊢ E : ⊕ {</ A@i // i ∈ [:n] />}
+</ Δ ⊢ F@i : A@i → B // i ∈ [:n] />
+────────────────────────────────────── sumElim
+Δ ⊢ case E {</ F@i // i ∈ [:n] />} : B
+
+Δ ⊢ E : A
+Δ ⊢ A ≡ B
+───────── equiv
+Δ ⊢ E : B
+
+judgement_syntax E " -> " F : OperationalSemantics
+
+judgement OperationalSemantics :=
+
+E -> E'
+─────────── appL
+E F -> E' F
+
+F -> F'
+─────────── appR
+V F -> V F'
+
+────────────────────── lamApp
+⦅λ x : A. E⦆ V -> E^^V
+
+E -> E'
+─────────────── typeApp
+E [A] -> E' [A]
+
+──────────────────────── typeLamApp
+⦅Λ a : K. E⦆ [A] -> E^^A
+
+E -> E'
+─────────────────────────────────────────────────────────────────────────────────────────────────────── prodIntro
+(</ V@i // i ∈ [:n] />, E, </ F@j // j ∈ [:m] />) -> (</ V@i // i ∈ [:n] />, E', </ F@j // j ∈ [:m] />)
+
+E -> E'
+───────────────────────────────────── prodElim
+π n E -> π n E'
+
+n ∈ [0:n']
+─────────────────────────────────── prodElimIntro
+π n (</ V@i // i ∈ [:n'] />) -> V@n
+
+E -> E'
+─────────────── sumIntro
+ι n E -> ι n E'
+
+E -> E'
+───────────────────────────────────────────────────────────────── sumElimL
+case E {</ F@i // i ∈ [:n] />} -> case E' {</ F@i // i ∈ [:n] />}
+
+E -> E'
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── sumElimR
+case V {</ V'@i // i ∈ [:n] />, E, </ F@j // j ∈ [:m] />} -> case V {</ V'@i // i ∈ [:n] />, E', </ F@j // j ∈ [:m] />}
+
+n ∈ [0:n']
+──────────────────────────────────────────────────── sumElimIntro
+case ι n V {</ V'@i // i ∈ [:n'] />} -> V'@n ⦅ι n V⦆
+
+end TabularTypeInterpreter.«F⊗⊕ω»

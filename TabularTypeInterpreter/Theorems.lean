@@ -1,0 +1,2 @@
+import TabularTypeInterpreter.Theorems.Kind
+import TabularTypeInterpreter.Theorems.Type
