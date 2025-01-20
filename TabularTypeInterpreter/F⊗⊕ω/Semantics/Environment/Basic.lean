@@ -10,13 +10,6 @@ def append (Δ : Environment) : Environment → Environment
   | typeExt Δ' a K => Δ.append Δ' |>.typeExt a K
   | termExt Δ' x A => Δ.append Δ' |>.termExt x A
 
-theorem append_empty (Δ : Environment) : Δ.append empty = Δ := rfl
-
-theorem empty_append (Δ : Environment) : append empty Δ = Δ := by
-  match Δ with
-  | empty => rfl
-  | typeExt Δ' .. | termExt Δ' .. => rw [append, Δ'.empty_append]
-
 def TypeVar_subst (Δ : Environment) (a : TypeVarId) (A : «Type») := match Δ with
   | empty => empty
   | typeExt Δ' a' K => Δ'.TypeVar_subst a A |>.typeExt a' K

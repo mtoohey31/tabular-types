@@ -1,6 +1,7 @@
 import Lott.DSL.Elab.JudgementComprehension
 import Lott.DSL.Elab.OrJudgement
 import Lott.DSL.Elab.UniversalJudgement
+import TabularTypeInterpreter.Data.Range
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Type
 import TabularTypeInterpreter.Semantics.Kind
 import TabularTypeInterpreter.Semantics.TypeEnvironment
@@ -171,5 +172,44 @@ judgement ClassEnvironment.WellFormedness :=
 ⊢c Γc, (</ TCₛ@i a ⇝ Aₛ@i // i in [:n] /> ⇒ TC a : κ) ↦ m : σ ⇝ A
 
 end
+
+judgement_syntax Γc "; " Γ " ⊢ " ρ₀ " ≡" "(" μ ") " ρ₁ " ⇝ " Fₚ ", " Fₛ : Monotype.RowEquivalenceAndElaboration
+
+judgement Monotype.RowEquivalenceAndElaboration :=
+
+Γc; Γ ⊢ ρ : R κ ⇝ A
+⊢ κ ⇝ K
+─────────────────────────────────────────────────────────────────────────────────────────── refl
+Γc; Γ ⊢ ρ ≡(μ) ρ ⇝ Λ a : K ↦ *. λ x : ⊗ (a$0 ⟦A⟧). x$0, Λ a : K ↦ *. λ x : ⊕ (a$0 ⟦A⟧). x$0
+
+/-
+symm is not included directly as a rule because the elaboration functions are directional (they
+convert from an elaborated prod or sum of the lhs to the same of the rhs), so a symm rule would have
+to magically find the inverse function term based on the original direction. Instead, we include a
+lemma proving symmetry in ../../Lemmas/Type.lean.
+-/
+
+Γc; Γ ⊢ ρ₀ : R κ ⇝ A₀
+⊢ κ ⇝ K
+Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ₀₁, Fₛ₀₁
+Γc; Γ ⊢ ρ₁ ≡(μ) ρ₂ ⇝ Fₚ₁₂, Fₛ₁₂
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── trans
+Γc; Γ ⊢ ρ₀ ≡(μ) ρ₂ ⇝ Λ a : K ↦ *. λ x : ⊗ (a$0 ⟦A₀⟧). Fₚ₁₂ [a$0] ⦅Fₚ₀₁ [a$0] x$0⦆, Λ a : K ↦ *. λ x : ⊕ (a$0 ⟦A₀⟧). Fₛ₁₂ [a$0] ⦅Fₛ₀₁ [a$0] x$0⦆
+
+-- TODO: Add comment to latex output to explain relationship between [:n], p, and p'.
+Γc; Γ ⊢ ⟨</ ξ@i ▹ τ@i // i in [:n] /> </ : κ // b />⟩ : R κ ⇝ {</ A@i // i in [:n] />}
+⊢ κ ⇝ K
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── comm {p p' : List Nat} (perm : List.Perm p [:n]) (perm' : List.Perm p' [:n]) (inv : Std.Range.get!InverseOn p p' n)
+Γc; Γ ⊢ ⟨</ ξ@i ▹ τ@i // i in [:n] /> </ : κ // b />⟩ ≡(C) ⟨</ ξ@i ▹ τ@i // i in p /> </ : κ // b />⟩ ⇝ Λ a : K ↦ *. λ x : ⊗ (a$0 ⟦{</ A@i // i in [:n] />}⟧). (</ π n' x$0 // n' in p />), Λ a : K ↦ *. λ x : ⊕ (a$0 ⟦{</ A@i // i in [:n] />}⟧). case x$0 {</ λ x' : a$0 A@i. ι n' x'$0 // (i, n') in [:n].toList.zip p' />}
+
+Γc; Γ ⊢ Lift (λ a : κ₀. τ₁) ⟨</ ξ@i ▹ τ₀@i // i in [:n] /> </ : κ₀ // b />⟩ : R κ₁ ⇝ A
+⊢ κ₁ ⇝ K
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── liftL (μ)
+Γc; Γ ⊢ Lift (λ a : κ₀. τ₁) ⟨</ ξ@i ▹ τ₀@i // i in [:n] /> </ : κ₀ // b />⟩ ≡(μ) ⟨</ ξ@i ▹ τ₁^^τ₀@i // i in [:n] /> </ : κ₁ // b />⟩ ⇝ Λ a : K ↦ *. λ x : ⊗ (a$0 ⟦A⟧). x$0, Λ a : K ↦ *. λ x : ⊕ (a$0 ⟦A⟧). x$0
+
+Γc; Γ ⊢ Lift (λ a : κ₀. τ₁) ⟨</ ξ@i ▹ τ₀@i // i in [:n] /> </ : κ₀ // b />⟩ : R κ₁ ⇝ A
+⊢ κ₁ ⇝ K
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── liftR (μ)
+Γc; Γ ⊢ ⟨</ ξ@i ▹ τ₁^^τ₀@i // i in [:n] /> </ : κ₁ // b />⟩ ≡(μ) Lift (λ a : κ₀. τ₁) ⟨</ ξ@i ▹ τ₀@i // i in [:n] /> </ : κ₀ // b />⟩ ⇝ Λ a : K ↦ *. λ x : ⊗ (a$0 ⟦A⟧). x$0, Λ a : K ↦ *. λ x : ⊕ (a$0 ⟦A⟧). x$0
 
 end TabularTypeInterpreter

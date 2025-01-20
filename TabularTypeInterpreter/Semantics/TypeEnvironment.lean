@@ -6,6 +6,18 @@ namespace TabularTypeInterpreter
 
 namespace TypeEnvironment
 
+def append (Γ : TypeEnvironment) : TypeEnvironment → TypeEnvironment
+  | empty => Γ
+  | typeExt Γ' a κ => Γ.append Γ' |>.typeExt a κ
+  | termExt Γ' x σ => Γ.append Γ' |>.termExt x σ
+  | constrExt Γ' ψ x => Γ.append Γ' |>.constrExt ψ x
+
+def TypeVar_subst (Γ : TypeEnvironment) (a : TypeVarId) (τ : Monotype) := match Γ with
+  | empty => empty
+  | typeExt Γ' a' κ => Γ'.TypeVar_subst a τ |>.typeExt a' κ
+  | termExt Γ' x σ => Γ'.TypeVar_subst a τ |>.termExt x <| σ.TypeVar_subst a τ
+  | constrExt Γ' ψ x => Γ'.TypeVar_subst a τ |>.constrExt (ψ.TypeVar_subst a τ) x
+
 def typeVarDom : TypeEnvironment → List TypeVarId
   | empty => []
   | typeExt Γ a _ => a :: Γ.typeVarDom
