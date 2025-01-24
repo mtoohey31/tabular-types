@@ -183,8 +183,7 @@ theorem weaken {A : «Type»} : A.TypeVarLocallyClosed m → A.TypeVarLocallyClo
 
 theorem strengthen
   : TypeVarLocallyClosed A (n + 1) → (A.TypeVar_open a n).TypeVarLocallyClosed n := by
-  induction A using Type.rec
-    (motive_2 := fun As => ∀ n, ∀ A ∈ As, TypeVarLocallyClosed A (n + 1) → (A.TypeVar_open a n).TypeVarLocallyClosed n)
+  induction A using Type.rec_uniform
     generalizing n <;> aesop
     (add simp TypeVar_open, 20% cases TypeVarLocallyClosed, safe constructors TypeVarLocallyClosed,
       20% apply [Nat.lt_of_le_of_ne, Nat.le_of_lt_succ])
@@ -796,7 +795,7 @@ private
 theorem subst_preserve_pred : [[ Δ ⊢ A ≡> A' ]] → [[ Δ ⊢ T^^A ≡> T^^A' ]] := by
   intro red
 
-  induction T using («Type».rec (motive_2 := fun l => ∀T ∈ l, [[Δ ⊢ T^^A ≡> T^^A']])) <;> (try aesop (rule_sets := [pred, topen]); done)
+  induction T using «Type».rec_uniform <;> (try aesop (rule_sets := [pred, topen]); done)
   . case lam k T ih =>
     simp [«Type».Type_open]
     constructor
@@ -823,20 +822,20 @@ private
 theorem fv_open_not_in : ∀{A B: «Type»}, a ∉ A.fv → a ∉ B.fv → a ∉ (A.Type_open B n).fv := by
   intro A B notInAfv notInBfv
   revert n
-  induction A using «Type».rec (motive_2 := fun l => ∀A ∈ l, ∀ n, a ∉ A.fv → a ∉ B.fv → a ∉ (A.Type_open B n).fv) <;> (aesop (add norm «Type».fv) (rule_sets := [topen]))
+  induction A using «Type».rec_uniform <;> (aesop (add norm «Type».fv) (rule_sets := [topen]))
 
 
 private
 theorem fv_openvar_not_in: ∀{A: «Type»}, a ∉ A.fv → a != a' → a ∉ (A.TypeVar_open a' n).fv := by
   intro A notInAfv neq
   revert n
-  induction A using «Type».rec (motive_2 := fun l => ∀A ∈ l, ∀ n, a ∉ A.fv → a != a' → a ∉ (A.TypeVar_open a' n).fv) <;> (aesop (add norm «Type».fv) (rule_sets := [topen]))
+  induction A using «Type».rec_uniform <;> (aesop (add norm «Type».fv) (rule_sets := [topen]))
 
 private
 theorem fv_not_in_openvar: ∀{A: «Type»}, a ∉ (A.TypeVar_open a' n).fv → a != a' → a ∉ A.fv := sorry
   -- intro A notInAfv neq
   -- revert n
-  -- induction A using «Type».rec (motive_2 := fun l => ∀A ∈ l, ∀ n, a ∉ (A.TypeVar_open a' n).fv → a != a' → a ∉ A.fv) <;> (aesop (add norm «Type».fv))
+  -- induction A using «Type».rec_uniform <;> (aesop (add norm «Type».fv))
 
 -- TODO make fv_open rules a rule_set. Challenge: collides with Aesop.BuiltinRules.intro_not
 
@@ -923,7 +922,7 @@ attribute [aesop unsafe cases (rule_sets := [lc])] «Type».TypeVarLocallyClosed
 private
 theorem TypeVarLocallyClosed_close : ∀{T: «Type»} n a, T.TypeVarLocallyClosed n → (T.TypeVar_close a n).TypeVarLocallyClosed (n + 1) := by
   intro T
-  induction T using «Type».rec (motive_2 := fun l => ∀T ∈ l, ∀a n, T.TypeVarLocallyClosed n → (T.TypeVar_close a n).TypeVarLocallyClosed (n + 1)) <;> (try aesop (add norm «Type».TypeVar_close) (rule_sets := [lc]); done)
+  induction T using «Type».rec_uniform <;> (try aesop (add norm «Type».TypeVar_close) (rule_sets := [lc]); done)
   . case var x =>
     simp [«Type».TypeVar_close]
     intro n fid lc
@@ -946,13 +945,13 @@ private theorem open_rec_lc {T: «Type»} (lc: T.TypeVarLocallyClosed n) (h: m >
 
 private
 theorem subst_open {A B T: «Type»} (lcT: T.TypeVarLocallyClosed n) : (A.TypeVar_subst a T).Type_open (B.TypeVar_subst a T) n = (A.Type_open B n).TypeVar_subst a T := by
-  induction A using «Type».rec (motive_2 := fun l => ∀A ∈ l, ∀B T n, T.TypeVarLocallyClosed n → (A.TypeVar_subst a T).Type_open (B.TypeVar_subst a T) n = (A.Type_open B n).TypeVar_subst a T) generalizing B T n <;>
+  induction A using «Type».rec_uniform generalizing B T n <;>
     aesop (add norm «Type».TypeVar_subst) (add safe open_rec_lc) (add safe Type.TypeVarLocallyClosed.weaken) (rule_sets := [topen])
 
 -- NOTE Proof in the paper is wrong. subst_intro doesn't require lc B, while subst_open does.
 private
 theorem subst_intro {A: «Type»} (nfv: a ∉ A.fv): (A.TypeVar_open a n).TypeVar_subst a B = A.Type_open B n := by
-  induction A using «Type».rec (motive_2 := fun l => ∀A ∈ l, ∀B n, a ∉ A.fv → (A.TypeVar_open a n).TypeVar_subst a B = A.Type_open B n) generalizing B n <;>
+  induction A using «Type».rec_uniform generalizing B n <;>
     aesop (add norm Type.TypeVar_subst) (add norm Type.fv) (rule_sets := [topen])
 
 private
