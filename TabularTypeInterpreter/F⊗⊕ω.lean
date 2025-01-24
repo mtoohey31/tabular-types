@@ -73,6 +73,18 @@ def fv : «Type» → List TypeVarId
   | prod A => A.fv
   | sum A => A.fv
 
+@[elab_as_elim]
+def rec_uniform {motive : «Type» → Prop} (var : ∀ a : TypeVar, motive (var a))
+  (lam : ∀ K A, motive A → motive (lam K A)) (app : ∀ A B, motive A → motive B → motive (app A B))
+  («forall» : ∀ K A, motive A → motive («forall» K A))
+  (arr : ∀ A B, motive A → motive B → motive (arr A B))
+  (list : ∀ As, (∀ A ∈ As, motive A) → motive (list As))
+  (listApp : ∀ A B, motive A → motive B → motive (listApp A B))
+  (prod : ∀ A, motive A → motive (prod A)) (sum : ∀ A, motive A → motive (sum A)) (A : «Type»)
+  : motive A :=
+  rec (motive_1 := motive) var lam app «forall» arr list listApp prod sum (fun _ => (nomatch ·))
+    (fun _ _ ih₀ ih₁ _ mem => match mem with | .head _ => ih₀ | .tail _ mem' => ih₁ _ mem') A
+
 @[simp]
 theorem TypeVar_open_sizeOf (A : «Type») : sizeOf (A.TypeVar_open a n) = sizeOf A := by
   match A with
@@ -778,34 +790,6 @@ def TypeEquivalence.symm : [[Δ ⊢ A ≡ B]] → [[Δ ⊢ B ≡ A]]
 private
 def TypeEquivalence.trans : [[Δ ⊢ A₀ ≡ A₁]] → [[Δ ⊢ A₁ ≡ A₂]] → [[Δ ⊢ A₀ ≡ A₂]] := sorry
 
-private
-theorem open_red : ∀ a ∉ (I: List _), ∀ n, ParallelReduction Δ A A' -- FIXME a not in Δ or fv(A)
--- FIXME exists K?
-  → ParallelReduction (Δ.typeExt a K) (A.TypeVar_open a n) (A'.TypeVar_open a n) := by
-  revert Δ A'
-
-  induction A using («Type».rec (motive_2 := fun l =>  ∀A ∈ l, ∀(Δ: Environment) (A': «Type»), ∀ a ∉ (I: List _), ∀n, ParallelReduction (Δ.typeExt a K) (A.TypeVar_open a n) (A'.TypeVar_open a n)))
-  . case var a =>
-    intro x Δ a aI n red
-    cases red
-    constructor
-  . case lam K' A ih =>
-    intro Δ A' a aI n pred
-    simp [«Type».TypeVar_open]
-    -- TODO do induction on pred
-    cases pred
-    . case refl => aesop (rule_sets := [pred, topen])
-    . case lam I A' pred =>
-      -- why too many variables provided?
-      rename_i I'
-      simp [«Type».TypeVar_open]
-      constructor
-      case I => exact I ++ I'
-      case a =>
-        intro a' memI2
-        sorry
-  all_goals sorry
-
 -- FIXME wrong! must do freevar subst.
 -- NOTE the list part of this proof is helpful though
 private
@@ -923,7 +907,13 @@ private
 theorem open_close_var {T: «Type»} a (nfv: a ∉ T.fv): (T.TypeVar_open a n).TypeVar_close a n = T := sorry
 
 private
-theorem Var_open_noop: ∀{T: «Type»} a, a ∉ T.fv → T.TypeVar_open a n = T := sorry
+theorem close_not_in_fv {T: «Type»}: a ∉ (T.TypeVar_close a n).fv := by
+  induction T using Type.rec_uniform generalizing n <;> simp_all [Type.TypeVar_close, Type.fv]
+  . case var x =>
+    cases x <;> aesop (add norm Type.fv)
+
+private
+theorem Var_open_noop: ∀{T: «Type»} a (lc: T.TypeVarLocallyClosed n), T.TypeVar_open a n = T := sorry
 
 attribute [aesop safe (rule_sets := [lc])] «Type».TypeVarLocallyClosed
 attribute [aesop unsafe cases (rule_sets := [lc])] «Type».TypeVarLocallyClosed
@@ -1212,13 +1202,11 @@ theorem TypeVarInEnvironment.TypeVar_subst_noop:  [[ a: K ∈ Δ[A/a'] ]] ↔ [[
     aesop (add norm Environment.TypeVar_subst) (add unsafe cases TypeVarInEnvironment) (add unsafe constructors TypeVarInEnvironment)
 
 private
-theorem Kinding.subst' (wf: [[ ⊢ Δ, a: K, Δ' ]]) (kA: [[ Δ ⊢ A: K ]]) (kT: [[ Δ, a: K, Δ' ⊢ T: K' ]]) (lc: A.TypeVarLocallyClosed): Kinding (Δ.append (Δ'.TypeVar_subst a A)) (T.TypeVar_subst a A) K' := by
--- FIXME  Δ'[a ↦ A]
+theorem Kinding.subst' (wf: [[ ⊢ Δ, a: K, Δ' ]]) (kA: [[ Δ ⊢ A: K ]]) (kT: [[ Δ, a: K, Δ' ⊢ T: K' ]]): [[ (Δ , Δ'[A/a]) ⊢ T[A/a] : K' ]] := by
   generalize Δ'eq: (Δ.typeExt a K).append Δ' = Δ_ at kT
   induction kT generalizing Δ Δ' a A K <;> simp_all [«Type».TypeVar_subst]
   case var a' K' Δ_ kIn =>
     subst Δ_
-    -- FIXME need to prove TypeVarInEnvironment_exchange (env)
     by_cases (a = a')
     . case pos eq =>
       simp_all
@@ -1261,7 +1249,7 @@ theorem Kinding.subst' (wf: [[ ⊢ Δ, a: K, Δ' ]]) (kA: [[ Δ ⊢ A: K ]]) (kT
     intro a' notIn
     specialize @ih a' (by simp_all) Δ a K (Δ'.typeExt a' K1) A
     simp_all [Environment.append]
-    rw [<- subst_open_var (by aesop) lc]
+    rw [<- subst_open_var (by aesop) (kA.TypeVarLocallyClosed_of)]
     apply ih
     constructor
     . assumption
@@ -1272,7 +1260,79 @@ theorem Kinding.subst' (wf: [[ ⊢ Δ, a: K, Δ' ]]) (kA: [[ Δ ⊢ A: K ]]) (kT
     intro a' notIn
     specialize @ih a' (by simp_all) Δ a K (Δ'.typeExt a' K1) A
     simp_all [Environment.append]
-    rw [<- subst_open_var (by aesop) lc]
+    rw [<- subst_open_var (by aesop) (kA.TypeVarLocallyClosed_of)]
+    apply ih
+    constructor
+    . assumption
+    . simp_all [Environment.typeVarDom, Environment.typeVarDom.app_comm]
+  case list n Δ_ T_i K_i kind ih =>
+    subst Δ_
+    constructor
+    simp_all
+    aesop (add safe constructors Kinding)
+  all_goals aesop (add safe constructors Kinding) (config := { enableSimp := false })
+
+-- TODO duplicate - Difference is that this one doesn't do subst on Environment
+private
+theorem Kinding.subst2' (wf: [[ ⊢ Δ, a: K, Δ' ]]) (kA: [[ Δ ⊢ A: K ]]) (kT: [[ Δ, a: K, Δ' ⊢ T: K' ]]): [[ (Δ , Δ') ⊢ T[A/a] : K' ]] := by
+  generalize Δ'eq: (Δ.typeExt a K).append Δ' = Δ_ at kT
+  induction kT generalizing Δ Δ' a A K <;> simp_all [«Type».TypeVar_subst]
+  case var a' K' Δ_ kIn =>
+    subst Δ_
+    by_cases (a = a')
+    . case pos eq =>
+      simp_all
+      subst a'
+      -- 1. by wf we know a ∉ Δ'.typeVarDom
+      have fresh := EnvironmentWellFormedness.app_typeVar_fresh_r (a := a) wf (by constructor)
+      -- 2. then by uniqueness we know from kIn that K' = K
+      have eq := TypeVarInEnvironment.unique (K:=K) (by
+        apply TypeVarInEnvironment.weakening_r fresh
+        constructor
+      ) kIn
+      subst K'
+      -- 3. then wts Δ, Δ'[S] ⊢ A: K, by weakening kA we are done
+      apply Kinding.weakening_r
+      . case fresh =>
+        apply EnvironmentWellFormedness.app_typeVar_fresh_l at wf
+        simp_all [Environment.typeVarDom]
+      . case a => assumption
+    . case neg neq =>
+      simp_all
+      -- 1. by kIn we know a': K' is either in (Δ, a: K) or Δ'
+      apply TypeVarInEnvironment.app_elim at kIn
+      constructor; case a =>
+      cases kIn
+      . case inl kIn =>
+        -- 2a. If a': K' ∈ Δ, a: K, we also know that a': K' ∉ dom(Δ')
+        obtain ⟨notInΔ', kIn⟩ := kIn
+        -- 3a. and by a ≠ a' we know a': K' ∈ Δ.
+        --     wts. a': K' ∈ Δ, Δ'[S], by weakening and subst_noop we are done
+        apply TypeVarInEnvironment.weakening_r
+        . simp_all [Environment.typeVarDom]
+        . cases kIn <;> simp_all
+      . case inr kIn =>
+        -- 2b. If a': K' ∈ Δ', similarly by weakening and subst_noop we are done
+        apply TypeVarInEnvironment.weakening_l
+        simp_all
+  case lam I Δ_ K1 T K2 kind ih =>
+    subst Δ_
+    apply Kinding.lam (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom)
+    intro a' notIn
+    specialize @ih a' (by simp_all) Δ a K (Δ'.typeExt a' K1) A
+    simp_all [Environment.append]
+    rw [<- subst_open_var (by aesop) (kA.TypeVarLocallyClosed_of)]
+    apply ih
+    constructor
+    . assumption
+    . simp_all [Environment.typeVarDom, Environment.typeVarDom.app_comm]
+  case scheme I Δ_ K1 T K2 kind ih =>
+    subst Δ_
+    apply Kinding.scheme (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom)
+    intro a' notIn
+    specialize @ih a' (by simp_all) Δ a K (Δ'.typeExt a' K1) A
+    simp_all [Environment.append]
+    rw [<- subst_open_var (by aesop) (kA.TypeVarLocallyClosed_of)]
     apply ih
     constructor
     . assumption
@@ -1285,7 +1345,7 @@ theorem Kinding.subst' (wf: [[ ⊢ Δ, a: K, Δ' ]]) (kA: [[ Δ ⊢ A: K ]]) (kT
   all_goals aesop (add safe constructors Kinding) (config := { enableSimp := false })
 
 private
-theorem Kinding.subst (wf: [[ ⊢ Δ, a: K ]]) (kA: [[ Δ ⊢ A: K ]]) (kT: [[ Δ, a: K ⊢ T: K' ]]) (lc: A.TypeVarLocallyClosed): Kinding Δ (T.TypeVar_subst a A) K' :=
+theorem Kinding.subst (wf: [[ ⊢ Δ, a: K ]]) (kA: [[ Δ ⊢ A: K ]]) (kT: [[ Δ, a: K ⊢ T: K' ]]): [[ Δ ⊢ T[A/a]: K' ]] :=
  by apply Kinding.subst' (Δ' := Environment.empty) <;> assumption
 
 
@@ -1296,7 +1356,7 @@ private
 theorem forall_intro_ex_k : ∀a, a ∉ A.fv → a ∉ Δ.typeVarDom → [[ Δ, a : K1 ⊢ A^a: K2 ]] → [[ Δ ⊢ (∀ a : K1. A) : K2 ]] := sorry
 
 private
-theorem EnvironmentWellFormedness.subst (wf: [[ ⊢ Δ, a: K, Δ' ]]) (kA: [[ Δ ⊢ A: K ]]) (lc: A.TypeVarLocallyClosed): EnvironmentWellFormedness (Δ.append (Δ'.TypeVar_subst a A)) := by
+theorem EnvironmentWellFormedness.subst (wf: [[ ⊢ Δ, a: K, Δ' ]]) (kA: [[ Δ ⊢ A: K ]]): [[ ⊢ Δ, Δ'[A/a] ]] := by
   induction Δ' generalizing Δ a K A <;> simp_all [Environment.append]
   . case empty =>
     cases wf
@@ -1320,17 +1380,6 @@ theorem EnvironmentWellFormedness.subst (wf: [[ ⊢ Δ, a: K, Δ' ]]) (kA: [[ Δ
       simp_all
       induction Δ' <;> simp_all [Environment.TypeVar_subst, Environment.append, Environment.typeVarDom, Environment.termVarDom] <;> cases wf <;> aesop
     . case a => apply Kinding.subst' (K := K) <;> simp_all
-
-theorem pred_open_var {A B: «Type»} (red: [[ Δ ⊢ A ≡> B ]]) (fresh: a ∉ Δ.typeVarDom ++ A.fv):
-  ParallelReduction (Δ.typeExt a K) (A.TypeVar_open a n) (B.TypeVar_open a n) := by
-  -- induction A using «Type».rec (motive_2 := fun l => ∀A ∈ l, ∀(Δ: Environment) (A' B: «Type»), ∀ a ∉ Δ.typeVarDom ++ A.fv, ParallelReduction (Δ.typeExt a K) (A.TypeVar_open a n) (B.TypeVar_open a n)) generalizing B <;> (try aesop; done)
-  induction red
-  . case refl => constructor
-  . case lamApp =>
-    rename_i ih2
-    simp_all [«Type».TypeVar_open]
-    sorry
-  all_goals sorry
 
 
 -- FIXME critical, trivial
@@ -1398,72 +1447,253 @@ theorem lc_iff : (TypeVarLocallyClosed_aux A ↔ A.TypeVarLocallyClosed) := ⟨T
 end «Type»
 
 private
-theorem pred_weakening (red: [[ Δ ⊢ A ≡> B ]]) (fresh: a ∉ A.fv) : [[ Δ, a: K ⊢ A ≡> B ]] := by sorry
+theorem pred_weakening' (red: [[ Δ, Δ' ⊢ A ≡> B ]]) (freshΔ: a ∉ Δ.typeVarDom) : [[ Δ, a: K, Δ' ⊢ A ≡> B ]] := by
+  generalize Δ_eq : Δ.append Δ' = Δ_ at red
+  induction red generalizing Δ Δ' <;> try (aesop (add norm Type.fv) (add safe constructors ParallelReduction); done)
+  . case lamApp Δ_ B K' I A A' B' kindB redA redB ihA ihB =>
+    subst Δ_
+    apply ParallelReduction.lamApp (I := a :: I ++ A.fv)
+    . rw [<- Environment.append_assoc_type]; apply Kinding.weakening_r' (fresh := by simp_all [Environment.typeVarDom]) kindB
+    . intro a' notIn
+      specialize @ihA a' (by simp_all) Δ (Δ'.typeExt a' K')
+      simp_all [Environment.append]
+    . specialize @ihB Δ Δ'; simp_all
+  . case lamListApp => sorry
+  . case lam I Δ_ K' A B red ih =>
+    subst Δ_
+    apply ParallelReduction.lam (I := a :: I ++ A.fv)
+    intro a' notIn
+    specialize @ih a' (by simp_all) Δ (Δ'.typeExt a' K')
+    simp_all [Environment.append]
+  . case scheme I Δ_ K' A B red ih =>
+    subst Δ_
+    apply ParallelReduction.scheme (I := a :: I ++ A.fv)
+    intro a' notIn
+    specialize @ih a' (by simp_all) Δ (Δ'.typeExt a' K')
+    simp_all [Environment.append]
+
+private
+theorem pred_weakening (red: [[ Δ ⊢ A ≡> B ]]) (freshΔ: a ∉ Δ.typeVarDom) : [[ Δ, a: K ⊢ A ≡> B ]] := by
+  apply pred_weakening' (Δ' := Environment.empty) <;> assumption
+
+private
+theorem pred_weakeningT' (red: [[ Δ, Δ' ⊢ A ≡> B ]]) : [[ Δ, x: T, Δ' ⊢ A ≡> B ]] := by
+  generalize Δ_eq : Δ.append Δ' = Δ_ at red
+  induction red generalizing Δ Δ' <;> try (aesop (rule_sets := [pred]); done)
+  . case lamApp Δ_ B K' I A A' B' kindB redA redB ihA ihB =>
+    subst Δ_
+    apply ParallelReduction.lamApp (I := x :: I)
+    . rw [<- Environment.append_assoc_term]; apply Kinding.weakening_r' (fresh := by simp_all [Environment.typeVarDom]) kindB
+    . intro x' notIn
+      specialize @ihA x' (by simp_all) Δ (Δ'.typeExt x' K') (by aesop)
+      simp_all [Environment.append]
+    . specialize @ihB Δ Δ'; simp_all
+  . case lamListApp => sorry
+  . case lam I Δ_ K' A B red ih =>
+    subst Δ_
+    apply ParallelReduction.lam (I := x :: I)
+    intro a' notIn
+    specialize @ih a' (by simp_all) Δ (Δ'.typeExt a' K') (by aesop)
+    simp_all [Environment.append]
+  . case scheme I Δ_ K' A B red ih =>
+    subst Δ_
+    apply ParallelReduction.scheme (I := x :: I)
+    intro a' notIn
+    specialize @ih a' (by simp_all) Δ (Δ'.typeExt a' K') (by aesop)
+    simp_all [Environment.append]
+
+private
+theorem pred_weakeningT (red: [[ Δ ⊢ A ≡> B ]]) : [[ Δ, x: T ⊢ A ≡> B ]] := by
+  apply pred_weakeningT' (Δ' := Environment.empty); assumption
+
+-- NOTE a weaker version (replacing wf with ∀a ∈, ∉ ...) should also be provable, but this requries a "kind only" wf
+-- NOTE using this weaker wf we can remove subst on Δ' for pred_subst theorems
+private
+theorem pred_weakening_multi (red: [[ Δ ⊢ A ≡> B ]]) (wf: [[ ⊢ Δ, Δ' ]]) : [[ Δ, Δ' ⊢ A ≡> B ]] := by
+  induction Δ'
+  . case empty => simp_all [Environment.append]
+  . case typeExt Δ' a' K' ih =>
+    simp_all [Environment.append]
+    apply pred_weakening
+    . apply ih
+      cases wf; assumption
+    . cases wf; simp_all
+  . case termExt Δ' a' T ih =>
+    simp_all [Environment.append]
+    apply pred_weakeningT
+    apply ih
+    cases wf; assumption
 
 private
 theorem pred_subst_in {A B T: «Type»} (red: [[ Δ ⊢ A ≡> B ]]) (lcA: A.TypeVarLocallyClosed 0) (lcT: T.TypeVarLocallyClosed 0): ParallelReduction Δ (T.TypeVar_subst a A) (T.TypeVar_subst a B) := by
   rw [<- Type.lc_iff] at lcT
   induction lcT generalizing Δ <;> simp_all [«Type».TypeVar_subst] <;> try aesop (rule_sets := [pred])
   . case lam I K T lc ih =>
-    apply ParallelReduction.lam (I := a :: I ++ A.fv)
+    apply ParallelReduction.lam (I := a :: I ++ A.fv ++ Δ.typeVarDom)
     intro a' notIn
     rw [<- subst_open_var (neq := by aesop) (lc := lcA)]
     rw [<- subst_open_var (neq := by aesop) (lc := pred_preserve_lc red _ lcA)]
-    obtain red := pred_weakening (a := a') (K := K) (red := red) (fresh := by simp_all)
-    apply ih <;> simp_all
+    obtain red := pred_weakening (a := a') (K := K) (red := red) (freshΔ := by simp_all)
+    simp_all
   . case «forall» I K T lc ih =>
-    apply ParallelReduction.scheme (I := a :: I ++ A.fv)
+    apply ParallelReduction.scheme (I := a :: I ++ A.fv ++ Δ.typeVarDom)
     intro a' notIn
     rw [<- subst_open_var (neq := by aesop) (lc := lcA)]
     rw [<- subst_open_var (neq := by aesop) (lc := pred_preserve_lc red _ lcA)]
-    obtain red := pred_weakening (a := a') (K := K) (red := red) (fresh := by simp_all)
-    apply ih <;> simp_all
+    obtain red := pred_weakening (a := a') (K := K) (red := red) (freshΔ := by simp_all)
+    simp_all
   . case list Tl lc ih => sorry -- FIXME might want to redo list definition (now I think the nat index approach is easier to work with lol)
 
 
--- FIXME critical
--- FIXME may need to redo according to P394
 private
-theorem pred_subst_same {A B T: «Type»} (red: [[ Δ ⊢ A ≡> B ]]) (fresh: a ∉ Δ.typeVarDom ++ A.fv): ParallelReduction Δ (T.TypeVar_subst a A) (T.TypeVar_subst a B) := by
-  induction T using «Type».rec (motive_2 := fun l => ∀T ∈ l, ∀(Δ: Environment) (A B: «Type») (a: TypeVarId) (red: [[ Δ ⊢ A ≡> B ]]) (fresh: a ∉ Δ.typeVarDom ++ A.fv), ParallelReduction Δ (T.TypeVar_subst a A) (T.TypeVar_subst a B)) generalizing A B a Δ <;> (try simp [«Type».TypeVar_subst]) <;> (try aesop (rule_sets := [pred]); done)
-  . case lam K T ih =>
-    sorry
-  . case «forall» K T ih =>
-    sorry
-  . case list Tl ih =>
-    sorry
+theorem Environment.app_typeExt_assoc {Δ Δ': Environment} : (Δ.append Δ' |>.typeExt a' K') = Δ.append (Δ'.typeExt a' K') := by simp_all [Environment.append]
 
-
--- FIXME critical, trivial
--- TODO better name, also is this really needed?
 private
-theorem pred_subst_better_name {A B T: «Type»} (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ ⊢ T ≡> T' ]]) (nfv: a ∉ T.fv) : ParallelReduction Δ (T.TypeVar_subst a A) (T'.TypeVar_subst a B) := sorry
+theorem Environment.typeExt_subst {Δ: Environment} : (Δ.TypeVar_subst a K).typeExt a' K' = (Δ.typeExt a' K').TypeVar_subst a K := by
+  induction Δ <;> simp_all [Environment.TypeVar_subst, Environment.typeExt]
+
+-- NOTE this is also provable: no subst on Δ' is needed
+private
+theorem pred_subst_out2 {A T T' : «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red : [[ Δ, a: K, Δ' ⊢ T ≡> T' ]]) (kindA: [[ Δ ⊢ A: K ]]) : [[ Δ, Δ' ⊢ T[A/a] ≡> T'[A/a] ]] := by sorry
+
+private
+theorem pred_subst_out' {A T T' : «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red : [[ Δ, a: K, Δ' ⊢ T ≡> T' ]]) (kindA: [[ Δ ⊢ A: K ]]) : [[ Δ, Δ'[A/a] ⊢ T[A/a] ≡> T'[A/a] ]] := by
+  generalize Δ_eq: (Δ.typeExt a K |>.append Δ') = Δ_ at red
+  induction red generalizing Δ Δ' <;> (try simp_all [«Type».TypeVar_subst]) <;> try (aesop (rule_sets := [pred]); done)
+  . case lamApp Δ_ T2 K' I T1 T1' T2' kindT2 redT1 redT2 ihT1 ihT2 =>
+    subst Δ_
+    rw [<- subst_open (lcT := kindA.TypeVarLocallyClosed_of)]
+    apply ParallelReduction.lamApp (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom)
+    . apply Kinding.subst' (K := K) <;> simp_all
+    . intro a' notIn
+      repeat rw [<- subst_open_var (neq := by aesop) (lc := kindA.TypeVarLocallyClosed_of)]
+      rw [Environment.app_typeExt_assoc, Environment.typeExt_subst]
+      apply ihT1 <;> simp_all [Environment.append]
+      . constructor <;> simp_all [Environment.typeVarDom, Environment.typeVarDom.app_comm]
+    . simp_all
+  . case lamListApp => sorry
+  . case lam I Δ_ K' T T' red ih =>
+    subst Δ_
+    apply ParallelReduction.lam (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom)
+    intro a' notIn
+    repeat rw [<- subst_open_var (neq := by aesop) (lc := kindA.TypeVarLocallyClosed_of)]
+    rw [Environment.app_typeExt_assoc, Environment.typeExt_subst]
+    apply ih <;> simp_all [Environment.append]
+    . constructor <;> simp_all [Environment.typeVarDom, Environment.typeVarDom.app_comm]
+  . case scheme I Δ_ K' T T' red ih =>
+    subst Δ_
+    apply ParallelReduction.scheme (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom)
+    intro a' notIn
+    repeat rw [<- subst_open_var (neq := by aesop) (lc := kindA.TypeVarLocallyClosed_of)]
+    rw [Environment.app_typeExt_assoc, Environment.typeExt_subst]
+    apply ih <;> simp_all [Environment.append]
+    . constructor <;> simp_all [Environment.typeVarDom, Environment.typeVarDom.app_comm]
+  . case list Tl red ih => sorry -- FIXME might want to redo list definition (now I think the nat index approach is easier to work with lol)
+
+private
+theorem pred_subst_out {A T T' : «Type»} (wf: [[ ⊢ Δ, a: K ]]) (red : [[ Δ, a: K ⊢ T ≡> T' ]]) (kindA: [[ Δ ⊢ A: K ]]) : [[ Δ ⊢ T[A/a] ≡> T'[A/a] ]] := by
+  apply pred_subst_out' (Δ' := Environment.empty) <;> assumption
+
 
 -- FIXME critical. from pred_subst_same: kindT is really annoying.. It stops us from using the lemma in
 -- (also, might be able to conclude that Δ ⊢ T[a ↦ A]: K')
 private
-theorem pred_subst {A B T: «Type»} (wf: [[ ⊢ Δ, a: K ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ, a: K ⊢ T ≡> T' ]]) (kindA: [[ Δ ⊢ A: K ]]) (fresh: a ∉ Δ.typeVarDom ++ A.fv) (lc: A.TypeVarLocallyClosed): ParallelReduction Δ (T.TypeVar_subst a A) (T'.TypeVar_subst a B) := by
-  generalize Δ'eq: Δ.typeExt a K = Δ' at red2
-  induction red2 generalizing Δ A B
-  . case refl Δ_ T_ =>
-    apply pred_subst_same <;> simp_all
-  . case lamApp Δ_ T2 K2 I T1 T1' T2' kindT2 redT1 redT2 ihT1 ihT2 =>
+theorem pred_subst_all' {A B T: «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ, a: K, Δ' ⊢ T ≡> T' ]]) (kindA: [[ Δ ⊢ A: K ]]) (lcT: T.TypeVarLocallyClosed): [[ Δ, Δ'[A/a] ⊢ T[A/a] ≡> T'[B/a] ]] := by
+  generalize Δ_eq: (Δ.typeExt a K |>.append Δ') = Δ_ at red2
+  induction red2 generalizing Δ Δ' A B
+  case refl Δ_ T_ =>
+    subst Δ_
+    apply pred_subst_in (lcA := kindA.TypeVarLocallyClosed_of) (lcT := lcT)
+    apply pred_weakening_multi
+    . assumption
+    . apply EnvironmentWellFormedness.subst (K := K) <;> simp_all
+  case lamApp Δ_ T2 K2 I T1 T1' T2' kindT2 redT1 redT2 ihT1 ihT2 =>
     subst Δ_
     simp [«Type».TypeVar_subst]
-    rw  [<- subst_open (lcT := pred_preserve_lc red1 _ lc)]
-    apply ParallelReduction.lamApp
-    . apply Kinding.subst (K := K) <;> assumption
-    . sorry -- FIXME must change definition of pred_subst to make it more generic, e.g. (Δ, a : K, Δ')
-    . aesop
-    . sorry -- metavar I, solved in subgoal 2
+    rw [<- subst_open (lcT := pred_preserve_lc red1 _ (kindA.TypeVarLocallyClosed_of))]
+    apply ParallelReduction.lamApp (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom)
+    . apply Kinding.subst' (K := K) <;> assumption
+    . case a =>
+      intro a' notIn
+      rw [<- subst_open_var (neq := by aesop) (lc := kindA.TypeVarLocallyClosed_of)]
+      rw [<- subst_open_var (neq := by aesop) (lc := (pred_preserve_lc red1 _ kindA.TypeVarLocallyClosed_of))]
+      rw [Environment.app_typeExt_assoc, Environment.typeExt_subst]
+      apply ihT1 <;> simp_all [Environment.append]
+      . constructor <;> simp_all [Environment.typeVarDom, Environment.typeVarDom.app_comm]
+      . aesop (add safe Type.TypeVarLocallyClosed.strengthen) (rule_sets := [lc]) (config := { enableSimp := false })
+    . apply ihT2 <;> simp_all [Environment.append]
+      aesop (add safe Type.TypeVarLocallyClosed.strengthen) (rule_sets := [lc]) (config := { enableSimp := false })
+  case lamListApp => sorry
+  case lam I Δ_ K' T T' redT ih =>
+    subst Δ_
+    simp [«Type».TypeVar_subst]
+    apply ParallelReduction.lam (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom)
+    intro a' notIn
+    rw [<- subst_open_var (neq := by aesop) (lc := kindA.TypeVarLocallyClosed_of)]
+    rw [<- subst_open_var (neq := by aesop) (lc := (pred_preserve_lc red1 _ kindA.TypeVarLocallyClosed_of))]
+    rw [Environment.app_typeExt_assoc, Environment.typeExt_subst]
+    apply ih <;> simp_all [Environment.append]
+    . constructor <;> simp_all [Environment.typeVarDom, Environment.typeVarDom.app_comm]
+    . aesop (add safe Type.TypeVarLocallyClosed.strengthen) (rule_sets := [lc]) (config := { enableSimp := false })
+  case scheme I Δ_ K' T T' redT ih =>
+    subst Δ_
+    simp [«Type».TypeVar_subst]
+    apply ParallelReduction.scheme (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom)
+    intro a' notIn
+    rw [<- subst_open_var (neq := by aesop) (lc := kindA.TypeVarLocallyClosed_of)]
+    rw [<- subst_open_var (neq := by aesop) (lc := (pred_preserve_lc red1 _ kindA.TypeVarLocallyClosed_of))]
+    rw [Environment.app_typeExt_assoc, Environment.typeExt_subst]
+    apply ih <;> simp_all [Environment.append]
+    . constructor <;> simp_all [Environment.typeVarDom, Environment.typeVarDom.app_comm]
+    . aesop (add safe Type.TypeVarLocallyClosed.strengthen) (rule_sets := [lc]) (config := { enableSimp := false })
+  case list => sorry
+  case listApp => sorry
+  case app => aesop (add norm Type.TypeVar_subst) (rule_sets := [pred, lc])
+  case arr => aesop (add norm Type.TypeVar_subst) (rule_sets := [pred, lc])
   all_goals sorry
 
--- FIXME those theorems are consequence of subst lemmas. They should not be used before those are proven
 private
-theorem lam_intro_ex : ∀a, a ∉ A.fv → a ∉ Δ.typeVarDom → [[ Δ, a : K ⊢ A^a ≡> B^a ]] → [[ Δ ⊢ (λ a : K. A) ≡> (λ a : K. B) ]] := sorry
+theorem pred_subst_all {A B T: «Type»} (wf: [[ ⊢ Δ, a: K ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ, a: K ⊢ T ≡> T' ]]) (kindA: [[ Δ ⊢ A: K ]]) (lcT: T.TypeVarLocallyClosed): [[ Δ ⊢ T[A/a] ≡> T'[B/a] ]] := by
+  apply pred_subst_all' (Δ' := Environment.empty) <;> assumption
+
+namespace «Type»
+private
+theorem open_var {T: «Type»} : T.TypeVar_open a n = T.Type_open (var (TypeVar.free a)) n := by
+  induction T using rec_uniform generalizing n <;> aesop (rule_sets := [topen])
+end «Type»
+
+-- NOTE this lemma doesn't necessarily require subst lemma. See rename lemma in the paper.
+private
+theorem ParallelReduction.rename a (fresh: a ∉ A.fv ++ B.fv ++ Δ.typeVarDom) (fresh2: a' ∉ a :: Δ.typeVarDom) (wf: [[ ⊢ Δ ]]) (red: [[ Δ, a: K ⊢ A^a ≡> B^a ]]): [[ Δ, a': K ⊢ A^a' ≡> B^a' ]] := by
+  repeat rw [Type.open_var]
+  repeat rw [<- subst_intro (a := a) (nfv := by simp_all)]
+  apply pred_subst_out (K := K)
+  . aesop (add norm Environment.typeVarDom) (add safe constructors EnvironmentWellFormedness)
+  . rw [<- Environment.append_empty (Δ := Δ |>.typeExt a' K |>.typeExt a K)]
+    rw [<- Environment.append_assoc_type (Δ' := Environment.empty)]
+    apply pred_weakening'
+    . simp_all [Environment.append]
+    . simp_all
+  . constructor
+    constructor
 
 private
-theorem forall_intro_ex : ∀a, a ∉ A.fv → a ∉ Δ.typeVarDom → [[ Δ, a : K ⊢ A^a ≡> B^a ]] → [[ Δ ⊢ (∀ a : K. A) ≡> (∀ a : K. B) ]] := sorry
+theorem lam_intro_ex a (fresh: a ∉ A.fv ++ B.fv ++ Δ.typeVarDom) (wf: [[ ⊢ Δ ]]) (red: [[ Δ, a : K ⊢ A^a ≡> B^a ]]): [[ Δ ⊢ (λ a : K. A) ≡> (λ a : K. B) ]] := by
+  apply ParallelReduction.lam (I := a :: Δ.typeVarDom)
+  intro a' notIn
+  apply ParallelReduction.rename a <;> simp_all
+
+private
+theorem lamApp_intro_ex a (fresh: a ∉ A.fv ++ A'.fv ++ Δ.typeVarDom) (wf: [[ ⊢ Δ ]]) (kind: [[ Δ ⊢ B: K ]]) (redA: [[ Δ, a: K ⊢ A^a ≡> A'^a ]]) (redB: [[ Δ ⊢ B ≡> B' ]]): [[ Δ ⊢ (λ a : K. A) B ≡> A' ^^ B' ]] := by
+  apply ParallelReduction.lamApp (I := a :: Δ.typeVarDom) <;> try assumption
+  intro a' notIn
+  apply ParallelReduction.rename a <;> simp_all
+
+private
+theorem forall_intro_ex a (fresh: a ∉ A.fv ++ B.fv ++ Δ.typeVarDom) (wf: [[ ⊢ Δ ]]) (red: [[ Δ, a : K ⊢ A^a ≡> B^a ]]): [[ Δ ⊢ (∀ a : K. A) ≡> (∀ a : K. B) ]] := by
+  apply ParallelReduction.scheme (I := a :: Δ.typeVarDom)
+  intro a' notIn
+  apply ParallelReduction.rename a <;> simp_all
 
 
 -- TODO is this lemma needed?
@@ -1611,10 +1841,9 @@ theorem pred_confluence_single : [[ ⊢ Δ ]] → [[ Δ ⊢ A ≡> B ]] -> [[ Δ
     exists («Type».lam K (T'.TypeVar_close a))
 
     constructor
-    -- TODO do we really need ex intro rules here?
-    . apply (lam_intro_ex a) <;> aesop
+    . apply (lam_intro_ex a) <;> simp_all [close_not_in_fv]
     . constructor
-      . apply (lam_intro_ex a) <;> aesop
+      . apply (lam_intro_ex a) <;> simp_all [close_not_in_fv]
       . constructor
         apply TypeVarLocallyClosed_close
         assumption
@@ -1654,19 +1883,18 @@ theorem pred_confluence_single : [[ ⊢ Δ ]] → [[ Δ ⊢ A ≡> B ]] -> [[ Δ
         . assumption
         . simp [Environment.NotInTypeVarInDom, Environment.InTypeVarInDom]; aesop
       specialize redA' a (by simp_all)
-      have ⟨T1, redA'T, redA2T, lcT1⟩ := ihA a (by simp_all) wf' redA'; clear redA'
+      have ⟨T1, redA'T, redA2T, lcT1⟩ := ihA a (by simp_all) wf' redA'
       have ⟨T2, redB'T, redB2T, lcT2⟩ := ihB redB'
       exists T1.TypeVar_subst a T2
       repeat' apply And.intro
-      -- FIXME need to prove pred_subst first
       . rw [<- subst_intro (a := a) (nfv := by simp_all)]
-        apply pred_subst <;> try assumption
-        . exact pred_preservation lcB wf redB (by assumption)
-        . simp_all
-        . exact pred_preserve_lc redB _ lcB
+        apply pred_subst_all <;> try assumption
+        . aesop (add safe apply pred_preservation) (config := { enableSimp := false })
+        . apply pred_preserve_lc (redA _ _) <;> simp_all
       . rw [<- subst_intro (a := a) (nfv := by simp_all)]
-        apply pred_subst
-        all_goals sorry
+        apply pred_subst_all <;> try assumption
+        . aesop (add safe apply pred_preservation) (config := { enableSimp := false })
+        . apply pred_preserve_lc redA'; simp_all
       . apply subst_lc <;> assumption
     . case app A2 B2 redA' redB' =>
       cases redA'
@@ -1679,16 +1907,21 @@ theorem pred_confluence_single : [[ ⊢ Δ ]] → [[ Δ ⊢ A ≡> B ]] -> [[ Δ
           . assumption
           . simp [Environment.NotInTypeVarInDom, Environment.InTypeVarInDom]; aesop
         specialize redA' a (by simp_all)
-        have ⟨T1, redA'T, redA2T, lcT1⟩ := ihA a (by simp_all) wf' redA'; clear redA'
+        have ⟨T1, redA'T, redA2T, lcT1⟩ := ihA a (by simp_all) wf' redA'
         have ⟨T2, redB'T, redB2T, lcT2⟩ := ihB redB'
-        exists T1.TypeVar_subst a T2
+
+        rw [<- close_open_var (T:=T1) (a:=a)] at redA'T redA2T <;> try assumption
+        exists (T1.TypeVar_close a).Type_open T2
         repeat' apply And.intro
-        -- FIXME need to prove pred_subst first
         . rw [<- subst_intro (a := a) (nfv := by simp_all)]
-          apply pred_subst
-          all_goals sorry
-        . sorry
-        . apply subst_lc <;> assumption
+          rw [<- subst_intro (a := a) (nfv := close_not_in_fv)]
+          apply pred_subst_all <;> try assumption
+          . aesop (add safe apply pred_preservation) (config := { enableSimp := false })
+          . apply pred_preserve_lc (redA _ _) <;> simp_all
+        . apply (lamApp_intro_ex a) <;> try (simp_all; done)
+          . simp_all [close_not_in_fv]
+          . aesop (add safe apply pred_preservation) (config := { enableSimp := false })
+        . simp_all [TypeVarLocallyClosed_openT, TypeVarLocallyClosed_close]
   all_goals sorry
 
 
