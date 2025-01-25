@@ -12,7 +12,52 @@ namespace TabularTypeInterpreter
 open «F⊗⊕ω»
 open Std
 
-theorem Monotype.RowEquivalenceAndElaboration.soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]])
+namespace Monotype.RowEquivalenceAndElaboration
+
+theorem symm (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (Γwe : [[Γc ⊢ Γ ⇝ Δ]])
+  : ∃ Fₚ' Fₛ', [[Γc; Γ ⊢ ρ₁ ≡(μ) ρ₀ ⇝ Fₚ', Fₛ']] := match ρee with
+  | refl ρek κe => ⟨_, _, refl ρek κe⟩
+  | comm perm perm' inv ξτske κe (ξ := ξ) (τ := τ) (A := A) (p := p) (p' := p') (n := n) => by
+    let ξ' i := ξ (p.get! i)
+    let τ' i := τ (p.get! i)
+    rw [List.map_singleton_flatten, List.map_singleton_flatten, ← Std.Range.map_get!_eq (as := p),
+        List.map_map]
+    have : (fun i => (ξ i, τ i)) ∘ p.get! = fun i => (ξ' i, τ' i) := rfl
+    rw [this]
+    have : [:n].toList.map (fun i => (ξ i, τ i)) = p'.map fun i => (ξ' i, τ' i) := by
+      symm
+      let lengths_eq := perm'.length_eq
+      rw [Std.Range.length_toList, Nat.sub_zero] at lengths_eq
+      rw [← Std.Range.map_get!_eq (as := p'), List.map_map, Std.Range.map_eq_of_eq_of_mem (by
+        intro i imem
+        show _ = (ξ i, τ i)
+        simp only [Function.comp, ξ', τ']
+        rw [perm'.length_eq, Std.Range.length_toList] at imem
+        rw [inv.right i imem]
+      ), ← lengths_eq]
+    rw [this, ← List.map_singleton_flatten, ← List.map_singleton_flatten (f := fun _ => (_, _))]
+    rw [perm.length_eq, Std.Range.length_toList, Nat.sub_zero]
+    let ⟨⟨B, ξke⟩, uni, ⟨_, _, _, κeq, h, _, τke⟩⟩ := ξτske.row_inversion
+    cases κeq
+    let lengths_eq := perm.length_eq
+    rw [Std.Range.length_toList, Nat.sub_zero] at lengths_eq
+    cases lengths_eq
+    let ξ'ke i (imem : i ∈ [:p.length]) := ξke (p.get! i) <| Std.Range.mem_of_mem_toList <|
+      perm.mem_iff.mp <| List.get!_mem imem.right
+    let τ'ke i (imem : i ∈ [:p.length]) := τke (p.get! i) <| Std.Range.mem_of_mem_toList <|
+      perm.mem_iff.mp <| List.get!_mem imem.right
+    let uni' := uni.Perm_preservation perm (fun _ => rfl)
+    exact ⟨_, _, comm perm' perm inv.symm (.row ξ'ke uni' τ'ke h) κe⟩
+  | trans _ κe ρ₀₁ee ρ₁₂ee =>
+    let ⟨_, _, ρ₁₀ee⟩ := ρ₀₁ee.symm Γwe
+    let ⟨_, _, ρ₂₁ee⟩ := ρ₁₂ee.symm Γwe
+    let ⟨κ', _, _, _, ρ₂ke⟩ := ρ₁₂ee.to_Kinding Γwe
+    let ⟨_, κ'e⟩ := κ'.Elaboration_total
+    ⟨_, _, trans ρ₂ke κ'e ρ₂₁ee ρ₁₀ee⟩
+  | liftL μ liftke κe => ⟨_, _, liftR μ liftke κe⟩
+  | liftR μ liftke κe => ⟨_, _, liftL μ liftke κe⟩
+
+theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]])
   (Γwe : [[Γc ⊢ Γ ⇝ Δ]]) (ρ₀ke : [[Γc; Γ ⊢ ρ₀ : R κ ⇝ A]]) (ρ₁ke : [[Γc; Γ ⊢ ρ₁ : R κ ⇝ B]])
   (κe : [[⊢ κ ⇝ K]])
   : [[Δ ⊢ Fₚ : ∀ a : K ↦ *. (⊗ (a$0 ⟦A⟧)) → ⊗ (a$0 ⟦B⟧)]] ∧
@@ -406,5 +451,7 @@ theorem Monotype.RowEquivalenceAndElaboration.soundness (ρee : [[Γc; Γ ⊢ ρ
       .prod_id Alc,
       .sum_id Alc
     ⟩
+
+end Monotype.RowEquivalenceAndElaboration
 
 end TabularTypeInterpreter
