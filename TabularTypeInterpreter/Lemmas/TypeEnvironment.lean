@@ -11,6 +11,51 @@ theorem empty_append (Γ : TypeEnvironment) : append empty Γ = Γ := by
   | empty => rfl
   | typeExt Γ' .. | termExt Γ' .. | constrExt Γ' .. => rw [append, Γ'.empty_append]
 
+theorem typeVarDom_append : (append Γ Γ').typeVarDom = Γ'.typeVarDom ++ Γ.typeVarDom := by
+  match Γ' with
+  | empty => rw [append, typeVarDom, List.nil_append]
+  | typeExt .. => rw [append, typeVarDom, typeVarDom_append, typeVarDom, List.cons_append]
+  | termExt .. | constrExt .. => rw [append, typeVarDom, typeVarDom_append, typeVarDom]
+
+theorem termVarDom_append : (append Γ Γ').termVarDom = Γ'.termVarDom ++ Γ.termVarDom := by
+  match Γ' with
+  | empty => rw [append, termVarDom, List.nil_append]
+  | typeExt .. => rw [append, termVarDom, termVarDom_append, termVarDom]
+  | termExt ..
+  | constrExt .. => rw [append, termVarDom, termVarDom_append, termVarDom, List.cons_append]
+
+theorem sizeOf'_pos : 0 < sizeOf' Γ := by
+  match Γ with
+  | empty =>
+    rw [sizeOf']
+    exact Nat.one_pos
+  | typeExt .. =>
+    rw [sizeOf', Nat.add_comm]
+    exact Nat.succ_pos _
+  | termExt .. =>
+    rw [sizeOf', Nat.add_comm 1, Nat.add_assoc, Nat.add_comm 1, ← Nat.add_assoc]
+    exact Nat.succ_pos _
+  | constrExt .. =>
+    rw [sizeOf', Nat.add_comm 3, Nat.add_assoc, Nat.add_comm 3, ← Nat.add_assoc]
+    exact Nat.succ_pos _
+
+theorem sizeOf'_append : (append Γ Γ').sizeOf' = Γ.sizeOf' + Γ'.sizeOf' - 1 := by
+  match Γ' with
+  | empty => rw [append, sizeOf', Nat.add_sub_cancel]
+  | typeExt .. =>
+    rw [append, sizeOf', sizeOf', sizeOf'_append, ← Nat.add_assoc, ← Nat.add_sub_assoc, ← Nat.add_assoc, Nat.add_comm 1]
+    exact Nat.le_add_right_of_le <| sizeOf'_pos
+  | termExt .. =>
+    rw [append, sizeOf', sizeOf', sizeOf'_append, ← Nat.add_sub_assoc, ← Nat.add_assoc,
+        ← Nat.add_assoc, ← Nat.add_assoc, Nat.add_comm _ 1, ← Nat.sub_add_comm]
+    exact Nat.le_add_right_of_le <| Nat.le_add_right _ _
+    exact Nat.le_add_right_of_le <| sizeOf'_pos
+  | constrExt .. =>
+    rw [append, sizeOf', sizeOf', sizeOf'_append, ← Nat.add_sub_assoc, ← Nat.add_assoc,
+        ← Nat.add_assoc, ← Nat.add_assoc, Nat.add_comm _ 3, ← Nat.sub_add_comm]
+    exact Nat.le_add_right_of_le <| Nat.le_add_right_of_le <| .step <| .step <| .refl
+    exact Nat.le_add_right_of_le <| sizeOf'_pos
+
 namespace WellFormednessAndElaboration
 
 theorem TypeVarIn_preservation (Γwe : [[Γc ⊢ Γ ⇝ Δ]])
@@ -128,7 +173,31 @@ theorem TypeVar_subst_preservation : [[a : κ ∈ Γ]] → [[a : κ ∈ Γ [τ /
 
 end TypeVarIn
 
-theorem TypeVarNotInDom.TypeVar_subst_preservation :[[a ∉ dom(Γ)]] → [[a ∉ dom(Γ [τ / a'])]] := by
+theorem TypeVarNotInDom.TypeVar_subst_preservation : [[a ∉ dom(Γ)]] → [[a ∉ dom(Γ [τ / a'])]] := by
   induction Γ <;> aesop (add simp [TypeVarNotInDom, typeVarDom])
+
+theorem TermVarNotInDom.TypeVar_subst_preservation : [[x ∉ dom'(Γ)]] → [[x ∉ dom'(Γ [τ / a])]] := by
+  induction Γ <;> aesop (add simp [TermVarNotInDom, termVarDom])
+
+theorem WellFormednessAndElaboration.TypeVarIn_weakening (ΓΓ'we : [[Γc ⊢ Γ, Γ' ⇝ Δ]]) (aκinΓ : [[a : κ ∈ Γ]]) : [[a : κ ∈ Γ, Γ']] := by
+  match Γ' with
+  | .empty => exact aκinΓ
+  | .typeExt _ a' _ =>
+    let .typeExt ΓΓ''we a'nin _ := ΓΓ'we
+    by_cases a = a'
+    · case pos aeqa' =>
+      cases aeqa'
+      rw [TypeVarNotInDom, typeVarDom_append] at a'nin
+      let ⟨_, aninΓ⟩ := List.not_mem_append'.mp a'nin
+      rw [← TypeVarNotInDom] at aninΓ
+      nomatch TypeVarIn.not_of_NotInDom aninΓ aκinΓ
+    · case neg anea' =>
+      exact ΓΓ''we.TypeVarIn_weakening aκinΓ |>.typeExt anea'
+  | .termExt .. =>
+    let .termExt ΓΓ''we .. := ΓΓ'we
+    exact ΓΓ''we.TypeVarIn_weakening aκinΓ |>.termExt
+  | .constrExt .. =>
+    let .constrExt ΓΓ''we .. := ΓΓ'we
+    exact ΓΓ''we.TypeVarIn_weakening aκinΓ |>.constrExt
 
 end TabularTypeInterpreter.TypeEnvironment

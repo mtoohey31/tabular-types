@@ -106,9 +106,8 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]])
               Fₚ₁₂ty.TermVarLocallyClosed_of.TermVar_open_eq]
           rw [Alc.TypeVar_open_eq]
           let Δax := Δa.termExt x [[⊗ (a ⟦A⟧)]]
-          let Δaxwf := Δawf.termVarExt xnin <| by
-            rw [← Δa.empty_append] at Δawf ⊢
-            exact .prod <| .listApp (.var .head) <| Aki.weakening Δawf (Δ'' := .typeExt .empty ..)
+          let Δaxwf := Δawf.termVarExt xnin <| .prod <| .listApp (.var .head) <|
+            Aki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)
           apply Typing.app (A := [[⊗ (a ⟦A₁⟧)]])
           · rw [← Type.TypeVarLocallyClosed.Type_open_var_TypeVar_close_id (A := .arr ..) <| by
                   rw [Blc.TypeVar_open_eq]
@@ -147,9 +146,8 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]])
               Fₛ₁₂ty.TermVarLocallyClosed_of.TermVar_open_eq]
           rw [Alc.TypeVar_open_eq]
           let Δax := Δa.termExt x [[⊕ (a ⟦A⟧)]]
-          let Δaxwf := Δawf.termVarExt xnin <| by
-            rw [← Δa.empty_append] at Δawf ⊢
-            exact .sum <| .listApp (.var .head) <| Aki.weakening Δawf (Δ'' := .typeExt .empty ..)
+          let Δaxwf := Δawf.termVarExt xnin <| .sum <| .listApp (.var .head) <|
+            Aki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)
           apply Typing.app (A := [[⊕ (a ⟦A₁⟧)]])
           · rw [← Type.TypeVarLocallyClosed.Type_open_var_TypeVar_close_id (A := .arr ..) <| by
                   rw [Blc.TypeVar_open_eq]
@@ -255,8 +253,7 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]])
           let B'ki := τkei.soundness Γwe κe
           simp only
           rw [B'ki.TypeVarLocallyClosed_of.TypeVar_open_eq]
-          rw [← (Δ.typeExt ..).empty_append] at Δawf ⊢
-          exact B'ki.weakening Δawf (Δ'' := .typeExt .empty ..),
+          exact B'ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty),
       .typeLam (I := Δ.typeVarDom) fun a anin => by
         simp only [«F⊗⊕ω».Term.TypeVar_open, Type.TypeVar_open, if_pos]
         let Δa := Δ.typeExt a <| K.arr .star
@@ -270,10 +267,8 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]])
             show Kinding _ ((A' i).TypeVar_open a) _
             let A'ki := τke' i imem |>.soundness Γwe κe
             rw [← A'eq i imem] at A'ki
-            rw [← (Δ.typeExt ..).empty_append, A'ki.TypeVarLocallyClosed_of.TypeVar_open_eq]
-            apply A'ki.weakening (Δ'' := .typeExt .empty ..)
-            rw [Environment.empty_append]
-            exact Δawf
+            rw [A'ki.TypeVarLocallyClosed_of.TypeVar_open_eq]
+            exact A'ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)
           simp only [«F⊗⊕ω».Term.TermVar_open, List.mapMem_eq_map, if_pos]
           rw [← Range.map_get!_eq (as := p'), length_eq', Range.map, List.map_singleton_flatten,
               List.map_singleton_flatten, List.map_singleton_flatten, List.zip_eq_zipWith,
@@ -310,8 +305,7 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]])
               · exact .var <| .termVarExt <| .head
               · let B'ki := τeki.soundness Γwe κe
                 rw [B'ki.TypeVarLocallyClosed_of.TypeVar_open_eq]
-                rw [← (Δa.termExt ..).empty_append] at Δaxwf ⊢
-                exact B'ki.weakening Δaxwf (Δ'' := .termExt (.typeExt .empty ..)  ..),
+                exact B'ki.weakening Δaxwf (Δ' := .termExt (.typeExt .empty ..) ..) (Δ'' := .empty),
       .typeLam <| .lam (.prod <| .listApp (.var_bound Nat.one_pos) (.list A'slc)) <|
         .prodIntro fun E mem => by
           rw [List.map_singleton_flatten, Range.map, List.map_map] at mem

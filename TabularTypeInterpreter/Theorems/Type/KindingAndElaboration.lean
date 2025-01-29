@@ -220,46 +220,46 @@ theorem TypeScheme.KindingAndElaboration.deterministic (σke₀ : [[Γc; Γ ⊢ 
     let ⟨_, Bᵣopeq⟩ :=
       keBᵣ₀ aₗ₀ aₗ₀nin₀ aₜ₀ aₜ₀nin₀ aₚ₀ aₚ₀nin₀ aᵢ₀ aᵢ₀nin₀ aₙ₀ aₙ₀nin₀ |>.deterministic <|
         keBᵣ₁ aₗ₀ aₗ₀nin₁ aₜ₀ aₜ₀nin₁ aₚ₀ aₚ₀nin₁ aᵢ₀ aᵢ₀nin₁ aₙ₀ aₙ₀nin₁
-    let aᵢ₀neaₙ₀ := List.ne_of_not_mem_cons aₙ₀nin₀ |>.symm
-    let aᵢ₀ninBᵣ₀op :=
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aᵢ₀neaₙ₀ aᵢ₀ninBᵣ₀ (n := 0)
-    let aᵢ₀ninBᵣ₁op :=
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aᵢ₀neaₙ₀ aᵢ₀ninBᵣ₁ (n := 0)
-    let aₚ₀neaᵢ₀ := List.ne_of_not_mem_cons aᵢ₀nin₀ |>.symm
-    let aₚ₀neaₙ₀ := Ne.symm <| List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons aₙ₀nin₀
-    let aₚ₀ninBᵣ₀op := TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₚ₀neaᵢ₀ (n := 0) <|
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₚ₀neaₙ₀ aₚ₀ninBᵣ₀ (n := 0)
-    let aₚ₀ninBᵣ₁op := TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₚ₀neaᵢ₀ (n := 0) <|
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₚ₀neaₙ₀ aₚ₀ninBᵣ₁ (n := 0)
-    let aₜ₀neaₚ₀ := List.ne_of_not_mem_cons aₚ₀nin₀ |>.symm
-    let aₜ₀neaᵢ₀ := Ne.symm <| List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons aᵢ₀nin₀
-    let aₜ₀neaₙ₀ := Ne.symm <| List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
-      List.not_mem_of_not_mem_cons aₙ₀nin₀
-    let aₜ₀ninBᵣ₀op := TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₜ₀neaₚ₀ (n := 0) <|
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₜ₀neaᵢ₀ (n := 0) <|
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₜ₀neaₙ₀ aₜ₀ninBᵣ₀ (n := 0)
-    let aₜ₀ninBᵣ₁op := TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₜ₀neaₚ₀ (n := 0) <|
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₜ₀neaᵢ₀ (n := 0) <|
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₜ₀neaₙ₀ aₜ₀ninBᵣ₁ (n := 0)
-    let aₗ₀neaₜ₀ := List.ne_of_not_mem_cons aₜ₀nin₀ |>.symm
-    let aₗ₀neaₚ₀ := Ne.symm <| List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons aₚ₀nin₀
-    let aₗ₀neaᵢ₀ := Ne.symm <| List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
+    let aₜ₀neaₗ₀ := List.ne_of_not_mem_cons aₜ₀nin₀
+    let aₜ₀ninBᵣ₀op :=
+      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₜ₀neaₗ₀ aₜ₀ninBᵣ₀ (n := 4)
+    let aₜ₀ninBᵣ₁op :=
+      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₜ₀neaₗ₀ aₜ₀ninBᵣ₁ (n := 4)
+    let aₚ₀neaₗ₀ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons aₚ₀nin₀
+    let aₚ₀neaₜ₀ := List.ne_of_not_mem_cons aₚ₀nin₀
+    let aₚ₀ninBᵣ₀op := TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₚ₀neaₜ₀ (n := 3) <|
+      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₚ₀neaₗ₀ aₚ₀ninBᵣ₀ (n := 4)
+    let aₚ₀ninBᵣ₁op := TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₚ₀neaₜ₀ (n := 3) <|
+      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₚ₀neaₗ₀ aₚ₀ninBᵣ₁ (n := 4)
+    let aᵢ₀neaₚ₀ := List.ne_of_not_mem_cons aᵢ₀nin₀
+    let aᵢ₀neaₜ₀ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons aᵢ₀nin₀
+    let aᵢ₀neaₗ₀ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
       List.not_mem_of_not_mem_cons aᵢ₀nin₀
-    let aₗ₀neaₙ₀ := Ne.symm <| List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
+    let aᵢ₀ninBᵣ₀op := TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aᵢ₀neaₚ₀ (n := 2) <|
+      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aᵢ₀neaₜ₀ (n := 3) <|
+      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aᵢ₀neaₗ₀ aᵢ₀ninBᵣ₀ (n := 4)
+    let aᵢ₀ninBᵣ₁op := TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aᵢ₀neaₚ₀ (n := 2) <|
+      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aᵢ₀neaₜ₀ (n := 3) <|
+      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aᵢ₀neaₗ₀ aᵢ₀ninBᵣ₁ (n := 4)
+    let aₙ₀neaᵢ₀ := List.ne_of_not_mem_cons aₙ₀nin₀
+    let aₙ₀neaₚ₀ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons aₙ₀nin₀
+    let aₙ₀neaₜ₀ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
+      List.not_mem_of_not_mem_cons aₙ₀nin₀
+    let aₙ₀neaₗ₀ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
       List.not_mem_of_not_mem_cons <| List.not_mem_of_not_mem_cons aₙ₀nin₀
-    let aₗ₀ninBᵣ₀op := TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₗ₀neaₜ₀ (n := 0) <|
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₗ₀neaₚ₀ (n := 0) <|
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₗ₀neaᵢ₀ (n := 0) <|
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₗ₀neaₙ₀ aₗ₀ninBᵣ₀ (n := 0)
-    let aₗ₀ninBᵣ₁op := TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₗ₀neaₜ₀ (n := 0) <|
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₗ₀neaₚ₀ (n := 0) <|
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₗ₀neaᵢ₀ (n := 0) <|
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₗ₀neaₙ₀ aₗ₀ninBᵣ₁ (n := 0)
-    let Bᵣeq := TypeVar_open_inj_of_not_mem_freeTypeVars aₙ₀ninBᵣ₀ aₙ₀ninBᵣ₁ <|
-      TypeVar_open_inj_of_not_mem_freeTypeVars aᵢ₀ninBᵣ₀op aᵢ₀ninBᵣ₁op <|
-      TypeVar_open_inj_of_not_mem_freeTypeVars aₚ₀ninBᵣ₀op aₚ₀ninBᵣ₁op <|
+    let aₙ₀ninBᵣ₀op := TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₀neaᵢ₀ (n := 1) <|
+      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₀neaₚ₀ (n := 2) <|
+      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₀neaₜ₀ (n := 3) <|
+      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₀neaₗ₀ aₙ₀ninBᵣ₀ (n := 4)
+    let aₙ₀ninBᵣ₁op := TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₀neaᵢ₀ (n := 1) <|
+      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₀neaₚ₀ (n := 2) <|
+      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₀neaₜ₀ (n := 3) <|
+      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₀neaₗ₀ aₙ₀ninBᵣ₁ (n := 4)
+    let Bᵣeq := TypeVar_open_inj_of_not_mem_freeTypeVars aₗ₀ninBᵣ₀ aₗ₀ninBᵣ₁ <|
       TypeVar_open_inj_of_not_mem_freeTypeVars aₜ₀ninBᵣ₀op aₜ₀ninBᵣ₁op <|
-      TypeVar_open_inj_of_not_mem_freeTypeVars aₗ₀ninBᵣ₀op aₗ₀ninBᵣ₁op Bᵣopeq
+      TypeVar_open_inj_of_not_mem_freeTypeVars aₚ₀ninBᵣ₀op aₚ₀ninBᵣ₁op <|
+      TypeVar_open_inj_of_not_mem_freeTypeVars aᵢ₀ninBᵣ₀op aᵢ₀ninBᵣ₁op <|
+      TypeVar_open_inj_of_not_mem_freeTypeVars aₙ₀ninBᵣ₀op aₙ₀ninBᵣ₁op Bᵣopeq
 
     let ⟨aᵢ₁, aᵢ₁nin⟩ := I₁₀ ++ I₁₁ ++ ↑Bₗ₀.freeTypeVars ++ ↑Bₗ₁.freeTypeVars |>.exists_fresh
     let ⟨aᵢ₁nin₀₁Bₗ₀, aᵢ₁ninBₗ₁⟩ := List.not_mem_append'.mp aᵢ₁nin
@@ -274,12 +274,12 @@ theorem TypeScheme.KindingAndElaboration.deterministic (σke₀ : [[Γc; Γ ⊢ 
     let ⟨_, Bₗopeq⟩ := keBₗ₀ aᵢ₁ aᵢ₁nin₀ aₙ₁ aₙ₁nin₀ |>.deterministic <|
       keBₗ₁ aᵢ₁ aᵢ₁nin₁ aₙ₁ aₙ₁nin₁
     let aₙ₁neaᵢ₁ := List.ne_of_not_mem_cons aₙ₁nin₀
-    let aᵢ₁ninBₗ₀op :=
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₁neaᵢ₁.symm aᵢ₁ninBₗ₀ (n := 0)
-    let aᵢ₁ninBₗ₁op :=
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₁neaᵢ₁.symm aᵢ₁ninBₗ₁ (n := 0)
-    let Bₗeq := TypeVar_open_inj_of_not_mem_freeTypeVars aₙ₁ninBₗ₀ aₙ₁ninBₗ₁ <|
-      TypeVar_open_inj_of_not_mem_freeTypeVars aᵢ₁ninBₗ₀op aᵢ₁ninBₗ₁op Bₗopeq
+    let aₙ₁ninBₗ₀op :=
+      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₁neaᵢ₁ aₙ₁ninBₗ₀ (n := 1)
+    let aₙ₁ninBₗ₁op :=
+      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₁neaᵢ₁ aₙ₁ninBₗ₁ (n := 1)
+    let Bₗeq := TypeVar_open_inj_of_not_mem_freeTypeVars aᵢ₁ninBₗ₀ aᵢ₁ninBₗ₁ <|
+      TypeVar_open_inj_of_not_mem_freeTypeVars aₙ₁ninBₗ₀op aₙ₁ninBₗ₁op Bₗopeq
 
     exact ⟨
       rfl,
@@ -303,9 +303,9 @@ theorem TypeScheme.KindingAndElaboration.deterministic (σke₀ : [[Γc; Γ ⊢ 
               ⟩,
             ⟩,
           ⟩,
-          app.injEq .. |>.mpr ⟨
+          arr.injEq .. |>.mpr ⟨
             rfl,
-            arr.injEq .. |>.mpr ⟨rfl, app.injEq .. |>.mpr ⟨rfl, Aeq⟩⟩
+            app.injEq .. |>.mpr ⟨rfl, Aeq⟩
           ⟩
         ⟩
       ⟩
@@ -430,58 +430,79 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
       let ⟨a, anin⟩ := Γ.typeVarDom ++ ↑A'.freeTypeVars |>.exists_fresh
       let ⟨aninΓ, aninA'⟩ := List.not_mem_append'.mp anin
       let ⟨A'k, _⟩ := Γcw.KindingAndElaboration_of_ClassEnvironment_in inΓc κ'e a
+      rw [← Δ.empty_append] at Γwe Bk ⊢
       exact A'k.weakening (Γwe.soundness.typeVarExt <| Γwe.TypeVarNotInDom_preservation aninΓ)
-        (Δ'' := .empty) |>.Type_open_preservation (Δ' := .empty) aninA' Bk
+        (Δ := .empty) (Δ'' := .typeExt .empty ..) |>.Type_open_preservation (Δ' := .empty) aninA' Bk
     · case isFalse h =>
       let ⟨a, anin⟩ := Γ.typeVarDom ++ ↑(Aₛ (i - 1)).freeTypeVars |>.exists_fresh
       let ⟨aninΓ, aninAₛ⟩ := List.not_mem_append'.mp anin
       let ⟨_, Aₛke⟩ := Γcw.KindingAndElaboration_of_ClassEnvironment_in inΓc κ'e a
       rw [Nat.add_comm] at iltnsucc
       have : i - 1 < n := Nat.sub_lt_left_of_lt_add (Nat.pos_of_ne_zero h) iltnsucc
-      exact Aₛke (i - 1) ⟨Nat.zero_le _, this⟩
-        |>.weakening (Γwe.soundness.typeVarExt <| Γwe.TypeVarNotInDom_preservation aninΓ)
-          (Δ'' := .empty) |>.Type_open_preservation (Δ' := .empty) aninAₛ Bk
+      rw [← Δ.empty_append] at Γwe Bk ⊢
+      exact Aₛke (i - 1) ⟨Nat.zero_le _, this⟩ |>.weakening
+        (Γwe.soundness.typeVarExt <| Γwe.TypeVarNotInDom_preservation aninΓ)
+        (Δ := .empty) (Δ'' := .typeExt .empty ..) |>.Type_open_preservation (Δ' := .empty) aninAₛ Bk
   | .qual (.mono (.all (.mk κ ψ) ρ)), .all I ψke κe' ρke =>
     let .constr := κe
     let Aopki : «F⊗⊕ω».Kinding .. := .lam (I := Γ.typeVarDom ++ I) fun a anin =>
       let ⟨aninΓ, aninI⟩ := List.not_mem_append'.mp anin
       ψke a aninI |>.soundness (Γwe.typeExt aninΓ κe') .constr
     .prod <| .listApp Aopki <| ρke.soundness Γwe κe'.row
-  | .qual (.mono (.ind ρ)), .ind I₀ I₁ ρke κ'e keBᵣ keBₗ =>
+  | .qual (.mono (.ind ρ)), .ind I₀ I₁ ρke κ'e keBᵣ keBₗ => by
     let .constr := κe
-    let ⟨aₗ, aₗnin⟩ := Γ.typeVarDom ++ I₀ |>.exists_fresh
-    let ⟨aₗninΓ, aₗnin₀⟩ := List.not_mem_append'.mp aₗnin
-    let Γₗ := Γ.typeExt aₗ _
-    let I₀ₗ : List TypeVarId := aₗ :: I₀
-    let ⟨aₜ, aₜnin⟩ := Γₗ.typeVarDom ++ I₀ₗ |>.exists_fresh
-    let ⟨aₜninΓ, aₜnin₀⟩ := List.not_mem_append'.mp aₜnin
-    let Γₗₜ := Γₗ.typeExt aₜ _
-    let I₀ₗₜ : List TypeVarId := aₜ :: I₀ₗ
-    let ⟨aₚ, aₚnin⟩ := Γₗₜ.typeVarDom ++ I₀ₗₜ |>.exists_fresh
-    let ⟨aₚninΓ, aₚnin₀⟩ := List.not_mem_append'.mp aₚnin
-    let Γₗₜₚ := Γₗₜ.typeExt aₚ _
-    let I₀ₗₜₚ : List TypeVarId := aₚ :: I₀ₗₜ
-    let ⟨aᵢ, aᵢnin⟩ := Γₗₜₚ.typeVarDom ++ I₀ₗₜₚ ++ I₁ |>.exists_fresh
-    let ⟨aᵢninΓₗₜₚ₀, aᵢnin₁⟩ := List.not_mem_append'.mp aᵢnin
-    let ⟨aᵢninΓₗₜₚ, aᵢnin₀⟩ := List.not_mem_append'.mp aᵢninΓₗₜₚ₀
-    let aᵢninΓ := List.not_mem_of_not_mem_cons <| List.not_mem_of_not_mem_cons
-      <| List.not_mem_of_not_mem_cons <| aᵢninΓₗₜₚ
-    let Γₗₜₚᵢ := Γₗₜₚ.typeExt aᵢ _
-    let I₀ₗₜₚᵢ : List TypeVarId := aᵢ :: I₀ₗₜₚ
-    let I₁ᵢ : List TypeVarId := aᵢ :: I₁
-    let ⟨aₙ, aₙnin⟩ := Γₗₜₚᵢ.typeVarDom ++ I₀ₗₜₚᵢ ++ I₁ᵢ |>.exists_fresh
-    let ⟨aₙninΓₗₜₚᵢ₀, aₙnin₁⟩ := List.not_mem_append'.mp aₙnin
-    let ⟨aₙninΓₗₜₚᵢ, aₙnin₀⟩ := List.not_mem_append'.mp aₙninΓₗₜₚᵢ₀
-    let ⟨aₙneaᵢ, aₙninΓₗₜₚ⟩ := List.ne_and_not_mem_of_not_mem_cons aₙninΓₗₜₚᵢ
-    let aₙninΓ := List.not_mem_of_not_mem_cons <| List.not_mem_of_not_mem_cons
-      <| List.not_mem_of_not_mem_cons <| aₙninΓₗₜₚ
-    let aₙninΓᵢ := List.not_mem_cons_of_ne_of_not_mem aₙneaᵢ aₙninΓ
-    let Γₗₜₚᵢₙwe := Γwe.typeExt aₗninΓ .label |>.typeExt aₜninΓ κ'e |>.typeExt aₚninΓ κ'e.row
-      |>.typeExt aᵢninΓₗₜₚ κ'e.row |>.typeExt aₙninΓₗₜₚᵢ κ'e.row
-    let Γᵢₙwe := Γwe.typeExt aᵢninΓ κ'e.row |>.typeExt aₙninΓᵢ κ'e.row
-    .ind_evidence Γwe.soundness
-      (keBᵣ aₗ aₗnin₀ aₜ aₜnin₀ aₚ aₚnin₀ aᵢ aᵢnin₀ aₙ aₙnin₀ |>.soundness Γₗₜₚᵢₙwe .constr)
-      (keBₗ aᵢ aᵢnin₁ aₙ aₙnin₁ |>.soundness Γᵢₙwe .constr)
+    apply Kinding.ind_evidence Γwe.soundness (ρke.soundness Γwe κ'e.row)
+      (I₀ := I₀ ++ Γ.typeVarDom) (I₁ := I₁ ++ Γ.typeVarDom)
+    · intro aₗ aₗnin aₜ aₜnin aₚ aₚnin aᵢ aᵢnin aₙ aₙnin
+      let ⟨aₗninI₀, aₗninΓ⟩ := List.not_mem_append'.mp aₗnin
+
+      let ⟨aₜneaₗ, aₜnin'⟩ := List.not_mem_cons.mp aₜnin
+      let ⟨aₜninI₀, aₜninΓ⟩ := List.not_mem_append'.mp aₜnin'
+      let aₜninI₀' := List.not_mem_cons.mpr ⟨aₜneaₗ, aₜninI₀⟩
+      let aₜninΓ' := List.not_mem_cons.mpr ⟨aₜneaₗ, aₜninΓ⟩
+
+      let ⟨aₚneaₜ, aₚnin'⟩ := List.not_mem_cons.mp aₚnin
+      let ⟨aₚneaₗ, aₚnin''⟩ := List.not_mem_cons.mp aₚnin'
+      let ⟨aₚninI₀, aₚninΓ⟩ := List.not_mem_append'.mp aₚnin''
+      let aₚninI₀' := List.not_mem_cons.mpr ⟨aₚneaₜ, List.not_mem_cons.mpr ⟨aₚneaₗ, aₚninI₀⟩⟩
+      let aₚninΓ' := List.not_mem_cons.mpr ⟨aₚneaₜ, List.not_mem_cons.mpr ⟨aₚneaₗ, aₚninΓ⟩⟩
+
+      let ⟨aᵢneaₚ, aᵢnin'⟩ := List.not_mem_cons.mp aᵢnin
+      let ⟨aᵢneaₜ, aᵢnin''⟩ := List.not_mem_cons.mp aᵢnin'
+      let ⟨aᵢneaₗ, aᵢnin'''⟩ := List.not_mem_cons.mp aᵢnin''
+      let ⟨aᵢninI₀, aᵢninΓ⟩ := List.not_mem_append'.mp aᵢnin'''
+      let aᵢninI₀' := List.not_mem_cons.mpr
+        ⟨aᵢneaₚ, List.not_mem_cons.mpr ⟨aᵢneaₜ, List.not_mem_cons.mpr ⟨aᵢneaₗ, aᵢninI₀⟩⟩⟩
+      let aᵢninΓ' := List.not_mem_cons.mpr
+        ⟨aᵢneaₚ, List.not_mem_cons.mpr ⟨aᵢneaₜ, List.not_mem_cons.mpr ⟨aᵢneaₗ, aᵢninΓ⟩⟩⟩
+
+      let ⟨aₙneaᵢ, aₙnin'⟩ := List.not_mem_cons.mp aₙnin
+      let ⟨aₙneaₚ, aₙnin''⟩ := List.not_mem_cons.mp aₙnin'
+      let ⟨aₙneaₜ, aₙnin'''⟩ := List.not_mem_cons.mp aₙnin''
+      let ⟨aₙneaₗ, aₙnin''''⟩ := List.not_mem_cons.mp aₙnin'''
+      let ⟨aₙninI₀, aₙninΓ⟩ := List.not_mem_append'.mp aₙnin''''
+      let aₙninI₀' := List.not_mem_cons.mpr ⟨
+        aₙneaᵢ,
+        List.not_mem_cons.mpr
+          ⟨aₙneaₚ, List.not_mem_cons.mpr ⟨aₙneaₜ, List.not_mem_cons.mpr ⟨aₙneaₗ, aₙninI₀⟩⟩⟩
+      ⟩
+      let aₙninΓ' := List.not_mem_cons.mpr ⟨
+        aₙneaᵢ,
+        List.not_mem_cons.mpr
+          ⟨aₙneaₚ, List.not_mem_cons.mpr ⟨aₙneaₜ, List.not_mem_cons.mpr ⟨aₙneaₗ, aₙninΓ⟩⟩⟩
+      ⟩
+
+      exact keBᵣ aₗ aₗninI₀ aₜ aₜninI₀' aₚ aₚninI₀' aᵢ aᵢninI₀' aₙ aₙninI₀' |>.soundness
+        (Γwe.typeExt aₗninΓ .label |>.typeExt aₜninΓ' κ'e |>.typeExt aₚninΓ' κ'e.row
+           |>.typeExt aᵢninΓ' κ'e.row |>.typeExt aₙninΓ' κ'e.row) .constr
+    · intro aᵢ aᵢnin aₙ aₙnin
+      let ⟨aᵢninI₁, aᵢninΓ⟩ := List.not_mem_append'.mp aᵢnin
+      let ⟨aₙneaᵢ, aₙnin'⟩ := List.not_mem_cons.mp aₙnin
+      let ⟨aₙninI₁, aₙninΓ⟩ := List.not_mem_append'.mp aₙnin'
+      let aₙninI₁' := List.not_mem_cons.mpr ⟨aₙneaᵢ, aₙninI₁⟩
+      let aₙninΓ' := List.not_mem_cons.mpr ⟨aₙneaᵢ, aₙninΓ⟩
+      exact keBₗ _ aᵢninI₁ _ aₙninI₁' |>.soundness
+        (Γwe.typeExt aᵢninΓ κ'e.row |>.typeExt aₙninΓ' κ'e.row) .constr
   | .qual (.mono (.split «λτ» ρ₀ ρ₁ ρ₂)), σke =>
     let .split concatke := σke
     concatke.soundness Γwe κe

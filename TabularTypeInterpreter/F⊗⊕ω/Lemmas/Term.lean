@@ -109,10 +109,8 @@ theorem prod_id (Δwf : [[⊢ Δ]]) (Aki : [[Δ ⊢ A : L K]])
       apply Typing.var (Δwf.typeVarExt anin |>.termVarExt xnin _) .head
       apply Kinding.prod
       apply Kinding.listApp (.var .head)
-      rw [Aki.TypeVarLocallyClosed_of.TypeVar_open_eq, ← (Δ.typeExt ..).empty_append]
-      apply Aki.weakening _ (Δ' := .empty) (Δ'' := .typeExt .empty ..)
-      rw [Environment.empty_append]
-      exact Δwf.typeVarExt anin
+      rw [Aki.TypeVarLocallyClosed_of.TypeVar_open_eq]
+      exact Aki.weakening (Δ' := .typeExt .empty ..) (Δ'' := .empty) <| Δwf.typeVarExt anin
 
 theorem sum_id (Δwf : [[⊢ Δ]]) (Aki : [[Δ ⊢ A : L K]])
   : [[Δ ⊢ Λ a : K ↦ *. λ x : ⊕ (a$0 ⟦A⟧). x$0 : ∀ a : K ↦ *. (⊕ (a$0 ⟦A⟧)) → ⊕ (a$0 ⟦A⟧)]] :=
@@ -123,10 +121,8 @@ theorem sum_id (Δwf : [[⊢ Δ]]) (Aki : [[Δ ⊢ A : L K]])
       apply Typing.var (Δwf.typeVarExt anin |>.termVarExt xnin _) .head
       apply Kinding.sum
       apply Kinding.listApp (.var .head)
-      rw [Aki.TypeVarLocallyClosed_of.TypeVar_open_eq, ← (Δ.typeExt ..).empty_append]
-      apply Aki.weakening _ (Δ' := .empty) (Δ'' := .typeExt .empty ..)
-      rw [Environment.empty_append]
-      exact Δwf.typeVarExt anin
+      rw [Aki.TypeVarLocallyClosed_of.TypeVar_open_eq]
+      exact Aki.weakening (Δ' := .typeExt .empty ..) (Δ'' := .empty) <| Δwf.typeVarExt anin
 
 theorem TermVarLocallyClosed_of (EtyA : [[Δ ⊢ E : A]]) : E.TermVarLocallyClosed 0 := by
   induction EtyA with

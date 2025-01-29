@@ -1,148 +1,11 @@
 import Aesop
+import TabularTypeInterpreter.Lemmas.TypeEnvironment
 import TabularTypeInterpreter.Semantics.Type
 
 namespace TabularTypeInterpreter
 
 open «F⊗⊕ω»
-
-mutual
-
-@[simp]
-theorem TypeLambda.TypeVar_open_sizeOf («λτ» : TypeLambda)
-  : sizeOf («λτ».TypeVar_open a n) = sizeOf «λτ» := open TypeLambda in by
-  let .mk κ τ := «λτ»
-  rw [TypeVar_open, mk.sizeOf_spec, mk.sizeOf_spec, τ.TypeVar_open_sizeOf]
-
-@[simp]
-theorem Monotype.TypeVar_open_sizeOf (τ : Monotype) : sizeOf (τ.TypeVar_open a n) = sizeOf τ :=
-  open Monotype in by
-  match τ with
-  | .var (.bound _) =>
-    rw [TypeVar_open]
-    split
-    · case isTrue h =>
-      rw [var.sizeOf_spec, var.sizeOf_spec, ← h]
-      dsimp only [sizeOf]
-      rw [default.sizeOf, default.sizeOf]
-    · case isFalse => rfl
-  | .var (.free _) =>
-    rw [TypeVar_open]
-    split <;> rfl
-  | .app φ τ =>
-    rw [TypeVar_open, app.sizeOf_spec, app.sizeOf_spec, φ.TypeVar_open_sizeOf,
-        τ.TypeVar_open_sizeOf]
-  | .arr τ₀ τ₁ =>
-    rw [TypeVar_open, arr.sizeOf_spec, arr.sizeOf_spec, τ₀.TypeVar_open_sizeOf,
-        τ₁.TypeVar_open_sizeOf]
-  | .label _ => rw [TypeVar_open]
-  | .floor ξ => rw [TypeVar_open, floor.sizeOf_spec, floor.sizeOf_spec, ξ.TypeVar_open_sizeOf]
-  | .comm _ => rw [TypeVar_open]
-  | .row ξτs κ? =>
-    rw [TypeVar_open, List.mapMem_eq_map]
-    match ξτs with
-    | [] => rw [List.map]
-    | (ξ, τ) :: ξτs' =>
-      rw [List.map, row.sizeOf_spec, row.sizeOf_spec, List.cons.sizeOf_spec, List.cons.sizeOf_spec,
-          Prod.mk.sizeOf_spec, Prod.mk.sizeOf_spec, ξ.TypeVar_open_sizeOf, τ.TypeVar_open_sizeOf]
-      have : sizeOf ((row ξτs' κ?).TypeVar_open a n) = sizeOf (row ξτs' κ?) :=
-        (row ξτs' κ?).TypeVar_open_sizeOf
-      simp_arith [TypeVar_open] at this
-      simp_arith [this]
-  | .prod μ ρ =>
-    rw [TypeVar_open, prod.sizeOf_spec, prod.sizeOf_spec, μ.TypeVar_open_sizeOf,
-        ρ.TypeVar_open_sizeOf]
-  | .sum μ ρ =>
-    rw [TypeVar_open, sum.sizeOf_spec, sum.sizeOf_spec, μ.TypeVar_open_sizeOf,
-        ρ.TypeVar_open_sizeOf]
-  | .lift «λτ» ρ =>
-    rw [TypeVar_open, lift.sizeOf_spec, lift.sizeOf_spec, «λτ».TypeVar_open_sizeOf,
-        ρ.TypeVar_open_sizeOf]
-  | .contain ρ₀ μ ρ₁ =>
-    rw [TypeVar_open, contain.sizeOf_spec, contain.sizeOf_spec, ρ₀.TypeVar_open_sizeOf,
-        μ.TypeVar_open_sizeOf, ρ₁.TypeVar_open_sizeOf]
-  | .concat ρ₀ μ ρ₁ ρ₂ =>
-    rw [TypeVar_open, concat.sizeOf_spec, concat.sizeOf_spec, ρ₀.TypeVar_open_sizeOf,
-        μ.TypeVar_open_sizeOf, ρ₁.TypeVar_open_sizeOf, ρ₂.TypeVar_open_sizeOf]
-  | .typeClass _ τ =>
-    rw [TypeVar_open, typeClass.sizeOf_spec, typeClass.sizeOf_spec, τ.TypeVar_open_sizeOf]
-  | .all «λτ» ρ =>
-    rw [TypeVar_open, all.sizeOf_spec, all.sizeOf_spec, «λτ».TypeVar_open_sizeOf,
-        ρ.TypeVar_open_sizeOf]
-  | .ind ρ => rw [TypeVar_open, ind.sizeOf_spec, ind.sizeOf_spec, ρ.TypeVar_open_sizeOf]
-  | .split «λτ» ρ₀ ρ₁ ρ₂ =>
-    rw [TypeVar_open, split.sizeOf_spec, split.sizeOf_spec, «λτ».TypeVar_open_sizeOf,
-        ρ₀.TypeVar_open_sizeOf, ρ₁.TypeVar_open_sizeOf, ρ₂.TypeVar_open_sizeOf]
-
-end
-
-mutual
-
-@[simp]
-theorem TypeLambda.TypeVar_open_sizeOf' («λτ» : TypeLambda)
-  : («λτ».TypeVar_open a n).sizeOf' = «λτ».sizeOf' := open TypeLambda in by
-  let .mk κ τ := «λτ»
-  rw [TypeVar_open, sizeOf', sizeOf', τ.TypeVar_open_sizeOf']
-
-@[simp]
-theorem Monotype.TypeVar_open_sizeOf' (τ : Monotype) : (τ.TypeVar_open a n).sizeOf' = τ.sizeOf' :=
-  open Monotype in by
-  match τ with
-  | .var (.bound _) =>
-    rw [TypeVar_open]
-    split
-    · case isTrue h =>
-      rw [sizeOf', sizeOf', ← h]
-      dsimp only [sizeOf]
-      rw [default.sizeOf, default.sizeOf]
-    · case isFalse => rfl
-  | .var (.free _) =>
-    rw [TypeVar_open]
-    split
-    · case isTrue h =>
-      rw [sizeOf', sizeOf']
-      dsimp only [sizeOf]
-      rw [default.sizeOf, default.sizeOf]
-    · case isFalse h => rfl
-  | .app φ τ =>
-    rw [TypeVar_open, sizeOf', sizeOf', φ.TypeVar_open_sizeOf', τ.TypeVar_open_sizeOf']
-  | .arr τ₀ τ₁ =>
-    rw [TypeVar_open, sizeOf', sizeOf', τ₀.TypeVar_open_sizeOf', τ₁.TypeVar_open_sizeOf']
-  | .label _ => rw [TypeVar_open]
-  | .floor ξ => rw [TypeVar_open, sizeOf', sizeOf', ξ.TypeVar_open_sizeOf']
-  | .comm _ => rw [TypeVar_open]
-  | .row ξτs κ? =>
-    rw [TypeVar_open, List.mapMem_eq_map]
-    match ξτs with
-    | [] => rw [List.map]
-    | (ξ, τ) :: ξτs' =>
-      rw [List.map, sizeOf', sizeOf', List.mapMem_eq_map, List.map_cons, List.sum_cons,
-          ξ.TypeVar_open_sizeOf', τ.TypeVar_open_sizeOf']
-      have : ((row ξτs' κ?).TypeVar_open a n).sizeOf' = (row ξτs' κ?).sizeOf' :=
-        (row ξτs' κ?).TypeVar_open_sizeOf'
-      simp_arith [TypeVar_open] at this
-      simp_arith [this]
-  | .prod μ ρ =>
-    rw [TypeVar_open, sizeOf', sizeOf', μ.TypeVar_open_sizeOf', ρ.TypeVar_open_sizeOf']
-  | .sum μ ρ =>
-    rw [TypeVar_open, sizeOf', sizeOf', μ.TypeVar_open_sizeOf', ρ.TypeVar_open_sizeOf']
-  | .lift «λτ» ρ =>
-    rw [TypeVar_open, sizeOf', sizeOf', «λτ».TypeVar_open_sizeOf', ρ.TypeVar_open_sizeOf']
-  | .contain ρ₀ μ ρ₁ =>
-    rw [TypeVar_open, sizeOf', sizeOf', ρ₀.TypeVar_open_sizeOf', μ.TypeVar_open_sizeOf',
-        ρ₁.TypeVar_open_sizeOf']
-  | .concat ρ₀ μ ρ₁ ρ₂ =>
-    rw [TypeVar_open, sizeOf', sizeOf', ρ₀.TypeVar_open_sizeOf', μ.TypeVar_open_sizeOf',
-        ρ₁.TypeVar_open_sizeOf', ρ₂.TypeVar_open_sizeOf']
-  | .typeClass _ τ =>
-    rw [TypeVar_open, sizeOf', sizeOf', τ.TypeVar_open_sizeOf']
-  | .all «λτ» ρ =>
-    rw [TypeVar_open, sizeOf', sizeOf', «λτ».TypeVar_open_sizeOf', ρ.TypeVar_open_sizeOf']
-  | .ind ρ => rw [TypeVar_open, sizeOf', sizeOf', ρ.TypeVar_open_sizeOf']
-  | .split «λτ» ρ₀ ρ₁ ρ₂ =>
-    rw [TypeVar_open, sizeOf', sizeOf', «λτ».TypeVar_open_sizeOf', ρ₀.TypeVar_open_sizeOf',
-        ρ₁.TypeVar_open_sizeOf', ρ₂.TypeVar_open_sizeOf']
-
-end
+open Std
 
 namespace Monotype
 
@@ -170,6 +33,44 @@ def rec_uniform {motive : Monotype → Prop} (var : ∀ a, motive (.var a))
     (fun | .mk κ τ, ρ₀, ρ₁, ρ₂, mτ, mρ₀, mρ₁, mρ₂ => split κ τ ρ₀ ρ₁ ρ₂ mτ mρ₀ mρ₁ mρ₂)
     (fun _ => (nomatch ·))
     (fun _ _ mhead mtail _ mem => match mem with | .head _ => mhead | .tail _ mem' => mtail _ mem') (fun _ _ mτ₀ mτ₁ => ⟨mτ₀, mτ₁⟩) τ
+
+@[simp]
+theorem TypeVar_open_sizeOf (τ : Monotype) : sizeOf (τ.TypeVar_open a n) = sizeOf τ := by
+  induction τ using rec_uniform generalizing n
+  case row ih =>
+    rw [TypeVar_open, List.mapMem_eq_map, row.sizeOf_spec, row.sizeOf_spec,
+        List.sizeOf_map_eq_of_eq_id_of_mem]
+    intro ξτ mem
+    let (ξ, τ) := ξτ
+    rw [Prod.mk.sizeOf_spec, Prod.mk.sizeOf_spec, ih _ mem |>.left, ih _ mem |>.right]
+  all_goals aesop
+    (add simp [TypeVar_open, TypeLambda.TypeVar_open, var.sizeOf_spec, app.sizeOf_spec,
+      arr.sizeOf_spec, floor.sizeOf_spec, comm.sizeOf_spec, row.sizeOf_spec, prod.sizeOf_spec,
+      sum.sizeOf_spec, lift.sizeOf_spec, contain.sizeOf_spec, concat.sizeOf_spec,
+      typeClass.sizeOf_spec, all.sizeOf_spec, ind.sizeOf_spec, split.sizeOf_spec,
+      TypeLambda.mk.sizeOf_spec])
+
+@[simp]
+theorem TypeVar_open_sizeOf' (τ : Monotype) : (τ.TypeVar_open a n).sizeOf' = τ.sizeOf' := by
+  induction τ using rec_uniform generalizing n
+  case row ih =>
+    rw [TypeVar_open, List.mapMem_eq_map, sizeOf', List.mapMem_eq_map, sizeOf', List.mapMem_eq_map,
+        List.map_map, List.sum_map_eq_of_eq_of_mem]
+    intro ξτ mem
+    rw [Function.comp, ih _ mem |>.left, ih _ mem |>.right]
+  all_goals aesop
+    (add simp [TypeVar_open, TypeLambda.TypeVar_open, sizeOf', TypeLambda.sizeOf'])
+
+@[simp]
+theorem TypeVar_close_sizeOf' (τ : Monotype) : (τ.TypeVar_close a n).sizeOf' = τ.sizeOf' := by
+  induction τ using rec_uniform generalizing n
+  case row ih =>
+    rw [TypeVar_close, List.mapMem_eq_map, sizeOf', List.mapMem_eq_map, sizeOf', List.mapMem_eq_map,
+        List.map_map, List.sum_map_eq_of_eq_of_mem]
+    intro ξτ mem
+    rw [Function.comp, ih _ mem |>.left, ih _ mem |>.right]
+  all_goals aesop
+    (add simp [TypeVar_close, TypeLambda.TypeVar_close, sizeOf', TypeLambda.sizeOf'])
 
 @[simp]
 theorem sizeOf_pos (τ : Monotype) : 0 < sizeOf τ := by cases τ <;> simp_arith
@@ -206,15 +107,72 @@ theorem TypeVar_open_TypeVar_close_id
     (add simp [TypeVar_open, TypeVar_close, TypeLambda.TypeVar_open, TypeLambda.TypeVar_close],
       50% cases TypeVarLocallyClosed, safe cases TypeLambda.TypeVarLocallyClosed)
 
+theorem TypeVar_open_drop
+  : m < n → (TypeVar_open τ a m).TypeVarLocallyClosed n → TypeVarLocallyClosed τ n := by
+  induction τ using rec_uniform generalizing m n <;> aesop
+    (add simp [TypeVar_open, TypeLambda.TypeVar_open], safe cases TypeVarLocallyClosed,
+      safe cases TypeLambda.TypeVarLocallyClosed, safe constructors TypeVarLocallyClosed,
+      safe constructors TypeLambda.TypeVarLocallyClosed)
+
+theorem Monotype_open_TypeVar_close_eq_TypeVar_subst (τlc : TypeVarLocallyClosed τ n)
+  : (τ.TypeVar_close a n).Monotype_open τ' n = τ.TypeVar_subst a τ' := by
+  induction τ using rec_uniform generalizing n
+  case lift ih₀ ih₁ =>
+    let .lift (.mk τ'lc) ρke := τlc
+    rw [TypeVar_close, Monotype_open, TypeVar_subst, TypeLambda.TypeVar_close,
+        TypeLambda.Monotype_open, TypeLambda.TypeVar_subst, ih₀ τ'lc, ih₁ ρke]
+  case all ih₀ ih₁ =>
+    let .all (.mk ψlc) ρke := τlc
+    rw [TypeVar_close, Monotype_open, TypeVar_subst, TypeLambda.TypeVar_close,
+        TypeLambda.Monotype_open, TypeLambda.TypeVar_subst, ih₀ ψlc, ih₁ ρke]
+  case split ih₀ ih₁ ih₂ ih₃ =>
+    let .split (.mk τ'lc) ρ₀ke ρ₁ke ρ₂ke := τlc
+    rw [TypeVar_close, Monotype_open, TypeVar_subst, TypeLambda.TypeVar_close,
+        TypeLambda.Monotype_open, TypeLambda.TypeVar_subst, ih₀ τ'lc, ih₁ ρ₀ke, ih₂ ρ₁ke, ih₃ ρ₂ke]
+  all_goals aesop
+    (add simp [TypeVar_close, Monotype_open, TypeVar_subst], safe cases TypeVarLocallyClosed)
+
 end TypeVarLocallyClosed
 
-theorem TypeVar_open_Monotype_open_comm (τ : Monotype) : TypeVarLocallyClosed τ' m → m ≠ n →
+theorem TypeVar_open_Monotype_open_comm (τ : Monotype) {τ'} : TypeVarLocallyClosed τ' m → m ≠ n →
     (τ.TypeVar_open a m).Monotype_open τ' n = (τ.Monotype_open τ' n).TypeVar_open a m := by
   induction τ using rec_uniform generalizing m n <;> aesop
     (add simp [TypeVar_open, Monotype_open, TypeLambda.TypeVar_open, TypeLambda.Monotype_open],
       20% [TypeVarLocallyClosed.TypeVar_open_id, Eq.symm, TypeVarLocallyClosed.weakening])
   · case left => exact a_1 _ _ a_5 |>.left a_2 a_3
   · case right => exact a_1 _ _ a_5 |>.right a_2 a_3
+
+theorem not_mem_freeTypeVars_TypeVar_open_intro
+  : a ∉ freeTypeVars τ → a ≠ a' → a ∉ (τ.TypeVar_open a' n).freeTypeVars := by
+  induction τ using rec_uniform generalizing n
+  case row ih =>
+    intro anin ne
+    rw [TypeVar_open, freeTypeVars]
+    simp [Function.comp]
+    intro I ξ τ mem eq
+    cases eq
+    have := ih (ξ, τ) mem
+    rw [freeTypeVars, List.mapMem_eq_map] at anin
+    let ⟨xninτ, xninξ⟩ := List.not_mem_append'.mp <|
+      List.not_mem_flatten.mp anin (τ.freeTypeVars ++ ξ.freeTypeVars) <|
+      List.mem_map.mpr ⟨(ξ, τ), mem, rfl⟩
+    exact List.not_mem_append'.mpr ⟨this.right xninτ ne, this.left xninξ ne⟩
+  all_goals aesop
+    (add simp [TypeVar_open, TypeLambda.TypeVar_open, freeTypeVars, TypeLambda.freeTypeVars])
+
+theorem not_mem_freeTypeVars_TypeVar_close : a ∉ (TypeVar_close τ a n).freeTypeVars := by
+  induction τ using rec_uniform generalizing n
+  case row ih =>
+    rw [TypeVar_close, List.mapMem_eq_map, freeTypeVars, List.mapMem_eq_map, List.map_map]
+    apply List.not_mem_flatten.mpr
+    intro ξτfreeTypeVars mem
+    rcases List.mem_map.mp mem with ⟨_, mem', rfl⟩
+    simp only [Function.comp]
+    apply List.not_mem_append'.mpr
+    exact ⟨ih _ mem' |>.right, ih _ mem' |>.left⟩
+  all_goals aesop
+    (add simp [TypeVar_close, freeTypeVars, TypeLambda.TypeVar_close, TypeLambda.freeTypeVars],
+      safe cases TypeVar)
 
 end Monotype
 
@@ -240,11 +198,44 @@ theorem TypeVar_open_sizeOf' (γ : QualifiedType) : (γ.TypeVar_open a n).sizeOf
   | .mono τ => rw [TypeVar_open, sizeOf', sizeOf', τ.TypeVar_open_sizeOf']
   | .qual ψ γ => rw [TypeVar_open, sizeOf', sizeOf', ψ.TypeVar_open_sizeOf', γ.TypeVar_open_sizeOf']
 
-theorem TypeVarLocallyClosed.TypeVar_open_TypeVar_close_id
+@[simp]
+theorem TypeVar_close_sizeOf' (γ : QualifiedType) : (γ.TypeVar_close a n).sizeOf' = γ.sizeOf' := by
+  match γ with
+  | .mono τ => rw [TypeVar_close, sizeOf', sizeOf', τ.TypeVar_close_sizeOf']
+  | .qual ψ γ => rw [TypeVar_close, sizeOf', sizeOf', ψ.TypeVar_close_sizeOf', γ.TypeVar_close_sizeOf']
+
+namespace TypeVarLocallyClosed
+
+theorem weakening (γlc : TypeVarLocallyClosed γ m) : TypeVarLocallyClosed γ (m + n) := by
+  induction γlc <;> aesop (simp_config := { arith := true })
+    (add safe constructors TypeVarLocallyClosed, 20% Monotype.TypeVarLocallyClosed.weakening)
+
+theorem TypeVar_open_TypeVar_close_id
   : TypeVarLocallyClosed γ n → (γ.TypeVar_close a n).TypeVar_open a n = γ := by
   induction γ <;> aesop
     (add simp [TypeVar_open, TypeVar_close], 50% cases TypeVarLocallyClosed,
       20% Monotype.TypeVarLocallyClosed.TypeVar_open_TypeVar_close_id)
+
+theorem TypeVar_open_drop
+  : m < n → (TypeVar_open γ a m).TypeVarLocallyClosed n → TypeVarLocallyClosed γ n := by
+  induction γ generalizing m n <;> aesop
+    (add simp TypeVar_open, safe cases TypeVarLocallyClosed, safe constructors TypeVarLocallyClosed,
+      20% Monotype.TypeVarLocallyClosed.TypeVar_open_drop)
+
+theorem Monotype_open_TypeVar_close_eq_TypeVar_subst (γlc : TypeVarLocallyClosed γ n)
+  : (γ.TypeVar_close a n).Monotype_open τ n = γ.TypeVar_subst a τ := by
+  match γ with
+  | .mono .. =>
+    let .mono τlc := γlc
+    rw [TypeVar_close, Monotype_open, TypeVar_subst,
+        τlc.Monotype_open_TypeVar_close_eq_TypeVar_subst]
+  | .qual .. =>
+    let .qual ψlc γ'lc := γlc
+    rw [TypeVar_close, Monotype_open, TypeVar_subst,
+        γ'lc.Monotype_open_TypeVar_close_eq_TypeVar_subst,
+        ψlc.Monotype_open_TypeVar_close_eq_TypeVar_subst]
+
+end TypeVarLocallyClosed
 
 theorem TypeVar_open_comm (γ : QualifiedType)
   : m ≠ n → (γ.TypeVar_open a m).TypeVar_open a' n = (γ.TypeVar_open a' n).TypeVar_open a m := by
@@ -255,6 +246,30 @@ theorem TypeVar_open_Monotype_open_comm (γ : QualifiedType) {τ : Monotype}
     (γ.TypeVar_open a m).Monotype_open τ n = (γ.Monotype_open τ n).TypeVar_open a m := by
   induction γ <;> aesop
     (add simp [TypeVar_open, Monotype_open], 20% Monotype.TypeVar_open_Monotype_open_comm)
+
+theorem not_mem_freeTypeVars_TypeVar_open_intro (anin : a ∉ freeTypeVars γ) (anea' : a ≠ a')
+  : a ∉ (γ.TypeVar_open a' n).freeTypeVars := by
+  match γ with
+  | .mono .. =>
+    rw [TypeVar_open]
+    rw [freeTypeVars] at anin ⊢
+    exact Monotype.not_mem_freeTypeVars_TypeVar_open_intro anin anea'
+  | .qual .. =>
+    rw [TypeVar_open]
+    rw [freeTypeVars] at anin ⊢
+    let ⟨aninψ, aninγ'⟩ := List.not_mem_append'.mp anin
+    exact List.not_mem_append'.mpr ⟨
+      Monotype.not_mem_freeTypeVars_TypeVar_open_intro aninψ anea',
+      not_mem_freeTypeVars_TypeVar_open_intro aninγ' anea'
+    ⟩
+
+theorem not_mem_freeTypeVars_TypeVar_close : a ∉ (TypeVar_close γ a n).freeTypeVars := by
+  induction γ with
+  | mono _ => exact Monotype.not_mem_freeTypeVars_TypeVar_close
+  | qual _ _ ih =>
+    rw [TypeVar_close, freeTypeVars]
+    apply List.not_mem_append'.mpr
+    exact ⟨Monotype.not_mem_freeTypeVars_TypeVar_close, ih⟩
 
 end QualifiedType
 
@@ -275,11 +290,47 @@ theorem TypeVar_open_sizeOf' (σ : TypeScheme) : (σ.TypeVar_open a n).sizeOf' =
   | .qual γ => rw [TypeVar_open, sizeOf', sizeOf', γ.TypeVar_open_sizeOf']
   | .quant _ σ => rw [TypeVar_open, sizeOf', sizeOf', σ.TypeVar_open_sizeOf']
 
-theorem TypeVarLocallyClosed.TypeVar_open_TypeVar_close_id
+@[simp]
+theorem TypeVar_close_sizeOf' (σ : TypeScheme) : (σ.TypeVar_close a n).sizeOf' = σ.sizeOf' := by
+  match σ with
+  | .qual γ => rw [TypeVar_close, sizeOf', sizeOf', γ.TypeVar_close_sizeOf']
+  | .quant _ σ => rw [TypeVar_close, sizeOf', sizeOf', σ.TypeVar_close_sizeOf']
+
+namespace TypeVarLocallyClosed
+
+theorem weakening (σlc : TypeVarLocallyClosed σ m) : TypeVarLocallyClosed σ (m + n) := by
+  induction σlc <;> aesop (simp_config := { arith := true })
+    (add safe constructors TypeVarLocallyClosed,
+      20% [of_eq, QualifiedType.TypeVarLocallyClosed.weakening])
+where
+  of_eq {σ m n} (σlc : TypeVarLocallyClosed σ m) (eq : m = n) : σ.TypeVarLocallyClosed n := by
+    rwa [eq] at σlc
+
+theorem TypeVar_open_TypeVar_close_id
   : TypeVarLocallyClosed σ n → (σ.TypeVar_close a n).TypeVar_open a n = σ  := by
   induction σ generalizing n <;> aesop
     (add simp [TypeVar_open, TypeVar_close], 50% cases TypeVarLocallyClosed,
       20% [QualifiedType.TypeVarLocallyClosed.TypeVar_open_TypeVar_close_id])
+
+theorem TypeVar_open_drop
+  : m < n → (TypeVar_open σ a m).TypeVarLocallyClosed n → TypeVarLocallyClosed σ n := by
+  induction σ generalizing m n <;> aesop
+    (add simp TypeVar_open, safe cases TypeVarLocallyClosed, safe constructors TypeVarLocallyClosed,
+      20% QualifiedType.TypeVarLocallyClosed.TypeVar_open_drop)
+
+theorem Monotype_open_TypeVar_close_eq_TypeVar_subst (σlc : TypeVarLocallyClosed σ n)
+  : (σ.TypeVar_close a n).Monotype_open τ n = σ.TypeVar_subst a τ := by
+  match σ with
+  | .qual .. =>
+    let .qual γlc := σlc
+    rw [TypeVar_close, Monotype_open, TypeVar_subst,
+        γlc.Monotype_open_TypeVar_close_eq_TypeVar_subst]
+  | .quant .. =>
+    let .quant σ'lc := σlc
+    rw [TypeVar_close, Monotype_open, TypeVar_subst,
+        σ'lc.Monotype_open_TypeVar_close_eq_TypeVar_subst]
+
+end TypeVarLocallyClosed
 
 theorem TypeVar_open_comm (σ : TypeScheme)
   : m ≠ n → (σ.TypeVar_open a m).TypeVar_open a' n = (σ.TypeVar_open a' n).TypeVar_open a m := by
@@ -292,6 +343,25 @@ theorem TypeVar_open_Monotype_open_comm (σ : TypeScheme) {τ : Monotype}
   induction σ generalizing m n <;> aesop
     (add simp [TypeVar_open, Monotype_open],
       20% [QualifiedType.TypeVar_open_Monotype_open_comm, Monotype.TypeVarLocallyClosed.weakening])
+
+theorem not_mem_freeTypeVars_TypeVar_open_intro (anin : a ∉ freeTypeVars σ) (anea' : a ≠ a')
+  : a ∉ (σ.TypeVar_open a' n).freeTypeVars := by
+  match σ with
+  | .qual _ =>
+    rw [TypeVar_open]
+    rw [freeTypeVars] at anin ⊢
+    exact QualifiedType.not_mem_freeTypeVars_TypeVar_open_intro anin anea'
+  | .quant .. =>
+    rw [TypeVar_open]
+    rw [freeTypeVars] at anin ⊢
+    exact not_mem_freeTypeVars_TypeVar_open_intro anin anea'
+
+theorem not_mem_freeTypeVars_TypeVar_close : a ∉ (TypeVar_close σ a n).freeTypeVars := by
+  induction σ generalizing n with
+  | qual _ => exact QualifiedType.not_mem_freeTypeVars_TypeVar_close
+  | quant _ _ ih =>
+    rw [TypeVar_close, freeTypeVars]
+    exact ih
 
 namespace KindingAndElaboration
 
@@ -344,13 +414,71 @@ theorem row_inversion
     ⟩
   ⟩
 
+theorem TypeVarLocallyClosed_of (σke : [[Γc; Γ ⊢ σ : κ ⇝ A]]) : σ.TypeVarLocallyClosed := by
+  induction σke using
+    rec (motive_2 := fun _ _ _ _ => True) (motive_3 := fun _ _ => ∀ {x : True}, True)
+  case scheme I _ _ ih =>
+    let ⟨a, anin⟩ := I.exists_fresh
+    exact .quant <| ih a anin |>.weakening.TypeVar_open_drop Nat.zero_lt_one
+  case row => exact .qual <| .mono <| .row sorry -- TODO: Fix generation of this constructor.
+  case lift I _ _ _ ih₀ ih₁ =>
+    let ⟨a, anin⟩ := I.exists_fresh
+    let .qual (.mono τlc) := ih₀ a anin
+    let .qual (.mono ρlc) := ih₁
+    exact .qual <| .mono <| .lift (.mk <| τlc.weakening.TypeVar_open_drop Nat.one_pos) ρlc
+  case ind ih₀ _ _ =>
+    let .qual (.mono ρlc) := ih₀
+    exact .qual <| .mono <| .ind ρlc
+  case all I _ _ _ ih₀ ih₁ =>
+    let ⟨a, anin⟩ := I.exists_fresh
+    let .qual (.mono ψlc) := ih₀ a anin
+    let .qual (.mono ρlc) := ih₁
+    exact .qual <| .mono <| .all (.mk <| ψlc.weakening.TypeVar_open_drop Nat.one_pos) ρlc
+  case split ih =>
+    let .qual (.mono (.concat (.lift «λτlc» ρ₀lc) _ ρ₁lc ρ₂lc)) := ih
+    exact .qual <| .mono <| .split «λτlc» ρ₀lc ρ₁lc ρ₂lc
+  all_goals aesop (add safe cases TypeVarLocallyClosed,
+    40% cases QualifiedType.TypeVarLocallyClosed, safe constructors TypeVarLocallyClosed,
+    safe constructors QualifiedType.TypeVarLocallyClosed,
+    safe constructors Monotype.TypeVarLocallyClosed)
+
 end KindingAndElaboration
 
 end TypeScheme
 
-def Monotype.label.Uniqueness.Perm_preservation {ξ' : Nat → Monotype}
-  (uni : [[unique(</ ξ@i // i in [:n] />)]]) (perm : List.Perm p [:n])
-  (eq : ∀ i, ξ' i = ξ (p.get! i)) : [[unique(</ ξ'@i // i in [:n] />)]] := by
+namespace Monotype.label.Uniqueness
+
+local instance : Inhabited Monotype where
+  default := .row [] none
+in
+def Monotype_open_preservation (uni : Uniqueness (List.map (TypeVar_open · a n) ξ))
+  : Uniqueness (ξ.map (·.Monotype_open τ n)) := by
+  generalize ξ'eq : ξ.map (·.TypeVar_open a n) = ξ' at uni
+  match uni with
+  | concrete ne (ℓ := ℓ) =>
+    rw [List.map_singleton_flatten] at ξ'eq
+    let length_eq : List.length (List.map ..) = List.length _ := by rw [ξ'eq]
+    rw [List.length_map, List.length_map, Range.length_toList, Nat.sub_zero] at length_eq
+    rw [← Range.map_get!_eq (as := ξ), length_eq, List.map_map] at ξ'eq ⊢
+    rw [Range.map_eq_of_eq_of_mem (by
+      intro i mem
+      simp only [Function.comp]
+      show _ = .label (ℓ i)
+      have := Range.eq_of_mem_of_map_eq ξ'eq i mem
+      simp only [Function.comp] at this
+      generalize ξ''eq : ξ.get! i = ξ'' at *
+      cases ξ'' <;> rw [TypeVar_open] at this
+      case label => rw [Monotype_open, label.inj this]
+      all_goals nomatch this
+    ), ← List.map_singleton_flatten, ← Range.map]
+    exact concrete ne
+  | var =>
+    let [_] := ξ
+    exact var
+
+def Perm_preservation {ξ' : Nat → Monotype} (uni : [[unique(</ ξ@i // i in [:n] />)]])
+  (perm : List.Perm p [:n]) (eq : ∀ i, ξ' i = ξ (p.get! i))
+  : [[unique(</ ξ'@i // i in [:n] />)]] := by
   generalize ξseq : ([:n].map fun i => [ξ i]).flatten = ξs at uni
   match uni with
   | concrete ne (ℓ := ℓ) =>
@@ -396,5 +524,132 @@ def Monotype.label.Uniqueness.Perm_preservation {ξ' : Nat → Monotype}
         Std.Range.toList, if_neg (nomatch ·), Nat.zero_add,
         if_neg (Nat.not_lt_of_le (Nat.le_refl _)), List.map_singleton]
     exact var
+
+end Monotype.label.Uniqueness
+
+theorem TypeScheme.KindingAndElaboration.weakening (σke : [[Γc; Γ, Γ'' ⊢ σ : κ ⇝ A]])
+  (ΓΓ'Γ''we : [[Γc ⊢ Γ, Γ', Γ'' ⇝ Δ]]) : [[Γc; Γ, Γ', Γ'' ⊢ σ : κ ⇝ A]] := by match σke with
+  | var aκinΓΓ'' => exact var <| match aκinΓΓ''.append_elim with
+    | .inl ⟨aκinΓ, aninΓ''⟩ => ΓΓ'Γ''we.TypeVarIn_weakening aκinΓ
+    | .inr aκinΓ'' => aκinΓ''.append_inr.append_inr
+  | app φke τke => exact app (φke.weakening ΓΓ'Γ''we) (τke.weakening ΓΓ'Γ''we)
+  | arr τ₀ke τ₁ke => exact arr (τ₀ke.weakening ΓΓ'Γ''we) (τ₁ke.weakening ΓΓ'Γ''we)
+  | qual ψke γke κe => exact qual (ψke.weakening ΓΓ'Γ''we) (γke.weakening ΓΓ'Γ''we) κe
+  | scheme I σ'ke κ₀e =>
+    apply scheme (I ++ [[(Γ, Γ', Γ'')]].typeVarDom) _ κ₀e
+    intro a anin
+    let ⟨aninI, aninΓΓ'Γ''⟩ := List.not_mem_append'.mp anin
+    rw [← TypeEnvironment.append, ← TypeEnvironment.append]
+    exact σ'ke a aninI |>.weakening <| ΓΓ'Γ''we.typeExt aninΓΓ'Γ'' κ₀e
+  | label => exact label
+  | floor ξke => exact floor <| ξke.weakening ΓΓ'Γ''we
+  | comm => exact comm
+  | row ξke uni τke h =>
+    exact row (ξke · · |>.weakening ΓΓ'Γ''we) uni (τke · · |>.weakening ΓΓ'Γ''we) h
+  | prod μke ρke => exact prod (μke.weakening ΓΓ'Γ''we) (ρke.weakening ΓΓ'Γ''we)
+  | sum μke ρke => exact sum (μke.weakening ΓΓ'Γ''we) (ρke.weakening ΓΓ'Γ''we)
+  | lift I τke κ₀e ρke =>
+    apply lift (I ++ [[(Γ, Γ', Γ'')]].typeVarDom) _ κ₀e <| ρke.weakening ΓΓ'Γ''we
+    intro a anin
+    let ⟨aninI, aninΓΓ'Γ''⟩ := List.not_mem_append'.mp anin
+    rw [← TypeEnvironment.append, ← TypeEnvironment.append]
+    exact τke a aninI |>.weakening <| ΓΓ'Γ''we.typeExt aninΓΓ'Γ'' κ₀e
+  | contain μke ρ₀ke ρ₁ke κe =>
+    exact contain (μke.weakening ΓΓ'Γ''we) (ρ₀ke.weakening ΓΓ'Γ''we) (ρ₁ke.weakening ΓΓ'Γ''we) κe
+  | concat μke ρ₀ke ρ₁ke ρ₂ke κe concat₀₂ke concat₁₂ke =>
+    exact concat (μke.weakening ΓΓ'Γ''we) (ρ₀ke.weakening ΓΓ'Γ''we) (ρ₁ke.weakening ΓΓ'Γ''we)
+      (ρ₂ke.weakening ΓΓ'Γ''we) κe (concat₀₂ke.weakening ΓΓ'Γ''we) (concat₁₂ke.weakening ΓΓ'Γ''we)
+  | tc Γcw γcin τke => exact tc Γcw γcin <| τke.weakening ΓΓ'Γ''we
+  | all I ψke κe ρke =>
+    apply all (I ++ [[(Γ, Γ', Γ'')]].typeVarDom) _ κe <| ρke.weakening ΓΓ'Γ''we
+    intro a anin
+    let ⟨aninI, aninΓΓ'Γ''⟩ := List.not_mem_append'.mp anin
+    rw [← TypeEnvironment.append, ← TypeEnvironment.append]
+    exact ψke a aninI |>.weakening <| ΓΓ'Γ''we.typeExt aninΓΓ'Γ'' κe
+  | «ind» I₀ I₁ ρke κe keBᵣ keBₗ =>
+    apply «ind» (I₀ ++ [[(Γ, Γ', Γ'')]].typeVarDom) (I₁ ++ [[(Γ, Γ', Γ'')]].typeVarDom)
+      (ρke.weakening ΓΓ'Γ''we) κe
+    · intro aₗ aₗnin aₜ aₜnin aₚ aₚnin aᵢ aᵢnin aₙ aₙnin
+      let ⟨aₗninI₀, aₗninΓΓ'Γ''⟩ := List.not_mem_append'.mp aₗnin
+      rw [← List.cons_append] at aₜnin
+      let ⟨aₜninI₀, aₜninΓΓ'Γ''⟩ := List.not_mem_append'.mp aₜnin
+      let aₜninΓΓ'Γ''aₗ := List.not_mem_cons.mpr ⟨List.ne_of_not_mem_cons aₜninI₀, aₜninΓΓ'Γ''⟩
+      rw [← List.cons_append, ← List.cons_append] at aₚnin
+      let ⟨aₚninI₀, aₚninΓΓ'Γ''⟩ := List.not_mem_append'.mp aₚnin
+      let aₚninΓΓ'Γ''aₗaₜ := List.not_mem_cons.mpr ⟨
+        List.ne_of_not_mem_cons aₚninI₀,
+        List.not_mem_cons.mpr ⟨
+          List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons aₚninI₀,
+          aₚninΓΓ'Γ''
+        ⟩
+      ⟩
+      rw [← List.cons_append, ← List.cons_append, ← List.cons_append] at aᵢnin
+      let ⟨aᵢninI₀, aᵢninΓΓ'Γ''⟩ := List.not_mem_append'.mp aᵢnin
+      let aᵢninΓΓ'Γ''aₗaₜaₚ := List.not_mem_cons.mpr ⟨
+        List.ne_of_not_mem_cons aᵢninI₀,
+        List.not_mem_cons.mpr ⟨
+          List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons aᵢninI₀,
+          List.not_mem_cons.mpr ⟨
+            List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
+              List.not_mem_of_not_mem_cons aᵢninI₀,
+            aᵢninΓΓ'Γ''
+          ⟩
+        ⟩
+      ⟩
+      rw [← List.cons_append, ← List.cons_append, ← List.cons_append, ← List.cons_append] at aₙnin
+      let ⟨aₙninI₀, aₙninΓΓ'Γ''⟩ := List.not_mem_append'.mp aₙnin
+      let aₙninΓΓ'Γ''aₗaₜaₚᵢ := List.not_mem_cons.mpr ⟨
+        List.ne_of_not_mem_cons aₙninI₀,
+        List.not_mem_cons.mpr ⟨
+          List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons aₙninI₀,
+          List.not_mem_cons.mpr ⟨
+            List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
+              List.not_mem_of_not_mem_cons aₙninI₀,
+            List.not_mem_cons.mpr ⟨
+              List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
+                List.not_mem_of_not_mem_cons <| List.not_mem_of_not_mem_cons aₙninI₀,
+              aₙninΓΓ'Γ''
+            ⟩
+          ⟩
+        ⟩
+      ⟩
+      repeat rw [← TypeEnvironment.append]
+      exact keBᵣ aₗ aₗninI₀ aₜ aₜninI₀ aₚ aₚninI₀ aᵢ aᵢninI₀ aₙ aₙninI₀ |>.weakening <|
+        ΓΓ'Γ''we.typeExt aₗninΓΓ'Γ'' .label |>.typeExt aₜninΓΓ'Γ''aₗ κe
+          |>.typeExt aₚninΓΓ'Γ''aₗaₜ κe.row |>.typeExt aᵢninΓΓ'Γ''aₗaₜaₚ κe.row
+          |>.typeExt aₙninΓΓ'Γ''aₗaₜaₚᵢ κe.row
+    · intro aᵢ aᵢnin aₙ aₙnin
+      let ⟨aᵢninI₁, aᵢninΓΓ'Γ''⟩ := List.not_mem_append'.mp aᵢnin
+      rw [← List.cons_append] at aₙnin
+      let ⟨aₙninI₁, aₙninΓΓ'Γ''⟩ := List.not_mem_append'.mp aₙnin
+      let aₙninΓΓ'Γ''aᵢ := List.not_mem_cons.mpr ⟨List.ne_of_not_mem_cons aₙninI₁, aₙninΓΓ'Γ''⟩
+      repeat rw [← TypeEnvironment.append]
+      exact keBₗ aᵢ aᵢninI₁ aₙ aₙninI₁ |>.weakening <|
+        ΓΓ'Γ''we.typeExt aᵢninΓΓ'Γ'' κe.row |>.typeExt aₙninΓΓ'Γ''aᵢ κe.row
+  | split concatke => exact split <| concatke.weakening ΓΓ'Γ''we
+termination_by σ.sizeOf'
+decreasing_by
+  all_goals simp_arith
+  · case _ ξ _ τ _ _ _ _ i mem =>
+    apply Nat.le_of_add_right_le (k := (τ i).sizeOf')
+    apply Nat.le_trans _ <| Nat.le_add_right ..
+    apply List.le_sum_of_mem'
+    rw [Range.map_eq_of_eq_of_mem (by
+          intro _ _
+          simp only [Function.comp]
+          rw [List.map_singleton]
+        ), List.map_singleton_flatten]
+    exact Range.mem_map_of_mem mem
+  · case _ ξ _ τ _ _ _ _ i mem =>
+    apply Nat.le_trans <| Nat.le_add_left (τ i).sizeOf' (ξ i).sizeOf'
+    apply Nat.le_trans _ <| Nat.le_add_right ..
+    apply List.le_sum_of_mem'
+    rw [Range.map_eq_of_eq_of_mem (by
+          intro _ _
+          simp only [Function.comp]
+          rw [List.map_singleton]
+        ), List.map_singleton_flatten]
+    exact Range.mem_map_of_mem mem
+  · exact Monotype.sizeOf'_pos _
 
 end TabularTypeInterpreter
