@@ -11,6 +11,12 @@ theorem empty_append (Γ : TypeEnvironment) : append empty Γ = Γ := by
   | empty => rfl
   | typeExt Γ' .. | termExt Γ' .. | constrExt Γ' .. => rw [append, Γ'.empty_append]
 
+theorem typeVarDom_append : (append Γ Γ').typeVarDom = Γ'.typeVarDom ++ Γ.typeVarDom := by
+  match Γ' with
+  | empty => rw [append, typeVarDom, List.nil_append]
+  | typeExt .. => rw [append, typeVarDom, typeVarDom_append, typeVarDom, List.cons_append]
+  | termExt .. | constrExt .. => rw [append, typeVarDom, typeVarDom_append, typeVarDom]
+
 namespace WellFormednessAndElaboration
 
 theorem TypeVarIn_preservation (Γwe : [[Γc ⊢ Γ ⇝ Δ]])
@@ -128,7 +134,7 @@ theorem TypeVar_subst_preservation : [[a : κ ∈ Γ]] → [[a : κ ∈ Γ [τ /
 
 end TypeVarIn
 
-theorem TypeVarNotInDom.TypeVar_subst_preservation :[[a ∉ dom(Γ)]] → [[a ∉ dom(Γ [τ / a'])]] := by
+theorem TypeVarNotInDom.TypeVar_subst_preservation : [[a ∉ dom(Γ)]] → [[a ∉ dom(Γ [τ / a'])]] := by
   induction Γ <;> aesop (add simp [TypeVarNotInDom, typeVarDom])
 
 end TabularTypeInterpreter.TypeEnvironment

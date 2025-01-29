@@ -371,6 +371,65 @@ theorem Type_open_dec (Alc : TypeVarLocallyClosed A (n + 1)) (Blc : B.TypeVarLoc
     let .sum A'lc := Alc
     exact sum <| A'lc.Type_open_dec Blc
 
+-- theorem foo
+--   : TypeVar_open A' a n = Type_open A B m → a ∉ A'.freeTypeVars → A.TypeVarLocallyClosed (m + 1) →
+--     B.TypeVarLocallyClosed → A' = (A.TypeVar_open a n).Type_open B m := by
+--   intro eq aninA' Alc Blc
+--   match A', A with
+--   | .var .., .var .. => sorry
+--   | .lam .., .lam .. =>
+--     rw [TypeVar_open, Type_open] at eq ⊢
+--     let ⟨eq₀, eq₁⟩ := lam.inj eq
+--     cases eq₀
+--     rw [freeTypeVars] at aninA'
+--     let .lam Alc := Alc
+--     rw [foo eq₁ aninA' Alc Blc]
+--   | .app .., .app .. =>
+--     rw [TypeVar_open, Type_open] at eq ⊢
+--     let ⟨eq₀, eq₁⟩ := app.inj eq
+--     rw [freeTypeVars] at aninA'
+--     let ⟨aninA'', aninB'⟩ := List.not_mem_append'.mp aninA'
+--     let .app A''lc B'lc := Alc
+--     rw [foo eq₀ aninA'' A''lc Blc, foo eq₁ aninB' B'lc Blc]
+--   | .forall .., .forall .. =>
+--     rw [TypeVar_open, Type_open] at eq ⊢
+--     let ⟨eq₀, eq₁⟩ := forall.inj eq
+--     cases eq₀
+--     rw [freeTypeVars] at aninA'
+--     let .forall Alc := Alc
+--     rw [foo eq₁ aninA' Alc Blc]
+--   | .arr .., .arr .. =>
+--     rw [TypeVar_open, Type_open] at eq ⊢
+--     let ⟨eq₀, eq₁⟩ := arr.inj eq
+--     rw [freeTypeVars] at aninA'
+--     let ⟨aninA'', aninB'⟩ := List.not_mem_append'.mp aninA'
+--     let .arr A''lc B'lc := Alc
+--     rw [foo eq₀ aninA'' A''lc Blc, foo eq₁ aninB' B'lc Blc]
+--   | .list .., .list .. => sorry
+--   | .listApp .., .listApp .. =>
+--     rw [TypeVar_open, Type_open] at eq ⊢
+--     let ⟨eq₀, eq₁⟩ := listApp.inj eq
+--     rw [freeTypeVars] at aninA'
+--     let ⟨aninA'', aninB'⟩ := List.not_mem_append'.mp aninA'
+--     let .listApp A''lc B'lc := Alc
+--     rw [foo eq₀ aninA'' A''lc Blc, foo eq₁ aninB' B'lc Blc]
+--   | .prod .., .prod .. =>
+--     rw [TypeVar_open, Type_open] at eq ⊢
+--     let eq' := prod.inj eq
+--     rw [freeTypeVars] at aninA'
+--     let .prod A''lc := Alc
+--     rw [foo eq' aninA' A''lc Blc]
+--   | .sum .., .sum .. =>
+--     rw [TypeVar_open, Type_open] at eq ⊢
+--     let eq' := sum.inj eq
+--     rw [freeTypeVars] at aninA'
+--     let .sum A''lc := Alc
+--     rw [foo eq' aninA' A''lc Blc]
+
+  -- induction A' using rec_uniform generalizing A n <;>
+  --   induction A using rec_uniform <;> aesop
+  --   (add simp [TypeVar_open, Type_open, freeTypeVars], safe cases TypeVar, 10% List.eq_of_map_eq_map_of_inj)
+
 end TypeVarLocallyClosed
 
 theorem TypeVar_close_eq_of_not_mem_freeTypeVars
@@ -398,6 +457,15 @@ theorem TypeVar_open_inj_of_not_mem_freeTypeVars (aninA : a ∉ freeTypeVars A)
 theorem not_mem_freeTypeVars_TypeVar_close : a ∉ (TypeVar_close A a n).freeTypeVars := by
   induction A using rec_uniform generalizing n <;> aesop
     (add simp [TypeVar_close, freeTypeVars], safe cases TypeVar)
+
+theorem not_mem_freeTypeVars_TypeVar_open_intro
+  : a ∉ freeTypeVars A → a ≠ a' → a ∉ (A.TypeVar_open a' n).freeTypeVars := by
+  induction A using rec_uniform generalizing n <;> aesop
+    (add simp [TypeVar_open, freeTypeVars], safe cases TypeVar)
+
+-- theorem bar (aninA : a ∉ freeTypeVars A) (mnen : m ≠ n)
+--   (eq : A.TypeVar_open a m = TypeVar_open B a n) : A = B.TypeVar_open a m := by
+--   rw [← TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars aninA (n := n)] at eq
 
 end «Type»
 
