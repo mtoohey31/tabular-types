@@ -481,7 +481,7 @@ open «F⊗⊕ω»
 
 namespace TypeScheme.KindingAndElaboration
 
-theorem weakening : [[Γc; Γ ⊢ σ : κ ⇝ A]] → [[Γc ⊢ Γ, Γ' ⇝ Δ]] → [[Γc; Γ, Γ' ⊢ σ : κ ⇝ A]] := sorry
+theorem weakening : [[Γc; Γ, Γ'' ⊢ σ : κ ⇝ A]] → [[Γc ⊢ Γ, Γ', Γ'' ⇝ Δ]] → [[Γc; Γ, Γ', Γ'' ⊢ σ : κ ⇝ A]] := sorry
 
 local instance : Inhabited Monotype where
   default := .row [] none
@@ -520,7 +520,7 @@ theorem Monotype_open_preservation
               rw [Monotype.Monotype_open, if_pos rfl, Type.Type_open, if_pos rfl]
               let .var ain := σke
               let .head := ain.append_elim_left aninΓ'
-              exact τke.weakening sorry (Δ := .empty)
+              exact τke.weakening sorry (Γ'' := .empty) (Δ := .empty)
             · case isFalse h =>
               let .var .. := σke
               rw [Type.freeTypeVars] at aninA
@@ -737,7 +737,7 @@ theorem Monotype_open_preservation
                 Type.not_mem_freeTypeVars_TypeVar_close τke
           all_goals nomatch σke
         all_goals nomatch σke
-      | .prod .. =>
+      | .prodOrSum .prod .. =>
         rw [Monotype.TypeVar_open] at σke
         cases A <;> rw [Type.TypeVar_open] at σke
         case prod =>
@@ -756,7 +756,7 @@ theorem Monotype_open_preservation
           rw [Monotype_open, QualifiedType.Monotype_open] at μke' ρke'
           exact prod μke' ρke'
         all_goals nomatch σke
-      | .sum .. =>
+      | .prodOrSum .sum .. =>
         rw [Monotype.TypeVar_open] at σke
         cases A <;> rw [Type.TypeVar_open] at σke
         case sum =>
@@ -883,10 +883,11 @@ theorem Monotype_open_preservation
         generalize A'eq : A.TypeVar_open a n = A' at σke
         let .tc Γcw inΓc τ'ke (κ := κ) := σke
         let ⟨_, κe⟩ := κ.Elaboration_total
-        let ⟨Aki, Aₛki⟩ := Γcw.KindingAndElaboration_of_ClassEnvironment_in inΓc κe a
+        let ⟨_, κe', _, Aki, _, Aₛki⟩ := Γcw.of_ClassEnvironment_in inΓc
+        cases κe.deterministic κe'
         let B'lc := τ'ke.soundness ΓaΓ'we κe |>.TypeVarLocallyClosed_of
-        let ⟨_, eq⟩ := Type.tc_evidence_eq_inversion aninA Aki.TypeVarLocallyClosed_of
-          (Aₛki · · |>.TypeVarLocallyClosed_of) B'lc A'eq
+        let ⟨_, eq⟩ := Type.tc_evidence_eq_inversion aninA (Aki a |>.TypeVarLocallyClosed_of)
+          (Aₛki a · · |>.TypeVarLocallyClosed_of) B'lc A'eq
         sorry
       | .all .. =>
         rename TypeLambda => «λτ»

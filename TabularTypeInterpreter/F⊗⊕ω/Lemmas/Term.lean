@@ -24,19 +24,24 @@ def rec_uniform {motive : Term → Prop} (var : ∀ x : TermVar, motive (var x))
 @[simp]
 theorem TypeVar_open_sizeOf : sizeOf (TypeVar_open E x n) = sizeOf E := by
   induction E using rec_uniform generalizing n <;> aesop
-    (add simp TypeVar_open, safe apply List.sizeOf_map_eq_of_eq_id_of_mem)
+    (add simp TypeVar_open, safe List.sizeOf_map_eq_of_eq_id_of_mem)
 
 @[simp]
 theorem TermVar_open_sizeOf : sizeOf (TermVar_open E x n) = sizeOf E := by
   induction E using rec_uniform generalizing n <;> aesop
-    (add simp TermVar_open, safe apply List.sizeOf_map_eq_of_eq_id_of_mem)
+    (add simp TermVar_open, safe List.sizeOf_map_eq_of_eq_id_of_mem)
 
 namespace TypeVarLocallyClosed
 
-theorem TypeVar_open_eq : TypeVarLocallyClosed E n → E.TypeVar_open a n = E := by
+theorem TypeVar_open_id : TypeVarLocallyClosed E n → E.TypeVar_open a n = E := by
   induction E using rec_uniform generalizing n <;> aesop
     (add simp TypeVar_open, 40% cases TypeVarLocallyClosed,
-      safe apply [Type.TypeVarLocallyClosed.TypeVar_open_eq, List.map_eq_id_of_eq_id_of_mem])
+      safe [Type.TypeVarLocallyClosed.TypeVar_open_id, List.map_eq_id_of_eq_id_of_mem])
+
+theorem Type_open_id : TypeVarLocallyClosed E n → E.Type_open F n = E := by
+  induction E using rec_uniform generalizing n <;> aesop
+    (add simp Type_open, 40% cases TypeVarLocallyClosed,
+      safe [Type.TypeVarLocallyClosed.Type_open_id, List.map_eq_id_of_eq_id_of_mem])
 
 theorem TermVar_open_drop
   : (TermVar_open E x m).TypeVarLocallyClosed n → E.TypeVarLocallyClosed n := by
@@ -48,7 +53,7 @@ theorem TypeVar_open_drop
   : m < n → (TypeVar_open E a m).TypeVarLocallyClosed n → E.TypeVarLocallyClosed n := by
   induction E using rec_uniform generalizing m n <;> aesop
     (add simp TypeVar_open, safe cases TypeVarLocallyClosed,
-      safe constructors TypeVarLocallyClosed, 20% apply Type.TypeVarLocallyClosed.TypeVar_open_drop)
+      safe constructors TypeVarLocallyClosed, 20% Type.TypeVarLocallyClosed.TypeVar_open_drop)
 
 theorem weaken (Elc : TypeVarLocallyClosed E m) : E.TypeVarLocallyClosed (m + n) := by
   induction Elc <;> aesop (simp_config := { arith := true })
@@ -69,11 +74,10 @@ end TypeVarLocallyClosed
 
 namespace TermVarLocallyClosed
 
-theorem TermVar_open_eq
+theorem TermVar_open_id
   : TermVarLocallyClosed E n → E.TermVar_open a n = E := by
   induction E using rec_uniform generalizing n <;> aesop
-    (add simp TermVar_open, 40% cases TermVarLocallyClosed,
-      safe apply List.map_eq_id_of_eq_id_of_mem)
+    (add simp TermVar_open, 40% cases TermVarLocallyClosed, safe List.map_eq_id_of_eq_id_of_mem)
 
 theorem TypeVar_open_drop
   : (TypeVar_open E x m).TermVarLocallyClosed n → E.TermVarLocallyClosed n := by
@@ -96,9 +100,32 @@ where
 
 end TermVarLocallyClosed
 
+theorem TypeVar_open_TermVar_open_comm
+  : (TermVar_open E x n).TypeVar_open a m = (E.TypeVar_open a m).TermVar_open x n := by
+  induction E using rec_uniform generalizing m n <;> aesop (add simp [TermVar_open, TypeVar_open])
+
 end Term
 
 namespace Typing
+
+local instance : Inhabited Term where
+  default := .prodIntro []
+in
+local instance : Inhabited «Type» where
+  default := .list []
+in
+theorem prodIntro' (EstyAs : ∀ EA ∈ List.zip Es As, let (E, A) := EA; [[Δ ⊢ E : A]])
+  (length_eq : Es.length = As.length) : Typing Δ (.prodIntro Es) (.prod (.list As)) := by
+  rw [← Std.Range.map_get!_eq (as := Es), ← Std.Range.map_get!_eq (as := As), ← length_eq,
+      Std.Range.map, Std.Range.map, ← List.map_singleton_flatten, ← Std.Range.map,
+      ← List.map_singleton_flatten, ← Std.Range.map]
+  apply Typing.prodIntro
+  intro i mem
+  have := EstyAs ((List.zip Es As).get! i) <| List.get!_mem <| by
+    rw [List.length_zip, ← length_eq, Nat.min_self]
+    exact mem.upper
+  rw [List.get!_zip length_eq mem.upper] at this
+  exact this
 
 theorem prod_id (Δwf : [[⊢ Δ]]) (Aki : [[Δ ⊢ A : L K]])
   : [[Δ ⊢ Λ a : K ↦ *. λ x : ⊗ (a$0 ⟦A⟧). x$0 : ∀ a : K ↦ *. (⊗ (a$0 ⟦A⟧)) → ⊗ (a$0 ⟦A⟧)]] :=
@@ -109,10 +136,8 @@ theorem prod_id (Δwf : [[⊢ Δ]]) (Aki : [[Δ ⊢ A : L K]])
       apply Typing.var (Δwf.typeVarExt anin |>.termVarExt xnin _) .head
       apply Kinding.prod
       apply Kinding.listApp (.var .head)
-      rw [Aki.TypeVarLocallyClosed_of.TypeVar_open_eq, ← (Δ.typeExt ..).empty_append]
-      apply Aki.weakening _ (Δ' := .empty) (Δ'' := .typeExt .empty ..)
-      rw [Environment.empty_append]
-      exact Δwf.typeVarExt anin
+      rw [Aki.TypeVarLocallyClosed_of.TypeVar_open_id]
+      exact Aki.weakening (Δ' := .typeExt .empty ..) (Δ'' := .empty) <| Δwf.typeVarExt anin
 
 theorem sum_id (Δwf : [[⊢ Δ]]) (Aki : [[Δ ⊢ A : L K]])
   : [[Δ ⊢ Λ a : K ↦ *. λ x : ⊕ (a$0 ⟦A⟧). x$0 : ∀ a : K ↦ *. (⊕ (a$0 ⟦A⟧)) → ⊕ (a$0 ⟦A⟧)]] :=
@@ -123,12 +148,16 @@ theorem sum_id (Δwf : [[⊢ Δ]]) (Aki : [[Δ ⊢ A : L K]])
       apply Typing.var (Δwf.typeVarExt anin |>.termVarExt xnin _) .head
       apply Kinding.sum
       apply Kinding.listApp (.var .head)
-      rw [Aki.TypeVarLocallyClosed_of.TypeVar_open_eq, ← (Δ.typeExt ..).empty_append]
-      apply Aki.weakening _ (Δ' := .empty) (Δ'' := .typeExt .empty ..)
-      rw [Environment.empty_append]
-      exact Δwf.typeVarExt anin
+      rw [Aki.TypeVarLocallyClosed_of.TypeVar_open_id]
+      exact Aki.weakening (Δ' := .typeExt .empty ..) (Δ'' := .empty) <| Δwf.typeVarExt anin
 
-theorem TermVarLocallyClosed_of (EtyA : [[Δ ⊢ E : A]]) : E.TermVarLocallyClosed 0 := by
+theorem id (Δwf : [[⊢ Δ]]) (Aki : [[Δ ⊢ A : *]]) : [[Δ ⊢ λ x : A. x$0 : A → A]] := by
+  apply Typing.lam Δ.termVarDom
+  intro x xnin
+  rw [Term.TermVar_open, if_pos rfl]
+  exact Typing.var (Δwf.termVarExt xnin Aki) .head
+
+theorem TermVarLocallyClosed_of (EtyA : [[Δ ⊢ E : A]]) : E.TermVarLocallyClosed := by
   induction EtyA with
   | var _ _ => exact .var_free
   | lam I _ ih =>
@@ -155,7 +184,7 @@ theorem TermVarLocallyClosed_of (EtyA : [[Δ ⊢ E : A]]) : E.TermVarLocallyClos
       exact ih₁ i mem'
   | equiv Ety' _ ih => exact ih
 
-theorem weakening : [[Δ ⊢ E : A]] → [[⊢ Δ', Δ, Δ'']] → [[Δ', Δ, Δ'' ⊢ E : A]] := sorry
+theorem weakening : [[Δ, Δ'' ⊢ E : A]] → [[⊢ Δ, Δ', Δ'']] → [[Δ, Δ', Δ'' ⊢ E : A]] := sorry
 
 end Typing
 

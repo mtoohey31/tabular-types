@@ -360,10 +360,10 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
   | .qual (.mono (.row ..)), .row _ _ τke _ =>
     let .row κ'e := κe
     .list fun i imem => τke i imem |>.soundness Γwe κ'e
-  | .qual (.mono (.prod μ ρ)), .prod μke ρke =>
+  | .qual (.mono (.prodOrSum .prod μ ρ)), .prod μke ρke =>
     let .star := κe
     .prod <| ρke.soundness Γwe <| .row .star
-  | .qual (.mono (.sum μ ρ)), .sum μke ρke =>
+  | .qual (.mono (.prodOrSum .sum μ ρ)), .sum μke ρke =>
     let .star := κe
     .sum <| ρke.soundness Γwe <| .row .star
   | .qual (.mono (.lift (.mk κ' τ) ρ)), σke =>
@@ -425,22 +425,27 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
     dsimp only [A'']
     let ⟨K', κ'e⟩ := κ'.Elaboration_total
     let Bk := τke.soundness Γwe κ'e
+    let ⟨_, κ'e', _, A'k, _, Aₛk⟩ := Γcw.of_ClassEnvironment_in inΓc
+    cases κ'e.deterministic κ'e'
     split
     · case isTrue h =>
       let ⟨a, anin⟩ := Γ.typeVarDom ++ ↑A'.freeTypeVars |>.exists_fresh
       let ⟨aninΓ, aninA'⟩ := List.not_mem_append'.mp anin
-      let ⟨A'k, _⟩ := Γcw.KindingAndElaboration_of_ClassEnvironment_in inΓc κ'e a
-      exact A'k.weakening (Γwe.soundness.typeVarExt <| Γwe.TypeVarNotInDom_preservation aninΓ)
-        (Δ'' := .empty) |>.Type_open_preservation (Δ' := .empty) aninA' Bk
+      let A'k' := A'k a |>.weakening (Δ := .empty) (Δ' := Δ) (Δ'' := .typeExt .empty ..) <| by
+        rw [Environment.empty_append]
+        exact Γwe.soundness.typeVarExt <| Γwe.TypeVarNotInDom_preservation aninΓ
+      rw [Environment.empty_append] at A'k'
+      exact A'k'.Type_open_preservation aninA' Bk (Δ' := .empty)
     · case isFalse h =>
       let ⟨a, anin⟩ := Γ.typeVarDom ++ ↑(Aₛ (i - 1)).freeTypeVars |>.exists_fresh
       let ⟨aninΓ, aninAₛ⟩ := List.not_mem_append'.mp anin
-      let ⟨_, Aₛke⟩ := Γcw.KindingAndElaboration_of_ClassEnvironment_in inΓc κ'e a
       rw [Nat.add_comm] at iltnsucc
       have : i - 1 < n := Nat.sub_lt_left_of_lt_add (Nat.pos_of_ne_zero h) iltnsucc
-      exact Aₛke (i - 1) ⟨Nat.zero_le _, this⟩
-        |>.weakening (Γwe.soundness.typeVarExt <| Γwe.TypeVarNotInDom_preservation aninΓ)
-          (Δ'' := .empty) |>.Type_open_preservation (Δ' := .empty) aninAₛ Bk
+      let Aₛk' := Aₛk a (i - 1) ⟨Nat.zero_le _, this⟩ |>.weakening (Δ := .empty) (Δ' := Δ) (Δ'' := .typeExt .empty ..) <| by
+        rw [Environment.empty_append]
+        exact Γwe.soundness.typeVarExt <| Γwe.TypeVarNotInDom_preservation aninΓ
+      rw [Environment.empty_append] at Aₛk'
+      exact Aₛk'.Type_open_preservation aninAₛ Bk (Δ' := .empty)
   | .qual (.mono (.all (.mk κ ψ) ρ)), .all I ψke κe' ρke =>
     let .constr := κe
     let Aopki : «F⊗⊕ω».Kinding .. := .lam (I := Γ.typeVarDom ++ I) fun a anin =>

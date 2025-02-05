@@ -251,48 +251,13 @@ decreasing_by
     cases this
     simp_arith
 
-theorem TypeVar_open_eq {A : «Type»} (Alc : A.TypeVarLocallyClosed n) : A.TypeVar_open a n = A := by
-  match A with
-  | var (.free _) => rw [TypeVar_open, if_neg (nomatch ·)]
-  | var (.bound _) =>
-    rw [TypeVar_open]
-    split
-    · case isTrue h =>
-      cases h
-      let .var_bound nltn := Alc
-      nomatch Nat.ne_of_lt nltn
-    · case isFalse => rfl
-  | .lam .. => let .lam A'lc := Alc; rw [TypeVar_open, A'lc.TypeVar_open_eq]
-  | .app .. =>
-    let .app A'lc Blc := Alc
-    rw [TypeVar_open, A'lc.TypeVar_open_eq, Blc.TypeVar_open_eq]
-  | .forall .. =>
-    let .forall A'lc := Alc
-    rw [TypeVar_open, A'lc.TypeVar_open_eq]
-  | .arr .. =>
-    let .arr A'lc Blc := Alc
-    rw [TypeVar_open, A'lc.TypeVar_open_eq, Blc.TypeVar_open_eq]
-  | .list A's =>
-    match h : A's with
-    | [] => rw [TypeVar_open]; rfl
-    | A' :: A's' =>
-      let .list A'slc := Alc
-      rw [TypeVar_open]
-      apply (Type.list.injEq _ _).mpr
-      show (_ :: _) = _
-      apply (List.cons.injEq _ _ _ _).mpr
-      constructor
-      · exact A'slc A' (.head _) |>.TypeVar_open_eq
-      · have := TypeVar_open_eq (A := .list A's') (a := a) (n := n) <| .list ?h
-        rw [TypeVar_open] at this
-        apply Type.list.inj this
-        intro A'' A''in
-        exact A'slc A'' <| .tail _ A''in
-  | .listApp .. =>
-    let .listApp A'lc Blc := Alc
-    rw [TypeVar_open, A'lc.TypeVar_open_eq, Blc.TypeVar_open_eq]
-  | .prod .. => let .prod A'lc := Alc; rw [TypeVar_open, A'lc.TypeVar_open_eq]
-  | .sum .. => let .sum A'lc := Alc; rw [TypeVar_open, A'lc.TypeVar_open_eq]
+theorem TypeVar_open_id : TypeVarLocallyClosed A n → A.TypeVar_open a n = A := by
+  induction A using rec_uniform generalizing n <;> aesop
+    (add simp TypeVar_open, safe cases TypeVarLocallyClosed, safe List.map_eq_id_of_eq_id_of_mem)
+
+theorem Type_open_id : TypeVarLocallyClosed A n → A.Type_open a n = A := by
+  induction A using rec_uniform generalizing n <;> aesop
+    (add simp Type_open, safe cases TypeVarLocallyClosed, safe List.map_eq_id_of_eq_id_of_mem)
 
 theorem TypeVar_open_TypeVar_close_id
   : TypeVarLocallyClosed A n → (A.TypeVar_close a n).TypeVar_open a n = A := by
@@ -309,12 +274,12 @@ theorem Type_open_TypeVar_open_comm
   : TypeVarLocallyClosed B n → m ≠ n →
     (Type_open A B m).TypeVar_open a n = (A.TypeVar_open a n).Type_open B m := by
   induction A using rec_uniform generalizing m n <;> aesop
-    (add simp [Type_open, TypeVar_open], 40% TypeVar_open_eq, safe weaken)
+    (add simp [Type_open, TypeVar_open], 40% TypeVar_open_id, safe weaken)
 
 theorem Type_open_TypeVar_open_eq
   : TypeVarLocallyClosed B n → (Type_open A B n).TypeVar_open a n = A.Type_open B n := by
   induction A using rec_uniform generalizing n <;> aesop
-    (add simp [Type_open, TypeVar_open], 40% TypeVar_open_eq, safe weaken)
+    (add simp [Type_open, TypeVar_open], 40% TypeVar_open_id, safe weaken)
 
 theorem Type_open_intro (Alc : A.TypeVarLocallyClosed n) (Blc : B.TypeVarLocallyClosed n)
   : (Type_open A B m).TypeVarLocallyClosed n := by
@@ -508,7 +473,7 @@ theorem Type_open_preservation {A : «Type»}
   (Aki : Kinding [[(Δ, a : K, Δ')]] (A.TypeVar_open a n) K') (aninfvA : a ∉ A.freeTypeVars)
   (Bki : [[Δ ⊢ B : K]]) : Kinding [[(Δ, (Δ' [B / a]))]] (A.Type_open B n) K' := sorry
 
-theorem weakening : [[Δ ⊢ A : K]] → [[⊢ Δ', Δ, Δ'']] → [[Δ', Δ, Δ'' ⊢ A : K]] := sorry
+theorem weakening : [[Δ, Δ'' ⊢ A : K]] → [[⊢ Δ, Δ', Δ'']] → [[Δ, Δ', Δ'' ⊢ A : K]] := sorry
 
 theorem unit : [[Δ ⊢ ⊗ { } : *]] := by
   have := list (Δ := Δ) (A := fun _ => .list []) (K := .star) (n := 0) (fun _ => nomatch ·)
@@ -525,17 +490,13 @@ theorem prj_evidence (Δwf : [[⊢ Δ]]) (A₀ki : [[Δ ⊢ A₀ : L K]]) (A₁k
   · apply prod
     apply listApp
     · exact var .head
-    · rw [A₁ki.TypeVarLocallyClosed_of.TypeVar_open_eq, ← Δ.empty_append]
-      apply A₁ki.weakening (Δ' := .empty) (Δ'' := .typeExt .empty a _)
-      rw [Environment.empty_append]
-      exact Δwf.typeVarExt anin
+    · rw [A₁ki.TypeVarLocallyClosed_of.TypeVar_open_id]
+      exact A₁ki.weakening (Δ' := .typeExt .empty a _) (Δ'' := .empty) <| Δwf.typeVarExt anin
   · apply prod
     apply listApp
     · exact var .head
-    · rw [A₀ki.TypeVarLocallyClosed_of.TypeVar_open_eq, ← Δ.empty_append]
-      apply A₀ki.weakening (Δ' := .empty) (Δ'' := .typeExt .empty a _)
-      rw [Environment.empty_append]
-      exact Δwf.typeVarExt anin
+    · rw [A₀ki.TypeVarLocallyClosed_of.TypeVar_open_id]
+      exact A₀ki.weakening (Δ' := .typeExt .empty a _) (Δ'' := .empty) <| Δwf.typeVarExt anin
 
 theorem inj_evidence (Δwf : [[⊢ Δ]]) (A₀ki : [[Δ ⊢ A₀ : L K]]) (A₁ki : [[Δ ⊢ A₁ : L K]])
   : [[Δ ⊢ ∀ a : K ↦ *. (⊕ (a$0 ⟦A₀⟧)) → ⊕ (a$0 ⟦A₁⟧) : *]] := by
@@ -546,17 +507,13 @@ theorem inj_evidence (Δwf : [[⊢ Δ]]) (A₀ki : [[Δ ⊢ A₀ : L K]]) (A₁k
   · apply sum
     apply listApp
     · exact var .head
-    · rw [A₀ki.TypeVarLocallyClosed_of.TypeVar_open_eq, ← Δ.empty_append]
-      apply A₀ki.weakening (Δ' := .empty) (Δ'' := .typeExt .empty a _)
-      rw [Environment.empty_append]
-      exact Δwf.typeVarExt anin
+    · rw [A₀ki.TypeVarLocallyClosed_of.TypeVar_open_id]
+      exact A₀ki.weakening (Δ' := .typeExt .empty a _) (Δ'' := .empty) <| Δwf.typeVarExt anin
   · apply sum
     apply listApp
     · exact var .head
-    · rw [A₁ki.TypeVarLocallyClosed_of.TypeVar_open_eq, ← Δ.empty_append]
-      apply A₁ki.weakening (Δ' := .empty) (Δ'' := .typeExt .empty a _)
-      rw [Environment.empty_append]
-      exact Δwf.typeVarExt anin
+    · rw [A₁ki.TypeVarLocallyClosed_of.TypeVar_open_id]
+      exact A₁ki.weakening (Δ' := .typeExt .empty a _) (Δ'' := .empty) <| Δwf.typeVarExt anin
 
 theorem concat_evidence (Δwf : [[⊢ Δ]]) (A₀ki : [[Δ ⊢ A₀ : L K]]) (A₁ki : [[Δ ⊢ A₁ : L K]])
   (A₂ki : [[Δ ⊢ A₂ : L K]])
@@ -568,25 +525,19 @@ theorem concat_evidence (Δwf : [[⊢ Δ]]) (A₀ki : [[Δ ⊢ A₀ : L K]]) (A�
   · apply prod
     apply listApp
     · exact var .head
-    · rw [A₀ki.TypeVarLocallyClosed_of.TypeVar_open_eq, ← Δ.empty_append]
-      apply A₀ki.weakening (Δ' := .empty) (Δ'' := .typeExt .empty a _)
-      rw [Environment.empty_append]
-      exact Δwf.typeVarExt anin
+    · rw [A₀ki.TypeVarLocallyClosed_of.TypeVar_open_id]
+      exact A₀ki.weakening (Δ' := .typeExt .empty a _) (Δ'' := .empty) <| Δwf.typeVarExt anin
   · apply arr
     · apply prod
       apply listApp
       · exact var .head
-      · rw [A₁ki.TypeVarLocallyClosed_of.TypeVar_open_eq, ← Δ.empty_append]
-        apply A₁ki.weakening (Δ' := .empty) (Δ'' := .typeExt .empty a _)
-        rw [Environment.empty_append]
-        exact Δwf.typeVarExt anin
+      · rw [A₁ki.TypeVarLocallyClosed_of.TypeVar_open_id]
+        exact A₁ki.weakening (Δ' := .typeExt .empty a _) (Δ'' := .empty) <| Δwf.typeVarExt anin
     · apply prod
       apply listApp
       · exact var .head
-      · rw [A₂ki.TypeVarLocallyClosed_of.TypeVar_open_eq, ← Δ.empty_append]
-        apply A₂ki.weakening (Δ' := .empty) (Δ'' := .typeExt .empty a _)
-        rw [Environment.empty_append]
-        exact Δwf.typeVarExt anin
+      · rw [A₂ki.TypeVarLocallyClosed_of.TypeVar_open_id]
+        exact A₂ki.weakening (Δ' := .typeExt .empty a _) (Δ'' := .empty) <| Δwf.typeVarExt anin
 
 theorem elim_evidence (Δwf : [[⊢ Δ]]) (A₀ki : [[Δ ⊢ A₀ : L K]]) (A₁ki : [[Δ ⊢ A₁ : L K]])
   (A₂ki : [[Δ ⊢ A₂ : L K]])
@@ -604,10 +555,9 @@ theorem elim_evidence (Δwf : [[⊢ Δ]]) (A₀ki : [[Δ ⊢ A₀ : L K]]) (A₁
       apply listApp
       · exact var <| .typeVarExt .head aₜnea.symm
       · let A₀lc := A₀ki.TypeVarLocallyClosed_of
-        rw [A₀lc.weaken (n := 1) |>.TypeVar_open_eq, A₀lc.TypeVar_open_eq, ← Δ.empty_append]
-        apply A₀ki.weakening (Δ' := .empty) (Δ'' := .typeExt (.typeExt .empty a _) aₜ _)
-        rw [Environment.empty_append]
-        exact Δwf.typeVarExt anin |>.typeVarExt aₜnin
+        rw [A₀lc.weaken (n := 1) |>.TypeVar_open_id, A₀lc.TypeVar_open_id]
+        exact A₀ki.weakening (Δ' := .typeExt (.typeExt .empty a _) aₜ _) (Δ'' := .empty) <|
+          Δwf.typeVarExt anin |>.typeVarExt aₜnin
     · exact var .head
   · apply arr
     · apply arr
@@ -615,26 +565,30 @@ theorem elim_evidence (Δwf : [[⊢ Δ]]) (A₀ki : [[Δ ⊢ A₀ : L K]]) (A₁
         apply listApp
         · exact var <| .typeVarExt .head aₜnea.symm
         · let A₁lc := A₁ki.TypeVarLocallyClosed_of
-          rw [A₁lc.weaken (n := 1) |>.TypeVar_open_eq, A₁lc.TypeVar_open_eq, ← Δ.empty_append]
-          apply A₁ki.weakening (Δ' := .empty) (Δ'' := .typeExt (.typeExt .empty a _) aₜ _)
-          rw [Environment.empty_append]
-          exact Δwf.typeVarExt anin |>.typeVarExt aₜnin
+          rw [A₁lc.weaken (n := 1) |>.TypeVar_open_id, A₁lc.TypeVar_open_id]
+          exact A₁ki.weakening (Δ' := .typeExt (.typeExt .empty a _) aₜ _) (Δ'' := .empty) <|
+            Δwf.typeVarExt anin |>.typeVarExt aₜnin
       · exact var .head
     · apply arr
       · apply sum
         apply listApp
         · exact var <| .typeVarExt .head aₜnea.symm
         · let A₂lc := A₂ki.TypeVarLocallyClosed_of
-          rw [A₂lc.weaken (n := 1) |>.TypeVar_open_eq, A₂lc.TypeVar_open_eq, ← Δ.empty_append]
-          apply A₂ki.weakening (Δ' := .empty) (Δ'' := .typeExt (.typeExt .empty a _) aₜ _)
-          rw [Environment.empty_append]
-          exact Δwf.typeVarExt anin |>.typeVarExt aₜnin
+          rw [A₂lc.weaken (n := 1) |>.TypeVar_open_id, A₂lc.TypeVar_open_id]
+          exact A₂ki.weakening (Δ' := .typeExt (.typeExt .empty a _) aₜ _) (Δ'' := .empty) <|
+            Δwf.typeVarExt anin |>.typeVarExt aₜnin
       · exact var .head
 
 theorem ind_evidence (Δwf : [[⊢ Δ]])
   (Bᵣki : [[Δ, aₗ : *, aₜ : K, aₚ : L K, aᵢ : L K, aₙ : L K ⊢ Bᵣ^aₙ^aᵢ^aₚ^aₜ^aₗ : *]])
   (Bₗki : [[Δ, aᵢ : L K, aₙ : L K ⊢ Bₗ^aₙ^aᵢ : *]])
   : [[Δ ⊢ ∀ aₘ : (L K) ↦ *. (∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bᵣ → Bₗ → aₗ$4 → aₘ$5 aₚ$2 → aₘ$5 aₙ$0) → aₘ$5 { } → aₘ$5 A : *]] := sorry
+
+theorem id : [[Δ ⊢ λ a : K. a$0 : K ↦ K]] := by
+  apply lam []
+  intro a anin
+  rw [Type.TypeVar_open, if_pos rfl]
+  exact var .head
 
 end Kinding
 

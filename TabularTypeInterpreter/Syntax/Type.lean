@@ -13,9 +13,11 @@ metavar TypeVar, a
 
 metavar Label, ℓ
 
-metavar TypeClass, TC
+nonterminal ProdOrSum, Ξ :=
+  | "Π" : prod
+  | "Σ" : sum
 
-metavar Member, m
+metavar TypeClass, TC
 
 variable (TC : Unit) -- To silence warning about TC deprecation.
 
@@ -32,8 +34,7 @@ nonterminal Monotype, τ, ξ, μ, ρ, ψ, φ :=
   | "⌊" ξ "⌋"                                        : floor
   | u                                                : comm
   | "⟨" sepBy(ξ " ▹ " τ, ", ") optional(" : " κ) "⟩" : row
-  | "Π" "(" μ ") " ρ                                 : prod
-  | "Σ" "(" μ ") " ρ                                 : sum
+  | Ξ "(" μ ") " ρ                                   : prodOrSum
   | "Lift " «λτ» ρ                                   : lift
   | ρ₀ " ≲" "(" μ ") " ρ₁                            : contain
   | ρ₀ " ⊙" "(" μ ") " ρ₁ " ~ " ρ₂                   : concat
