@@ -572,6 +572,7 @@ decreasing_by
   apply Nat.le_of_lt
   exact List.sizeOf_lt_of_mem A'''in
 
+-- NOTE NOT REALLY USED
 theorem Type_open_preservation {A : «Type»}
   (Aki : Kinding [[(Δ, a : K, Δ')]] (A.TypeVar_open a n) K') (aninfvA : a ∉ A.fv)
   (Bki : [[Δ ⊢ B : K]]) : Kinding [[(Δ, (Δ' [B / a]))]] (A.Type_open B n) K' := sorry
@@ -579,8 +580,6 @@ theorem Type_open_preservation {A : «Type»}
 -- theorem weakening1 : [[Δ, Δ'' ⊢ A : K]] → [[⊢ Δ, Δ', Δ'']] → [[Δ, Δ', Δ'' ⊢ A : K]] := sorry
 
 -- theorem weakening2 : [[Δ ⊢ A : K]] → [[⊢ Δ, Δ']] → [[Δ, Δ' ⊢ A : K]] := sorry
-
-theorem weakening : [[Δ ⊢ A : K]] → [[⊢ Δ', Δ, Δ'']] → [[Δ', Δ, Δ'' ⊢ A : K]] := sorry
 
 end Kinding
 
@@ -911,11 +910,11 @@ theorem type_exists_close_at: ∀(T: «Type»), ∃ n, T.TypeVarLocallyClosed n 
 private
 theorem lc_abs_iff_body: («Type».lam K A).TypeVarLocallyClosed n ↔ ∃(I: List _), ∀x ∉ I, (A.TypeVar_open x n).TypeVarLocallyClosed n := sorry
 
--- NOTE correct, from the paper
+-- NOTE correct, from the paper, mtoohey has a proof of this
 private
 theorem close_open_var {T: «Type»} a (lc: T.TypeVarLocallyClosed n): (T.TypeVar_close a n).TypeVar_open a n = T := sorry
 
--- NOTE correct, from the paper
+-- NOTE correct, from the paper, mtoohey has a proof of this
 private
 theorem open_close_var {T: «Type»} a (nfv: a ∉ T.fv): (T.TypeVar_open a n).TypeVar_close a n = T := sorry
 
