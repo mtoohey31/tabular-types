@@ -679,11 +679,11 @@ judgement ParallelReduction :=
 ────────────────────────────── lamApp
 Δ ⊢ (λ a : K. A) B ≡> A'^^B'
 
-</ Δ ⊢ B : K // (B, _) in (BB's: List («Type» × «Type»)) />
+</ Δ ⊢ B@i : K // i in [:n] />
 ∀ a ∉ (I: List _), Δ, a : K ⊢ A^a ≡> A'^a
-</ Δ ⊢ B ≡> B' // (B, B') in BB's />
+</ Δ ⊢ B@i ≡> B'@i // i in [:n] />
 ──────────────────────────────────────────────────────────────────────────────── lamListApp
-Δ ⊢ (λ a : K. A) ⟦{ </ B // (B, _) in BB's /> }⟧ ≡> { </ A'^^B' // (_, B') in BB's /> }
+Δ ⊢ (λ a : K. A) ⟦{ </ B@i // i in [:n] /> }⟧ ≡> { </ A'^^B'@i // i in [:n] /> }
 
 ∀ a ∉ (I : List _), Δ, a : K ⊢ A^a ≡> B^a
 ─────────────────────────── lam
@@ -703,9 +703,9 @@ judgement ParallelReduction :=
 ───────────────────── arr
 Δ ⊢ A₁ → B₁ ≡> A₂ → B₂
 
-</ Δ ⊢ A ≡> B // (A, B) in (ABs : List («Type» × «Type»)) />
+</ Δ ⊢ A@i ≡> B@i // i in [:n] />
 ──────────────────────────────────────────────────────────────────────────────── list
-Δ ⊢ { </ A // (A, _) in ABs /> } ≡> { </ B // (_, B) in ABs /> }
+Δ ⊢ { </ A@i // i in [:n] /> } ≡> { </ B@i // i in [:n] /> }
 
 Δ ⊢ A₁ ≡> A₂
 Δ ⊢ B₁ ≡> B₂
@@ -805,35 +805,6 @@ def TypeEquivalence.symm : [[Δ ⊢ A ≡ B]] → [[Δ ⊢ B ≡ A]]
 
 private
 def TypeEquivalence.trans : [[Δ ⊢ A₀ ≡ A₁]] → [[Δ ⊢ A₁ ≡ A₂]] → [[Δ ⊢ A₀ ≡ A₂]] := sorry
-
--- FIXME wrong! must do freevar subst.
--- NOTE the list part of this proof is helpful though
-private
-theorem subst_preserve_pred : [[ Δ ⊢ A ≡> A' ]] → [[ Δ ⊢ T^^A ≡> T^^A' ]] := by
-  intro red
-
-  induction T using «Type».rec_uniform <;> (try aesop (rule_sets := [pred, topen]); done)
-  . case lam k T ih =>
-    simp [«Type».Type_open]
-    constructor
-    case I => exact []  -- FIXME not in fv(?)
-    case a =>
-      simp_all [«Type».TypeVar_open, «Type».Type_open]
-      sorry
-  case list l ih =>
-    induction l <;> (try aesop (rule_sets := [pred, topen]); done)
-    . case cons hd tl tail_ih =>
-      have ih' := ih hd (by aesop)
-      have tail_ih' := tail_ih (by aesop)
-      have H := @ParallelReduction.list (List.zip ((hd::tl).map (fun t => «Type».Type_open t A)) ((hd::tl).map (fun t => «Type».Type_open t A'))) Δ
-      simp at H
-      -- FIXME definition of PRed changed. Need to update whateverL1 and whateverL2
-      -- repeat rw [List.whateverL1 (by aesop), List.whateverL2 (by aesop)] at H
-      repeat rw [List.whateverflat] at H
-      have H' := H ih' (by aesop (add unsafe forward List.zip_member_map_same) (rule_sets := [pred]))
-      simp_all
-      sorry
-  all_goals sorry
 
 private
 theorem fv_open_not_in : ∀{A B: «Type»}, a ∉ A.fv → a ∉ B.fv → a ∉ (A.Type_open B n).fv := by
@@ -1619,7 +1590,6 @@ theorem pred_subst_out' {A T T' : «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red :
     rw [Environment.app_typeExt_assoc, Environment.typeExt_subst]
     apply ih <;> simp_all [Environment.append]
     . constructor <;> simp_all [Environment.typeVarDom, Environment.typeVarDom.app_comm]
-  . case list Tl red ih => sorry -- FIXME might want to redo list definition (now I think the nat index approach is easier to work with lol)
 
 private
 theorem pred_subst_out {A T T' : «Type»} (wf: [[ ⊢ Δ, a: K ]]) (red : [[ Δ, a: K ⊢ T ≡> T' ]]) (kindA: [[ Δ ⊢ A: K ]]) : [[ Δ ⊢ T[A/a] ≡> T'[A/a] ]] := by
