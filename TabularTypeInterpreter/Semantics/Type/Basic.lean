@@ -18,8 +18,7 @@ def Monotype.sizeOf' : Monotype → Nat
   | .floor ξ => 1 + ξ.sizeOf'
   | .comm u => 1 + sizeOf u
   | .row ξτs κ? => 1 + (List.sum <| ξτs.mapMem fun (ξ, τ) _ => ξ.sizeOf' + τ.sizeOf') + sizeOf κ?
-  | .prod μ ρ => 1 + μ.sizeOf' + ρ.sizeOf'
-  | .sum μ ρ => 1 + μ.sizeOf' + ρ.sizeOf'
+  | .prodOrSum _ μ ρ => 1 + μ.sizeOf' + ρ.sizeOf'
   | .lift «λτ» ρ => 1 + «λτ».sizeOf' + ρ.sizeOf'
   | .contain ρ₀ μ ρ₁ => 1 + ρ₀.sizeOf' + μ.sizeOf' + ρ₁.sizeOf'
   | .concat ρ₀ μ ρ₁ ρ₂ => 1 + ρ₀.sizeOf' + μ.sizeOf' + ρ₁.sizeOf' + ρ₂.sizeOf'

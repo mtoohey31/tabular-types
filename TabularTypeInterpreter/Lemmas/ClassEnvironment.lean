@@ -1,61 +1,36 @@
+import Aesop
 import TabularTypeInterpreter.Semantics.Type.KindingAndElaboration
 import TabularTypeInterpreter.Theorems.Kind
 
-namespace TabularTypeInterpreter.ClassEnvironment
+namespace TabularTypeInterpreter
 
-namespace WellFormedness
+open Std
 
-theorem ext_eliml (Γcγcw : [[⊢c Γc, γc]]) : [[⊢c Γc]] :=
-  let .ext Γcw .. := Γcγcw
-  Γcw
+namespace ClassEnvironment
 
-theorem KindingAndElaboration_of_ClassEnvironment_in {TC} (Γcw : [[⊢c Γc]])
-  (TCin : [[(</ TCₛ@i a ⇝ Aₛ@i // i in [:n] /> ⇒ TC a : κ) ↦ m : σ ⇝ A ∈ Γc]]) (κe : [[⊢ κ ⇝ K]])
-  : ∀ a, [[ε, a : K ⊢ A^a : *]] ∧ ∀ i ∈ [:n], [[ε, a : K ⊢ Aₛ@i^a : *]] := by
-  intro a
-  generalize γceq : ClassEnvironmentEntry.mk
-    (List.map (fun i => [(TCₛ i, Aₛ i)]) (Coe.coe [:n])).flatten TC κ m σ A = γc at TCin
-  match TCin with
-  | .head =>
-    let .ext _ κ'e _ Aopki _ Aₛopki := Γcw
-    let ⟨TCₛAₛeq, _, κeqκ', _, _, AeqA'⟩ := ClassEnvironmentEntry.mk.inj γceq
-    cases κeqκ'
-    cases AeqA'
-    cases κe.deterministic κ'e
-    exact ⟨
-      Aopki a,
-      fun i inin => by
-        rw [List.map_singleton_flatten, List.map_singleton_flatten] at TCₛAₛeq
-        let length_eq : List.length (List.map _ _) = List.length _ := by rw [TCₛAₛeq]
-        dsimp [Coe.coe] at length_eq
-        rw [List.length_map, List.length_map, Std.Range.length_toList, Std.Range.length_toList,
-            Nat.sub_zero, Nat.sub_zero] at length_eq
-        cases length_eq
-        rw [And.right <| Prod.mk.inj <| Std.Range.eq_of_mem_of_map_eq' TCₛAₛeq i inin]
-        exact Aₛopki i inin a
-    ⟩
-  | .ext TCin' .. =>
-    let ⟨TCₛAₛeq, _, κeqκ', _, _, AeqA'⟩ := ClassEnvironmentEntry.mk.inj γceq
-    cases κeqκ'
-    cases AeqA'
-    let ⟨Aopki, Aₛopki⟩ :=
-      Γcw.ext_eliml.KindingAndElaboration_of_ClassEnvironment_in TCin' κe a
-    exact ⟨
-      Aopki,
-      fun i inin => by
-        rw [List.map_singleton_flatten, List.map_singleton_flatten] at TCₛAₛeq
-        let length_eq : List.length (List.map _ _) = List.length _ := by rw [TCₛAₛeq]
-        dsimp [Coe.coe] at length_eq
-        rw [List.length_map, List.length_map, Std.Range.length_toList, Std.Range.length_toList,
-            Nat.sub_zero, Nat.sub_zero] at length_eq
-        cases length_eq
-        rw [And.right <| Prod.mk.inj <| Std.Range.eq_of_mem_of_map_eq' TCₛAₛeq i inin]
-        exact Aₛopki i inin
-    ⟩
+theorem TCDom_append : (append Γc Γc').TCDom = Γc'.TCDom ++ Γc.TCDom := by
+  match Γc' with
+  | empty => rw [append, TCDom, List.nil_append]
+  | ext .. => rw [append, TCDom, TCDom_append, TCDom, List.cons_append]
 
-end WellFormedness
+theorem memberDom_append : (append Γc Γc').memberDom = Γc'.memberDom ++ Γc.memberDom := by
+  match Γc' with
+  | empty => rw [append, memberDom, List.nil_append]
+  | ext .. => rw [append, memberDom, memberDom_append, memberDom, List.cons_append]
 
-theorem In.deterministic (γc₀in : [[γc₀ ∈ Γc]]) (γc₁in : [[γc₁ ∈ Γc]]) (eq : γc₀.2 = γc₁.2)
+namespace In
+
+theorem ne_of_TCNotInDom {TC} (γcin : [[γc ∈ Γc]]) (TCnin : [[TC ∉ dom(Γc)]]) : TC ≠ γc.2 :=
+  match γcin with
+  | .head => List.ne_of_not_mem_cons TCnin
+  | .ext γcin' .. => γcin'.ne_of_TCNotInDom <| List.not_mem_of_not_mem_cons TCnin
+
+theorem ne_of_MemberNotInDom (γcin : [[γc ∈ Γc]]) (mnin : [[m ∉ dom(Γc)]]) : m ≠ γc.4 :=
+  match γcin with
+  | .head => List.ne_of_not_mem_cons mnin
+  | .ext γcin' .. => γcin'.ne_of_MemberNotInDom <| List.not_mem_of_not_mem_cons mnin
+
+theorem deterministic (γc₀in : [[γc₀ ∈ Γc]]) (γc₁in : [[γc₁ ∈ Γc]]) (eq : γc₀.2 = γc₁.2)
   : γc₀ = γc₁ := by
   cases γc₀in
   · case head =>
@@ -64,7 +39,7 @@ theorem In.deterministic (γc₀in : [[γc₀ ∈ Γc]]) (γc₁in : [[γc₁ �
     · case ext ne _ _ =>
       cases eq
       nomatch ne
-  · case ext TC' _ _ _ _ _ _ _ γc₀in' ne _ =>
+  · case ext TC' _ _ _ _ _ _ _ _ γc₀in' ne _ =>
     generalize γceq : ClassEnvironmentEntry.mk _ TC' .. = γc at *
     cases γc₁in
     · case head =>
@@ -74,4 +49,117 @@ theorem In.deterministic (γc₀in : [[γc₀ ∈ Γc]]) (γc₁in : [[γc₁ �
     · case ext γc₁in' =>
       exact γc₀in'.deterministic γc₁in' eq
 
-end TabularTypeInterpreter.ClassEnvironment
+end In
+
+local instance : Inhabited TypeClass where
+  default := .zero
+in
+local instance : Inhabited «F⊗⊕ω».Type where
+  default := .list []
+in
+theorem WellFormedness.In_append_inl (ΓcΓc'w : [[⊢c Γc, Γc']]) (γcin : [[γc ∈ Γc]])
+  : [[γc ∈ Γc, Γc']] := by
+  match Γc' with
+  | .empty => exact γcin
+  | .ext .. =>
+    cases ΓcΓc'w
+    case ext ΓcΓc''w TCnin mnin _ _ =>
+    have := ΓcΓc''w.In_append_inl γcin
+    let .mk TCₛAₛ .. := γc
+    rw [← Range.map_get!_eq (as := TCₛAₛ), Range.map, ← List.map_singleton_flatten,
+        ← Range.map] at this ⊢
+    rw [TCNotInDom, TCDom_append] at TCnin
+    let ⟨_, TCninΓc⟩ := List.not_mem_append'.mp TCnin
+    rw [MemberNotInDom, memberDom_append] at mnin
+    let ⟨_, mninΓc⟩ := List.not_mem_append'.mp mnin
+    exact this.ext (γcin.ne_of_TCNotInDom TCninΓc).symm (γcin.ne_of_MemberNotInDom mninΓc).symm
+
+end ClassEnvironment
+
+theorem TypeScheme.KindingAndElaboration.class_weakening (σke : [[Γc; Γ ⊢ σ : κ ⇝ A]])
+  (ΓcΓc'w : [[⊢c Γc, Γc']]) : [[Γc, Γc'; Γ ⊢ σ : κ ⇝ A]] := by
+  induction σke using rec (motive_2 := fun _ _ _ _ => True)
+    (motive_3 := fun _ _ => ∀ {x : True}, True)
+  case scheme I _ κ₀e ih => exact scheme I (ih · · ΓcΓc'w) κ₀e
+  case lift I _ κ₀e _ τih ρih => exact lift I (τih · · ΓcΓc'w) κ₀e (ρih ΓcΓc'w)
+  case tc γcin _ _ ih => exact tc ΓcΓc'w (ΓcΓc'w.In_append_inl γcin) (ih ΓcΓc'w)
+  case all I _ κ₀e _ ψih ρih => exact all I (ψih · · ΓcΓc'w) κ₀e (ρih ΓcΓc'w)
+  case ind I₀ I₁ _ κe _ _ ρih Bᵣih Bₗih =>
+    exact ind I₀ I₁ (ρih ΓcΓc'w) κe (Bᵣih · · · · · · · · · · ΓcΓc'w) (Bₗih · · · · ΓcΓc'w)
+  all_goals aesop (add safe constructors KindingAndElaboration)
+
+namespace ClassEnvironment
+
+namespace WellFormedness
+
+theorem ext_eliml (Γcγcw : [[⊢c Γc, γc]]) : [[⊢c Γc]] :=
+  let .ext Γcw .. := Γcγcw
+  Γcw
+
+theorem of_ClassEnvironment_in {TC} (Γcw : [[⊢c Γc]])
+  (TCin : [[(</ TCₛ@i a ⇝ Aₛ@i // i in [:n] /> ⇒ TC a : κ) ↦ m : σ ⇝ A ∈ Γc]])
+  : ∃ K, [[⊢ κ ⇝ K]] ∧ (∀ a, [[Γc; ε, a : κ ⊢ σ^a : * ⇝ A^a]]) ∧ (∀ a, [[ε, a : K ⊢ A^a : *]]) ∧
+    (∀ a, ∀ i ∈ [:n], [[Γc; ε, a : κ ⊢ TCₛ@i a : C ⇝ Aₛ@i^a]]) ∧
+    (∀ a, ∀ i ∈ [:n], [[ε, a : K ⊢ Aₛ@i^a : *]]) := by
+  generalize γceq : ClassEnvironmentEntry.mk .. = γc at TCin
+  match TCin with
+  | .head =>
+    let Γcw@(ext _ _ _ κe σke Ake TCₛke Aₛki) := Γcw
+    injection γceq with TCₛAₛeq TCeq κeq meq σeq Aeq
+    rw [List.map_singleton_flatten, List.map_singleton_flatten] at TCₛAₛeq
+    let length_eq : List.length (List.map ..) = List.length _ := by rw [TCₛAₛeq]
+    rw [List.length_map, List.length_map, Range.length_toList, Range.length_toList] at length_eq
+    cases length_eq
+    cases κeq
+    cases σeq
+    cases Aeq
+    apply Exists.intro _
+    constructor
+    · exact κe
+    · constructor
+      · exact (σke · |>.class_weakening Γcw (Γc' := .ext .empty _))
+      · constructor
+        · exact Ake
+        · constructor
+          · intro a i mem
+            let ⟨TCₛeq, Aₛeq⟩ := Prod.mk.inj <| Range.eq_of_mem_of_map_eq TCₛAₛeq i mem
+            rw [TCₛeq, Aₛeq]
+            exact TCₛke i mem a |>.class_weakening Γcw (Γc' := .ext .empty _)
+          · intro a i mem
+            let ⟨TCₛeq, Aₛeq⟩ := Prod.mk.inj <| Range.eq_of_mem_of_map_eq TCₛAₛeq i mem
+            rw [Aₛeq]
+            exact Aₛki i mem a
+  | .ext TCin' TCneTC' mnem' (TC' := TC') =>
+    generalize ClassEnvironmentEntry.mk _ TC' .. = γc at *
+    let Γcw@(ext Γcw' ..) := Γcw
+    let ⟨_, κe, σke, Aki, TCₛke, Aₛki⟩ := Γcw'.of_ClassEnvironment_in TCin'
+    injection γceq with TCₛAₛeq TCeq κeq meq σeq Aeq
+    rw [List.map_singleton_flatten, List.map_singleton_flatten] at TCₛAₛeq
+    let length_eq : List.length (List.map ..) = List.length _ := by rw [TCₛAₛeq]
+    rw [List.length_map, List.length_map, Range.length_toList, Range.length_toList] at length_eq
+    cases length_eq
+    cases κeq
+    cases σeq
+    cases Aeq
+    apply Exists.intro _
+    constructor
+    · exact κe
+    · constructor
+      · exact (σke · |>.class_weakening Γcw (Γc' := .ext .empty _))
+      · constructor
+        · exact Aki
+        · constructor
+          · intro a i mem
+            let ⟨TCₛeq, Aₛeq⟩ := Prod.mk.inj <| Range.eq_of_mem_of_map_eq TCₛAₛeq i mem
+            rw [TCₛeq, Aₛeq]
+            exact TCₛke a i mem |>.class_weakening Γcw (Γc' := .ext .empty _)
+          · intro a i mem
+            let ⟨TCₛeq, Aₛeq⟩ := Prod.mk.inj <| Range.eq_of_mem_of_map_eq TCₛAₛeq i mem
+            rw [Aₛeq]
+            exact Aₛki a i mem
+
+end WellFormedness
+
+end ClassEnvironment
+
+end TabularTypeInterpreter

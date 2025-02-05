@@ -15,8 +15,7 @@ def rec_uniform {motive : Monotype → Prop} (var : ∀ a, motive (.var a))
   (arr : ∀ τ₀ τ₁, motive τ₀ → motive τ₁ → motive (.arr τ₀ τ₁)) (label : ∀ ℓ, motive (.label ℓ))
   (floor : ∀ ξ, motive ξ → motive (.floor ξ)) (comm : ∀ u, motive (.comm u))
   (row : ∀ ξτs κ?, (∀ ξτ ∈ ξτs, motive ξτ.fst ∧ motive ξτ.snd) → motive (.row ξτs κ?))
-  (prod : ∀ μ ρ, motive μ → motive ρ → motive (.prod μ ρ))
-  (sum : ∀ μ ρ, motive μ → motive ρ → motive (.sum μ ρ))
+  (prodOrSum : ∀ Ξ μ ρ, motive μ → motive ρ → motive (.prodOrSum Ξ μ ρ))
   (lift : ∀ κ τ ρ, motive τ → motive ρ → motive (.lift (.mk κ τ) ρ))
   (contain : ∀ ρ₀ μ ρ₁, motive ρ₀ → motive μ → motive ρ₁ → motive (.contain ρ₀ μ ρ₁))
   (concat : ∀ ρ₀ μ ρ₁ ρ₂, motive ρ₀ → motive μ → motive ρ₁ → motive ρ₂ → motive (.concat ρ₀ μ ρ₁ ρ₂))
@@ -28,7 +27,7 @@ def rec_uniform {motive : Monotype → Prop} (var : ∀ a, motive (.var a))
   Monotype.rec (motive_1 := fun | .mk _ τ => motive τ) (motive_2 := motive)
     (motive_3 := fun τss => ∀ τs ∈ τss, motive τs.fst ∧ motive τs.snd)
     (motive_4 := fun τs => motive τs.fst ∧ motive τs.snd) (fun _ _ mτ => mτ) var app arr label
-    floor comm row prod sum (fun | .mk κ τ, ρ, mτ, mρ => lift κ τ ρ mτ mρ) contain concat typeClass
+    floor comm row prodOrSum (fun | .mk κ τ, ρ, mτ, mρ => lift κ τ ρ mτ mρ) contain concat typeClass
     (fun | .mk κ τ, ρ, mτ, mρ => all κ τ ρ mτ mρ) ind
     (fun | .mk κ τ, ρ₀, ρ₁, ρ₂, mτ, mρ₀, mρ₁, mρ₂ => split κ τ ρ₀ ρ₁ ρ₂ mτ mρ₀ mρ₁ mρ₂)
     (fun _ => (nomatch ·))
@@ -45,8 +44,8 @@ theorem TypeVar_open_sizeOf (τ : Monotype) : sizeOf (τ.TypeVar_open a n) = siz
     rw [Prod.mk.sizeOf_spec, Prod.mk.sizeOf_spec, ih _ mem |>.left, ih _ mem |>.right]
   all_goals aesop
     (add simp [TypeVar_open, TypeLambda.TypeVar_open, var.sizeOf_spec, app.sizeOf_spec,
-      arr.sizeOf_spec, floor.sizeOf_spec, comm.sizeOf_spec, row.sizeOf_spec, prod.sizeOf_spec,
-      sum.sizeOf_spec, lift.sizeOf_spec, contain.sizeOf_spec, concat.sizeOf_spec,
+      arr.sizeOf_spec, floor.sizeOf_spec, comm.sizeOf_spec, row.sizeOf_spec, prodOrSum.sizeOf_spec,
+      lift.sizeOf_spec, contain.sizeOf_spec, concat.sizeOf_spec,
       typeClass.sizeOf_spec, all.sizeOf_spec, ind.sizeOf_spec, split.sizeOf_spec,
       TypeLambda.mk.sizeOf_spec])
 
@@ -91,6 +90,17 @@ theorem TypeVar_open_comm (τ : Monotype)
     simp
     exact ⟨ih _ mem |>.left mnen, ih _ mem |>.right mnen⟩
   all_goals aesop (add simp [TypeVar_open, TypeLambda.TypeVar_open])
+
+theorem TypeVar_open_eq_Monotype_open_var : TypeVar_open τ a n = τ.Monotype_open (.var a) n := by
+  induction τ using rec_uniform generalizing n
+  case row _ _ ih =>
+    rw [TypeVar_open, Monotype_open, List.mapMem_eq_map, List.mapMem_eq_map]
+    apply row.injEq .. |>.mpr ⟨_, rfl⟩
+    apply List.map_eq_map_iff.mpr
+    intro ξτ mem
+    rw [ih ξτ mem |>.left, ih ξτ mem |>.right]
+  all_goals aesop
+    (add simp [TypeVar_open, Monotype_open, TypeLambda.TypeVar_open, TypeLambda.Monotype_open])
 
 namespace TypeVarLocallyClosed
 
@@ -277,6 +287,10 @@ theorem TypeVar_close_sizeOf' (γ : QualifiedType) : (γ.TypeVar_close a n).size
   | .mono τ => rw [TypeVar_close, sizeOf', sizeOf', τ.TypeVar_close_sizeOf']
   | .qual ψ γ => rw [TypeVar_close, sizeOf', sizeOf', ψ.TypeVar_close_sizeOf', γ.TypeVar_close_sizeOf']
 
+theorem TypeVar_open_eq_Monotype_open_var : TypeVar_open γ a n = γ.Monotype_open (.var a) n := by
+  induction γ <;> aesop
+    (add simp [TypeVar_open, Monotype_open], safe Monotype.TypeVar_open_eq_Monotype_open_var)
+
 namespace TypeVarLocallyClosed
 
 theorem weakening (γlc : TypeVarLocallyClosed γ m) : TypeVarLocallyClosed γ (m + n) := by
@@ -369,6 +383,11 @@ theorem TypeVar_close_sizeOf' (σ : TypeScheme) : (σ.TypeVar_close a n).sizeOf'
   | .qual γ => rw [TypeVar_close, sizeOf', sizeOf', γ.TypeVar_close_sizeOf']
   | .quant _ σ => rw [TypeVar_close, sizeOf', sizeOf', σ.TypeVar_close_sizeOf']
 
+theorem TypeVar_open_eq_Monotype_open_var : TypeVar_open σ a n = σ.Monotype_open (.var a) n := by
+  induction σ generalizing n <;> aesop
+    (add simp [TypeVar_open, Monotype_open], safe [Monotype.TypeVar_open_eq_Monotype_open_var,
+                                                   QualifiedType.TypeVar_open_eq_Monotype_open_var])
+
 namespace TypeVarLocallyClosed
 
 theorem weakening (σlc : TypeVarLocallyClosed σ m) : TypeVarLocallyClosed σ (m + n) := by
@@ -437,6 +456,18 @@ theorem not_mem_freeTypeVars_TypeVar_close : a ∉ (TypeVar_close σ a n).freeTy
     exact ih
 
 namespace KindingAndElaboration
+
+theorem empty_row_inversion (rowke : [[Γc; Γ ⊢ ⟨ : κ'⟩ : κ ⇝ A]]) : κ = [[R κ']] ∧ A = [[{ }]] := by
+  generalize ξτseq : [] = ξτs, κ?eq : some κ' = κ? at rowke
+  let .row .. := rowke
+  rw [Option.filter] at κ?eq
+  split at κ?eq
+  case isFalse => nomatch κ?eq
+  cases κ?eq
+  rw [List.map_singleton_flatten] at ξτseq ⊢
+  cases Nat.eq_zero_of_le_zero <| Range.toList_eq_nil_iff.mp <| List.map_eq_nil_iff.mp ξτseq.symm
+  rw [Range.toList_eq_nil_iff.mpr (Nat.le_refl _), List.map_nil]
+  exact ⟨rfl, rfl⟩
 
 theorem row_inversion
   (rowke : [[Γc; Γ ⊢ ⟨</ ξ@i ▹ τ@i // i in [:n] /> </ : κ' // b />⟩ : κ ⇝ A]])
