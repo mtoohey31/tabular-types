@@ -67,6 +67,12 @@ judgement TypeEquivalence :=
 ───────────────────────────────────────────────────────────────── listAppR
 Δ ⊢ { </ A B@i // i in [:n] /> } ≡ A ⟦{ </ B@i // i in [:n] /> }⟧
 
+────────────────────────── listAppIdL
+Δ ⊢ (λ a : K. a$0) ⟦A⟧ ≡ A
+
+────────────────────────── listAppIdR
+Δ ⊢ A ≡ (λ a : K. a$0) ⟦A⟧
+
 ∀ a ∉ I, Δ, a : K ⊢ A^a ≡ B^a
 ───────────────────────────── lam (I : List TypeVarId)
 Δ ⊢ λ a : K. A ≡ λ a : K. B
