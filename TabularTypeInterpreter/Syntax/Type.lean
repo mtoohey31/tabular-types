@@ -25,23 +25,23 @@ nonterminal TypeLambda, «λτ» :=
   | "(" "λ " a " : " κ ". " τ ")" : mk (bind a in τ)
 
 nonterminal Monotype, τ, ξ, μ, ρ, ψ, φ :=
-  | a                                   : var
-  | φ τ                                 : app
-  | τ₀ " → " τ₁                         : arr
-  | ℓ                                   : label
-  | "⌊" ξ "⌋"                           : floor
-  | u                                   : comm
-  | "⟨" sepBy(ξ " ▹ " τ, ", ") "⟩"      : row
-  | "Π" "(" μ ") " ρ                    : prod
-  | "Σ" "(" μ ") " ρ                    : sum
-  | "Lift " «λτ» ρ                      : lift
-  | ρ₀ " ≲" "(" μ ") " ρ₁               : contain
-  | ρ₀ " ⊙" "(" μ ") " ρ₁ " ~ " ρ₂      : concat
-  | TC τ                                : typeClass
-  | "All " «λτ» ρ                       : all
-  | "Ind " ρ                            : ind
-  | "Split " «λτ» ρ₀ " ⊙' " ρ₁ " ~ " ρ₂ : split
-  | "(" τ ")"                           : paren (desugar := return τ)
+  | a                                                : var
+  | φ τ                                              : app
+  | τ₀ " → " τ₁                                      : arr
+  | ℓ                                                : label
+  | "⌊" ξ "⌋"                                        : floor
+  | u                                                : comm
+  | "⟨" sepBy(ξ " ▹ " τ, ", ") optional(" : " κ) "⟩" : row
+  | "Π" "(" μ ") " ρ                                 : prod
+  | "Σ" "(" μ ") " ρ                                 : sum
+  | "Lift " «λτ» ρ                                   : lift
+  | ρ₀ " ≲" "(" μ ") " ρ₁                            : contain
+  | ρ₀ " ⊙" "(" μ ") " ρ₁ " ~ " ρ₂                   : concat
+  | TC τ                                             : typeClass
+  | "All " «λτ» ρ                                    : all
+  | "Ind " ρ                                         : ind
+  | "Split " «λτ» ρ₀ " ⊙' " ρ₁ " ~ " ρ₂              : split
+  | "(" τ ")"                                        : paren (desugar := return τ)
 
 end
 
