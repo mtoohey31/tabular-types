@@ -3,7 +3,7 @@ import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Type
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Environment
 import TabularTypeInterpreter.Lemmas.ClassEnvironment
 import TabularTypeInterpreter.Lemmas.Type
-import TabularTypeInterpreter.Lemmas.TypeEnvironment
+import TabularTypeInterpreter.Lemmas.TypeEnvironment.Basic
 import TabularTypeInterpreter.Semantics.Type
 import TabularTypeInterpreter.Theorems.Kind
 
@@ -98,9 +98,9 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]])
         let ⟨aninA, aninA₁⟩ := List.not_mem_append'.mp aninAA₁
         let Δa := Δ.typeExt a (K.arr .star)
         let Δawf : [[⊢ Δa]] := Δwf.typeVarExt aninΔ
-        simp only [«F⊗⊕ω».Term.TypeVar_open, Type.TypeVar_open, if_pos]
+        simp only [Term.TypeVar_open, Type.TypeVar_open, if_pos]
         exact .lam (I := Δ.termVarDom) fun x xnin => by
-          simp only [«F⊗⊕ω».Term.TermVar_open, if_pos]
+          simp only [Term.TermVar_open, if_pos]
           rw [Fₚ₀₁lc.TypeVar_open_id, Fₚ₁₂lc.TypeVar_open_id,
               Fₚ₀₁ty.TermVarLocallyClosed_of.TermVar_open_id,
               Fₚ₁₂ty.TermVarLocallyClosed_of.TermVar_open_id]
@@ -132,9 +132,9 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]])
         let ⟨aninA, aninA₁⟩ := List.not_mem_append'.mp aninAA₁
         let Δa := Δ.typeExt a (K.arr .star)
         let Δawf : [[⊢ Δa]] := Δwf.typeVarExt aninΔ
-        simp only [«F⊗⊕ω».Term.TypeVar_open, Type.TypeVar_open, if_pos]
+        simp only [Term.TypeVar_open, Type.TypeVar_open, if_pos]
         exact .lam (I := Δ.termVarDom) fun x xnin => by
-          simp only [«F⊗⊕ω».Term.TermVar_open, if_pos]
+          simp only [Term.TermVar_open, if_pos]
           rw [Fₛ₀₁lc.TypeVar_open_id, Fₛ₁₂lc.TypeVar_open_id,
               Fₛ₀₁ty.TermVarLocallyClosed_of.TermVar_open_id,
               Fₛ₁₂ty.TermVarLocallyClosed_of.TermVar_open_id]
@@ -201,16 +201,16 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]])
       exact A'slc' i mem'
     exact ⟨
       .typeLam (I := Δ.typeVarDom) fun a anin => by
-        simp only [«F⊗⊕ω».Term.TypeVar_open, Type.TypeVar_open, if_pos]
+        simp only [Term.TypeVar_open, Type.TypeVar_open, if_pos]
         let Δawf := Γwe.soundness.typeVarExt anin (K := K.arr .star)
         exact .lam (I := Δ.termVarDom) fun x xnin => by
-          simp only [«F⊗⊕ω».Term.TermVar_open, List.mapMem_eq_map, if_pos]
+          simp only [Term.TermVar_open, List.mapMem_eq_map, if_pos]
           rw [List.map_singleton_flatten, List.map_singleton_flatten, List.map_singleton_flatten,
               List.map_map, List.map_map, List.map_map, List.map_map, List.map_map,
               ← List.map_singleton_flatten, ← Range.map, ← List.map_singleton_flatten,
               ← Range.map, ← List.map_singleton_flatten, ← Range.map]
           apply Typing.equiv _ <| .prod .listAppR
-          simp only [Function.comp, «F⊗⊕ω».Term.TypeVar_open, «F⊗⊕ω».Term.TermVar_open, if_pos]
+          simp only [Function.comp, Term.TypeVar_open, Term.TermVar_open, if_pos]
           apply Typing.prodIntro
           intro i imem
           simp only
@@ -247,7 +247,7 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]])
           rw [B'ki.TypeVarLocallyClosed_of.TypeVar_open_id]
           exact B'ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty),
       .typeLam (I := Δ.typeVarDom) fun a anin => by
-        simp only [«F⊗⊕ω».Term.TypeVar_open, Type.TypeVar_open, if_pos]
+        simp only [Term.TypeVar_open, Type.TypeVar_open, if_pos]
         let Δa := Δ.typeExt a <| K.arr .star
         let Δawf : [[⊢ Δa]] := Γwe.soundness.typeVarExt anin (K := K.arr .star)
         exact .lam (I := Δ.termVarDom) fun x xnin => by
@@ -261,7 +261,7 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]])
             rw [← A'eq i imem] at A'ki
             rw [A'ki.TypeVarLocallyClosed_of.TypeVar_open_id]
             exact A'ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)
-          simp only [«F⊗⊕ω».Term.TermVar_open, List.mapMem_eq_map, if_pos]
+          simp only [Term.TermVar_open, List.mapMem_eq_map, if_pos]
           rw [← Range.map_get!_eq (as := p'), length_eq', Range.map, List.map_singleton_flatten,
               List.map_singleton_flatten, List.map_singleton_flatten, List.zip_eq_zipWith,
               Range.map, List.zipWith_map_right, List.zipWith_same, List.map_map, List.map_map,
@@ -273,11 +273,11 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]])
           · exact .equiv (.var Δaxwf .head) <| .sum <| .listAppL
           · intro i imem
             simp only
-            simp only [Type.TypeVar_open, «F⊗⊕ω».Term.TypeVar_open, «F⊗⊕ω».Term.TermVar_open,
+            simp only [Type.TypeVar_open, Term.TypeVar_open, Term.TermVar_open,
                        if_pos]
             rw [if_neg (nomatch ·)]
             exact .lam (I := x :: Δa.termVarDom) fun x' x'nin => by
-              simp only [«F⊗⊕ω».Term.TermVar_open, if_pos]
+              simp only [Term.TermVar_open, if_pos]
               apply Typing.equiv _ <| .sum <| .listAppR
               let iltplen := imem.right
               rw [← length_eq'] at iltplen
@@ -449,25 +449,6 @@ theorem TypeScheme.KindingAndElaboration.TypeVar_open_deterministic {I₀ I₁ :
   let ⟨aninI₀, aninI₁⟩ := List.not_mem_append'.mp anin''
   let ⟨κeq, opeq⟩ := σke₀ a aninI₀ |>.deterministic <| σke₁ a aninI₁
   ⟨κeq, Type.TypeVar_open_inj_of_not_mem_freeTypeVars aninA aninB opeq⟩
-
-theorem _root_.Exists.mkFun [Inhabited α] {p : Nat → α → Prop}
-  : (∀ i ∈ [:n], ∃ a, p i a) → ∃ f : Nat → α, ∀ i ∈ [:n], p i (f i) := by
-  intro h
-  induction n with
-  | zero => exact ⟨fun _ => default, fun i mem => nomatch mem⟩
-  | succ n ih =>
-    let ⟨f', h'⟩ := ih fun i mem => h i ⟨mem.lower, Nat.lt_add_right _ mem.upper⟩
-    let ⟨a, h''⟩ := h n ⟨Nat.zero_le _, Nat.lt_succ_self _⟩
-    let f i := if i = n then a else f' i
-    apply Exists.intro f
-    intro i mem
-    dsimp only [f]
-    split
-    · case isTrue h''' =>
-      cases h'''
-      exact h''
-    · case isFalse h''' =>
-      exact h' i ⟨mem.lower, Nat.lt_of_le_of_ne (Nat.le_of_lt_succ mem.upper) h'''⟩
 
 namespace TypeScheme.SubtypingAndElaboration
 
@@ -680,7 +661,7 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γwe : [[Γc �
     rw [ρ₀ke.soundness Γwe (.row .star) |>.TypeVarLocallyClosed_of.Type_open_id,
         ρ₁ke.soundness Γwe (.row .star) |>.TypeVarLocallyClosed_of.Type_open_id] at this
     exact .equiv (this .id) <| .arr (.sum .listAppIdL) (.sum .listAppIdL)
-  | decay σ₀ke' =>
+  | decay σ₀ke' _ =>
     rename ProdOrSum => Ξ
     rcases σ₀ke.deterministic σ₀ke' with ⟨rfl, rfl⟩
     apply Typing.lam Δ.termVarDom
@@ -699,7 +680,7 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γwe : [[Γc �
       cases ρke.deterministic ρke' |>.right
       let Δxwf := Γwe.soundness.termVarExt xnin <| σ₀ke.soundness Γwe κe
       exact .var Δxwf .head
-  | never =>
+  | never _ _ =>
     let σ₀ke@(.sum _ ρke) := σ₀ke
     cases ρke.empty_row_inversion.right
     apply Typing.lam Δ.termVarDom
