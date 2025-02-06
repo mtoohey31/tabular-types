@@ -154,14 +154,14 @@ def rec_uniform {motive : Monotype → Prop} (var : ∀ a, motive (.var a))
   (concat : ∀ ρ₀ μ ρ₁ ρ₂, motive ρ₀ → motive μ → motive ρ₁ → motive ρ₂ → motive (.concat ρ₀ μ ρ₁ ρ₂))
   (typeClass : ∀ TC τ, motive τ → motive (.typeClass TC τ))
   (all : ∀ κ ψ ρ, motive ψ → motive ρ → motive (.all (.mk κ ψ) ρ))
-  (ind : ∀ ρ, motive ρ → motive (.ind ρ))
+  («ind» : ∀ ρ, motive ρ → motive (.ind ρ))
   (split : ∀ κ τ ρ₀ ρ₁ ρ₂, motive τ → motive ρ₀ → motive ρ₁ → motive ρ₂ → motive (.split (.mk κ τ) ρ₀ ρ₁ ρ₂))
   (τ : Monotype) : motive τ :=
   Monotype.rec (motive_1 := fun | .mk _ τ => motive τ) (motive_2 := motive)
     (motive_3 := fun τss => ∀ τs ∈ τss, motive τs.fst ∧ motive τs.snd)
     (motive_4 := fun τs => motive τs.fst ∧ motive τs.snd) (fun _ _ mτ => mτ) var app arr label
     floor comm row prodOrSum (fun | .mk κ τ, ρ, mτ, mρ => lift κ τ ρ mτ mρ) contain concat typeClass
-    (fun | .mk κ τ, ρ, mτ, mρ => all κ τ ρ mτ mρ) ind
+    (fun | .mk κ τ, ρ, mτ, mρ => all κ τ ρ mτ mρ) «ind»
     (fun | .mk κ τ, ρ₀, ρ₁, ρ₂, mτ, mρ₀, mρ₁, mρ₂ => split κ τ ρ₀ ρ₁ ρ₂ mτ mρ₀ mρ₁ mρ₂)
     (fun _ => (nomatch ·))
     (fun _ _ mhead mtail _ mem => match mem with | .head _ => mhead | .tail _ mem' => mtail _ mem') (fun _ _ mτ₀ mτ₁ => ⟨mτ₀, mτ₁⟩) τ
@@ -455,7 +455,7 @@ theorem TypeVarLocallyClosed_of (σke : [[Γc; Γ ⊢ σ : κ ⇝ A]]) : σ.Type
     let .qual (.mono τlc) := ih₀ a anin
     let .qual (.mono ρlc) := ih₁
     exact .qual <| .mono <| .lift (.mk <| τlc.weakening.TypeVar_open_drop Nat.one_pos) ρlc
-  case ind ih₀ _ _ =>
+  case «ind» ih₀ _ _ =>
     let .qual (.mono ρlc) := ih₀
     exact .qual <| .mono <| .ind ρlc
   case all I _ _ _ ih₀ ih₁ =>
@@ -555,5 +555,11 @@ def Perm_preservation {ξ' : Nat → Monotype} (uni : [[unique(</ ξ@i // i in [
     exact var
 
 end Monotype.label.Uniqueness
+
+theorem TypeScheme.KindingAndElaboration.weakening (σke : [[Γc; Γ, Γ'' ⊢ σ : κ ⇝ A]])
+  (ΓΓ'Γ''we : [[Γc ⊢ Γ, Γ', Γ'' ⇝ Δ]]) : [[Γc; Γ, Γ', Γ'' ⊢ σ : κ ⇝ A]] := by
+  match σke with
+  | .var aκinΓ => sorry
+  | _ => sorry
 
 end TabularTypeInterpreter

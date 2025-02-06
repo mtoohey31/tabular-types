@@ -36,6 +36,37 @@ theorem TypeVarNotInDom_preservation (Γwe : [[Γc ⊢ Γ ⇝ Δ]]) (anin : [[a 
     | .inr ainΔ' => Γ'we.TypeVarNotInDom_preservation (List.not_mem_of_not_mem_cons anin) ainΔ'
   | .termExt Γ'we .. | .constrExt Γ'we .. => Γ'we.TypeVarNotInDom_preservation anin ainΔ
 
+-- TODO: Deduplicate with the one in MonotypeOpenPreservation.lean.
+theorem _root_.TabularTypeInterpreter.TypeScheme.KindingAndElaboration.weakening' : [[Γc; Γ, Γ'' ⊢ σ : κ ⇝ A]] → [[Γc ⊢ Γ, Γ', Γ'' ⇝ Δ]] → [[Γc; Γ, Γ', Γ'' ⊢ σ : κ ⇝ A]] := sorry
+
+theorem KindingAndElaboration_of_TermVarIn (Γwe : [[Γc ⊢ Γ ⇝ Δ]]) (xσinΓ : [[x : σ ∈ Γ]])
+  : ∃ A, [[Γc; Γ ⊢ σ : * ⇝ A]] :=
+  match Γwe, xσinΓ with
+  | Γwe@(.typeExt Γ'we ..), .typeExt xσinΓ' =>
+    let ⟨_, σke'⟩ := Γ'we.KindingAndElaboration_of_TermVarIn xσinΓ'
+    ⟨_, σke'.weakening' Γwe (Γ' := .typeExt .empty ..) (Γ'' := .empty)⟩
+  | Γwe@(.termExt _ _ σke), .head =>
+    ⟨_, σke.weakening' Γwe (Γ' := .termExt .empty ..) (Γ'' := .empty)⟩
+  | Γwe@(.termExt Γ'we ..), .termExt _ xσinΓ' =>
+    let ⟨_, σke'⟩ := Γ'we.KindingAndElaboration_of_TermVarIn xσinΓ'
+    ⟨_, σke'.weakening' Γwe (Γ' := .termExt .empty ..) (Γ'' := .empty)⟩
+  | Γwe@(.constrExt Γ'we ..), .constrExt _ xσinΓ' =>
+    let ⟨_, σke'⟩ := Γ'we.KindingAndElaboration_of_TermVarIn xσinΓ'
+    ⟨_, σke'.weakening' Γwe (Γ' := .constrExt .empty ..) (Γ'' := .empty)⟩
+
+theorem TermVarIn_preservation (Γwe : [[Γc ⊢ Γ ⇝ Δ]])
+  (xσinΓ : [[x : σ ∈ Γ]]) (σke : [[Γc; Γ ⊢ σ : * ⇝ A]]) : [[x : A ∈ Δ]] := by
+  match Γwe, xσinΓ with
+  | Γwe@(.typeExt Γ'we ..), .typeExt xσinΓ' =>
+    let ⟨_, σke'⟩ := Γ'we.KindingAndElaboration_of_TermVarIn xσinΓ'
+    let .refl _ := σke.deterministic <| σke.weakening' Γwe (Γ' := .typeExt .empty ..) (Γ'' .empty)
+    exact Γ'we.TermVarIn_preservation xσinΓ' σke' |>.typeVarExt
+  -- | .typeExt _ _ κe' (K := K'), .head => let .refl _ := κe.deterministic κe'; .head
+  -- | .typeExt Γ'we _ _ (a := a') , .typeExt anea'' aκinΓ' =>
+  --   Γ'we.TypeVarIn_preservation aκinΓ' κe |>.typeVarExt anea''
+  -- | .termExt Γ'we .., .termExt aκinΓ' => Γ'we.TypeVarIn_preservation aκinΓ' κe |>.termVarExt
+  -- | .constrExt Γ'we .., .constrExt aκinΓ' => Γ'we.TypeVarIn_preservation aκinΓ' κe |>.termVarExt
+
 theorem TermVarNotInDom_preservation (Γwe : [[Γc ⊢ Γ ⇝ Δ]]) (xnin : [[x ∉ dom'(Γ)]])
   : [[x ∉ dom(Δ)]] := fun xinΔ => match Γwe with
   | .empty => nomatch xinΔ

@@ -1,5 +1,6 @@
 import Lott.DSL.Elab.Bool
 import Lott.DSL.Elab.Nat
+import TabularTypeInterpreter.«F⊗⊕ω».Syntax.Term
 import TabularTypeInterpreter.Syntax.Term
 import TabularTypeInterpreter.Syntax.Type
 
@@ -8,6 +9,10 @@ namespace TabularTypeInterpreter
 instance : Coe TypeVarId «F⊗⊕ω».TypeVarId where coe a := a
 
 instance : Coe TypeVarId «F⊗⊕ω».TypeVar where coe a := .free a
+
+instance : Coe TermVarId «F⊗⊕ω».TermVarId where coe x := x
+
+instance : Coe TermVarId «F⊗⊕ω».TermVar where coe x := .free x
 
 judgement_syntax a " ≠ " a' : TypeVarNe (id a, a')
 
