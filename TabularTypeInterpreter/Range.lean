@@ -38,4 +38,15 @@ theorem mem_toList_le {m} n {h: m <= n} : ∀i ∈ [m:n].toList, i < n := by
       simp [Std.Range.toList] at h
       simp_all
 
+theorem map_f_get!_eq [Inhabited α] [Inhabited β] {as : List α} {f : α → β} : [:as.length].map (fun i => f <| as.get! i) = as.map f := by
+  match as with
+  | [] =>
+    rw [List.length_nil, map, toList, if_neg (nomatch ·), if_neg (Nat.not_lt_of_le (Nat.le_refl _)),
+        List.map_nil, List.map_nil]
+  | a :: as' =>
+    rw [List.length_cons, map, toList, if_neg (nomatch ·), if_pos (Nat.succ_pos _), List.map_cons,
+        List.get!_cons_zero, ← map_shift (Nat.le_add_left ..), Nat.add_sub_cancel,
+        Nat.add_sub_cancel, map_eq_of_eq_of_mem fun _ _ => congrArg f <| List.get!_cons_succ .., ← map,
+        map_f_get!_eq, List.map_cons]
+
 end Std.Range
