@@ -5,6 +5,7 @@ import Lott.DSL.Elab.JudgementComprehension
 import Lott.DSL.Elab.UniversalJudgement
 import Lott.DSL.Elab.Nat
 import Mathlib.Tactic
+import TabularTypeInterpreter.Range
 import TabularTypeInterpreter.List
 import TabularTypeInterpreter.Tactic
 import TabularTypeInterpreter.RuleSets
@@ -720,6 +721,24 @@ judgement ParallelReduction :=
 ───────────── sum
 Δ ⊢ ⊕ A ≡> ⊕ B
 
+namespace ParallelReduction
+
+private
+def list' (As Bs: List «Type») (l: As.length = Bs.length) (red: ∀A B, ⟨A, B⟩ ∈ (As.zip Bs) → [[ Δ ⊢ A ≡> B ]]): ParallelReduction Δ (Type.list As) (Type.list Bs) := by
+  have Type_d: «Type» := .var <| .free <| .zero
+  have H := list (n := As.length) (Δ := Δ) (A := As.toFn Type_d) (B := Bs.toFn Type_d) (by
+    intro i In
+    apply red
+    repeat rw [List.toFn_spec i (le := by cases In; simp_all)]
+    rw [<- List.getElem_zip (i := i) (l := As) (l' := Bs) (h := by cases In; simp_all)]
+    apply List.getElem_mem
+  )
+  simp_all [List.map_singleton_flatten]
+  simp_rw [List.toFn_spec', <- l, List.toFn_spec'] at H
+  exact H
+
+end ParallelReduction
+
 judgement_syntax Δ " ⊢ " A " ≡>* " B : MultiParallelReduction
 
 judgement MultiParallelReduction :=
@@ -814,51 +833,56 @@ theorem fv_open_not_in : ∀{A B: «Type»}, a ∉ A.fv → a ∉ B.fv → a ∉
 
 
 private
-theorem fv_openvar_not_in: ∀{A: «Type»}, a ∉ A.fv → a != a' → a ∉ (A.TypeVar_open a' n).fv := by
+theorem fv_openvar_not_in: ∀{A: «Type»}, a ∉ A.fv → a ≠ a' → a ∉ (A.TypeVar_open a' n).fv := by
   intro A notInAfv neq
   revert n
-  induction A using «Type».rec_uniform <;> (aesop (add norm «Type».fv) (rule_sets := [topen]))
+  induction A using «Type».rec_uniform <;> aesop (add norm «Type».fv) (rule_sets := [topen])
 
 private
-theorem fv_not_in_openvar: ∀{A: «Type»}, a ∉ (A.TypeVar_open a' n).fv → a != a' → a ∉ A.fv := sorry
-  -- intro A notInAfv neq
-  -- revert n
-  -- induction A using «Type».rec_uniform <;> (aesop (add norm «Type».fv))
-
+theorem fv_not_in_openvar: ∀{A: «Type»}, a ∉ (A.TypeVar_open a' n).fv → a ≠ a' → a ∉ A.fv := by
+  intro A notInAfv neq
+  revert n
+  induction A using «Type».rec_uniform <;> aesop (add norm «Type».fv) (rule_sets := [topen]) (config := { useSimpAll := false })
 -- TODO make fv_open rules a rule_set. Challenge: collides with Aesop.BuiltinRules.intro_not
 
--- NOTE definitely true, can do that after I figure out how to deal with lists
 private
-theorem red_no_intro_fv: [[ Δ ⊢ A ≡> B ]] → ∀a, a ∉ A.fv → a ∉ B.fv := by
-  intro red
-  induction red <;> (try simp_all [«Type».fv]; done)
+theorem red_no_intro_fv (red: [[ Δ ⊢ A ≡> B ]]) a (notInFV: a ∉ A.fv): a ∉ B.fv := by
+  induction red generalizing a <;> simp_all [«Type».fv]
   . case lamApp Δ B K I A A' B' kinding redA redB ihA' ihB' =>
-    simp [«Type».fv]
-    intros a notInAfv notInBfv
+    obtain ⟨notInAfv, notInBfv⟩ := notInFV
     apply fv_open_not_in
     . have ⟨a', notInI⟩ := (I ++ A'.fv).exists_fresh
       by_cases a = a'
       . case pos eq => simp_all
       . case neg neq =>
-        have ihA' := ihA' a' (by aesop) a (fv_openvar_not_in notInAfv (by aesop))
-        exact fv_not_in_openvar ihA' (by aesop)
-    . aesop
-  . case lamListApp => sorry
+        specialize ihA' a' (by simp_all) a (fv_openvar_not_in notInAfv (by simp_all))
+        exact fv_not_in_openvar ihA' (by simp_all)
+    . simp_all
+  . case lamListApp n Δ B K I A A' B' kinding redA redB ihA' ihB' =>
+    intro as i inRange _
+    obtain ⟨notInAfv, notInBfv⟩ := notInFV
+    apply fv_open_not_in
+    . have ⟨a', notInI⟩ := (I ++ A'.fv).exists_fresh
+      by_cases a = a'
+      . case pos eq => simp_all
+      . case neg neq =>
+        specialize ihA' a' (by simp_all) a (fv_openvar_not_in notInAfv (by simp_all))
+        exact fv_not_in_openvar ihA' (by simp_all)
+    . simp_all [Std.Range.mem_of_mem_toList]
   . case lam I Δ K A B red ih =>
-    intro a notInAfv
-    simp [«Type».fv] at *
     have ⟨a', notInI⟩ := (a :: I).exists_fresh
-    have ih' := ih a' (by aesop) a (by apply fv_openvar_not_in <;> aesop)
+    have ih' := @ih a' (by simp_all) a (by apply fv_openvar_not_in <;> aesop)
     apply fv_not_in_openvar at ih'
     aesop
   . case scheme I Δ K A B red ih =>
-    intro a notInAfv
-    simp [«Type».fv] at *
     have ⟨a', notInI⟩ := (a :: I).exists_fresh
     have ih' := ih a' (by aesop) a (by apply fv_openvar_not_in <;> aesop)
     apply fv_not_in_openvar at ih'
     aesop
-  . case list => sorry
+  . case list n Δ A B red ih =>
+    intro as i inRange _
+    simp_all [Std.Range.mem_of_mem_toList]
+
 
 private
 theorem red_lam_inversion : ∀I: List _, [[ Δ ⊢ (λ a? : K. A) ≡> T ]] → ∃ a A', a ∉ I ∧ T = [[λ a : K. A']] ∧ [[ Δ, a : K ⊢ A^a ≡> A'^a ]] := by
@@ -916,12 +940,6 @@ theorem TypeVarLocallyClosed_close : ∀{T: «Type»} n a, T.TypeVarLocallyClose
       apply Type.TypeVarLocallyClosed.weaken
       assumption
 
-#print dite
-#print axioms PSigma.mk
-#print Type.TypeVar_close._unary.proof_2
-#print axioms true_or
-#print axioms PSigma.casesOn
-
 private theorem open_rec_lc {T: «Type»} (lc: T.TypeVarLocallyClosed n) (h: m >= n): T.Type_open B m = T := by
   induction lc generalizing m <;> simp_all [Type.Type_open]
   . case var_bound m' n' h' =>
@@ -971,12 +989,19 @@ theorem ParallelReduction.preserve_lc (red: [[ Δ ⊢ A ≡> B ]]): A.TypeVarLoc
     cases lcA; case lam lcA =>
     have lcA' := lcA.modus_ponens_open ihA
     apply TypeVarLocallyClosed_openT <;> simp_all
-  case lamListApp => sorry
-  case lam I Δ' K A B red ih =>
-    aesop (add safe forward Type.TypeVarLocallyClosed.modus_ponens_open) (rule_sets := [lc])
-  case list => sorry
+  case lamListApp n Δ B K I A A' B' kindB redA redB ihA ihB =>
+    intro lcAB
+    simp_all
+    cases lcAB; case listApp lcA lcB =>
+    cases lcA; case lam lcA =>
+    have lcA' := lcA.modus_ponens_open ihA
+    cases lcB; case list lcB =>
+    constructor
+    simp_all
+    intro _ i In _
+    apply TypeVarLocallyClosed_openT<;> simp_all [Std.Range.mem_of_mem_toList]
   all_goals
-    aesop (add safe forward Type.TypeVarLocallyClosed.modus_ponens_open) (rule_sets := [lc])
+    aesop (add safe forward Type.TypeVarLocallyClosed.modus_ponens_open) (add safe forward Std.Range.mem_of_mem_toList) (rule_sets := [lc])
 
 
 private
@@ -1114,14 +1139,11 @@ theorem TypeVarInEnvironment.app_elim : [[ a: K ∈ Δ, Δ' ]] → ([[ a ∉ dom
     . case empty => simp_all [Environment.append]
     . case typeExt Δ' a' K' ih =>
       simp_all [Environment.append]
-      sorry
+      specialize @ih (by simp_all [Environment.typeVarDom]) (by cases hIn <;> simp_all [Environment.typeVarDom])
+      cases ih <;> aesop (add norm Environment.typeVarDom) (add safe constructors TypeVarInEnvironment)
     . case termExt Δ' a' T ih =>
       simp_all [Environment.append]
-      specialize @ih (by
-        intro h
-        apply hNotIn
-        simp_all [Environment.typeVarDom]
-      ) (by cases hIn; simp_all)
+      specialize @ih (by simp_all [Environment.typeVarDom]) (by cases hIn; simp_all)
       cases ih <;> aesop (add safe constructors TypeVarInEnvironment)
 
 
@@ -1460,7 +1482,17 @@ theorem pred_weakening' (red: [[ Δ, Δ' ⊢ A ≡> B ]]) (freshΔ: a ∉ Δ.typ
       specialize @ihA a' (by simp_all) Δ (Δ'.typeExt a' K')
       simp_all [Environment.append]
     . specialize @ihB Δ Δ'; simp_all
-  . case lamListApp => sorry
+  . case lamListApp n Δ_ B K' I A A' B' kindB redA redB ihA ihB =>
+    subst Δ_
+    apply ParallelReduction.lamListApp (I := a :: I ++ A.fv)
+    . rw [<- Environment.append_assoc_type]
+      intros n In
+      apply Kinding.weakening_r' (fresh := by simp_all [Environment.typeVarDom]) (kindB n In)
+    . intro a' notIn
+      specialize @ihA a' (by simp_all) Δ (Δ'.typeExt a' K')
+      simp_all [Environment.append]
+    . intros n In
+      specialize @ihB n In Δ Δ'; simp_all
   . case lam I Δ_ K' A B red ih =>
     subst Δ_
     apply ParallelReduction.lam (I := a :: I ++ A.fv)
@@ -1490,7 +1522,17 @@ theorem pred_weakeningT' (red: [[ Δ, Δ' ⊢ A ≡> B ]]) : [[ Δ, x: T, Δ' �
       specialize @ihA x' (by simp_all) Δ (Δ'.typeExt x' K') (by aesop)
       simp_all [Environment.append]
     . specialize @ihB Δ Δ'; simp_all
-  . case lamListApp => sorry
+  . case lamListApp n Δ_ B K' I A A' B' kindB redA redB ihA ihB =>
+    subst Δ_
+    apply ParallelReduction.lamListApp (I := x :: I)
+    . rw [<- Environment.append_assoc_term]
+      intro i In
+      apply Kinding.weakening_r' (fresh := by simp_all [Environment.typeVarDom]) (kindB i In)
+    . intro x' notIn
+      specialize @ihA x' (by simp_all) Δ (Δ'.typeExt x' K') (by aesop)
+      simp_all [Environment.append]
+    . intro i notIn
+      specialize @ihB i notIn Δ Δ'; simp_all
   . case lam I Δ_ K' A B red ih =>
     subst Δ_
     apply ParallelReduction.lam (I := x :: I)
@@ -1544,8 +1586,10 @@ theorem pred_subst_in {A B T: «Type»} (red: [[ Δ ⊢ A ≡> B ]]) (lcA: A.Typ
     rw [<- subst_open_var (neq := by aesop) (lc := red.preserve_lc lcA)]
     obtain red := pred_weakening (a := a') (K := K) (red := red) (freshΔ := by simp_all)
     simp_all
-  . case list Tl lc ih => sorry -- FIXME might want to redo list definition (now I think the nat index approach is easier to work with lol)
-
+  . case list Tl lc ih =>
+    apply ParallelReduction.list' (l := by simp_all [List.length_map])
+    simp_all [List.zip]
+    aesop
 
 private
 theorem Environment.app_typeExt_assoc {Δ Δ': Environment} : (Δ.append Δ' |>.typeExt a' K') = Δ.append (Δ'.typeExt a' K') := by simp_all [Environment.append]
@@ -1602,13 +1646,12 @@ private
 theorem pred_subst_all' {A B T: «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ, a: K, Δ' ⊢ T ≡> T' ]]) (kindA: [[ Δ ⊢ A: K ]]) (lcT: T.TypeVarLocallyClosed): [[ Δ, Δ'[A/a] ⊢ T[A/a] ≡> T'[B/a] ]] := by
   generalize Δ_eq: (Δ.typeExt a K |>.append Δ') = Δ_ at red2
   induction red2 generalizing Δ Δ' A B
-  case refl Δ_ T_ =>
-    subst Δ_
+  . case refl Δ_ T_ =>
     apply pred_subst_in (lcA := kindA.TypeVarLocallyClosed_of) (lcT := lcT)
     apply pred_weakening_multi
     . assumption
     . apply EnvironmentWellFormedness.subst (K := K) <;> simp_all
-  case lamApp Δ_ T2 K2 I T1 T1' T2' kindT2 redT1 redT2 ihT1 ihT2 =>
+  . case lamApp Δ_ T2 K2 I T1 T1' T2' kindT2 redT1 redT2 ihT1 ihT2 =>
     subst Δ_
     simp [«Type».TypeVar_subst]
     rw [<- subst_open (lcT := red1.preserve_lc kindA.TypeVarLocallyClosed_of)]
@@ -1624,8 +1667,8 @@ theorem pred_subst_all' {A B T: «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red1: [
       . aesop (add safe Type.TypeVarLocallyClosed.strengthen) (rule_sets := [lc]) (config := { enableSimp := false })
     . apply ihT2 <;> simp_all [Environment.append]
       aesop (add safe Type.TypeVarLocallyClosed.strengthen) (rule_sets := [lc]) (config := { enableSimp := false })
-  case lamListApp => sorry
-  case lam I Δ_ K' T T' redT ih =>
+  . case lamListApp => sorry
+  . case lam I Δ_ K' T T' redT ih =>
     subst Δ_
     simp [«Type».TypeVar_subst]
     apply ParallelReduction.lam (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom)
@@ -1636,7 +1679,11 @@ theorem pred_subst_all' {A B T: «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red1: [
     apply ih <;> simp_all [Environment.append]
     . constructor <;> simp_all [Environment.typeVarDom, Environment.typeVarDom.app_comm]
     . aesop (add safe Type.TypeVarLocallyClosed.strengthen) (rule_sets := [lc]) (config := { enableSimp := false })
-  case scheme I Δ_ K' T T' redT ih =>
+  . case app =>
+    cases lcT
+    simp_all [«Type».TypeVar_subst]
+    constructor <;> simp_all
+  . case scheme I Δ_ K' T T' redT ih =>
     subst Δ_
     simp [«Type».TypeVar_subst]
     apply ParallelReduction.scheme (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom)
@@ -1647,11 +1694,18 @@ theorem pred_subst_all' {A B T: «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red1: [
     apply ih <;> simp_all [Environment.append]
     . constructor <;> simp_all [Environment.typeVarDom, Environment.typeVarDom.app_comm]
     . aesop (add safe Type.TypeVarLocallyClosed.strengthen) (rule_sets := [lc]) (config := { enableSimp := false })
-  case list => sorry
-  case listApp => sorry
-  case app => aesop (add norm Type.TypeVar_subst) (rule_sets := [pred, lc])
-  case arr => aesop (add norm Type.TypeVar_subst) (rule_sets := [pred, lc])
-  all_goals sorry
+  . case arr =>
+    cases lcT
+    simp_all [«Type».TypeVar_subst]
+    constructor <;> simp_all
+  . case list n Δ_ T T' red ih =>
+    cases lcT
+    simp_all [«Type».TypeVar_subst]
+    constructor <;> simp_all [Std.Range.mem_toList_of_mem]
+  . case listApp =>
+    cases lcT
+    simp_all [«Type».TypeVar_subst]
+    constructor <;> simp_all
 
 private
 theorem pred_subst_all {A B T: «Type»} (wf: [[ ⊢ Δ, a: K ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ, a: K ⊢ T ≡> T' ]]) (kindA: [[ Δ ⊢ A: K ]]) (lcT: T.TypeVarLocallyClosed): [[ Δ ⊢ T[A/a] ≡> T'[B/a] ]] := by
@@ -1736,6 +1790,28 @@ theorem Kinding.det : [[ Δ ⊢ A: K ]] → [[ Δ ⊢ A: K' ]] → K = K' := by
     simp_all
   all_goals sorry -- TODO It's obviously provable, but very tedious
 
+private
+theorem Kinding.inv_list (k: [[ Δ ⊢ { </ A@i // i in [:n] /> } : L K ]]): ∀i ∈ [0:n], [[ Δ ⊢ A@i : K ]] := by
+  generalize Teq : (Type.list ([0:n].map fun i => [A i]).flatten) = T at k
+  cases k <;> simp_all
+  . case list n_ A_ k =>
+    simp_all [List.map_sigleton_flatten_eq_map]
+    have neq: n = n_ := by
+      apply congrArg (f:= List.length) at Teq
+      simp_all [List.length_map, Std.Range.length_toList]
+    simp_all [List.map_sigleton_flatten_eq_map, Std.Range.mem_toList_of_mem]
+
+private
+theorem Kinding.inv_list' (k: [[ Δ ⊢ { </ A@i // i in [:n] /> } : K ]]): ∃ K', K = Kind.list K' ∧ ∀i ∈ [0:n], [[ Δ ⊢ A@i : K' ]] := by
+  generalize Teq : (Type.list ([0:n].map fun i => [A i]).flatten) = T at k
+  cases k <;> simp_all
+  . case list n_ A_ K_ k =>
+    simp_all [List.map_sigleton_flatten_eq_map]
+    have neq: n = n_ := by
+      apply congrArg (f:= List.length) at Teq
+      simp_all [List.length_map, Std.Range.length_toList]
+    simp_all [List.map_sigleton_flatten_eq_map, Std.Range.mem_toList_of_mem]
+
 -- NOTE must have for conf_lamApp: needed when using pred_subst
 private
 theorem pred_preservation (lc: A.TypeVarLocallyClosed) (wf: [[ ⊢ Δ ]]) (red: [[ Δ ⊢ A ≡> B ]]): [[ Δ ⊢ A: K ]] → [[ Δ ⊢ B: K ]] := by
@@ -1799,8 +1875,14 @@ theorem pred_preservation (lc: A.TypeVarLocallyClosed) (wf: [[ ⊢ Δ ]]) (red: 
     intro k
     cases k
     constructor <;> aesop (rule_sets := [lc])
-  . case list => sorry
-  . case listApp => sorry
+  . case list n Δ_ A B red ih =>
+    intro k
+    have ⟨K_, eqK_, k'⟩ := k.inv_list'; subst K
+    constructor; aesop (add safe forward Std.Range.mem_toList_of_mem) (rule_sets := [lc])
+  . case listApp =>
+    intro k
+    cases k
+    constructor <;> aesop (rule_sets := [lc])
   . case prod =>
     intro k
     cases k
