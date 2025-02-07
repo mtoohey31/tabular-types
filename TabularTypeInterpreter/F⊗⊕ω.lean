@@ -1704,11 +1704,20 @@ theorem pred_subst_all' {A B T: «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red1: [
   . case list n Δ_ T T' red ih =>
     cases lcT
     simp_all [«Type».TypeVar_subst]
-    constructor <;> simp_all [Std.Range.mem_toList_of_mem]
+    constructor; simp_all [Std.Range.mem_toList_of_mem]
   . case listApp =>
     cases lcT
     simp_all [«Type».TypeVar_subst]
     constructor <;> simp_all
+  . case prod =>
+    cases lcT
+    simp_all [«Type».TypeVar_subst]
+    constructor; simp_all
+  . case sum =>
+    cases lcT
+    simp_all [«Type».TypeVar_subst]
+    constructor; simp_all
+
 
 private
 theorem pred_subst_all {A B T: «Type»} (wf: [[ ⊢ Δ, a: K ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ, a: K ⊢ T ≡> T' ]]) (kindA: [[ Δ ⊢ A: K ]]) (lcT: T.TypeVarLocallyClosed): [[ Δ ⊢ T[A/a] ≡> T'[B/a] ]] := by
@@ -1798,22 +1807,22 @@ theorem Kinding.inv_list (k: [[ Δ ⊢ { </ A@i // i in [:n] /> } : L K ]]): ∀
   generalize Teq : (Type.list ([0:n].map fun i => [A i]).flatten) = T at k
   cases k <;> simp_all
   . case list n_ A_ k =>
-    simp_all [List.map_sigleton_flatten_eq_map]
+    simp_all [List.map_singleton_flatten]
     have neq: n = n_ := by
       apply congrArg (f:= List.length) at Teq
       simp_all [List.length_map, Std.Range.length_toList]
-    simp_all [List.map_sigleton_flatten_eq_map, Std.Range.mem_toList_of_mem]
+    simp_all [List.map_singleton_flatten, Std.Range.mem_toList_of_mem]
 
 private
 theorem Kinding.inv_list' (k: [[ Δ ⊢ { </ A@i // i in [:n] /> } : K ]]): ∃ K', K = Kind.list K' ∧ ∀i ∈ [0:n], [[ Δ ⊢ A@i : K' ]] := by
   generalize Teq : (Type.list ([0:n].map fun i => [A i]).flatten) = T at k
   cases k <;> simp_all
   . case list n_ A_ K_ k =>
-    simp_all [List.map_sigleton_flatten_eq_map]
+    simp_all [List.map_singleton_flatten]
     have neq: n = n_ := by
       apply congrArg (f:= List.length) at Teq
       simp_all [List.length_map, Std.Range.length_toList]
-    simp_all [List.map_sigleton_flatten_eq_map, Std.Range.mem_toList_of_mem]
+    simp_all [List.map_singleton_flatten, Std.Range.mem_toList_of_mem]
 
 -- NOTE must have for conf_lamApp: needed when using pred_subst
 private
