@@ -2,12 +2,6 @@ import Lott.Data.Range
 
 namespace Std.Range
 
-private
-theorem mem_of_mem_toList {m n i: Nat} (mem: i ∈ [m:n].toList): i ∈ [m:n] := by
-  have H := @mem_of_mem_map (f:=id)
-  simp_all
-
-private
 theorem mem_toList_of_mem {m n i: Nat} (mem: i ∈ [m:n]): i ∈ [m:n].toList := by
   have H := @mem_map_of_mem (f:=id)
   simp_all

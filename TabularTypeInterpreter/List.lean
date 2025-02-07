@@ -6,6 +6,8 @@ namespace List
 def combinations {α : Type} (l : List α) :  List (List α)  :=
   l.foldl (fun acc a => acc ++ acc.map (fun l => a :: l)) [nil]
 
+-- (╯︵╰,) those functions can be replaced by matthew's approach, where he uses `get!` and friends.
+
 def toFn {α: Type} (l: List α) (default: α) (n: Nat): α :=
   if h: n < l.length then
     l.get (.mk n h)

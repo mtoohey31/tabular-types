@@ -724,18 +724,21 @@ judgement ParallelReduction :=
 namespace ParallelReduction
 
 private
-def list' (As Bs: List «Type») (l: As.length = Bs.length) (red: ∀A B, ⟨A, B⟩ ∈ (As.zip Bs) → [[ Δ ⊢ A ≡> B ]]): ParallelReduction Δ (Type.list As) (Type.list Bs) := by
-  have Type_d: «Type» := .var <| .free <| .zero
-  have H := list (n := As.length) (Δ := Δ) (A := As.toFn Type_d) (B := Bs.toFn Type_d) (by
-    intro i In
-    apply red
-    repeat rw [List.toFn_spec i (le := by cases In; simp_all)]
-    rw [<- List.getElem_zip (i := i) (l := As) (l' := Bs) (h := by cases In; simp_all)]
-    apply List.getElem_mem
-  )
-  simp_all [List.map_singleton_flatten]
-  simp_rw [List.toFn_spec', <- l, List.toFn_spec'] at H
-  exact H
+local instance : Inhabited «Type» where
+  default := .list []
+in
+def list' (As Bs: List «Type») (length_eq: As.length = Bs.length) (red: ∀A B, ⟨A, B⟩ ∈ (As.zip Bs) → [[ Δ ⊢ A ≡> B ]]): ParallelReduction Δ (Type.list As) (Type.list Bs) := by
+  rw [← Std.Range.map_get!_eq (as := As), ← Std.Range.map_get!_eq (as := Bs), ← length_eq,
+      Std.Range.map, Std.Range.map, ← List.map_singleton_flatten, ← Std.Range.map,
+      ← List.map_singleton_flatten, ← Std.Range.map]
+  apply list
+  intro i mem
+  apply red
+  have := (As.zip Bs).get!_mem <| by
+    rw [List.length_zip, ← length_eq, Nat.min_self]
+    exact mem.upper
+  rw [List.get!_zip length_eq mem.upper] at this
+  exact this
 
 end ParallelReduction
 
@@ -1587,7 +1590,7 @@ theorem pred_subst_in {A B T: «Type»} (red: [[ Δ ⊢ A ≡> B ]]) (lcA: A.Typ
     obtain red := pred_weakening (a := a') (K := K) (red := red) (freshΔ := by simp_all)
     simp_all
   . case list Tl lc ih =>
-    apply ParallelReduction.list' (l := by simp_all [List.length_map])
+    apply ParallelReduction.list' (length_eq := by simp_all [List.length_map])
     simp_all [List.zip]
     aesop
 
