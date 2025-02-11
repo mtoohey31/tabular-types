@@ -81,9 +81,16 @@ theorem sizeOf'_pos (τ : Monotype) : 0 < τ.sizeOf' := by cases τ <;> simp_ari
 theorem TypeVar_open_comm (τ : Monotype)
   : m ≠ n → (τ.TypeVar_open a m).TypeVar_open a' n = (τ.TypeVar_open a' n).TypeVar_open a m := by
   induction τ using rec_uniform generalizing m n
+  case row ih =>
+    intro mnen
+    rw [TypeVar_open, TypeVar_open, TypeVar_open, TypeVar_open, List.mapMem_eq_map,
+        List.mapMem_eq_map, List.mapMem_eq_map, List.mapMem_eq_map, List.map_map, List.map_map]
+    apply row.injEq .. |>.mpr ⟨_, rfl⟩
+    apply List.map_eq_map_iff.mpr
+    intro _ mem
+    simp
+    exact ⟨ih _ mem |>.left mnen, ih _ mem |>.right mnen⟩
   all_goals aesop (add simp [TypeVar_open, TypeLambda.TypeVar_open])
-  · case left => exact a_1 _ _ a_4 |>.left a_2
-  · case right => exact a_1 _ _ a_4 |>.right a_2
 
 namespace TypeVarLocallyClosed
 
@@ -97,19 +104,64 @@ where
     rwa [eq] at τlc
 
 theorem TypeVar_open_id : TypeVarLocallyClosed τ n → τ.TypeVar_open a n = τ := by
-  induction τ using rec_uniform generalizing n <;> aesop
+  induction τ using rec_uniform generalizing n
+  case row ih =>
+    intro rowlc
+    let .row τslc ξslc := rowlc
+    rw [TypeVar_open, List.mapMem_eq_map]
+    congr
+    apply List.map_eq_id_of_eq_id_of_mem
+    intro _ mem
+    let ξlc := ξslc _ mem
+    conv at ξlc => simp_match
+    let τlc := τslc _ mem
+    conv at τlc => simp_match
+    congr
+    · exact ih _ mem |>.left ξlc
+    · exact ih _ mem |>.right τlc
+  all_goals aesop
     (add simp [TypeVar_open, TypeLambda.TypeVar_open], 50% cases TypeVarLocallyClosed,
       safe cases TypeLambda.TypeVarLocallyClosed)
 
 theorem TypeVar_open_TypeVar_close_id
   : TypeVarLocallyClosed τ n → (τ.TypeVar_close a n).TypeVar_open a n = τ := by
-  induction τ using rec_uniform generalizing n <;> aesop
+  induction τ using rec_uniform generalizing n
+  case row ih =>
+    intro rowlc
+    let .row τslc ξslc := rowlc
+    rw [TypeVar_close, List.mapMem_eq_map, TypeVar_open, List.mapMem_eq_map, List.map_map]
+    congr
+    apply List.map_eq_id_of_eq_id_of_mem
+    intro _ mem
+    let ξlc := ξslc _ mem
+    conv at ξlc => simp_match
+    let τlc := τslc _ mem
+    conv at τlc => simp_match
+    simp
+    congr
+    · exact ih _ mem |>.left ξlc
+    · exact ih _ mem |>.right τlc
+  all_goals aesop
     (add simp [TypeVar_open, TypeVar_close, TypeLambda.TypeVar_open, TypeLambda.TypeVar_close],
       50% cases TypeVarLocallyClosed, safe cases TypeLambda.TypeVarLocallyClosed)
 
 theorem TypeVar_open_drop
   : m < n → (TypeVar_open τ a m).TypeVarLocallyClosed n → TypeVarLocallyClosed τ n := by
-  induction τ using rec_uniform generalizing m n <;> aesop
+  induction τ using rec_uniform generalizing m n
+  case row ih =>
+    intro mltn rowoplc
+    rw [TypeVar_open, List.mapMem_eq_map] at rowoplc
+    let .row τopslc ξopslc := rowoplc
+    apply row
+    · intro _ mem
+      let τoplc := τopslc _ <| List.mem_map.mpr ⟨_, mem, rfl⟩
+      conv at τoplc => simp_match
+      exact ih _ mem |>.right mltn τoplc
+    · intro _ mem
+      let ξoplc := ξopslc _ <| List.mem_map.mpr ⟨_, mem, rfl⟩
+      conv at ξoplc => simp_match
+      exact ih _ mem |>.left mltn ξoplc
+  all_goals aesop
     (add simp [TypeVar_open, TypeLambda.TypeVar_open], safe cases TypeVarLocallyClosed,
       safe cases TypeLambda.TypeVarLocallyClosed, safe constructors TypeVarLocallyClosed,
       safe constructors TypeLambda.TypeVarLocallyClosed)
@@ -117,6 +169,19 @@ theorem TypeVar_open_drop
 theorem Monotype_open_TypeVar_close_eq_TypeVar_subst (τlc : TypeVarLocallyClosed τ n)
   : (τ.TypeVar_close a n).Monotype_open τ' n = τ.TypeVar_subst a τ' := by
   induction τ using rec_uniform generalizing n
+  case row ih =>
+    let .row τslc ξslc := τlc
+    rw [TypeVar_close, List.mapMem_eq_map, Monotype_open, List.mapMem_eq_map, List.map_map,
+        TypeVar_subst, List.mapMem_eq_map]
+    apply row.injEq .. |>.mpr ⟨_, rfl⟩
+    apply List.map_eq_map_iff.mpr
+    intro _ mem
+    let ξlc := ξslc _ mem
+    conv at ξlc => simp_match
+    let τlc := τslc _ mem
+    conv at τlc => simp_match
+    simp
+    exact ⟨ih _ mem |>.left ξlc, ih _ mem |>.right τlc⟩
   case lift ih₀ ih₁ =>
     let .lift (.mk τ'lc) ρke := τlc
     rw [TypeVar_close, Monotype_open, TypeVar_subst, TypeLambda.TypeVar_close,
@@ -136,11 +201,19 @@ end TypeVarLocallyClosed
 
 theorem TypeVar_open_Monotype_open_comm (τ : Monotype) {τ'} : TypeVarLocallyClosed τ' m → m ≠ n →
     (τ.TypeVar_open a m).Monotype_open τ' n = (τ.Monotype_open τ' n).TypeVar_open a m := by
-  induction τ using rec_uniform generalizing m n <;> aesop
+  induction τ using rec_uniform generalizing m n
+  case row ih =>
+    intro τ'lc mnen
+    rw [TypeVar_open, List.mapMem_eq_map, Monotype_open, List.mapMem_eq_map, List.map_map,
+        Monotype_open, List.mapMem_eq_map, TypeVar_open, List.mapMem_eq_map, List.map_map]
+    apply row.injEq .. |>.mpr ⟨_, rfl⟩
+    apply List.map_eq_map_iff.mpr
+    intro _ mem
+    simp
+    exact ⟨ih _ mem |>.left τ'lc mnen, ih _ mem |>.right τ'lc mnen⟩
+  all_goals aesop
     (add simp [TypeVar_open, Monotype_open, TypeLambda.TypeVar_open, TypeLambda.Monotype_open],
       20% [TypeVarLocallyClosed.TypeVar_open_id, Eq.symm, TypeVarLocallyClosed.weakening])
-  · case left => exact a_1 _ _ a_5 |>.left a_2 a_3
-  · case right => exact a_1 _ _ a_5 |>.right a_2 a_3
 
 theorem not_mem_freeTypeVars_TypeVar_open_intro
   : a ∉ freeTypeVars τ → a ≠ a' → a ∉ (τ.TypeVar_open a' n).freeTypeVars := by
@@ -420,7 +493,19 @@ theorem TypeVarLocallyClosed_of (σke : [[Γc; Γ ⊢ σ : κ ⇝ A]]) : σ.Type
   case scheme I _ _ ih =>
     let ⟨a, anin⟩ := I.exists_fresh
     exact .quant <| ih a anin |>.weakening.TypeVar_open_drop Nat.zero_lt_one
-  case row => exact .qual <| .mono <| .row sorry -- TODO: Fix generation of this constructor.
+  case row ih₀ ih₁ =>
+    rw [List.map_singleton_flatten]
+    apply TypeVarLocallyClosed.qual <| .mono <| .row _ _
+    · intro _ mem
+      rcases List.mem_map.mp mem with ⟨_, mem', rfl⟩
+      conv => simp_match
+      let .qual (.mono τlc) := ih₁ _ <| Range.mem_of_mem_toList mem'
+      exact τlc
+    · intro _ mem
+      rcases List.mem_map.mp mem with ⟨_, mem', rfl⟩
+      conv => simp_match
+      let .qual (.mono ξlc) := ih₀ _ <| Range.mem_of_mem_toList mem'
+      exact ξlc
   case lift I _ _ _ ih₀ ih₁ =>
     let ⟨a, anin⟩ := I.exists_fresh
     let .qual (.mono τlc) := ih₀ a anin
