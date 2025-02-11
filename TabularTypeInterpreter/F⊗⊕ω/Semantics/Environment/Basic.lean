@@ -10,13 +10,6 @@ def append (Δ : Environment) : Environment → Environment
   | typeExt Δ' a K => Δ.append Δ' |>.typeExt a K
   | termExt Δ' x A => Δ.append Δ' |>.termExt x A
 
-theorem append_empty (Δ : Environment) : Δ.append empty = Δ := rfl
-
-theorem empty_append (Δ : Environment) : append empty Δ = Δ := by
-  match Δ with
-  | empty => rfl
-  | typeExt Δ' .. | termExt Δ' .. => rw [append, Δ'.empty_append]
-
 def TypeVar_subst (Δ : Environment) (a : TypeVarId) (A : «Type») := match Δ with
   | empty => empty
   | typeExt Δ' a' K => Δ'.TypeVar_subst a A |>.typeExt a' K
@@ -66,20 +59,20 @@ x ≠ x'
 ───────────────── termVarExt
 x : A ∈ Δ, x' : B
 
-judgement_syntax a " ∈ " "dom" "(" Δ ")" : Environment.InTypeVarInDom (id a)
+judgement_syntax a " ∈ " "dom" "(" Δ ")" : Environment.TypeVarInDom (id a)
 
-def Environment.InTypeVarInDom a (Δ : Environment) := a ∈ Δ.typeVarDom
+def Environment.TypeVarInDom a (Δ : Environment) := a ∈ Δ.typeVarDom
 
-judgement_syntax a " ∉ " "dom" "(" Δ ")" : Environment.NotInTypeVarInDom (id a)
+judgement_syntax a " ∉ " "dom" "(" Δ ")" : Environment.TypeVarNotInDom (id a)
 
-def Environment.NotInTypeVarInDom a Δ := ¬[[a ∈ dom(Δ)]]
+def Environment.TypeVarNotInDom a Δ := ¬[[a ∈ dom(Δ)]]
 
-judgement_syntax x " ∈ " "dom" "(" Δ ")" : Environment.InTermVarInDom (id x)
+judgement_syntax x " ∈ " "dom" "(" Δ ")" : Environment.TermVarInDom (id x)
 
-def Environment.InTermVarInDom x (Δ : Environment) := x ∈ Δ.termVarDom
+def Environment.TermVarInDom x (Δ : Environment) := x ∈ Δ.termVarDom
 
-judgement_syntax x " ∉ " "dom" "(" Δ ")" : Environment.NotInTermVarInDom (id x)
+judgement_syntax x " ∉ " "dom" "(" Δ ")" : Environment.TermVarNotInDom (id x)
 
-def Environment.NotInTermVarInDom x Δ := ¬[[x ∈ dom(Δ)]]
+def Environment.TermVarNotInDom x Δ := ¬[[x ∈ dom(Δ)]]
 
 end TabularTypeInterpreter.«F⊗⊕ω»

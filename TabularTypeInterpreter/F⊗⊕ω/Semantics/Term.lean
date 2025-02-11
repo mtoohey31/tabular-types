@@ -13,14 +13,14 @@ x : A ∈ Δ
 ───────── var
 Δ ⊢ x : A
 
-∀ x ∉ I, Δ, x : A ⊢ E^a : B
+∀ x ∉ I, Δ, x : A ⊢ E^x : B
 ─────────────────────────── lam (I : List TermVarId)
 Δ ⊢ λ x : A. E : A → B
 
 Δ ⊢ E : A → B
 Δ ⊢ F : A
-─────────────── app
-Δ ⊢ E F : A → B
+───────────── app
+Δ ⊢ E F : B
 
 ∀ a ∉ I, Δ, a : K ⊢ E^a : A^a
 ───────────────────────────── typeLam (I : List TypeVarId)
