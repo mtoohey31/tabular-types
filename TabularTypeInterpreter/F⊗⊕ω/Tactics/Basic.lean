@@ -1,8 +1,8 @@
+import Aesop
 import Lean.Elab
-import TabularTypeInterpreter.List
-import Mathlib.Tactic
+import TabularTypeInterpreter.Data.List
 
-namespace TabularTypeInterpreter.Tactic
+namespace TabularTypeInterpreter.«F⊗⊕ω»
 
 open Lean Meta MonadLCtx Elab Term in
 def genI (goal: MVarId): MetaM (List Lean.Term) :=
@@ -34,4 +34,4 @@ def guessI : RuleTac := fun input => (do
   return { applications := apps }
 )
 
-end TabularTypeInterpreter.Tactic
+end TabularTypeInterpreter.«F⊗⊕ω»

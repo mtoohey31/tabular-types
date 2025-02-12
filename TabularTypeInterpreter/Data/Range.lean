@@ -2,6 +2,9 @@ import Lott.Data.Range
 
 namespace Std.Range
 
+def get!InverseOn (p p' : List Nat) (n : Nat) :=
+  (∀ i ∈ [:n], p'.get! (p.get! i) = i) ∧ ∀ i ∈ [:n], p.get! (p'.get! i) = i
+
 theorem mem_toList_of_mem {m n i: Nat} (mem: i ∈ [m:n]): i ∈ [m:n].toList := by
   have H := @mem_map_of_mem (f:=id)
   simp_all

@@ -1,3 +1,5 @@
 import TabularTypeInterpreter.«F⊗⊕ω»
+import TabularTypeInterpreter.Lemmas
 import TabularTypeInterpreter.Semantics
 import TabularTypeInterpreter.Syntax
+import TabularTypeInterpreter.Theorems

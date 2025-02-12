@@ -1,0 +1,2 @@
+import TabularTypeInterpreter.Theorems.Type.Basic
+import TabularTypeInterpreter.Theorems.Type.KindingAndElaboration
