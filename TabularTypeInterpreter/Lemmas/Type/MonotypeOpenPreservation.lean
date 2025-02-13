@@ -1470,14 +1470,13 @@ decreasing_by
     exact Nat.le_add_right _ _
   · rw [← List.get!_eq_getElem!]
     apply Nat.le_add_right_of_le
-    apply Nat.le_of_add_right_le (k := (ξτs.get! i).snd.sizeOf')
+    apply Nat.le_add_right_of_le
     apply List.le_sum_of_mem'
     apply List.mem_map.mpr
     exact ⟨_, List.get!_mem ilt, rfl⟩
   · rw [← List.get!_eq_getElem!]
     apply Nat.le_add_right_of_le
-    apply Nat.le_of_add_right_le (k := (ξτs.get! i).fst.sizeOf')
-    rw [Nat.add_comm]
+    apply Nat.le_trans _ <| Nat.le_add_left _ _
     apply List.le_sum_of_mem'
     apply List.mem_map.mpr
     exact ⟨_, List.get!_mem ilt, rfl⟩

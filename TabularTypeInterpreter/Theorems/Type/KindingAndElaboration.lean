@@ -321,8 +321,8 @@ decreasing_by
     rw [Std.Range.map_eq_of_eq_of_mem (by
           intro _ _
           simp only [Function.comp]
-          rw [List.map_singleton]
-        ), List.map_singleton_flatten]
+          rw [List.map_singleton, List.sum_singleton]
+        )]
     exact Range.mem_map_of_mem ⟨Nat.le_refl _, Nat.pos_of_ne_zero nnezero⟩
   · case _ ξ _ τ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ =>
     apply Nat.le_trans <| Nat.le_add_left (τ i).sizeOf' (ξ i).sizeOf'
@@ -331,8 +331,8 @@ decreasing_by
     rw [Std.Range.map_eq_of_eq_of_mem (by
           intro _ _
           simp only [Function.comp]
-          rw [List.map_singleton]
-        ), List.map_singleton_flatten]
+          rw [List.map_singleton, List.sum_singleton]
+        )]
     exact Range.mem_map_of_mem imem
   · exact Nat.succ_le_of_lt <| Monotype.sizeOf'_pos _
 
@@ -516,8 +516,8 @@ decreasing_by
     rw [Range.map_eq_of_eq_of_mem (by
           intro _ _
           simp only [Function.comp]
-          rw [List.map_singleton]
-        ), List.map_singleton_flatten]
+          rw [List.map_singleton, List.sum_singleton]
+        )]
     exact Range.mem_map_of_mem imem
   · exact Nat.succ_le_of_lt <| Monotype.sizeOf'_pos _
   · exact Nat.succ_le_of_lt <| Monotype.sizeOf'_pos _
