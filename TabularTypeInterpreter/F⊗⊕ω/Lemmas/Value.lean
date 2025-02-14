@@ -1,10 +1,11 @@
-import Aesop
+import Mathlib.Tactic
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Term
-import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Type
+import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Type.Equivalence
+import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Type.ParallelReduction
 
 namespace TabularTypeInterpreter.«F⊗⊕ω».Value
 
--- TODO rename
+-- TODO rename, and will be affected by equiv definition change
 private
 theorem ty_lam_ty_eq_forall (Ety: [[Δ ⊢ Λ a : K. E: T]]) : ∃ T', [[Δ ⊢ T ≡ ∀ a : K. T']] := by
   generalize LamEeq : [[Λ a : K. E]] = LamE at Ety
@@ -16,20 +17,35 @@ theorem ty_lam_ty_eq_forall (Ety: [[Δ ⊢ Λ a : K. E: T]]) : ∃ T', [[Δ ⊢ 
     exists w
     exact (a_1.symm).trans h
 
+private
+theorem ty_prodIntro_ty_eq_prod (Ety: Typing Δ (Term.prodIntro E) T) : ∃ T', [[Δ ⊢ T ≡ ⊗T']] := sorry
+
+private
+theorem ty_sumIntro_ty_eq_sum (Ety: Typing Δ (Term.sumIntro n E) T) : ∃ T', [[Δ ⊢ T ≡ ⊕T']] := sorry
+
 -- canonical form of abstractions
-theorem eq_lam_of_ty_arr (VtyAarrB : [[ε ⊢ V : A → B]])
+theorem eq_lam_of_ty_arr (VtyAarrB : [[ε ⊢ V : A → B]]) (Alc: A.TypeVarLocallyClosed) (Blc: B.TypeVarLocallyClosed)
   : ∃ A' E, V.1 = [[λ x : A'. E]] := by
   obtain ⟨E, isV⟩ := V ; simp
   cases isV <;> simp at *
   .case typeLam K E =>
     have ⟨T, Eeq⟩ := ty_lam_ty_eq_forall VtyAarrB
-    -- have ⟨U, mredArr, mredForall⟩ := equiv_common_reduct Eeq
-    -- have ⟨A', E', Eeq', AarrBeq⟩ := mredForall.inv_lam
-    -- have ⟨A'', E'', Eeq'', AarrBeq'⟩ := mredArr.inv_arr
-    -- aesop
-    sorry
-  .case prodIntro => sorry
-  .case sumIntro => sorry
+    have ⟨U, mredArr, mredForall⟩ := Eeq.common_reduct_of .empty (by constructor <;> simp_all)
+    have := mredForall.inv_typeLam; rcases this
+    have := mredArr.inv_arr; rcases this
+    simp_all
+  .case prodIntro E isV =>
+    have ⟨T, Eeq⟩ := ty_prodIntro_ty_eq_prod VtyAarrB
+    have ⟨U, mredArr, mredProd⟩ := Eeq.common_reduct_of .empty (by constructor <;> simp_all)
+    have := mredProd.inv_prodIntro; rcases this
+    have := mredArr.inv_arr; rcases this
+    simp_all
+  .case sumIntro n E isV =>
+    have ⟨T, Eeq⟩ := ty_sumIntro_ty_eq_sum VtyAarrB
+    have ⟨U, mredArr, mredSum⟩ := Eeq.common_reduct_of .empty (by constructor <;> simp_all)
+    have := mredSum.inv_sumIntro; rcases this
+    have := mredArr.inv_arr; rcases this
+    simp_all
 
 theorem eq_typeApp_of_ty_forall (Vty : [[ε ⊢ V : ∀ a : K. A]])
   : ∃ K E, V.1 = [[Λ a : K. E]] := sorry

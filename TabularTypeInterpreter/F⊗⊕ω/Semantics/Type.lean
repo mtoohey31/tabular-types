@@ -1,6 +1,7 @@
 import Lott.Data.Range
 import Lott.DSL.Elab.JudgementComprehension
 import Lott.DSL.Elab.UniversalJudgement
+import TabularTypeInterpreter.RuleSets
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Environment.Basic
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
@@ -200,5 +201,7 @@ def MultiParallelReduction.delabMPRed: Lean.PrettyPrinter.Unexpander
     let into := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "≡>*") }
     `([ $Δ $vdash $A $into $B ])
   | _ => throw ()
+
+attribute [aesop unsafe simp constructors (rule_sets := [pred])] ParallelReduction MultiParallelReduction
 
 end TabularTypeInterpreter.«F⊗⊕ω»

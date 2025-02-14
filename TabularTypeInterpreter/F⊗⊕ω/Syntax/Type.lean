@@ -1,3 +1,4 @@
+import TabularTypeInterpreter.RuleSets
 import TabularTypeInterpreter.«F⊗⊕ω».Syntax.Kind
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
@@ -16,6 +17,8 @@ nonterminal «Type», A, B, C, T :=
   | "⊗ " A                 : prod
   | "⊕ " A                 : sum
   | "(" A ")"              : paren (desugar := return A)
+
+attribute [aesop norm (rule_sets := [topen])] Type.Type_open Type.TypeVar_open
 
 namespace «Type»
 @[app_unexpander TypeVar_open]
