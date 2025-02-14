@@ -27,7 +27,9 @@ theorem append_term_assoc {Δ Δ': Environment} : [[ (Δ , ((ε , x : T) , Δ'))
 theorem typeVarDom_TypeVar_subst {Δ: Environment} : (Δ.TypeVar_subst a A).typeVarDom = Δ.typeVarDom  := by
   induction Δ <;> simp_all [TypeVar_subst, typeVarDom]
 
-theorem append_typeExt_assoc {Δ Δ': Environment} : (Δ.append Δ' |>.typeExt a' K') = Δ.append (Δ'.typeExt a' K') := by simp_all [append]
+theorem append_typeExt_assoc {Δ Δ': Environment} : [[ (Δ, Δ'), a: K ]] = [[ (Δ, (Δ', a: K)) ]] := by simp_all [append]
+
+theorem append_termExt_assoc {Δ Δ': Environment} : [[ (Δ, Δ'), x: T ]] = [[ (Δ, (Δ', x: T)) ]] := by simp_all [append]
 
 theorem typeExt_subst {Δ: Environment} : (Δ.TypeVar_subst a K).typeExt a' K' = (Δ.typeExt a' K').TypeVar_subst a K := by
   induction Δ <;> simp_all [TypeVar_subst, typeExt]
