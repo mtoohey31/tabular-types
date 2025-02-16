@@ -638,6 +638,17 @@ theorem symm (σee : [[Γc; Γ ⊢ σ₀ ≡ σ₁ ⇝ F]]) (Γwe : [[Γc ⊢ Γ
     cases γ₀ke.deterministic γ₀ke' |>.left
     exact ⟨_, qual ψ₀₁ee γ₁₀ee (ψ₁ke.qual γ₁ke κe) ψ₀ke⟩
   | scheme I σ₀₁'ee κ₀e σ₀ke σ₀₁'ih => sorry
+    -- let ⟨_, _, _, _, σ₁ke⟩ := scheme I σ₀₁'ee κ₀e σ₀ke |>.to_Kinding Γwe
+    -- rename TypeEnvironment => Γ
+    -- let ⟨a, anin⟩ := I ++ Γ.typeVarDom |>.exists_fresh
+    -- let ⟨aninI, aninΓ⟩ := List.not_mem_append'.mp anin
+    -- let ⟨_, σ₁₀'ee⟩ := σ₀₁'ee a aninI |>.symm <| Γwe.typeExt aninΓ κ₀e
+    -- let ⟨_, σ₁₀'ee⟩ := Exists.mkFun <| by
+    --   intro a anin
+    --   let ⟨aninI, aninΓ⟩ := List.not_mem_append'.mp anin
+    --   exact σ₀₁'ih a aninI <| Γwe.typeExt aninΓ κ₀e
+    -- exact ⟨_, scheme (I ++ Γ.typeVarDom) sorry κ₀e σ₁ke⟩
+    -- TODO: Needs equivalence elaboration determinism
   | prod τ₀₁ee prodke τ₀₁ih =>
     let ⟨_, _, _, prodke', prod'ke⟩ := prod τ₀₁ee prodke |>.to_Kinding Γwe
     cases prodke.deterministic prodke' |>.left
@@ -1354,6 +1365,85 @@ theorem soundness (σee : [[Γc; Γ ⊢ σ₀ ≡ σ₁ ⇝ F]]) (Γwe : [[Γc �
             exact .prodElim (n := 3) (.var Δxₑwf .head) ⟨by simp_arith, by simp_arith⟩
           · case tail mem'''' => nomatch mem''''
   | tc τ₀₁ee σ'op₀₁ee γcin TCₛee TCτ₀ke τ₀₁ih σ'op₀₁ih TCₛih => sorry
+    -- rename TypeScheme => σ'
+    -- rename_i n _ Aₛ _ _ B' _ _ _
+    -- cases σ₀ke.deterministic TCτ₀ke |>.right
+    -- let TCτ₀ke@(.tc Γcw γcin' τ₀ke) := TCτ₀ke
+    -- let .tc _ γcin'' τ₁ke (B := B'') := σ₁ke
+    -- rcases ClassEnvironmentEntry.mk.inj <| γcin.deterministic γcin' rfl with
+    --   ⟨TCₛeq₀, _, rfl, _, _, rfl⟩
+    -- rcases ClassEnvironmentEntry.mk.inj <| γcin.deterministic γcin'' rfl with
+    --   ⟨TCₛeq₁, _, rfl, _, _, rfl⟩
+    -- rw [List.map_singleton_flatten, List.map_singleton_flatten] at TCₛeq₀ TCₛeq₁
+    -- let length_eq₀ : List.length (List.map ..) = List.length _ := by rw [TCₛeq₀]
+    -- let length_eq₁ : List.length (List.map ..) = List.length _ := by rw [TCₛeq₁]
+    -- rw [List.length_map, List.length_map, Range.length_toList, Range.length_toList, Nat.sub_zero,
+    --     Nat.sub_zero] at length_eq₀ length_eq₁
+    -- cases length_eq₀
+    -- cases length_eq₁
+    -- apply Typing.lam Δ.termVarDom
+    -- intro x xnin
+    -- let Δxwf := Γwe.soundness.termVarExt xnin <| TCτ₀ke.soundness Γwe .constr
+    -- simp only [Term.TermVar_open]
+    -- rw [List.mapMem_eq_map, List.map_cons]
+    -- let ⟨_, κ'e, σ'ke, _, TCₛke, Aₛki⟩ := Γcw.of_ClassEnvironment_in γcin
+    -- apply Typing.prodIntro' _ <| by
+    --   rw [List.map_singleton_flatten, List.map_singleton_flatten, List.length_cons,
+    --       List.length_cons, List.length_map, List.length_map, List.length_map, Range.length_toList]
+    -- intro _ mem
+    -- cases mem
+    -- · case head =>
+    --   conv => simp_match
+    --   simp [Term.TermVar_open]
+    --   rename TypeEnvironment => Γ
+    --   let ⟨a, anin⟩ := σ'.freeTypeVars ++ ↑B'.freeTypeVars ++ Γ.typeVarDom |>.exists_fresh
+    --   let ⟨aninσ'B', aninΓ⟩ := List.not_mem_append'.mp anin
+    --   let ⟨aninσ', aninB'⟩ := List.not_mem_append'.mp aninσ'B'
+    --   let Γawe := Γwe.typeExt aninΓ κ'e
+    --   let σ'ke' := σ'ke a |>.weakening (Γ := .empty) (Γ'' := .typeExt .empty ..) <| by
+    --     rw [TypeEnvironment.empty_append]
+    --     exact Γawe
+    --   rw [TypeEnvironment.empty_append] at σ'ke'
+    --   let σ'opτ₀ke := σ'ke'.Monotype_open_preservation (Γ' := .empty) Γawe (nomatch ·) aninσ' aninB' τ₀ke
+    --   let σ'opτ₁ke := σ'ke'.Monotype_open_preservation (Γ' := .empty) Γawe (nomatch ·) aninσ' aninB' τ₁ke
+    --   let Fty := σ'op₀₁ih Γwe σ'opτ₀ke σ'opτ₁ke .star
+    --   rw [Fty.TermVarLocallyClosed_of.TermVar_open_id]
+    --   apply Typing.app <| Fty.weakening Δxwf (Δ' := .termExt .empty ..) (Δ'' := .empty)
+    --   rw [← Range.map_get!_eq (as := _ :: _), Range.map, ← List.map_singleton_flatten,
+    --       ← Range.map] at Δxwf ⊢
+    --   rw [Environment.append, Environment.append, Environment.append]
+    --   have := Typing.prodElim (n := 0) (.var Δxwf .head) ⟨by simp_arith, by simp_arith⟩
+    --   rw [List.get!_cons_zero] at this
+    --   exact this
+    -- · case tail mem' =>
+    --   rw [List.map_singleton_flatten, List.map_singleton_flatten, List.map_map, List.zipWith_map,
+    --       List.zipWith_same] at mem'
+    --   rcases Range.mem_of_mem_map mem' with ⟨i, mem, rfl⟩
+    --   conv => simp_match
+    --   simp [Term.TermVar_open]
+    --   let ⟨_, _, _, _, _, _, _, _, _, γcₛin, zeroty, Aₛeq⟩ := TCₛke .zero i mem |>.class_inversion
+    --   rcases zeroty.deterministic (.var .head) with ⟨rfl, rfl⟩
+    --   rw [Type.TypeVar_open_eq_Type_open_var] at Aₛeq
+    --   let Fₛty := TCₛih i mem Γwe (.tc Γcw γcₛin τ₀ke) (.tc Γcw γcₛin τ₁ke) .constr
+    --   rw [Fₛty.TermVarLocallyClosed_of.TermVar_open_id]
+    --   let πty := by
+    --     rw [← Range.map_get!_eq (as := _ :: _), Range.map, ← List.map_singleton_flatten,
+    --         ← Range.map] at Δxwf
+    --     exact Typing.prodElim (n := i + 1) (.var Δxwf .head) ⟨
+    --       by simp_arith,
+    --       by
+    --         rw [List.length_cons, List.map_singleton_flatten, List.length_map, Range.length_toList]
+    --         apply Nat.succ_lt_succ
+    --         exact mem.upper
+    --     ⟩
+    --   rw [Range.map, List.map_singleton_flatten, ← Range.map,
+    --       Range.map_get!_eq (as := _ :: _)] at πty
+    --   apply Typing.app _ πty
+    --   rw [List.get!_cons_succ, List.map_singleton_flatten, Range.get!_map mem.upper,
+    --       ← And.right <| Prod.mk.inj <| Range.eq_of_mem_of_map_eq TCₛeq₁ i mem, Nat.add_zero,
+    --       ← And.right <| Prod.mk.inj <| Range.eq_of_mem_of_map_eq TCₛeq₀ i mem,
+    --       ← List.map_singleton_flatten]
+    --   exact Fₛty.weakening Δxwf (Δ' := .termExt .empty ..) (Δ'' := .empty)
   | tcRow => sorry
   | allRow I ρ₀₁ee allke ψke κe' =>
     rename_i ψ _ B' K
