@@ -3,7 +3,18 @@ import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Term
 import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Type.Equivalence
 import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Type.ParallelReduction
 
-namespace TabularTypeInterpreter.«F⊗⊕ω».Value
+namespace TabularTypeInterpreter.«F⊗⊕ω»
+
+namespace TypeEquivalence
+
+theorem common_reduct_of (eq: [[Δ ⊢ A ≡ B]]) (wf: [[ ⊢ Δ ]]) (lc: A.TypeVarLocallyClosed) : ∃C, [[Δ ⊢ A ≡>* C]] ∧ [[Δ ⊢ B ≡>* C]] :=
+  let ⟨redAB, _⟩ := eq.ParallelReduction_of
+  let ⟨C, redAC, redBC, _⟩ := redAB.common_reduct wf lc
+  ⟨C, redAC, redBC⟩
+
+end TypeEquivalence
+
+namespace Value
 
 -- TODO rename, and will be affected by equiv definition change
 private
@@ -56,4 +67,4 @@ theorem eq_prodIntro_of_ty_prod (Vty : [[ε ⊢ V : ⊗ {</ A@i // i in [:n] />}
 theorem eq_sumIntro_of_ty_sum (Vty : [[ε ⊢ V : ⊕ {</ A@i // i in [:n'] />}]])
   : ∃ n ∈ [0:n'], ∃ V', V.1 = [[ι n V']] := sorry
 
-end TabularTypeInterpreter.«F⊗⊕ω».Value
+end Value

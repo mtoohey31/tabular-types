@@ -8,8 +8,6 @@ namespace TypeEquivalence
 
 theorem ParallelReduction_of (eq: [[Δ ⊢ A ≡ B]]) : [[Δ ⊢ A ≡>* B]] ∧ [[Δ ⊢ B ≡>* A]] := sorry
 
-theorem common_reduct_of (eq: [[Δ ⊢ A ≡ B]]) (wf: [[ ⊢ Δ ]]) (lc: A.TypeVarLocallyClosed) : ∃C, [[Δ ⊢ A ≡>* C]] ∧ [[Δ ⊢ B ≡>* C]] := sorry
-
 def symm : [[Δ ⊢ A ≡ B]] → [[Δ ⊢ B ≡ A]]
   | refl => refl
   | lamAppL => lamAppR
