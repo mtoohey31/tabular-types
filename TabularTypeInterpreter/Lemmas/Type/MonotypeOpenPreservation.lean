@@ -454,7 +454,6 @@ theorem concat_evidence_eq_inversion
 local instance : Inhabited «Type» where
   default := .list []
 in
-private
 theorem tc_evidence_eq_inversion (aninA : a ∉ A.freeTypeVars)
   (A'oplc : (A'.TypeVar_open a').TypeVarLocallyClosed)
   (Aₛoplc : ∀ i ∈ [:n'], ((Aₛ i).TypeVar_open a').TypeVarLocallyClosed)
@@ -930,7 +929,7 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
                 Type.not_mem_freeTypeVars_TypeVar_close τke
           all_goals nomatch σke
         all_goals nomatch σke
-      | .prod .. =>
+      | .prodOrSum .prod .. =>
         rw [Monotype.TypeVar_open] at σke
         cases A <;> rw [Type.TypeVar_open] at σke
         case prod =>
@@ -949,7 +948,7 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
           rw [Monotype_open, QualifiedType.Monotype_open] at μke' ρke'
           exact prod μke' ρke'
         all_goals nomatch σke
-      | .sum .. =>
+      | .prodOrSum .sum .. =>
         rw [Monotype.TypeVar_open] at σke
         cases A <;> rw [Type.TypeVar_open] at σke
         case sum =>
@@ -1113,14 +1112,13 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
         generalize A'eq : A.TypeVar_open a n = A' at σke
         let .tc Γcw inΓc τ'ke (κ := κ) (A := A) (TCₛ := TCₛ) (Aₛ := Aₛ) (n := n') (m := m) (σ := σ')
           (B := B') := σke
-        let ⟨_, κe⟩ := κ.Elaboration_total
         let ⟨a', a'nin⟩ := a :: ↑A.freeTypeVars ++ ↑([:n'].map fun i => (Aₛ i).freeTypeVars).flatten
           |>.exists_fresh
-        let ⟨Aki, Aₛki⟩ := Γcw.KindingAndElaboration_of_ClassEnvironment_in inΓc κe a'
+        let ⟨_, κe, _, Aki, _, Aₛki⟩ := Γcw.of_ClassEnvironment_in inΓc
         let B'lc := τ'ke.soundness ΓaΓ'we κe |>.TypeVarLocallyClosed_of
-        rcases Type.tc_evidence_eq_inversion aninA Aki.TypeVarLocallyClosed_of
-          (Aₛki · · |>.TypeVarLocallyClosed_of) B'lc A'eq with ⟨A', Aₛ', eq₀, eq₁, rfl⟩
-        let Alc := Aki.TypeVarLocallyClosed_of.weaken (n := 1).TypeVar_open_drop <| Nat.lt.base _
+        rcases Type.tc_evidence_eq_inversion aninA (Aki a').TypeVarLocallyClosed_of
+          (Aₛki a' · · |>.TypeVarLocallyClosed_of) B'lc A'eq with ⟨A', Aₛ', eq₀, eq₁, rfl⟩
+        let Alc := Aki a' |>.TypeVarLocallyClosed_of.weaken (n := 1).TypeVar_open_drop Nat.one_pos
         rw [Type.freeTypeVars, Type.freeTypeVars, List.mapMem_eq_map, List.map_cons,
             List.map_singleton_flatten, List.flatten_cons, List.map_map] at aninA
         let ⟨aninA', aninAₛ'⟩ := List.not_mem_append'.mp aninA
@@ -1138,8 +1136,8 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
               intro i mem
               show _ = ((Aₛ i).TypeVar_subst a B).Type_open (B'.TypeVar_subst a B)
               let Aₛeq := eq₁ i mem
-              let Aₛlc := Aₛki i mem |>.TypeVarLocallyClosed_of.weaken (n := 1).TypeVar_open_drop <|
-                Nat.lt.base _
+              let Aₛlc := Aₛki a' i mem |>.TypeVarLocallyClosed_of.weaken (n := 1).TypeVar_open_drop
+                Nat.one_pos
               let AₛopB'lc := Aₛlc.Type_open_dec B'lc
               let AₛopB'lc' := AₛopB'lc.weaken (n := n)
               rw [Nat.zero_add] at AₛopB'lc'
@@ -1162,14 +1160,14 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
         rw [B'lc'.Type_open_TypeVar_close_eq_TypeVar_subst] at τ'ke'
         apply tc Γcw _ τ'ke' (TCₛ := TCₛ) (m := m) (σ := σ')
         let ⟨a'nea, _⟩ := List.not_mem_cons.mp a'nin
-        let aninA := Type.not_mem_freeTypeVars_TypeVar_open_drop <| Aki.not_mem_freeTypeVars_of <|
-          List.not_mem_singleton.mpr a'nea.symm
+        let aninA := Type.not_mem_freeTypeVars_TypeVar_open_drop <|
+          (Aki a').not_mem_freeTypeVars_of <| List.not_mem_singleton.mpr a'nea.symm
         rw [Type.TypeVar_subst_id_of_not_mem_freeTypeVars aninA, List.map_singleton_flatten,
             Range.map_eq_of_eq_of_mem (by
               intro i mem
               show _ = (TCₛ i, Aₛ i)
               let aninAₛ := Type.not_mem_freeTypeVars_TypeVar_open_drop <|
-                Aₛki i mem |>.not_mem_freeTypeVars_of <| List.not_mem_singleton.mpr a'nea.symm
+                Aₛki a' i mem |>.not_mem_freeTypeVars_of <| List.not_mem_singleton.mpr a'nea.symm
               rw [Type.TypeVar_subst_id_of_not_mem_freeTypeVars aninAₛ]
             ), ← List.map_singleton_flatten]
         exact inΓc
