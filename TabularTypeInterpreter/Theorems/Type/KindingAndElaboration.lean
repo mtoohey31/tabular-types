@@ -1,7 +1,7 @@
 import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Type
 import TabularTypeInterpreter.Lemmas.ClassEnvironment
 import TabularTypeInterpreter.Lemmas.Type.Basic
-import TabularTypeInterpreter.Lemmas.TypeEnvironment
+import TabularTypeInterpreter.Lemmas.TypeEnvironment.Basic
 import TabularTypeInterpreter.Semantics.Type
 import TabularTypeInterpreter.Theorems.Kind
 

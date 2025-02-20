@@ -1,5 +1,5 @@
 import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Type
-import TabularTypeInterpreter.Lemmas.TypeEnvironment
+import TabularTypeInterpreter.Lemmas.TypeEnvironment.Basic
 import TabularTypeInterpreter.Theorems.Kind
 import TabularTypeInterpreter.Theorems.Type.KindingAndElaboration
 
@@ -517,11 +517,11 @@ theorem tc_evidence_eq_inversion (aninA : a ∉ A.freeTypeVars)
 
 private
 theorem ind_evidence_inversion
-  (eq : A.TypeVar_open a n = [[∀ aₘ : (L K) ↦ *. (∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bᵣ → Bₗ → aₗ$4 → (aₘ$5 aₚ$2) → aₘ$5 aₙ$0) → (aₘ$0 { }) → aₘ$0 A']])
+  (eq : A.TypeVar_open a n = [[∀ aₘ : (L K) ↦ *. (∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bᵣ → Bₗ → (⊗ { }) → (aₘ$5 aₚ$2) → aₘ$5 aᵢ$1) → (aₘ$0 { }) → aₘ$0 A']])
   : ∃ Bᵣ' Bₗ' A'',
     Bᵣ = Bᵣ'.TypeVar_open a (n + 6) ∧ Bₗ = Bₗ'.TypeVar_open a (n + 6) ∧
     A' = A''.TypeVar_open a (n + 1) ∧
-    A = [[∀ aₘ : (L K) ↦ *. (∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bᵣ' → Bₗ' → aₗ$4 → (aₘ$5 aₚ$2) → aₘ$5 aₙ$0) → (aₘ$0 { }) → aₘ$0 A'']] := by
+    A = [[∀ aₘ : (L K) ↦ *. (∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bᵣ' → Bₗ' → (⊗ { }) → (aₘ$5 aₚ$2) → aₘ$5 aᵢ$1) → (aₘ$0 { }) → aₘ$0 A'']] := by
   cases A <;> rw [TypeVar_open] at eq
   case «forall» A =>
     rcases forall.inj eq with ⟨rfl, eq'⟩
@@ -553,105 +553,105 @@ theorem ind_evidence_inversion
                     case arr A₀₀ A₀₁ =>
                       let ⟨eq₀₀, eq₀₁⟩ := arr.inj eq₀'''''''
                       cases A₀₀ <;> rw [TypeVar_open] at eq₀₀
-                      case var a' =>
-                        match a' with
-                        | .bound n' =>
-                          split at eq₀₀
-                          · case isTrue => nomatch eq₀₀
-                          · case isFalse =>
-                            cases eq₀₀
-                            cases A₀₁ <;> rw [TypeVar_open] at eq₀₁
-                            case arr A₀₁₀ A₀₁₁ =>
-                              let ⟨eq₀₁₀, eq₀₁₁⟩ := arr.inj eq₀₁
-                              cases A₀₁₀ <;> rw [TypeVar_open] at eq₀₁₀
-                              case app A₀₁₀₀ A₀₁₀₁ =>
-                                let ⟨eq₀₁₀₀, eq₀₁₀₁⟩ := app.inj eq₀₁₀
-                                cases A₀₁₀₀ <;> rw [TypeVar_open] at eq₀₁₀₀
-                                case var a' =>
-                                  match a' with
-                                  | .bound n' =>
-                                    split at eq₀₁₀₀
-                                    · case isTrue => nomatch eq₀₁₀₀
-                                    · case isFalse =>
-                                      cases eq₀₁₀₀
-                                      cases A₀₁₀₁ <;> rw [TypeVar_open] at eq₀₁₀₁
-                                      case var a' =>
-                                        match a' with
-                                        | .bound n' =>
-                                          split at eq₀₁₀₁
-                                          · case isTrue => nomatch eq₀₁₀₁
-                                          · case isFalse =>
-                                            cases eq₀₁₀₁
-                                            cases A₀₁₁ <;> rw [TypeVar_open] at eq₀₁₁
-                                            case app A₀₁₁₀ A₀₁₁₁ =>
-                                              let ⟨eq₀₁₁₀, eq₀₁₁₁⟩ := app.inj eq₀₁₁
-                                              cases A₀₁₁₀ <;> rw [TypeVar_open] at eq₀₁₁₀
-                                              case var a' =>
-                                                match a' with
-                                                | .bound n' =>
-                                                  split at eq₀₁₁₀
-                                                  · case isTrue => nomatch eq₀₁₁₀
-                                                  · case isFalse =>
-                                                    cases eq₀₁₁₀
-                                                    cases A₀₁₁₁ <;> rw [TypeVar_open] at eq₀₁₁₁
-                                                    case var a' =>
-                                                      match a' with
-                                                      | .bound n' =>
-                                                        split at eq₀₁₁₁
-                                                        · case isTrue => nomatch eq₀₁₁₁
-                                                        · case isFalse =>
-                                                          cases eq₀₁₁₁
-                                                          cases A₁ <;> rw [TypeVar_open] at eq₁
-                                                          case arr A₁₀ A₁₁ =>
-                                                            let ⟨eq₁₀, eq₁₁⟩ := arr.inj eq₁
-                                                            cases A₁₀ <;> rw [TypeVar_open] at eq₁₀
-                                                            case app A₁₀₀ A₁₀₁ =>
-                                                              let ⟨eq₁₀₀, eq₁₀₁⟩ := app.inj eq₁₀
-                                                              cases A₁₀₀ <;> rw [TypeVar_open] at eq₁₀₀
-                                                              case var a' =>
-                                                                match a' with
-                                                                | .bound n' =>
-                                                                  split at eq₁₀₀
-                                                                  · case isTrue => nomatch eq₁₀₀
-                                                                  · case isFalse =>
-                                                                    cases eq₁₀₀
-                                                                    cases A₁₀₁ <;> rw [TypeVar_open] at eq₁₀₁
-                                                                    case list A₁₀₁ =>
-                                                                      let eq₁₀₁' := list.inj eq₁₀₁
-                                                                      rw [List.mapMem_eq_map] at eq₁₀₁'
-                                                                      cases List.map_eq_nil_iff.mp eq₁₀₁'
-                                                                      cases A₁₁ <;> rw [TypeVar_open] at eq₁₁
-                                                                      case app A₁₁₀ A'' =>
-                                                                        let ⟨eq₁₁₀, A'eq⟩ := app.inj eq₁₁
-                                                                        cases A₁₁₀ <;> rw [TypeVar_open] at eq₁₁₀
-                                                                        case var a' =>
-                                                                          match a' with
-                                                                          | .bound n' =>
-                                                                            split at eq₁₁₀
-                                                                            · case isTrue => nomatch eq₁₁₀
-                                                                            · case isFalse =>
-                                                                              cases eq₁₁₀
-                                                                              exact ⟨_, _, _, Bᵣeq.symm, Bₗeq.symm, A'eq.symm, rfl⟩
-                                                                          | .free _ => split at eq₁₁₀ <;> nomatch eq₁₁₀
-                                                                        all_goals nomatch eq₁₁₀
-                                                                      all_goals nomatch eq₁₁
-                                                                    all_goals nomatch eq₁₀₁
-                                                                | .free _ => split at eq₁₀₀ <;> nomatch eq₁₀₀
-                                                              all_goals nomatch eq₁₀₀
-                                                            all_goals nomatch eq₁₀
-                                                          all_goals nomatch eq₁
-                                                      | .free _ => split at eq₀₁₁₁ <;> nomatch eq₀₁₁₁
-                                                    all_goals nomatch eq₀₁₁₁
-                                                | .free _ => split at eq₀₁₁₀ <;> nomatch eq₀₁₁₀
-                                              all_goals nomatch eq₀₁₁₀
-                                            all_goals nomatch eq₀₁₁
-                                        | .free _ => split at eq₀₁₀₁ <;> nomatch eq₀₁₀₁
-                                      all_goals nomatch eq₀₁₀₁
-                                  | .free _ => split at eq₀₁₀₀ <;> nomatch eq₀₁₀₀
-                                all_goals nomatch eq₀₁₀₀
-                              all_goals nomatch eq₀₁₀
-                            all_goals nomatch eq₀₁
-                        | .free _ => split at eq₀₀ <;> nomatch eq₀₀
+                      case prod A₀₀ =>
+                        let eq₀₀' := prod.inj eq₀₀
+                        cases A₀₀ <;> rw [TypeVar_open] at eq₀₀'
+                        case list =>
+                          let eq₀₀'' := list.inj eq₀₀'
+                          rw [List.mapMem_eq_map] at eq₀₀''
+                          cases List.map_eq_nil_iff.mp eq₀₀''
+                          cases A₀₁ <;> rw [TypeVar_open] at eq₀₁
+                          case arr A₀₁₀ A₀₁₁ =>
+                            let ⟨eq₀₁₀, eq₀₁₁⟩ := arr.inj eq₀₁
+                            cases A₀₁₀ <;> rw [TypeVar_open] at eq₀₁₀
+                            case app A₀₁₀₀ A₀₁₀₁ =>
+                              let ⟨eq₀₁₀₀, eq₀₁₀₁⟩ := app.inj eq₀₁₀
+                              cases A₀₁₀₀ <;> rw [TypeVar_open] at eq₀₁₀₀
+                              case var a' =>
+                                match a' with
+                                | .bound n' =>
+                                  split at eq₀₁₀₀
+                                  · case isTrue => nomatch eq₀₁₀₀
+                                  · case isFalse =>
+                                    cases eq₀₁₀₀
+                                    cases A₀₁₀₁ <;> rw [TypeVar_open] at eq₀₁₀₁
+                                    case var a' =>
+                                      match a' with
+                                      | .bound n' =>
+                                        split at eq₀₁₀₁
+                                        · case isTrue => nomatch eq₀₁₀₁
+                                        · case isFalse =>
+                                          cases eq₀₁₀₁
+                                          cases A₀₁₁ <;> rw [TypeVar_open] at eq₀₁₁
+                                          case app A₀₁₁₀ A₀₁₁₁ =>
+                                            let ⟨eq₀₁₁₀, eq₀₁₁₁⟩ := app.inj eq₀₁₁
+                                            cases A₀₁₁₀ <;> rw [TypeVar_open] at eq₀₁₁₀
+                                            case var a' =>
+                                              match a' with
+                                              | .bound n' =>
+                                                split at eq₀₁₁₀
+                                                · case isTrue => nomatch eq₀₁₁₀
+                                                · case isFalse =>
+                                                  cases eq₀₁₁₀
+                                                  cases A₀₁₁₁ <;> rw [TypeVar_open] at eq₀₁₁₁
+                                                  case var a' =>
+                                                    match a' with
+                                                    | .bound n' =>
+                                                      split at eq₀₁₁₁
+                                                      · case isTrue => nomatch eq₀₁₁₁
+                                                      · case isFalse =>
+                                                        cases eq₀₁₁₁
+                                                        cases A₁ <;> rw [TypeVar_open] at eq₁
+                                                        case arr A₁₀ A₁₁ =>
+                                                          let ⟨eq₁₀, eq₁₁⟩ := arr.inj eq₁
+                                                          cases A₁₀ <;> rw [TypeVar_open] at eq₁₀
+                                                          case app A₁₀₀ A₁₀₁ =>
+                                                            let ⟨eq₁₀₀, eq₁₀₁⟩ := app.inj eq₁₀
+                                                            cases A₁₀₀ <;> rw [TypeVar_open] at eq₁₀₀
+                                                            case var a' =>
+                                                              match a' with
+                                                              | .bound n' =>
+                                                                split at eq₁₀₀
+                                                                · case isTrue => nomatch eq₁₀₀
+                                                                · case isFalse =>
+                                                                  cases eq₁₀₀
+                                                                  cases A₁₀₁ <;> rw [TypeVar_open] at eq₁₀₁
+                                                                  case list A₁₀₁ =>
+                                                                    let eq₁₀₁' := list.inj eq₁₀₁
+                                                                    rw [List.mapMem_eq_map] at eq₁₀₁'
+                                                                    cases List.map_eq_nil_iff.mp eq₁₀₁'
+                                                                    cases A₁₁ <;> rw [TypeVar_open] at eq₁₁
+                                                                    case app A₁₁₀ A'' =>
+                                                                      let ⟨eq₁₁₀, A'eq⟩ := app.inj eq₁₁
+                                                                      cases A₁₁₀ <;> rw [TypeVar_open] at eq₁₁₀
+                                                                      case var a' =>
+                                                                        match a' with
+                                                                        | .bound n' =>
+                                                                          split at eq₁₁₀
+                                                                          · case isTrue => nomatch eq₁₁₀
+                                                                          · case isFalse =>
+                                                                            cases eq₁₁₀
+                                                                            exact ⟨_, _, _, Bᵣeq.symm, Bₗeq.symm, A'eq.symm, rfl⟩
+                                                                        | .free _ => split at eq₁₁₀ <;> nomatch eq₁₁₀
+                                                                      all_goals nomatch eq₁₁₀
+                                                                    all_goals nomatch eq₁₁
+                                                                  all_goals nomatch eq₁₀₁
+                                                              | .free _ => split at eq₁₀₀ <;> nomatch eq₁₀₀
+                                                            all_goals nomatch eq₁₀₀
+                                                          all_goals nomatch eq₁₀
+                                                        all_goals nomatch eq₁
+                                                    | .free _ => split at eq₀₁₁₁ <;> nomatch eq₀₁₁₁
+                                                  all_goals nomatch eq₀₁₁₁
+                                              | .free _ => split at eq₀₁₁₀ <;> nomatch eq₀₁₁₀
+                                            all_goals nomatch eq₀₁₁₀
+                                          all_goals nomatch eq₀₁₁
+                                      | .free _ => split at eq₀₁₀₁ <;> nomatch eq₀₁₀₁
+                                    all_goals nomatch eq₀₁₀₁
+                                | .free _ => split at eq₀₁₀₀ <;> nomatch eq₀₁₀₀
+                              all_goals nomatch eq₀₁₀₀
+                            all_goals nomatch eq₀₁₀
+                          all_goals nomatch eq₀₁
+                        all_goals nomatch eq₀₀'
                       all_goals nomatch eq₀₀
                     all_goals nomatch eq₀'''''''
                   all_goals nomatch eq₀''''''
@@ -1234,8 +1234,8 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
         simp [Type.freeTypeVars] at aninA
         let ⟨aninBᵣ', aninBₗ', aninA''⟩ := aninA
         let ρke' := ρke.Monotype_open_preservation ΓaΓ'we aninΓ' aninσ aninA'' τke
-        apply ind (I₀ ++ [[(Γ, a : κ₀, Γ')]].typeVarDom) (I₁ ++ [[(Γ, a : κ₀, Γ')]].typeVarDom) ρke'
-          κe
+        apply «ind» (I₀ ++ [[(Γ, a : κ₀, Γ')]].typeVarDom) (I₁ ++ [[(Γ, a : κ₀, Γ')]].typeVarDom)
+          ρke' κe
         · intro aₗ aₗnin aₜ aₜnin aₚ aₚnin aᵢ aᵢnin aₙ aₙnin
           let ⟨aₗninI₀, aₗninΓaΓ'⟩ := List.not_mem_append'.mp aₗnin
 
@@ -1361,7 +1361,7 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
           let aₙninI₁' := List.not_mem_cons.mpr ⟨aₙneaᵢ, aₙninI₁⟩
           let aₙninΓaΓ'' := List.not_mem_cons.mpr ⟨aₙneaᵢ, aₙninΓaΓ'⟩
           let keBₗ' : KindingAndElaboration Γc [[(Γ, a : κ₀, Γ', aᵢ : R κ, aₙ : R κ)]]
-            ((qual (.mono (.concat (.var aᵢ) (.comm .non) (.var aₙ) ρ))).TypeVar_open a m) .constr
+            ((qual (.mono (.concat (.var aₙ) (.comm .non) (.var aᵢ) ρ))).TypeVar_open a m) .constr
             (((Bₗ'.TypeVar_open aᵢ 1).TypeVar_open aₙ).TypeVar_open a (n + 6)) := by
             rw [TypeVar_open, QualifiedType.TypeVar_open, Monotype.TypeVar_open,
                 Monotype.TypeVar_open, if_neg (nomatch ·), Monotype.TypeVar_open,
@@ -1383,7 +1383,7 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
           let keBₗ'' := keBₗ'.Monotype_open_preservation
             (ΓaΓ'we.typeExt aᵢninΓaΓ' κe.row |>.typeExt aₙninΓaΓ'' κe.row) aninΓ'aᵢaₙ (by
               simp [freeTypeVars, QualifiedType.freeTypeVars, Monotype.freeTypeVars]
-              exact ⟨aneaᵢ, aneaₙ, aninσ⟩) (Type.not_mem_freeTypeVars_TypeVar_open_intro
+              exact ⟨aneaₙ, aneaᵢ, aninσ⟩) (Type.not_mem_freeTypeVars_TypeVar_open_intro
               (Type.not_mem_freeTypeVars_TypeVar_open_intro aninBₗ' aneaᵢ) aneaₙ) τke
           let ⟨_, .typeExt Γwe ..⟩ := ΓaΓ'we.append_left_elim
           let ⟨_, κ₀e⟩ := κ₀.Elaboration_total

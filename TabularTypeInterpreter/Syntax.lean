@@ -1,3 +1,4 @@
+import TabularTypeInterpreter.Syntax.Basic
 import TabularTypeInterpreter.Syntax.ClassEnvironment
 import TabularTypeInterpreter.Syntax.Kind
 import TabularTypeInterpreter.Syntax.Term

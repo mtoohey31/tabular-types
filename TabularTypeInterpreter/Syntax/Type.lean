@@ -30,7 +30,7 @@ nonterminal Monotype, τ, ξ, μ, ρ, ψ, φ :=
   | a                                                : var
   | φ τ                                              : app
   | τ₀ " → " τ₁                                      : arr
-  | ℓ                                                : label
+  | ℓ                                                : label nosubst
   | "⌊" ξ "⌋"                                        : floor
   | u                                                : comm
   | "⟨" sepBy(ξ " ▹ " τ, ", ") optional(" : " κ) "⟩" : row

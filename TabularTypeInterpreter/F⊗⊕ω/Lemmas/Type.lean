@@ -585,7 +585,7 @@ theorem ind_evidence (Δwf : [[⊢ Δ]])
   (Bᵣki : ∀ aₗ ∉ I₀, ∀ aₜ ∉ aₗ :: I₀, ∀ aₚ ∉ aₜ :: aₗ :: I₀, ∀ aᵢ ∉ aₚ :: aₜ :: aₗ :: I₀, ∀ aₙ ∉ aᵢ :: aₚ :: aₜ :: aₗ :: I₀,
     [[Δ, aₗ : *, aₜ : K, aₚ : L K, aᵢ : L K, aₙ : L K ⊢ Bᵣ^aₗ#4^aₜ#3^aₚ#2^aᵢ#1^aₙ : *]])
   (Bₗki : ∀ aᵢ ∉ I₁, ∀ aₙ ∉ aᵢ :: I₁, [[Δ, aᵢ : L K, aₙ : L K ⊢ Bₗ^aᵢ#1^aₙ : *]])
-  : [[Δ ⊢ ∀ aₘ : (L K) ↦ *. (∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bᵣ → Bₗ → aₗ$4 → (aₘ$5 aₚ$2) → aₘ$5 aₙ$0) → (aₘ$0 { }) → aₘ$0 A : *]] := by
+  : [[Δ ⊢ ∀ aₘ : (L K) ↦ *. (∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bᵣ → Bₗ → (⊗ { }) → (aₘ$5 aₚ$2) → aₘ$5 aᵢ$1) → (aₘ$0 { }) → aₘ$0 A : *]] := by
   apply scheme Δ.typeVarDom
   intro aₘ aₘnin
   let Δaₘwf := Δwf.typeVarExt aₘnin (K := K.list.arr .star)
@@ -654,13 +654,14 @@ theorem ind_evidence (Δwf : [[⊢ Δ]])
     let ⟨aₙninI₀I₁, aₙninΔ⟩ := List.not_mem_append'.mp aₙnin
     let ⟨aₙninI₀, aₙninI₁⟩ := List.not_mem_append'.mp aₙninI₀I₁
     let Δaₘaₗaₜaₚaᵢaₙwf := Δaₘaₗaₜaₚaᵢwf.typeVarExt aₙninΔ (K := K.list)
+    let aᵢneaₙ := List.ne_of_not_mem_cons aₙninI₀
     let aₚneaₙ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons aₙninI₀
     let aₗneaₙ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
       List.not_mem_of_not_mem_cons <| List.not_mem_of_not_mem_cons <| aₙninI₀
     let aₘneaₙ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
       List.not_mem_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
       List.not_mem_of_not_mem_cons <| aₙninΔ
-    symm at aₚneaₙ aₗneaₙ aₘneaₙ
+    symm at aᵢneaₙ aₚneaₙ aₗneaₙ aₘneaₙ
     simp [Type.TypeVar_open]
     apply arr <| Bᵣki _ aₗninI₀ _ aₜninI₀ _ aₚninI₀ _ aᵢninI₀ _ aₙninI₀ |>.weakening Δaₘaₗaₜaₚaᵢaₙwf
       (Δ := Δ)
@@ -670,18 +671,16 @@ theorem ind_evidence (Δwf : [[⊢ Δ]])
       (Δ := Δ)
       (Δ' := .typeExt (.typeExt (.typeExt (.typeExt .empty ..) ..) ..) ..)
       (Δ'' := .typeExt (.typeExt .empty ..) ..)
-    · apply arr
-      · exact var <|
-          .typeVarExt (.typeVarExt (.typeVarExt (.typeVarExt .head aₗneaₜ) aₗneaₚ) aₗneaᵢ) aₗneaₙ
-      · apply arr
-        · apply app
-          · exact var <| .typeVarExt (.typeVarExt (.typeVarExt
-               (.typeVarExt (.typeVarExt .head aₘneaₗ) aₘneaₜ) aₘneaₚ) aₘneaᵢ) aₘneaₙ
-          · exact var <| .typeVarExt (.typeVarExt .head aₚneaᵢ) aₚneaₙ
-        · apply app
-          · exact var <| .typeVarExt (.typeVarExt (.typeVarExt
-               (.typeVarExt (.typeVarExt .head aₘneaₗ) aₘneaₜ) aₘneaₚ) aₘneaᵢ) aₘneaₙ
-          · exact var .head
+    · apply arr .unit
+      apply arr
+      · apply app
+        · exact var <| .typeVarExt (.typeVarExt (.typeVarExt
+             (.typeVarExt (.typeVarExt .head aₘneaₗ) aₘneaₜ) aₘneaₚ) aₘneaᵢ) aₘneaₙ
+        · exact var <| .typeVarExt (.typeVarExt .head aₚneaᵢ) aₚneaₙ
+      · apply app
+        · exact var <| .typeVarExt (.typeVarExt (.typeVarExt
+             (.typeVarExt (.typeVarExt .head aₘneaₗ) aₘneaₜ) aₘneaₚ) aₘneaᵢ) aₘneaₙ
+        · exact var <| .typeVarExt .head aᵢneaₙ
   · apply arr
     · apply app
       · exact var .head

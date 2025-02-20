@@ -60,6 +60,27 @@ a : κ ∈ Γ
 ──────────────── constrExt
 a : κ ∈ Γ, ψ ⇝ x
 
+judgement_syntax x " : " σ " ∈ " Γ : TypeEnvironment.TermVarIn (id x)
+
+judgement TypeEnvironment.TermVarIn :=
+
+──────────────── head
+x : σ ∈ Γ, x : σ
+
+x : σ ∈ Γ
+──────────────── typeExt
+x : σ ∈ Γ, a : κ
+
+x ≠ x'
+x : σ ∈ Γ
+────────────────── termExt
+x : σ ∈ Γ, x' : σ'
+
+x ≠ x'
+x : σ ∈ Γ
+───────────────── constrExt
+x : σ ∈ Γ, ψ ⇝ x'
+
 judgement_syntax a " ∉ " "dom" "(" Γ ")" : TypeEnvironment.TypeVarNotInDom (id a)
 
 def TypeEnvironment.TypeVarNotInDom a (Γ : TypeEnvironment) := a ∉ Γ.typeVarDom
