@@ -202,6 +202,70 @@ def MultiParallelReduction.delabMPRed: Lean.PrettyPrinter.Unexpander
     `([ $Δ $vdash $A $into $B ])
   | _ => throw ()
 
-attribute [aesop unsafe simp constructors (rule_sets := [pred])] ParallelReduction MultiParallelReduction
+judgement_syntax Δ " ⊢ " A " <≡>* " B : STParallelReduction
+
+-- FIXME pretty much all forms of equiv relation of PR works for confluence proof. The problem is we want
+-- a specific version that's easy to prove the following:
+-- 1. It's indeed an equivalence relation
+-- 2. It's easy to prove its correspondence with type equivalence
+judgement STParallelReduction :=
+
+──────────── refl
+Δ ⊢ A <≡>* A
+
+Δ ⊢ A ≡> A'
+Δ ⊢ A' <≡>* A''
+─────────────── step
+Δ ⊢ A <≡>* A''
+
+Δ ⊢ A' ≡> A
+Δ ⊢ A' <≡>* A''
+─────────────── revStep
+Δ ⊢ A <≡>* A''
+
+@[app_unexpander STParallelReduction]
+def STParallelReduction.delabMPRed: Lean.PrettyPrinter.Unexpander
+  | `($(_) $Δ $A $B) =>
+    let info := Lean.SourceInfo.none
+    let vdash := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "⊢") }
+    let into := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "<≡>*") }
+    `([ $Δ $vdash $A $into $B ])
+  | _ => throw ()
+
+def ParallelReduction.ST_of (red: [[ Δ ⊢ A ≡> B ]]): [[ Δ ⊢ A <≡>* B ]] := .step red .refl
+def ParallelReduction.ST_rev_of (red: [[ Δ ⊢ A ≡> B ]]): [[ Δ ⊢ B <≡>* A ]] := .revStep red .refl
+
+namespace STParallelReduction
+
+def trans (stAB: [[ Δ ⊢ A <≡>* B ]]) (stBC: [[ Δ ⊢ B <≡>* C ]]): [[ Δ ⊢ A <≡>* C ]] := by
+  induction stAB generalizing C
+  . case refl => exact stBC
+  . case step A B T stAB stBT ih =>
+    have stBC := ih stBC
+    exact .step stAB stBC
+  . case revStep A B T stAB stBT ih =>
+    have stBC := ih stBC
+    exact .revStep stAB stBC
+
+def join'  (stAB: [[ Δ ⊢ A <≡>* B ]]):
+  ([[ Δ ⊢ C ≡> B ]] → [[ Δ ⊢ C <≡>* A ]])
+  ∧ ([[ Δ ⊢ C ≡> A ]] → [[ Δ ⊢ C <≡>* B ]])
+  ∧ ([[ Δ ⊢ C ≡> B ]] → [[ Δ ⊢ A <≡>* C ]])
+  ∧ ([[ Δ ⊢ C ≡> A ]] → [[ Δ ⊢ B <≡>* C ]])
+   := by
+  induction stAB generalizing C
+  . case refl A => sorry
+    -- exact ⟨ParallelReduction.ST_of, ParallelReduction.ST_of, ParallelReduction.ST_rev_of, ParallelReduction.ST_rev_of⟩
+  . case step A A' B AA' stA'B ih =>
+    repeat' constructor
+    . aesop (add unsafe constructors STParallelReduction)
+    . aesop (add unsafe constructors STParallelReduction)
+    . aesop (add unsafe constructors STParallelReduction)
+    . sorry -- FIXME impossible to prove
+  . sorry
+
+end STParallelReduction
+
+attribute [aesop unsafe simp constructors (rule_sets := [pred])] ParallelReduction MultiParallelReduction STParallelReduction
 
 end TabularTypeInterpreter.«F⊗⊕ω»
