@@ -154,7 +154,7 @@ theorem subst'  (kT: [[ Δ, a: K, Δ' ⊢ T: K' ]]) (wf: [[ ⊢ Δ, a: K, Δ' ]]
       simp_all
       subst a'
       -- 1. by wf we know a ∉ Δ'.typeVarDom
-      have fresh := wf.append_typeVar_fresh_r (a := a) (by constructor)
+      have fresh := wf.append_typeVar_fresh_r a (by constructor)
       -- 2. then by uniqueness we know from kIn that K' = K
       have eq := kIn.unique (K':=K) (by
         apply TypeVarInEnvironment.weakening_r fresh

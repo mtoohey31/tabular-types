@@ -18,6 +18,12 @@ theorem typeVarDom_append : (append Δ Δ').typeVarDom = Δ'.typeVarDom ++ Δ.ty
   | typeExt .. => rw [append, typeVarDom, typeVarDom_append, typeVarDom, List.cons_append]
   | termExt .. => rw [append, typeVarDom, typeVarDom_append, typeVarDom]
 
+theorem termVarDom_append : (append Δ Δ').termVarDom = Δ'.termVarDom ++ Δ.termVarDom := by
+  match Δ' with
+  | empty => rw [append, termVarDom, List.nil_append]
+  | typeExt .. => rw [append, termVarDom, termVarDom_append, termVarDom]
+  | termExt .. => rw [append, termVarDom, termVarDom_append, termVarDom, List.cons_append]
+
 theorem append_type_assoc {Δ Δ': Environment} : [[ (Δ , ((ε , a : K) , Δ')) ]] = [[ (Δ , a : K) , Δ' ]] := by
   induction Δ' generalizing Δ <;> simp_all [append]
 
@@ -141,7 +147,7 @@ end TypeVarInEnvironment
 -- TODO I need these definitions to prove Type lemma
 namespace EnvironmentWellFormedness
 open Environment in
-theorem append_typeVar_fresh_r: [[ ⊢ Δ, Δ' ]] → a ∈ Δ.typeVarDom → a ∉ Δ'.typeVarDom := by
+theorem append_typeVar_fresh_r: [[ ⊢ Δ, Δ' ]] → ∀a ∈ Δ.typeVarDom, a ∉ Δ'.typeVarDom := by
   intro wf
   induction Δ' <;> aesop (add safe cases EnvironmentWellFormedness, norm typeVarDom, norm typeVarDom_append, norm TypeVarNotInDom, norm TypeVarInDom)
 
@@ -149,6 +155,16 @@ open Environment in
 theorem append_typeVar_fresh_l : [[ ⊢ Δ, Δ' ]] → ∀a ∈ Δ'.typeVarDom, a ∉ Δ.typeVarDom := by
   intro wf
   induction Δ' <;> aesop (add safe cases EnvironmentWellFormedness, norm typeVarDom, norm typeVarDom_append, norm TypeVarNotInDom, norm TypeVarInDom)
+
+open Environment in
+theorem append_termVar_fresh_r: [[ ⊢ Δ, Δ' ]] → ∀a ∈ Δ.termVarDom, a ∉ Δ'.termVarDom := by
+  intro wf
+  induction Δ' <;> aesop (add safe cases EnvironmentWellFormedness, norm termVarDom, norm termVarDom_append, norm TermVarNotInDom, norm TermVarInDom)
+
+open Environment in
+theorem append_termVar_fresh_l : [[ ⊢ Δ, Δ' ]] → ∀a ∈ Δ'.termVarDom, a ∉ Δ.termVarDom := by
+  intro wf
+  induction Δ' <;> aesop (add safe cases EnvironmentWellFormedness, norm termVarDom, norm termVarDom_append, norm TermVarNotInDom, norm TermVarInDom)
 end EnvironmentWellFormedness
 
 end TabularTypeInterpreter.«F⊗⊕ω»
