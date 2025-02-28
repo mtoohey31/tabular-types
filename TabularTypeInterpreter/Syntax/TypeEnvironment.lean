@@ -1,5 +1,5 @@
 import TabularTypeInterpreter.«F⊗⊕ω».Syntax.Term
-import TabularTypeInterpreter.Syntax.Term
+import TabularTypeInterpreter.Syntax.Basic
 import TabularTypeInterpreter.Syntax.Type
 
 namespace TabularTypeInterpreter

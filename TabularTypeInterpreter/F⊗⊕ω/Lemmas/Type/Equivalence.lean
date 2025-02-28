@@ -14,6 +14,8 @@ def symm : [[Δ ⊢ A ≡ B]] → [[Δ ⊢ B ≡ A]]
   | lamAppR => lamAppL
   | listAppL => listAppR
   | listAppR => listAppL
+  | listAppIdL => listAppIdR
+  | listAppIdR => listAppIdL
   | lam I h => lam I fun a mem => (h a mem).symm
   | app h₁ h₂ => app h₁.symm h₂.symm
   | scheme I h => scheme I fun a mem => (h a mem).symm

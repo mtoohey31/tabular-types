@@ -1,2 +1,3 @@
 import TabularTypeInterpreter.Theorems.Kind
+import TabularTypeInterpreter.Theorems.Term
 import TabularTypeInterpreter.Theorems.Type

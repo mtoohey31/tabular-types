@@ -6,6 +6,7 @@ import TabularTypeInterpreter.Theorems.Type.KindingAndElaboration
 namespace TabularTypeInterpreter
 
 open «F⊗⊕ω»
+open Std
 
 theorem Monotype.RowEquivalenceAndElaboration.to_Kinding (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]])
   (Γwe : [[Γc ⊢ Γ ⇝ Δ]]) : ∃ κ A B, [[Γc; Γ ⊢ ρ₀ : R κ ⇝ A]] ∧ [[Γc; Γ ⊢ ρ₁ : R κ ⇝ B]] := by
@@ -73,5 +74,164 @@ theorem Monotype.RowEquivalenceAndElaboration.to_Kinding (ρee : [[Γc; Γ ⊢ �
           (τ₀ke i imem) (Γ' := .empty)) h,
       liftke
     ⟩
+
+local instance : Inhabited Monotype where
+  default := .row [] none
+in
+local instance : Inhabited «Type» where
+  default := .list []
+in
+theorem TypeScheme.SubtypingAndElaboration.to_Kinding (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]])
+  (Γwe : [[Γc ⊢ Γ ⇝ Δ]]) : ∃ κ A B, [[Γc; Γ ⊢ σ₀ : κ ⇝ A]] ∧ [[Γc; Γ ⊢ σ₁ : κ ⇝ B]] := by
+  match σse with
+  | refl σke => exact ⟨_, _, _, σke, σke⟩
+  | arr τ₂₀se τ₁₃se τ₀τ₁ke τ₂ke =>
+    let .arr _ τ₁ke := τ₀τ₁ke
+    let ⟨_, _, _, τ₁ke', τ₃ke⟩ := τ₁₃se.to_Kinding Γwe
+    cases τ₁ke.deterministic τ₁ke' |>.left
+    exact ⟨_, _, _, τ₀τ₁ke, τ₂ke.arr τ₃ke⟩
+  | qual ψ₁₀se γ₀₁se ψ₀γ₀ke ψ₁ke =>
+    let .qual _ γ₀ke κe := ψ₀γ₀ke
+    let ⟨_, _, _, γ₀ke', γ₁ke⟩ := γ₀₁se.to_Kinding Γwe
+    cases γ₀ke.deterministic γ₀ke' |>.left
+    exact ⟨_, _, _, ψ₀γ₀ke, ψ₁ke.qual γ₁ke κe⟩
+  | scheme I σ'se κ₀e σ₀ke (κ₁ := κ₁) (σ₁ := σ₁') =>
+    let .scheme I' σ₀'ke _ := σ₀ke
+    let ⟨a, anin⟩ := I ++ I' ++ Γ.typeVarDom ++ σ₁'.freeTypeVars |>.exists_fresh
+    let ⟨aninII'Γ, aninσ₁'⟩ := List.not_mem_append'.mp anin
+    let ⟨aninII', aninΓ⟩ := List.not_mem_append'.mp aninII'Γ
+    let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp aninII'
+    let Γawe := Γwe.typeExt aninΓ κ₀e
+    let ⟨_, _, B, σ₀'ke', σ₁'ke⟩ := σ'se a aninI |>.to_Kinding Γawe
+    cases σ₀'ke a aninI' |>.deterministic σ₀'ke' |>.left
+    exact ⟨_, _, _, σ₀ke, .scheme (a :: Γ.typeVarDom) (A := B.TypeVar_close a) (by
+      intro a' a'nin
+      let ⟨a'nea, a'ninΓ⟩ := List.not_mem_cons.mp a'nin
+      let ⟨_, κ₁e⟩ := κ₁.Elaboration_total
+      rw [← σ₁'ke.soundness Γawe κ₁e |>.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_close_id
+            (a := a)] at σ₁'ke
+      let Γa'awe :=
+        Γwe.typeExt a'ninΓ κ₀e |>.typeExt (List.not_mem_cons.mpr ⟨a'nea.symm, aninΓ⟩) κ₀e
+      have := σ₁'ke.weakening Γa'awe (Γ' := .typeExt .empty ..) (Γ'' := .typeExt .empty ..)
+        |>.Monotype_open_preservation (Γ' := .empty) Γa'awe (nomatch ·) aninσ₁'
+        Type.not_mem_freeTypeVars_TypeVar_close (.var .head)
+      rw [TypeEnvironment.TypeVar_subst, ← Type.TypeVar_open_eq_Type_open_var,
+          ← TypeVar_open_eq_Monotype_open_var] at this
+      exact this
+    ) κ₀e⟩
+  | prod τ₀₁se prodke (n := n) (ξ := ξ) (τ₀ := τ₀) (τ₁ := τ₁) (b := b) =>
+    let .prod μke ξτ₀ke := prodke
+    generalize ξτ₀s'eq : ([:n].map fun i => [(ξ i, τ₀ i)]).flatten = ξτ₀s' at *
+    generalize κ?eq : Option.filter (fun _ => b) (some Kind.star) = κ? at *
+    let .row ξ'ke uni τ₀'ke h (ξ := ξ') := ξτ₀ke
+    rw [List.map_singleton_flatten, List.map_singleton_flatten] at ξτ₀s'eq
+    let neqn' : List.length (List.map ..) = List.length _ := by rw [ξτ₀s'eq]
+    rw [List.length_map, List.length_map, Range.length_toList, Range.length_toList, Nat.sub_zero,
+        Nat.sub_zero] at neqn'
+    cases neqn'
+    let ξke i mem := by
+      have := ξ'ke i mem
+      simp only at this
+      rw [← And.left <| Prod.mk.inj <| Range.eq_of_mem_of_map_eq ξτ₀s'eq i mem] at this
+      exact this
+    rw [Range.map, List.map_singleton_flatten, Range.map_eq_of_eq_of_mem
+          (Eq.symm <| And.left <| Prod.mk.inj <| Range.eq_of_mem_of_map_eq ξτ₀s'eq · ·),
+        ← List.map_singleton_flatten, ← Range.map] at uni
+    let τ₀ke i mem := by
+      have := τ₀'ke i mem
+      simp only at this
+      rw [← And.right <| Prod.mk.inj <| Range.eq_of_mem_of_map_eq ξτ₀s'eq i mem] at this
+      exact this
+    let ⟨_, τ₁ke⟩ := Range.skolem (n := n)
+      (p := fun i A => KindingAndElaboration Γc Γ (.qual (.mono (τ₁ i))) .star A) <| by
+      intro i mem
+      let ⟨_, _, A, τ₀ke', τ₁ke⟩ := τ₀₁se i mem |>.to_Kinding Γwe
+      cases τ₀ke i mem |>.deterministic τ₀ke' |>.left
+      exact ⟨A, τ₁ke⟩
+    exact ⟨_, _, _, prodke, .prod μke <| .row ξke uni τ₁ke h⟩
+  | sum τ₀₁se sumke τ₀ke (n := n) (ξ := ξ) (τ₀ := τ₀) (τ₁ := τ₁) (b := b) =>
+    let .sum μke ξτ₀ke := sumke
+    generalize ξτ₀s'eq : ([:n].map fun i => [(ξ i, τ₀ i)]).flatten = ξτ₀s' at *
+    generalize κ?eq : Option.filter (fun _ => b) (some Kind.star) = κ? at *
+    let .row ξ'ke uni τ₀'ke h (ξ := ξ') := ξτ₀ke
+    rw [List.map_singleton_flatten, List.map_singleton_flatten] at ξτ₀s'eq
+    let neqn' : List.length (List.map ..) = List.length _ := by rw [ξτ₀s'eq]
+    rw [List.length_map, List.length_map, Range.length_toList, Range.length_toList, Nat.sub_zero,
+        Nat.sub_zero] at neqn'
+    cases neqn'
+    let ξke i mem := by
+      have := ξ'ke i mem
+      simp only at this
+      rw [← And.left <| Prod.mk.inj <| Range.eq_of_mem_of_map_eq ξτ₀s'eq i mem] at this
+      exact this
+    rw [Range.map, List.map_singleton_flatten, Range.map_eq_of_eq_of_mem
+          (Eq.symm <| And.left <| Prod.mk.inj <| Range.eq_of_mem_of_map_eq ξτ₀s'eq · ·),
+        ← List.map_singleton_flatten, ← Range.map] at uni
+    let ⟨_, τ₁ke⟩ := Range.skolem (n := n)
+      (p := fun i A => KindingAndElaboration Γc Γ (.qual (.mono (τ₁ i))) .star A) <| by
+      intro i mem
+      let ⟨_, _, A, τ₀ke', τ₁ke⟩ := τ₀₁se i mem |>.to_Kinding Γwe
+      cases τ₀ke i mem |>.deterministic τ₀ke' |>.left
+      exact ⟨A, τ₁ke⟩
+    exact ⟨_, _, _, sumke, .sum μke <| .row ξke uni τ₁ke h⟩
+  | prodRow ρ₀₁se prodke@(.prod μke ρ₀ke) =>
+    let ⟨_, _, _, ρ₀ke', ρ₁ke⟩ := ρ₀₁se.to_Kinding Γwe
+    cases ρ₀ke.deterministic ρ₀ke' |>.left
+    exact ⟨_, _, _, prodke, .prod μke ρ₁ke⟩
+  | sumRow ρ₀₁se sumke@(.sum μke ρ₀ke) =>
+    let ⟨_, _, _, ρ₀ke', ρ₁ke⟩ := ρ₀₁se.to_Kinding Γwe
+    cases ρ₀ke.deterministic ρ₀ke' |>.left
+    exact ⟨_, _, _, sumke, .sum μke ρ₁ke⟩
+  | decay prodOrSumke μke (Ξ := Ξ) =>
+    match Ξ with
+    | .prod =>
+      let .prod _ ρke := prodOrSumke
+      exact ⟨_, _, _, prodOrSumke, .prod μke ρke⟩
+    | .sum =>
+      let .sum _ ρke := prodOrSumke
+      exact ⟨_, _, _, prodOrSumke, .sum μke ρke⟩
+  | never μke σke => exact ⟨_, .sum (.list []), _, .sum μke .empty_row, σke⟩
+  | contain _ _ _ _ containke _ _ ρ₂ke ρ₃ke κe =>
+    let .contain μke .. := containke
+    exact ⟨_, _, _, containke, .contain μke ρ₂ke ρ₃ke κe⟩
+  | concat _ _ _ _ _ _ concatke _ _ _ ρ₃ke ρ₄ke ρ₅ke κe contain₀₂₃₅se contain₁₂₄₅se =>
+    let .concat μke .. := concatke
+    exact ⟨
+      _,
+      _,
+      _,
+      concatke,
+      .concat μke ρ₃ke ρ₄ke ρ₅ke κe (.contain μke ρ₃ke ρ₅ke κe) (.contain μke ρ₄ke ρ₅ke κe)
+    ⟩
+  | tc τ₀₁se σop₀₁se _ TCₛse TCτ₀ke
+  | tcRow τ₀₁se σop₀₁se _ TCₛse TCτ₀ke =>
+    let ⟨_, _, _, τ₀ke, τ₁ke⟩ := τ₀₁se.to_Kinding Γwe
+    let .tc Γcw «γcin» τ₀ke' := TCτ₀ke
+    cases τ₀ke.deterministic τ₀ke' |>.left
+    exact ⟨_, _, _, TCτ₀ke, .tc Γcw «γcin» τ₁ke⟩
+  | allRow I ρ₀₁ee allke ψke κe =>
+    let ⟨_, _, _, ρ₀ke, ρ₁ke⟩ := ρ₀₁ee.to_Kinding Γwe
+    let .all _ _ _ ρ₀ke' := allke
+    cases ρ₀ke.deterministic ρ₀ke' |>.left
+    exact ⟨_, _, _, allke, .all I ψke κe ρ₁ke⟩
+  | split concatse =>
+    let ⟨_, _, _, concatke@(.concat ..), concatke'@(.concat ..)⟩ := concatse.to_Kinding Γwe
+    exact ⟨_, _, _, concatke.split, concatke'.split⟩
+termination_by σ₀.sizeOf'
+decreasing_by
+  all_goals simp_arith
+  all_goals (
+    apply Nat.le_add_right_of_le
+    apply Nat.le_add_right_of_le
+    apply Nat.le_trans _ <| Nat.le_add_left ..
+    rw [funext (f := _ ∘ _) (by
+      intro x
+      show _ = [(ξ x).sizeOf' + (τ₀ x).sizeOf']
+      simp [Function.comp]
+    ), List.map_singleton_flatten]
+    apply Nat.le_trans (Nat.le_add_left _ (ξ i).sizeOf')
+    apply List.le_sum_of_mem'
+    exact Range.mem_map_of_mem mem
+  )
 
 end TabularTypeInterpreter

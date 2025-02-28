@@ -306,48 +306,10 @@ decreasing_by
     cases this
     simp_arith
 
-theorem TypeVar_open_eq {A : «Type»} (Alc : A.TypeVarLocallyClosed n) : A.TypeVar_open a n = A := by
-  match A with
-  | var (.free _) => rw [TypeVar_open, if_neg (nomatch ·)]
-  | var (.bound _) =>
-    rw [TypeVar_open]
-    split
-    · case isTrue h =>
-      cases h
-      let .var_bound nltn := Alc
-      nomatch Nat.ne_of_lt nltn
-    · case isFalse => rfl
-  | .lam .. => let .lam A'lc := Alc; rw [TypeVar_open, A'lc.TypeVar_open_eq]
-  | .app .. =>
-    let .app A'lc Blc := Alc
-    rw [TypeVar_open, A'lc.TypeVar_open_eq, Blc.TypeVar_open_eq]
-  | .forall .. =>
-    let .forall A'lc := Alc
-    rw [TypeVar_open, A'lc.TypeVar_open_eq]
-  | .arr .. =>
-    let .arr A'lc Blc := Alc
-    rw [TypeVar_open, A'lc.TypeVar_open_eq, Blc.TypeVar_open_eq]
-  | .list A's =>
-    match h : A's with
-    | [] => rw [TypeVar_open]; rfl
-    | A' :: A's' =>
-      let .list A'slc := Alc
-      rw [TypeVar_open]
-      apply (Type.list.injEq _ _).mpr
-      show (_ :: _) = _
-      apply (List.cons.injEq _ _ _ _).mpr
-      constructor
-      · exact A'slc A' (.head _) |>.TypeVar_open_eq
-      · have := TypeVar_open_eq (A := .list A's') (a := a) (n := n) <| .list ?h
-        rw [TypeVar_open] at this
-        apply Type.list.inj this
-        intro A'' A''in
-        exact A'slc A'' <| .tail _ A''in
-  | .listApp .. =>
-    let .listApp A'lc Blc := Alc
-    rw [TypeVar_open, A'lc.TypeVar_open_eq, Blc.TypeVar_open_eq]
-  | .prod .. => let .prod A'lc := Alc; rw [TypeVar_open, A'lc.TypeVar_open_eq]
-  | .sum .. => let .sum A'lc := Alc; rw [TypeVar_open, A'lc.TypeVar_open_eq]
+theorem TypeVar_open_id : TypeVarLocallyClosed A n → A.TypeVar_open a n = A := by
+  induction A using rec_uniform generalizing n <;> aesop
+    (add simp TypeVar_open, safe cases TypeVarLocallyClosed, safe List.map_eq_id_of_eq_id_of_mem)
+    (add simp Type_open, safe cases TypeVarLocallyClosed, safe List.map_eq_id_of_eq_id_of_mem)
 
 theorem Type_open_id : TypeVarLocallyClosed A n → A.Type_open B n = A := by
   induction A using rec_uniform generalizing n <;> aesop
@@ -368,12 +330,12 @@ theorem Type_open_TypeVar_open_comm
   : TypeVarLocallyClosed B n → m ≠ n →
     (Type_open A B m).TypeVar_open a n = (A.TypeVar_open a n).Type_open B m := by
   induction A using rec_uniform generalizing m n <;> aesop
-    (add simp [Type_open, TypeVar_open], 40% TypeVar_open_eq, safe weaken)
+    (add simp [Type_open, TypeVar_open], 40% TypeVar_open_id, safe weaken)
 
 theorem Type_open_TypeVar_open_eq
   : TypeVarLocallyClosed B n → (Type_open A B n).TypeVar_open a n = A.Type_open B n := by
   induction A using rec_uniform generalizing n <;> aesop
-    (add simp [Type_open, TypeVar_open], 40% TypeVar_open_eq, safe weaken)
+    (add simp [Type_open, TypeVar_open], 40% TypeVar_open_id, safe weaken)
 
 theorem Type_open_intro (Alc : A.TypeVarLocallyClosed n) (Blc : B.TypeVarLocallyClosed n)
   : (Type_open A B m).TypeVarLocallyClosed n := by

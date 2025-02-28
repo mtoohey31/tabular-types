@@ -1,5 +1,6 @@
 import TabularTypeInterpreter.Semantics.Basic
 import TabularTypeInterpreter.Semantics.ClassEnvironment
 import TabularTypeInterpreter.Semantics.Kind
+import TabularTypeInterpreter.Semantics.Term
 import TabularTypeInterpreter.Semantics.Type
 import TabularTypeInterpreter.Semantics.TypeEnvironment

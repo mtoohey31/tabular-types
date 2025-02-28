@@ -1,4 +1,5 @@
 import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Value
+import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Term
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Term
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
@@ -64,7 +65,9 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
       | .inr FIsValue =>
         let VE' : Value := ⟨E', E'IsValue⟩
         have : E' = VE'.1 := rfl
-        have ⟨_, _, VE'eq⟩ := VE'.eq_lam_of_ty_arr E'tyA'arrB
+        have A'Blc := E'tyA'arrB.TypeVarLocallyClosed_of
+        cases A'Blc; case arr A'lc Blc =>
+        have ⟨_, _, VE'eq⟩ := VE'.eq_lam_of_ty_arr E'tyA'arrB A'lc Blc
         rw [this, VE'eq]
         exact .inl <| .intro _ <| .lamApp (V := ⟨F, FIsValue⟩)
   · case typeLam => exact .inr .typeLam
@@ -76,7 +79,7 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
       have ⟨_, _, Veq⟩ := V.eq_typeApp_of_ty_forall E'ty
       rw [this, Veq]
       exact .inl <| .intro _ <| .typeLamApp
-  · case prodIntro n E' A E'ty ih => match progress.fold E'ty (fun i mem => ih i mem rfl) with
+  · case prodIntro n E' A wf E'ty ih => match progress.fold E'ty (fun i mem => ih i mem rfl) with
     | .inl ⟨i, ⟨_, iltn⟩, IsValue, E'', toE''⟩ =>
       let V j : Value := if h' : j < i then ⟨E' j, IsValue j ⟨Nat.zero_le _, h'⟩⟩ else default
       rw [progress.sandwich iltn, Range.map_eq_of_eq_of_mem (fun j jmem => by
@@ -102,7 +105,7 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
   · case sumIntro ih => match ih rfl with
     | .inl ⟨E', toE'⟩ => exact .inl <| .intro _ <| .sumIntro toE'
     | .inr E'IsValue => exact .inr <| .sumIntro E'IsValue
-  · case sumElim E' n As F _ E'ty Fty ih₁ ih₂ => match ih₁ rfl with
+  · case sumElim E' n As F _ E'ty Fty Fki ih₁ ih₂ => match ih₁ rfl with
     | .inl ⟨E'', E'toE''⟩ => exact .inl <| .intro _ <| .sumElimL E'toE''
     | .inr E'IsValue =>
       let VE' : Value := ⟨E', E'IsValue⟩
