@@ -1,3 +1,4 @@
+import Lott.Elab.Nat
 import TabularTypeInterpreter.RuleSets
 import TabularTypeInterpreter.«F⊗⊕ω».Syntax.Kind
 
@@ -16,7 +17,7 @@ nonterminal «Type», A, B, C, T :=
   | A " ⟦" B "⟧"           : listApp
   | "⊗ " A                 : prod
   | "⊕ " A                 : sum
-  | "(" A ")"              : paren (desugar := return A)
+  | "(" A ")"              : paren (expand := return A)
 
 attribute [aesop norm (rule_sets := [topen])] Type.Type_open Type.TypeVar_open
 

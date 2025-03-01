@@ -22,6 +22,6 @@ nonterminal Term, M, «N» :=
   | "ind " «λτ» ρ "; " M "; " «N»       : ind
   | "splitₚ " «λτ» M                    : splitₚ
   | "splitₛ " «λτ» M "; " «N»           : splitₛ
-  | "(" M ")"                           : paren (desugar := return M)
+  | "(" M ")"                           : paren (expand := return M)
 
 end TabularTypeInterpreter

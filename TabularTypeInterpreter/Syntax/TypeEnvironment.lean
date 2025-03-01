@@ -6,12 +6,13 @@ namespace TabularTypeInterpreter
 
 nosubst
 nonterminal TypeEnvironment, Γ :=
-  | "ε"                     : empty
-  | Γ ", " a " : " κ        : typeExt (id a)
-  | Γ ", " x " : " σ        : termExt (id x)
-  | Γ ", " ψ " ⇝ " «F⊗⊕ω».x : constrExt (id x)
-  | "(" Γ ")"               : paren (desugar := return Γ)
-  | Γ ", " Γ'               : append (elab := return Lean.mkApp2 (.const `TabularTypeInterpreter.TypeEnvironment.append []) Γ Γ')
-  | Γ " [" τ " / " a "]"    : subst (id a) (elab := return Lean.mkApp3 (.const `TabularTypeInterpreter.TypeEnvironment.TypeVar_subst []) Γ a τ)
+  | "ε"                                : empty
+  | Γ ", " a " : " κ                   : typeExt (id a)
+  | Γ ",, " aκ:sepBy(a " : " κ, ",, ") : multiTypeExt (id a) (expand := return .mkCApp `TabularTypeInterpreter.TypeEnvironment.multiTypeExt #[Γ, aκ])
+  | Γ ", " x " : " σ                   : termExt (id x)
+  | Γ ", " ψ " ⇝ " «F⊗⊕ω».x            : constrExt (id x)
+  | Γ ", " Γ'                          : append (expand := return .mkCApp `TabularTypeInterpreter.TypeEnvironment.append #[Γ, Γ'])
+  | Γ " [" τ " / " a "]"               : subst (id a) (expand := return .mkCApp `TabularTypeInterpreter.TypeEnvironment.TypeVar_subst #[Γ, a, τ])
+  | "(" Γ ")"                          : paren (expand := return Γ)
 
 end TabularTypeInterpreter

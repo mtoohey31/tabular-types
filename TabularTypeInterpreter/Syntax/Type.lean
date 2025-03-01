@@ -42,7 +42,7 @@ nonterminal Monotype, τ, ξ, μ, ρ, ψ, φ :=
   | "All " «λτ» ρ                                    : all
   | "Ind " ρ                                         : ind
   | "Split " «λτ» ρ₀ " ⊙' " ρ₁ " ~ " ρ₂              : split
-  | "(" τ ")"                                        : paren (desugar := return τ)
+  | "(" τ ")"                                        : paren (expand := return τ)
 
 end
 

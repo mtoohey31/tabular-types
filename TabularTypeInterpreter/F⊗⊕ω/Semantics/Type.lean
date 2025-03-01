@@ -1,8 +1,8 @@
 import Lott.Data.Range
-import Lott.DSL.Elab.JudgementComprehension
-import Lott.DSL.Elab.UniversalJudgement
-import TabularTypeInterpreter.RuleSets
+import Lott.Elab.JudgementComprehension
+import Lott.Elab.UniversalJudgement
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Environment.Basic
+import TabularTypeInterpreter.RuleSets
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
 

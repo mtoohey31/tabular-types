@@ -15,9 +15,7 @@ local instance : Inhabited «Type» where
   default := .list []
 in
 def list' (As Bs: List «Type») (length_eq: As.length = Bs.length) (red: ∀A B, ⟨A, B⟩ ∈ (As.zip Bs) → [[ Δ ⊢ A ≡> B ]]): ParallelReduction Δ (Type.list As) (Type.list Bs) := by
-  rw [← Std.Range.map_get!_eq (as := As), ← Std.Range.map_get!_eq (as := Bs), ← length_eq,
-      Std.Range.map, Std.Range.map, ← List.map_singleton_flatten, ← Std.Range.map,
-      ← List.map_singleton_flatten, ← Std.Range.map]
+  rw [← Std.Range.map_get!_eq (as := As), ← Std.Range.map_get!_eq (as := Bs), ← length_eq]
   apply list
   intro i mem
   apply red
@@ -36,9 +34,7 @@ def lamListApp' (A A' : «Type») (Bs B's : List «Type») (length_eq: Bs.length
   (redB: ∀B B', ⟨B, B'⟩ ∈ (Bs.zip B's) → [[ Δ ⊢ B ≡> B' ]])
   (Abody: A.TypeVarLocallyClosed 1)
   : ParallelReduction Δ ((Type.lam K A).listApp (Type.list Bs)) (Type.list <| B's.map fun B' => A'.Type_open B') := by
-    rw [← Std.Range.map_get!_eq (as := Bs), ← Std.Range.map_f_get!_eq (as := B's) (f := fun B' => A'.Type_open B'), <- length_eq,
-      Std.Range.map, Std.Range.map, ← List.map_singleton_flatten, ← Std.Range.map,
-      ← List.map_singleton_flatten, ← Std.Range.map]
+    rw [← Std.Range.map_get!_eq (as := Bs), ← Std.Range.map_f_get!_eq (as := B's) (f := fun B' => A'.Type_open B'), <- length_eq]
     apply lamListApp (I := I)
     . intro i mem
       apply kind
@@ -79,7 +75,7 @@ theorem preserve_not_mem_freeTypeVars (red: [[ Δ ⊢ A ≡> B ]]) a (notInFV: a
         exact not_mem_freeTypeVars_TypeVar_open_drop ihA'
     . simp_all
   . case lamListApp n Δ B K I A A' B' kinding redA redB Abody ihA' ihB' =>
-    intro as i inRange _
+    intro i inRange
     obtain ⟨notInAfv, notInBfv⟩ := notInFV
     apply not_mem_freeTypeVars_Type_open_intro
     . have ⟨a', notInI⟩ := (I ++ A'.freeTypeVars).exists_fresh
@@ -98,7 +94,7 @@ theorem preserve_not_mem_freeTypeVars (red: [[ Δ ⊢ A ≡> B ]]) a (notInFV: a
     have ih' := ih a' (by aesop) a (by apply not_mem_freeTypeVars_TypeVar_open_intro <;> aesop)
     exact not_mem_freeTypeVars_TypeVar_open_drop ih'
   . case list n Δ A B red ih =>
-    intro as i inRange _
+    intro as i inRange
     simp_all [Std.Range.mem_of_mem_toList]
 
 open «Type» TypeVarLocallyClosed in
@@ -119,9 +115,10 @@ theorem preserve_lc (red: [[ Δ ⊢ A ≡> B ]]): A.TypeVarLocallyClosed → B.T
     cases lcB; case list lcB =>
     constructor
     simp_all
-    intro _ i In _
+    intro i In
     apply Type_open_dec <;> simp_all [Std.Range.mem_of_mem_toList]
   all_goals
+    set_option aesop.dev.statefulForward false in
     aesop (add safe forward modus_ponens_open, safe forward Std.Range.mem_of_mem_toList, safe TypeVarLocallyClosed, unsafe cases TypeVarLocallyClosed)
 
 open «Type» TypeVarLocallyClosed in
@@ -146,7 +143,6 @@ theorem preserve_lc_rev (red: [[ Δ ⊢ A ≡> B ]]): B.TypeVarLocallyClosed →
     . case zero => constructor; simp [Std.Range.map, Std.Range.toList]
     . case succ n =>
       specialize lcA'B' (A'.Type_open (B' 0)) (by
-        rw [List.map_singleton_flatten]
         apply Std.Range.mem_map_of_mem
         simp [Membership.mem]
       )
@@ -154,8 +150,9 @@ theorem preserve_lc_rev (red: [[ Δ ⊢ A ≡> B ]]): B.TypeVarLocallyClosed →
       rw [<- Type.TypeVar_subst_intro_of_not_mem_freeTypeVars (a := a) (by simp_all)] at lcA'B'
       have Blc := λ i In => kindB i In |>.TypeVarLocallyClosed_of
       constructor
-      simp_all [List.map_singleton_flatten, Std.Range.mem_map_of_mem, Std.Range.mem_of_mem_toList]
+      simp_all [Std.Range.mem_map_of_mem, Std.Range.mem_of_mem_toList]
   all_goals
+    set_option aesop.dev.statefulForward false in
     aesop (add safe forward modus_ponens_open, safe forward Std.Range.mem_of_mem_toList, safe TypeVarLocallyClosed, unsafe cases TypeVarLocallyClosed)
 
 theorem weakening_type' (red: [[ Δ, Δ' ⊢ A ≡> B ]]) (freshΔ: a ∉ Δ.typeVarDom) : [[ Δ, a: K, Δ' ⊢ A ≡> B ]] := by
@@ -325,7 +322,7 @@ theorem subst_out' {A T T' : «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red : [[ �
     unfold Function.comp
     simp
     -- TODO bruhhh
-    have := funext <| λx => congrArg (λa => [a]) (kindA.TypeVarLocallyClosed_of.Type_open_TypeVar_subst_dist (a := a) (n := 0) (A := T1') (B := T2' x) (B' := A) )
+    have := funext <| λx => (kindA.TypeVarLocallyClosed_of.Type_open_TypeVar_subst_dist (a := a) (n := 0) (A := T1') (B := T2' x) (B' := A) )
     rw [this]
     apply ParallelReduction.lamListApp (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom)
     . intro i mem
@@ -383,14 +380,14 @@ theorem subst_all' {A B T: «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red1: [[ Δ 
       apply ihT1 <;> simp_all [Environment.append]
       . constructor <;> simp_all [Environment.typeVarDom, Environment.typeVarDom_append, Environment.TypeVarNotInDom, Environment.TypeVarInDom]
       . aesop (add safe Type.TypeVarLocallyClosed.strengthen, norm Environment.TypeVarNotInDom, norm Environment.TypeVarInDom, safe Type.TypeVarLocallyClosed, unsafe cases Type.TypeVarLocallyClosed) (config := { enableSimp := false })
-    . apply ihT2 <;> simp_all [Environment.append]
+    . apply ihT2 <;> try simp_all [Environment.append]
       aesop (add safe Type.TypeVarLocallyClosed.strengthen, norm Environment.TypeVarNotInDom, norm Environment.TypeVarInDom, safe Type.TypeVarLocallyClosed, unsafe cases Type.TypeVarLocallyClosed) (config := { enableSimp := false })
   . case lamListApp n Δ_ T2 K2 I T1 T1' T2' kindT2 redT1 redT2 T1body ihT1 ihT2 =>
     subst Δ_
     simp [«Type».TypeVar_subst]
     unfold Function.comp
     simp
-    have := funext <| λx => congrArg (λa => [a]) (red1.preserve_lc kindA.TypeVarLocallyClosed_of |>.Type_open_TypeVar_subst_dist (a := a) (n := 0) (A := T1') (B := T2' x) (B' := B))
+    have := funext <| λx => (red1.preserve_lc kindA.TypeVarLocallyClosed_of |>.Type_open_TypeVar_subst_dist (a := a) (n := 0) (A := T1') (B := T2' x) (B' := B))
     rw [this]
     apply ParallelReduction.lamListApp (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom)
     . intros i mem
@@ -406,7 +403,6 @@ theorem subst_all' {A B T: «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red1: [[ Δ 
         aesop (add safe Type.TypeVarLocallyClosed.strengthen, norm Environment.TypeVarNotInDom, norm Environment.TypeVarInDom, safe Type.TypeVarLocallyClosed, unsafe cases Type.TypeVarLocallyClosed) (config := { enableSimp := false })
     . intros i mem
       apply ihT2 <;> simp_all [Environment.append]
-      simp [List.map_singleton_flatten] at lcT
       clear T1body
       aesop (add safe Type.TypeVarLocallyClosed.strengthen, safe forward Std.Range.mem_toList_of_mem, safe List.mem_map_of_mem, norm Environment.TypeVarNotInDom, norm Environment.TypeVarInDom, safe Type.TypeVarLocallyClosed, unsafe cases Type.TypeVarLocallyClosed) (config := { enableSimp := false })
     . have Alc := kindA.TypeVarLocallyClosed_of
@@ -556,6 +552,7 @@ theorem preservation (lc: A.TypeVarLocallyClosed) (wf: [[ ⊢ Δ ]]) (red: [[ Δ
     simp_all
   case list n Δ_ A B red ih =>
     have ⟨K_, eqK_, k'⟩ := k.inv_list'; subst K
+    set_option aesop.dev.statefulForward false in
     constructor; aesop (add safe forward Std.Range.mem_toList_of_mem, safe Type.TypeVarLocallyClosed, unsafe cases Type.TypeVarLocallyClosed)
   all_goals cases k; constructor <;> aesop (add safe Type.TypeVarLocallyClosed, unsafe cases Type.TypeVarLocallyClosed) (config := { enableSimp := false })
 

@@ -1,4 +1,4 @@
-import Lott.DSL.Elab.Nat
+import Lott.Elab.Nat
 import TabularTypeInterpreter.«F⊗⊕ω».Syntax.Type
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
@@ -16,7 +16,7 @@ nonterminal Term, E, F :=
   | "π " n E                         : prodElim
   | "ι " n E                         : sumIntro
   | "case " E "{" sepBy(F, ", ") "}" : sumElim
-  | "⦅" E "⦆"                        : paren (desugar := return E)
+  | "⦅" E "⦆"                        : paren (expand := return E)
 
 namespace Term
 attribute [app_unexpander TypeVar_open] Type.delabTVOpen

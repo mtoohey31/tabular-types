@@ -65,7 +65,7 @@ theorem contain_evidence_eq_inversion (aninA : a ∉ A.freeTypeVars)
                         rename Nat => n'
                         match n' with
                         | 0 =>
-                          rw [if_neg (nomatch ·)] at *
+                          rw [if_neg nofun] at *
                           cases A₀₁' <;> rw [Type.TypeVar_open] at *
                           case prod =>
                             rename «Type» => A₀₀'
@@ -80,7 +80,7 @@ theorem contain_evidence_eq_inversion (aninA : a ∉ A.freeTypeVars)
                                   rename Nat => n'
                                   match n' with
                                   | 0 =>
-                                    rw [if_neg (nomatch ·)] at *
+                                    rw [if_neg nofun] at *
                                     cases A₁' <;> rw [TypeVar_open] at *
                                     case «forall» =>
                                       let ⟨Keq, eq₁'⟩ := forall.inj eq₁
@@ -103,7 +103,7 @@ theorem contain_evidence_eq_inversion (aninA : a ∉ A.freeTypeVars)
                                                 rename Nat => n'
                                                 match n' with
                                                 | 0 =>
-                                                  rw [if_neg (nomatch ·)] at *
+                                                  rw [if_neg nofun] at *
                                                   cases A₁₁' <;> rw [Type.TypeVar_open] at *
                                                   case sum =>
                                                     rename «Type» => A₁₀'
@@ -118,7 +118,7 @@ theorem contain_evidence_eq_inversion (aninA : a ∉ A.freeTypeVars)
                                                           rename Nat => n'
                                                           match n' with
                                                           | 0 =>
-                                                            rw [if_neg (nomatch ·)] at *
+                                                            rw [if_neg nofun] at *
                                                             cases eq₀'
                                                             let ⟨eq₁₀, eq₁₁⟩ := arr.inj eq₁'
                                                             simp [freeTypeVars] at aninA
@@ -164,6 +164,7 @@ theorem contain_evidence_eq_inversion (aninA : a ∉ A.freeTypeVars)
     all_goals nomatch eq
   all_goals nomatch eq
 
+set_option maxHeartbeats 2000000 in
 private
 theorem concat_evidence_eq_inversion
   (eq : A.TypeVar_open a n = [[⊗ {∀ a : K ↦ *. (⊗ (a$0 ⟦A₀⟧)) → (⊗ (a$0 ⟦A₁⟧)) → ⊗ (a$0 ⟦A₂⟧), ∀ a : K ↦ *. ∀ aₜ : *. ((⊕ (a$1 ⟦A₀⟧)) → aₜ$0) → ((⊕ (a$1 ⟦A₁⟧)) → aₜ$0) → (⊕ (a$1 ⟦A₂⟧)) → aₜ$0, Bₗ, Bᵣ}]])
@@ -246,7 +247,7 @@ theorem concat_evidence_eq_inversion
                             rename Nat => n'
                             match n' with
                             | 0 =>
-                              rw [if_neg (nomatch ·)] at *
+                              rw [if_neg nofun] at *
                               cases A₀₁' <;> rw [Type.TypeVar_open] at *
                               case arr =>
                                 rename_i A₀₁₀' A₀₁₁'
@@ -264,7 +265,7 @@ theorem concat_evidence_eq_inversion
                                         rename Nat => n'
                                         match n' with
                                         | 0 =>
-                                          rw [if_neg (nomatch ·)] at *
+                                          rw [if_neg nofun] at *
                                           cases A₀₁₁' <;> rw [Type.TypeVar_open] at *
                                           case prod =>
                                             rename «Type» => A₀₁₁'
@@ -279,7 +280,7 @@ theorem concat_evidence_eq_inversion
                                                   rename Nat => n'
                                                   match n' with
                                                   | 0 =>
-                                                    rw [if_neg (nomatch ·)] at *
+                                                    rw [if_neg nofun] at *
                                                     cases A₁' <;> rw [TypeVar_open] at *
                                                     case «forall» =>
                                                       let ⟨Keq, eq₁'⟩ := forall.inj eq₁
@@ -310,7 +311,7 @@ theorem concat_evidence_eq_inversion
                                                                     rename Nat => n'
                                                                     match n' with
                                                                     | 1 =>
-                                                                      rw [if_neg (nomatch ·)] at *
+                                                                      rw [if_neg nofun] at *
                                                                       cases A₁₀₁' <;> rw [Type.TypeVar_open] at *
                                                                       case var =>
                                                                         rename «F⊗⊕ω».TypeVar => a'
@@ -319,7 +320,7 @@ theorem concat_evidence_eq_inversion
                                                                           rename Nat => n'
                                                                           match n' with
                                                                           | 0 =>
-                                                                            rw [if_neg (nomatch ·)] at *
+                                                                            rw [if_neg nofun] at *
                                                                             cases A₁₁' <;> rw [Type.TypeVar_open] at *
                                                                             case arr =>
                                                                               rename_i A₁₁₀' A₁₁₁'
@@ -340,7 +341,7 @@ theorem concat_evidence_eq_inversion
                                                                                         rename Nat => n'
                                                                                         match n' with
                                                                                         | 1 =>
-                                                                                          rw [if_neg (nomatch ·)] at *
+                                                                                          rw [if_neg nofun] at *
                                                                                           cases A₁₁₀₁' <;> rw [Type.TypeVar_open] at *
                                                                                           case var =>
                                                                                             rename «F⊗⊕ω».TypeVar => a'
@@ -349,7 +350,7 @@ theorem concat_evidence_eq_inversion
                                                                                               rename Nat => n'
                                                                                               match n' with
                                                                                               | 0 =>
-                                                                                                rw [if_neg (nomatch ·)] at *
+                                                                                                rw [if_neg nofun] at *
                                                                                                 cases A₁₁₁' <;> rw [TypeVar_open] at *
                                                                                                 case arr =>
                                                                                                   rename_i A₁₁₁₀' A₁₁₁₁'
@@ -367,7 +368,7 @@ theorem concat_evidence_eq_inversion
                                                                                                           rename Nat => n'
                                                                                                           match n' with
                                                                                                           | 1 =>
-                                                                                                            rw [if_neg (nomatch ·)] at *
+                                                                                                            rw [if_neg nofun] at *
                                                                                                             cases A₁₁₁₁' <;> rw [Type.TypeVar_open] at *
                                                                                                             case var =>
                                                                                                               rename «F⊗⊕ω».TypeVar => a'
@@ -376,7 +377,7 @@ theorem concat_evidence_eq_inversion
                                                                                                                 rename Nat => n'
                                                                                                                 match n' with
                                                                                                                 | 0 =>
-                                                                                                                  rw [if_neg (nomatch ·)] at *
+                                                                                                                  rw [if_neg nofun] at *
                                                                                                                   cases eq₀'
                                                                                                                   let ⟨eq₁₀, eq₁₁⟩ := arr.inj eq₁''
                                                                                                                   let ⟨eq₁₁₀, eq₁₁₁⟩ := arr.inj eq₁₁
@@ -476,9 +477,8 @@ theorem tc_evidence_eq_inversion (aninA : a ∉ A.freeTypeVars)
       | A'' :: Aₛ' =>
         rw [List.map_cons] at *
         let ⟨eq₀, eq₁⟩ := List.cons_eq_cons.mp eq''
-        rw [← Range.map_get!_eq (as := Aₛ'), Range.map, List.map_map,
-            List.map_singleton_flatten] at eq₁
-        let length_eq : List.length (List.map ..) = List.length _ :=  by rw [eq₁]
+        rw [← Range.map_get!_eq (as := Aₛ'), Range.map, List.map_map, ← Range.map] at eq₁
+        let length_eq : List.length (Range.map ..) = List.length _ :=  by rw [eq₁]
         rw [List.length_map, List.length_map, Range.length_toList, Range.length_toList,
             Nat.sub_zero, Nat.sub_zero] at length_eq
         cases length_eq
@@ -505,7 +505,7 @@ theorem tc_evidence_eq_inversion (aninA : a ∉ A.freeTypeVars)
             rw [Nat.zero_add] at AₛopBlc
             rw [← AₛopBlc.TypeVar_open_TypeVar_close_id (a := a), Aₛeq]
           · congr
-            rw (occs := .pos [1]) [List.map_singleton_flatten, ← Range.map_get!_eq (as := Aₛ')]
+            rw (occs := .pos [1]) [← Range.map_get!_eq (as := Aₛ')]
             apply Range.map_eq_of_eq_of_mem
             intro i mem
             symm
@@ -679,10 +679,11 @@ open TypeScheme in
 mutual
 
 theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
-  (σke : KindingAndElaboration Γc [[(Γ, a : κ₀, Γ')]] (TypeVar_open σ a m) κ₁
-    (Type.TypeVar_open A a n)) (ΓaΓ'we : [[Γc ⊢ Γ, a : κ₀, Γ' ⇝ Δ]]) (aninΓ' : [[a ∉ dom(Γ')]])
-  (aninσ : a ∉ σ.freeTypeVars) (aninA : a ∉ A.freeTypeVars) (τke : [[Γc; Γ ⊢ τ : κ₀ ⇝ B]])
-  : KindingAndElaboration Γc [[(Γ, (Γ' [τ / a]))]] (σ.Monotype_open τ m) κ₁ (A.Type_open B n) :=
+  (σke : KindingAndElaboration Γc [[Γ, a : κ₀, Γ']] (TypeVar_open σ a m) κ₁
+    (Type.TypeVar_open A a n)) (Γcw : [[⊢c Γc]]) (ΓaΓ'we : [[Γc ⊢ Γ, a : κ₀, Γ' ⇝ Δ]])
+  (aninΓ' : [[a ∉ dom(Γ')]]) (aninσ : a ∉ σ.freeTypeVars) (aninA : a ∉ A.freeTypeVars)
+  (τke : [[Γc; Γ ⊢ τ : κ₀ ⇝ B]])
+  : KindingAndElaboration Γc [[Γ, (Γ' [τ / a])]] (σ.Monotype_open τ m) κ₁ (A.Type_open B n) :=
   open KindingAndElaboration in by
   let .qual (.mono τlc) := τke.TypeVarLocallyClosed_of
   match σ with
@@ -712,7 +713,8 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
               let ⟨_, κ₁e⟩ := κ₁.Elaboration_total
               let ainΔ := ΓaΓ'we.TypeVarIn_preservation ain κ₁e
               rcases ainΔ.eq_of with ⟨_, _, rfl⟩
-              exact τke.weakening (Γ'' := .empty) <| ΓaΓ'we.TypeVar_subst_preservation aninΓ' τke
+              exact τke.weakening (Γ'' := .empty) <|
+                ΓaΓ'we.TypeVar_subst_preservation Γcw aninΓ' τke
             · case isFalse h =>
               let .var .. := σke
               rw [Type.freeTypeVars] at aninA
@@ -743,9 +745,9 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
           rw [← QualifiedType.TypeVar_open, ← TypeVar_open] at φke τ''ke
           rw [Monotype.freeTypeVars] at aninσ
           rw [Type.freeTypeVars] at aninA
-          let φke' := φke.Monotype_open_preservation ΓaΓ'we aninΓ'
+          let φke' := φke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ'
             (aninσ <| List.mem_append_left _ ·) (aninA <| List.mem_append_left _ ·) τke
-          let τ''ke' := τ''ke.Monotype_open_preservation ΓaΓ'we aninΓ'
+          let τ''ke' := τ''ke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ'
             (aninσ <| List.mem_append_right _ ·) (aninA <| List.mem_append_right _ ·) τke
           rw [Monotype_open, QualifiedType.Monotype_open] at φke' τ''ke'
           exact app φke' τ''ke'
@@ -759,9 +761,9 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
           rw [← QualifiedType.TypeVar_open, ← TypeVar_open] at τ₀ke τ₁ke
           rw [Monotype.freeTypeVars] at aninσ
           rw [Type.freeTypeVars] at aninA
-          let τ₀ke' := τ₀ke.Monotype_open_preservation ΓaΓ'we aninΓ'
+          let τ₀ke' := τ₀ke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ'
             (aninσ <| List.mem_append_left _ ·) (aninA <| List.mem_append_left _ ·) τke
-          let τ₁ke' := τ₁ke.Monotype_open_preservation ΓaΓ'we aninΓ'
+          let τ₁ke' := τ₁ke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ'
             (aninσ <| List.mem_append_right _ ·) (aninA <| List.mem_append_right _ ·) τke
           rw [Monotype_open, QualifiedType.Monotype_open] at τ₀ke' τ₁ke'
           exact arr τ₀ke' τ₁ke'
@@ -810,11 +812,10 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
           : (ξτs.map fun (ξ, τ) => (ξ.TypeVar_open a m, τ.TypeVar_open a m)) = ξτs' at σke
         generalize A'eq : A.TypeVar_open a n = A' at σke
         let .row ξ'ke uni τ'ke h' (B := B') := σke
-        rw [List.map_singleton_flatten] at ξτs'eq
         cases A <;> rw [Type.TypeVar_open] at A'eq
         case list =>
           rename List _ => A
-          rw [List.mapMem_eq_map, List.map_singleton_flatten] at A'eq
+          rw [List.mapMem_eq_map] at A'eq
           let A'eq := Type.list.inj A'eq
           let ξτslength_eq : List.length (List.map ..) = List.length _ := by rw [ξτs'eq]
           let Alength_eq : List.length (List.map ..) = List.length _ := by rw [A'eq]
@@ -829,22 +830,21 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
               Range.map_eq_of_eq_of_mem (by
                 intro i _
                 show _ = (ξ' i, τ' i)
-                simp only [Function.comp]
-              ), ← List.map_singleton_flatten, ← Range.map,
-              Range.map_eq_of_eq_of_mem (by
+                simp only [Function.comp, ξ', τ']
+              ), ← Range.map, Range.map_eq_of_eq_of_mem (by
                 intro i _
                 show _ = A'' i
-                simp only [Function.comp]
-              ), ← List.map_singleton_flatten, ← Range.map]
+                simp only [Function.comp, A'']
+              ), ← Range.map]
           rw [← Range.map_get!_eq (as := ξτs), ξτslength_eq, Range.map, List.map_map] at ξτs'eq
           rw [Monotype.freeTypeVars, List.mapMem_eq_map] at aninσ
           let aninξ i ilt : a ∉ (ξτs.get! i).fst.freeTypeVars := by
-            apply (List.not_mem_append' (xs := (ξτs.get! i).snd.freeTypeVars)).mp _ |>.right
+            apply (List.not_mem_append' (ys := (ξτs.get! i).snd.freeTypeVars)).mp _ |>.left
             apply List.not_mem_flatten.mp aninσ
             apply List.mem_map.mpr
             exact ⟨_, List.get!_mem ilt, rfl⟩
           let aninτ i ilt : a ∉ (ξτs.get! i).snd.freeTypeVars := by
-            apply (List.not_mem_append' (ys := (ξτs.get! i).fst.freeTypeVars)).mp _ |>.left
+            apply (List.not_mem_append' (xs := (ξτs.get! i).fst.freeTypeVars)).mp _ |>.right
             apply List.not_mem_flatten.mp aninσ
             apply List.mem_map.mpr
             exact ⟨_, List.get!_mem ilt, rfl⟩
@@ -856,21 +856,21 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
             have := Range.eq_of_mem_of_map_eq ξτs'eq i mem
             simp only [Function.comp] at this
             rw [← Prod.mk.inj this |>.left, ← QualifiedType.TypeVar_open, ← TypeVar_open] at ξike
-            let Bki := ξike.soundness ΓaΓ'we .label |>.TypeVarLocallyClosed_of.weaken (n := m)
+            let Bki := ξike.soundness Γcw ΓaΓ'we .label |>.TypeVarLocallyClosed_of.weaken (n := m)
             rw [Nat.zero_add] at Bki
             rw [← Bki.TypeVar_open_TypeVar_close_id (a := a)] at ξike
-            let ilt : i < ξτs.length := by rw [ξτslength_eq]; exact mem.right
-            have := ξike.Monotype_open_preservation ΓaΓ'we aninΓ' (aninξ i ilt)
+            let ilt : i < ξτs.length := by rw [ξτslength_eq]; exact mem.upper
+            have := ξike.Monotype_open_preservation Γcw ΓaΓ'we aninΓ' (aninξ i ilt)
               Type.not_mem_freeTypeVars_TypeVar_close τke
             rw [Monotype_open, QualifiedType.Monotype_open] at this
             exact this
-          · rw [List.map_singleton_flatten, funext (f := ξ') (by
+          · rw [funext (f := fun i => ξ' i) (by
               intro i
               show _ = ((fun x => x.Monotype_open τ m) ∘ (fun i => ξτs.get! i |>.fst)) i
               simp only [ξ', Function.comp]
-            ), ← List.map_map]
+            ), Range.map, ← List.map_map]
             apply Monotype.label.Uniqueness.Monotype_open_preservation (a := a)
-            rw [Range.map, List.map_singleton_flatten, Range.map_eq_of_eq_of_mem (by
+            rw [Range.map, Range.map_eq_of_eq_of_mem (by
               intro i mem
               have := Range.eq_of_mem_of_map_eq ξτs'eq i mem
               simp only [Function.comp] at this
@@ -896,11 +896,11 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
             rw [Type.freeTypeVars, List.mapMem_eq_map] at aninA
             have iltAlength : i < A.length := by
               rw [Alength_eq]
-              exact mem.right
+              exact mem.upper
             let aninAi := List.not_mem_flatten.mp aninA (A.get! i).freeTypeVars
               (List.mem_map.mpr ⟨_, List.get!_mem iltAlength, rfl⟩)
-            let ilt : i < ξτs.length := by rw [ξτslength_eq]; exact mem.right
-            have := τike.Monotype_open_preservation ΓaΓ'we aninΓ' (aninτ i ilt) aninAi τke
+            let ilt : i < ξτs.length := by rw [ξτslength_eq]; exact mem.upper
+            have := τike.Monotype_open_preservation Γcw ΓaΓ'we aninΓ' (aninτ i ilt) aninAi τke
             rw [Monotype_open, QualifiedType.Monotype_open] at this
             exact this
         all_goals nomatch A'eq
@@ -921,11 +921,11 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
               rw [List.map_nil] at σke ⊢
               let .floor ξke := σke
               rw [← QualifiedType.TypeVar_open, ← TypeVar_open] at ξke
-              let Alc := ξke.soundness ΓaΓ'we .label |>.TypeVarLocallyClosed_of.weaken (n := n)
+              let Alc := ξke.soundness Γcw ΓaΓ'we .label |>.TypeVarLocallyClosed_of.weaken (n := n)
               rw [Nat.zero_add] at Alc
               rw [← Alc.TypeVar_open_TypeVar_close_id (a := a)] at ξke
               rw [Monotype.freeTypeVars] at aninσ
-              exact floor <| ξke.Monotype_open_preservation ΓaΓ'we aninΓ' aninσ
+              exact floor <| ξke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ' aninσ
                 Type.not_mem_freeTypeVars_TypeVar_close τke
           all_goals nomatch σke
         all_goals nomatch σke
@@ -938,12 +938,12 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
           rw [← QualifiedType.TypeVar_open, ← TypeVar_open] at μke ρke
           rw [Monotype.freeTypeVars] at aninσ
           rw [Type.freeTypeVars] at aninA
-          let Blc := μke.soundness ΓaΓ'we .comm |>.TypeVarLocallyClosed_of.weaken (n := n)
+          let Blc := μke.soundness Γcw ΓaΓ'we .comm |>.TypeVarLocallyClosed_of.weaken (n := n)
           rw [Nat.zero_add] at Blc
           rw [← Blc.TypeVar_open_TypeVar_close_id (a := a)] at μke
-          let μke' := μke.Monotype_open_preservation ΓaΓ'we aninΓ'
+          let μke' := μke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ'
             (aninσ <| List.mem_append_left _ ·) Type.not_mem_freeTypeVars_TypeVar_close τke
-          let ρke' := ρke.Monotype_open_preservation ΓaΓ'we aninΓ'
+          let ρke' := ρke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ'
             (aninσ <| List.mem_append_right _ ·) aninA τke
           rw [Monotype_open, QualifiedType.Monotype_open] at μke' ρke'
           exact prod μke' ρke'
@@ -957,12 +957,12 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
           rw [← QualifiedType.TypeVar_open, ← TypeVar_open] at μke ρke
           rw [Monotype.freeTypeVars] at aninσ
           rw [Type.freeTypeVars] at aninA
-          let Blc := μke.soundness ΓaΓ'we .comm |>.TypeVarLocallyClosed_of.weaken (n := n)
+          let Blc := μke.soundness Γcw ΓaΓ'we .comm |>.TypeVarLocallyClosed_of.weaken (n := n)
           rw [Nat.zero_add] at Blc
           rw [← Blc.TypeVar_open_TypeVar_close_id (a := a)] at μke
-          let μke' := μke.Monotype_open_preservation ΓaΓ'we aninΓ'
+          let μke' := μke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ'
             (aninσ <| List.mem_append_left _ ·) Type.not_mem_freeTypeVars_TypeVar_close τke
-          let ρke' := ρke.Monotype_open_preservation ΓaΓ'we aninΓ'
+          let ρke' := ρke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ'
             (aninσ <| List.mem_append_right _ ·) aninA τke
           rw [Monotype_open, QualifiedType.Monotype_open] at μke' ρke'
           exact sum μke' ρke'
@@ -982,7 +982,7 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
             rw [← QualifiedType.TypeVar_open, ← TypeVar_open] at ρke
             rw [Monotype.freeTypeVars, TypeLambda.freeTypeVars] at aninσ
             rw [Type.freeTypeVars, Type.freeTypeVars] at aninA
-            let ρke' := ρke.Monotype_open_preservation ΓaΓ'we aninΓ'
+            let ρke' := ρke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ'
               (aninσ <| List.mem_append_right _ ·) (aninA <| List.mem_append_right _ ·) τke
             rw [Monotype_open, QualifiedType.Monotype_open] at ρke'
             apply lift ([[(Γ, a : κ₀, Γ')]].typeVarDom ++ I) _ κ₀'e ρke'
@@ -995,13 +995,13 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
             symm at ne
             let ⟨_, .typeExt Γwe ..⟩ := ΓaΓ'we.append_left_elim
             let ⟨_, κ₀e⟩ := κ₀.Elaboration_total
-            let Blc := τke.soundness Γwe κ₀e |>.TypeVarLocallyClosed_of
+            let Blc := τke.soundness Γcw Γwe κ₀e |>.TypeVarLocallyClosed_of
             rw [Blc.Type_open_TypeVar_open_comm <| Nat.succ_ne_zero _]
             have := τ''ke a' a'ninI
             rw [τ''.TypeVar_open_comm <| Nat.succ_ne_zero _,
                 ← QualifiedType.TypeVar_open, ← TypeVar_open,
                 A.TypeVar_open_comm <| Nat.succ_ne_zero _, ← TypeEnvironment.append] at this
-            have := this.Monotype_open_preservation (ΓaΓ'we.typeExt a'ninΓaΓ'' κ₀'e)
+            have := this.Monotype_open_preservation Γcw (ΓaΓ'we.typeExt a'ninΓaΓ'' κ₀'e)
                (List.not_mem_cons.mpr ⟨ne, aninΓ'⟩)
                (Monotype.not_mem_freeTypeVars_TypeVar_open_intro
                  (aninσ <| List.mem_append_left _ ·) ne)
@@ -1025,20 +1025,20 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
         rw [Monotype.Monotype_open, Type.Type_open, Type.Type_open, List.mapMem_eq_map,
             List.map_cons, List.map_singleton]
         repeat rw [Type.Type_open]
-        rw [if_neg (nomatch ·)]
+        rw [if_neg nofun]
         rw [← QualifiedType.TypeVar_open, ← TypeVar_open] at μke ρ₀ke ρ₁ke
         rw [Monotype.freeTypeVars] at aninσ
         let ⟨aninρ₀μ, aninρ₁⟩ := List.not_mem_append'.mp aninσ
         let ⟨aninρ₀, aninμ⟩ := List.not_mem_append'.mp aninρ₀μ
         simp [Type.freeTypeVars] at aninA
         let ⟨_, aninA₀, aninA₁⟩ := aninA
-        let Blc := μke.soundness ΓaΓ'we .comm |>.TypeVarLocallyClosed_of.weaken (n := n)
+        let Blc := μke.soundness Γcw ΓaΓ'we .comm |>.TypeVarLocallyClosed_of.weaken (n := n)
         rw [Nat.zero_add] at Blc
         rw [← Blc.TypeVar_open_TypeVar_close_id (a := a)] at μke
-        let μke' := μke.Monotype_open_preservation ΓaΓ'we aninΓ' aninμ
+        let μke' := μke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ' aninμ
           Type.not_mem_freeTypeVars_TypeVar_close τke
-        let ρ₀ke' := ρ₀ke.Monotype_open_preservation ΓaΓ'we aninΓ' aninρ₀ aninA₀ τke
-        let ρ₁ke' := ρ₁ke.Monotype_open_preservation ΓaΓ'we aninΓ' aninρ₁ aninA₁ τke
+        let ρ₀ke' := ρ₀ke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ' aninρ₀ aninA₀ τke
+        let ρ₁ke' := ρ₁ke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ' aninρ₁ aninA₁ τke
         rw [Monotype_open, QualifiedType.Monotype_open] at ρ₀ke' ρ₁ke'
         exact contain μke' ρ₀ke' ρ₁ke' κe
       | .concat .. =>
@@ -1051,8 +1051,8 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
         rw [Monotype.Monotype_open]
         simp [Type.freeTypeVars] at aninA
         let ⟨aninA₀', aninA₁', aninA₂', aninA₀'', aninA₁'', aninA₂'', aninBₗ', aninBᵣ'⟩:= aninA
-        let A₀lc := ρ₀ke.soundness ΓaΓ'we κe.row |>.TypeVarLocallyClosed_of.weaken (n := n + 1)
-        let A₀lc' := ρ₀ke.soundness ΓaΓ'we κe.row |>.TypeVarLocallyClosed_of.weaken (n := n + 2)
+        let A₀lc := ρ₀ke.soundness Γcw ΓaΓ'we κe.row |>.TypeVarLocallyClosed_of.weaken (n := n + 1)
+        let A₀lc' := ρ₀ke.soundness Γcw ΓaΓ'we κe.row |>.TypeVarLocallyClosed_of.weaken (n := n + 2)
         rw [Nat.zero_add] at A₀lc A₀lc'
         rw [← A₀lc.TypeVar_open_TypeVar_close_id (a := a)] at eq₀ ρ₀ke
         rw [← A₀lc'.TypeVar_open_TypeVar_close_id (a := a)] at eq₀'
@@ -1060,8 +1060,8 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
           aninA₀' eq₀
         cases Type.TypeVar_open_inj_of_not_mem_freeTypeVars Type.not_mem_freeTypeVars_TypeVar_close
           aninA₀'' eq₀'
-        let A₁lc := ρ₁ke.soundness ΓaΓ'we κe.row |>.TypeVarLocallyClosed_of.weaken (n := n + 1)
-        let A₁lc' := ρ₁ke.soundness ΓaΓ'we κe.row |>.TypeVarLocallyClosed_of.weaken (n := n + 2)
+        let A₁lc := ρ₁ke.soundness Γcw ΓaΓ'we κe.row |>.TypeVarLocallyClosed_of.weaken (n := n + 1)
+        let A₁lc' := ρ₁ke.soundness Γcw ΓaΓ'we κe.row |>.TypeVarLocallyClosed_of.weaken (n := n + 2)
         rw [Nat.zero_add] at A₁lc A₁lc'
         rw [← A₁lc.TypeVar_open_TypeVar_close_id (a := a)] at eq₁ ρ₁ke
         rw [← A₁lc'.TypeVar_open_TypeVar_close_id (a := a)] at eq₁'
@@ -1069,8 +1069,8 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
           aninA₁' eq₁
         cases Type.TypeVar_open_inj_of_not_mem_freeTypeVars Type.not_mem_freeTypeVars_TypeVar_close
           aninA₁'' eq₁'
-        let A₂lc := ρ₂ke.soundness ΓaΓ'we κe.row |>.TypeVarLocallyClosed_of.weaken (n := n + 1)
-        let A₂lc' := ρ₂ke.soundness ΓaΓ'we κe.row |>.TypeVarLocallyClosed_of.weaken (n := n + 2)
+        let A₂lc := ρ₂ke.soundness Γcw ΓaΓ'we κe.row |>.TypeVarLocallyClosed_of.weaken (n := n + 1)
+        let A₂lc' := ρ₂ke.soundness Γcw ΓaΓ'we κe.row |>.TypeVarLocallyClosed_of.weaken (n := n + 2)
         rw [Nat.zero_add] at A₂lc A₂lc'
         rw [← A₂lc.TypeVar_open_TypeVar_close_id (a := a)] at eq₂ ρ₂ke
         rw [← A₂lc'.TypeVar_open_TypeVar_close_id (a := a)] at eq₂'
@@ -1088,21 +1088,21 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
         let ⟨aninρ₀, aninμ, aninρ₁, aninρ₂⟩ := aninσ
         rw [← Monotype.TypeVar_open] at keBₗ keBᵣ
         rw [← QualifiedType.TypeVar_open, ← TypeVar_open] at μke ρ₀ke ρ₁ke ρ₂ke keBₗ keBᵣ
-        let Blc := μke.soundness ΓaΓ'we .comm |>.TypeVarLocallyClosed_of.weaken (n := n)
+        let Blc := μke.soundness Γcw ΓaΓ'we .comm |>.TypeVarLocallyClosed_of.weaken (n := n)
         rw [Nat.zero_add] at Blc
         rw [← Blc.TypeVar_open_TypeVar_close_id (a := a)] at μke
-        let μke' := μke.Monotype_open_preservation ΓaΓ'we aninΓ' aninμ
+        let μke' := μke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ' aninμ
           Type.not_mem_freeTypeVars_TypeVar_close τke
-        let ρ₀ke' := ρ₀ke.Monotype_open_preservation ΓaΓ'we aninΓ' aninρ₀
+        let ρ₀ke' := ρ₀ke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ' aninρ₀
           Type.not_mem_freeTypeVars_TypeVar_close τke
-        let ρ₁ke' := ρ₁ke.Monotype_open_preservation ΓaΓ'we aninΓ' aninρ₁
+        let ρ₁ke' := ρ₁ke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ' aninρ₁
           Type.not_mem_freeTypeVars_TypeVar_close τke
-        let ρ₂ke' := ρ₂ke.Monotype_open_preservation ΓaΓ'we aninΓ' aninρ₂
+        let ρ₂ke' := ρ₂ke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ' aninρ₂
           Type.not_mem_freeTypeVars_TypeVar_close τke
-        let keBₗ' := keBₗ.Monotype_open_preservation ΓaΓ'we aninΓ' (by
+        let keBₗ' := keBₗ.Monotype_open_preservation Γcw ΓaΓ'we aninΓ' (by
           simp [freeTypeVars, QualifiedType.freeTypeVars, Monotype.freeTypeVars]
           exact ⟨aninρ₀, aninμ, aninρ₂⟩) aninBₗ' τke
-        let keBᵣ' := keBᵣ.Monotype_open_preservation ΓaΓ'we aninΓ' (by
+        let keBᵣ' := keBᵣ.Monotype_open_preservation Γcw ΓaΓ'we aninΓ' (by
           simp [freeTypeVars, QualifiedType.freeTypeVars, Monotype.freeTypeVars]
           exact ⟨aninρ₁, aninμ, aninρ₂⟩) aninBᵣ' τke
         rw [Monotype_open, QualifiedType.Monotype_open, Monotype.Monotype_open] at keBₗ' keBᵣ'
@@ -1110,17 +1110,17 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
       | .typeClass .. =>
         rw [Monotype.TypeVar_open] at σke
         generalize A'eq : A.TypeVar_open a n = A' at σke
-        let .tc Γcw inΓc τ'ke (κ := κ) (A := A) (TCₛ := TCₛ) (Aₛ := Aₛ) (n := n') (m := m) (σ := σ')
+        let .tc inΓc τ'ke (κ := κ) (A := A) (TCₛ := TCₛ) (Aₛ := Aₛ) (n := n') (m := m) (σ := σ')
           (B := B') := σke
         let ⟨a', a'nin⟩ := a :: ↑A.freeTypeVars ++ ↑([:n'].map fun i => (Aₛ i).freeTypeVars).flatten
           |>.exists_fresh
         let ⟨_, κe, _, Aki, _, Aₛki⟩ := Γcw.of_ClassEnvironment_in inΓc
-        let B'lc := τ'ke.soundness ΓaΓ'we κe |>.TypeVarLocallyClosed_of
+        let B'lc := τ'ke.soundness Γcw ΓaΓ'we κe |>.TypeVarLocallyClosed_of
         rcases Type.tc_evidence_eq_inversion aninA (Aki a').TypeVarLocallyClosed_of
           (Aₛki a' · · |>.TypeVarLocallyClosed_of) B'lc A'eq with ⟨A', Aₛ', eq₀, eq₁, rfl⟩
         let Alc := Aki a' |>.TypeVarLocallyClosed_of.weaken (n := 1).TypeVar_open_drop Nat.one_pos
         rw [Type.freeTypeVars, Type.freeTypeVars, List.mapMem_eq_map, List.map_cons,
-            List.map_singleton_flatten, List.flatten_cons, List.map_map] at aninA
+            List.flatten_cons, List.map_map] at aninA
         let ⟨aninA', aninAₛ'⟩ := List.not_mem_append'.mp aninA
         let AopB'lc := Alc.Type_open_dec B'lc
         let AopB'lc' := AopB'lc.weaken (n := n)
@@ -1130,9 +1130,9 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
           Type.not_mem_freeTypeVars_TypeVar_close aninA' eq₀
         let ⟨_, .typeExt Γwe ..⟩ := ΓaΓ'we.append_left_elim
         let ⟨_, κ₀e⟩ := κ₀.Elaboration_total
-        let Blc := τke.soundness Γwe κ₀e |>.TypeVarLocallyClosed_of
+        let Blc := τke.soundness Γcw Γwe κ₀e |>.TypeVarLocallyClosed_of
         rw [Type.Type_open, Type.Type_open, List.mapMem_eq_map, List.map_cons,
-            List.map_singleton_flatten, List.map_map, Range.map_eq_of_eq_of_mem (by
+            List.map_map, Range.map_eq_of_eq_of_mem (by
               intro i mem
               show _ = ((Aₛ i).TypeVar_subst a B).Type_open (B'.TypeVar_subst a B)
               let Aₛeq := eq₁ i mem
@@ -1148,28 +1148,27 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
                 Type.not_mem_freeTypeVars_TypeVar_close aninAₛ'' Aₛeq
               rw [Function.comp, ← this, AₛopB'lc'.Type_open_TypeVar_close_eq_TypeVar_subst,
                   Blc.Type_open_TypeVar_subst_dist]
-            ), ← List.map_singleton_flatten, AopB'lc'.Type_open_TypeVar_close_eq_TypeVar_subst,
-            Blc.Type_open_TypeVar_subst_dist, Monotype.Monotype_open]
+            ), AopB'lc'.Type_open_TypeVar_close_eq_TypeVar_subst, Blc.Type_open_TypeVar_subst_dist,
+            Monotype.Monotype_open]
         let B'lc' := B'lc.weaken (n := n)
         rw [Nat.zero_add] at B'lc'
         rw [← QualifiedType.TypeVar_open, ← TypeVar_open,
             ← B'lc'.TypeVar_open_TypeVar_close_id (a := a)] at τ'ke
         rw [Monotype.freeTypeVars] at aninσ
-        let τ'ke' := τ'ke.Monotype_open_preservation ΓaΓ'we aninΓ' aninσ
+        let τ'ke' := τ'ke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ' aninσ
           Type.not_mem_freeTypeVars_TypeVar_close τke
         rw [B'lc'.Type_open_TypeVar_close_eq_TypeVar_subst] at τ'ke'
-        apply tc Γcw _ τ'ke' (TCₛ := TCₛ) (m := m) (σ := σ')
+        apply tc _ τ'ke' (TCₛ := TCₛ) (m := m) (σ := σ')
         let ⟨a'nea, _⟩ := List.not_mem_cons.mp a'nin
         let aninA := Type.not_mem_freeTypeVars_TypeVar_open_drop <|
           (Aki a').not_mem_freeTypeVars_of <| List.not_mem_singleton.mpr a'nea.symm
-        rw [Type.TypeVar_subst_id_of_not_mem_freeTypeVars aninA, List.map_singleton_flatten,
-            Range.map_eq_of_eq_of_mem (by
-              intro i mem
-              show _ = (TCₛ i, Aₛ i)
-              let aninAₛ := Type.not_mem_freeTypeVars_TypeVar_open_drop <|
-                Aₛki a' i mem |>.not_mem_freeTypeVars_of <| List.not_mem_singleton.mpr a'nea.symm
-              rw [Type.TypeVar_subst_id_of_not_mem_freeTypeVars aninAₛ]
-            ), ← List.map_singleton_flatten]
+        rw [Type.TypeVar_subst_id_of_not_mem_freeTypeVars aninA, Range.map_eq_of_eq_of_mem'' (by
+          intro i mem
+          show _ = (TCₛ i, Aₛ i)
+          let aninAₛ := Type.not_mem_freeTypeVars_TypeVar_open_drop <|
+            Aₛki a' i mem |>.not_mem_freeTypeVars_of <| List.not_mem_singleton.mpr a'nea.symm
+          rw [Type.TypeVar_subst_id_of_not_mem_freeTypeVars aninAₛ]
+        )]
         exact inΓc
       | .all .. =>
         rename TypeLambda => «λτ»
@@ -1190,7 +1189,7 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
               rw [← QualifiedType.TypeVar_open, ← TypeVar_open] at ρke
               rw [Monotype.freeTypeVars, TypeLambda.freeTypeVars] at aninσ
               rw [Type.freeTypeVars, Type.freeTypeVars, Type.freeTypeVars] at aninA
-              let ρke' := ρke.Monotype_open_preservation ΓaΓ'we aninΓ'
+              let ρke' := ρke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ'
                 (aninσ <| List.mem_append_right _ ·) (aninA <| List.mem_append_right _ ·) τke
               rw [Monotype_open, QualifiedType.Monotype_open] at ρke'
               apply all ([[(Γ, a : κ₀, Γ')]].typeVarDom ++ I) _ κe ρke'
@@ -1203,13 +1202,13 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
               symm at ne
               let ⟨_, .typeExt Γwe ..⟩ := ΓaΓ'we.append_left_elim
               let ⟨_, κ₀e⟩ := κ₀.Elaboration_total
-              let Blc := τke.soundness Γwe κ₀e |>.TypeVarLocallyClosed_of
+              let Blc := τke.soundness Γcw Γwe κ₀e |>.TypeVarLocallyClosed_of
               rw [Blc.Type_open_TypeVar_open_comm <| Nat.succ_ne_zero _]
               have := ψke a' a'ninI
               rw [ψ.TypeVar_open_comm <| Nat.succ_ne_zero _,
                   ← QualifiedType.TypeVar_open, ← TypeVar_open,
                   A.TypeVar_open_comm <| Nat.succ_ne_zero _, ← TypeEnvironment.append] at this
-              have := this.Monotype_open_preservation (ΓaΓ'we.typeExt a'ninΓaΓ'' κe)
+              have := this.Monotype_open_preservation Γcw (ΓaΓ'we.typeExt a'ninΓaΓ'' κe)
                 (List.not_mem_cons.mpr ⟨ne, aninΓ'⟩)
                 (Monotype.not_mem_freeTypeVars_TypeVar_open_intro
                   (aninσ <| List.mem_append_left _ ·) ne)
@@ -1233,7 +1232,7 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
         rw [Monotype.freeTypeVars] at aninσ
         simp [Type.freeTypeVars] at aninA
         let ⟨aninBᵣ', aninBₗ', aninA''⟩ := aninA
-        let ρke' := ρke.Monotype_open_preservation ΓaΓ'we aninΓ' aninσ aninA'' τke
+        let ρke' := ρke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ' aninσ aninA'' τke
         apply «ind» (I₀ ++ [[(Γ, a : κ₀, Γ')]].typeVarDom) (I₁ ++ [[(Γ, a : κ₀, Γ')]].typeVarDom)
           ρke' κe
         · intro aₗ aₗnin aₜ aₜnin aₚ aₚnin aᵢ aᵢnin aₙ aₙnin
@@ -1282,10 +1281,10 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
             ((((((Bᵣ'.TypeVar_open aₗ 4).TypeVar_open aₜ 3).TypeVar_open aₚ 2)
               |>.TypeVar_open aᵢ 1).TypeVar_open aₙ 0).TypeVar_open a (n + 6)) := by
             rw [TypeVar_open, QualifiedType.TypeVar_open, Monotype.TypeVar_open,
-                Monotype.TypeVar_open, if_neg (nomatch ·), Monotype.TypeVar_open,
-                if_neg (nomatch ·), Monotype.TypeVar_open, Monotype.TypeVar_open,
-                List.mapMem_eq_map, List.map_singleton, Monotype.TypeVar_open, if_neg (nomatch ·),
-                Monotype.TypeVar_open, if_neg (nomatch ·),
+                Monotype.TypeVar_open, if_neg nofun, Monotype.TypeVar_open, if_neg nofun,
+                Monotype.TypeVar_open, Monotype.TypeVar_open, List.mapMem_eq_map,
+                List.map_singleton, Monotype.TypeVar_open, if_neg nofun, Monotype.TypeVar_open,
+                if_neg nofun,
                 Type.TypeVar_open_comm (m := 0) (n := n + 6) _ (Nat.zero_ne_add_one _),
                 Type.TypeVar_open_comm (m := 1) (n := n + 6) _ (by simp_arith),
                 Type.TypeVar_open_comm (m := 2) (n := n + 6) _ (by simp_arith),
@@ -1325,12 +1324,12 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
                 ⟨aneaₚ, List.not_mem_cons.mpr ⟨aneaₜ, List.not_mem_cons.mpr ⟨aneaₗ, aninΓ'⟩⟩⟩
             ⟩
           ⟩
-          let keBᵣ'' := keBᵣ'.Monotype_open_preservation
+          let keBᵣ'' := keBᵣ'.Monotype_open_preservation Γcw
             (ΓaΓ'we.typeExt aₗninΓaΓ' .label |>.typeExt aₜninΓaΓ'' κe |>.typeExt aₚninΓaΓ'' κe.row
               |>.typeExt aᵢninΓaΓ'' κe.row |>.typeExt aₙninΓaΓ'' κe.row)
             aninΓ'aₗaₜaₚaᵢaₙ (by
               simp [freeTypeVars, QualifiedType.freeTypeVars, Monotype.freeTypeVars]
-              exact ⟨aneaₜ, aneaₗ, aneaₚ, aneaᵢ⟩)
+              exact ⟨aneaₗ, aneaₜ, aneaₚ, aneaᵢ⟩)
             (Type.not_mem_freeTypeVars_TypeVar_open_intro
               (Type.not_mem_freeTypeVars_TypeVar_open_intro
                 (Type.not_mem_freeTypeVars_TypeVar_open_intro
@@ -1340,7 +1339,7 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
             τke
           let ⟨_, .typeExt Γwe ..⟩ := ΓaΓ'we.append_left_elim
           let ⟨_, κ₀e⟩ := κ₀.Elaboration_total
-          let Blc := τke.soundness Γwe κ₀e |>.TypeVarLocallyClosed_of
+          let Blc := τke.soundness Γcw Γwe κ₀e |>.TypeVarLocallyClosed_of
           rw [TypeEnvironment.TypeVar_subst, TypeEnvironment.TypeVar_subst,
               TypeEnvironment.TypeVar_subst, TypeEnvironment.TypeVar_subst,
               TypeEnvironment.TypeVar_subst, ← Blc.Type_open_TypeVar_open_comm (Nat.succ_ne_zero _),
@@ -1349,10 +1348,10 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
               ← Blc.weaken (n := 3).Type_open_TypeVar_open_comm (by simp_arith),
               ← Blc.weaken (n := 4).Type_open_TypeVar_open_comm (by simp_arith),
               Monotype_open, QualifiedType.Monotype_open, Monotype.Monotype_open,
-              Monotype.Monotype_open, if_neg (nomatch ·), Monotype.Monotype_open,
-              if_neg (nomatch ·), Monotype.Monotype_open, Monotype.Monotype_open,
-              List.mapMem_eq_map, List.map_singleton, Monotype.Monotype_open, if_neg (nomatch ·),
-              Monotype.Monotype_open, if_neg (nomatch ·)] at keBᵣ''
+              Monotype.Monotype_open, if_neg nofun, Monotype.Monotype_open, if_neg nofun,
+              Monotype.Monotype_open, Monotype.Monotype_open, List.mapMem_eq_map,
+              List.map_singleton, Monotype.Monotype_open, if_neg nofun, Monotype.Monotype_open,
+              if_neg nofun] at keBᵣ''
           exact keBᵣ''
         · intro aᵢ aᵢnin aₙ aₙnin
           let ⟨aᵢninI₁, aᵢninΓaΓ'⟩ := List.not_mem_append'.mp aᵢnin
@@ -1364,8 +1363,8 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
             ((qual (.mono (.concat (.var aₙ) (.comm .non) (.var aᵢ) ρ))).TypeVar_open a m) .constr
             (((Bₗ'.TypeVar_open aᵢ 1).TypeVar_open aₙ).TypeVar_open a (n + 6)) := by
             rw [TypeVar_open, QualifiedType.TypeVar_open, Monotype.TypeVar_open,
-                Monotype.TypeVar_open, if_neg (nomatch ·), Monotype.TypeVar_open,
-                if_neg (nomatch ·), Monotype.TypeVar_open,
+                Monotype.TypeVar_open, if_neg nofun, Monotype.TypeVar_open, if_neg nofun,
+                Monotype.TypeVar_open,
                 Type.TypeVar_open_comm (m := 0) (n := n + 6) _ (Nat.zero_ne_add_one _),
                 Type.TypeVar_open_comm (m := 1) (n := n + 6) _ (by simp_arith)]
             exact keBₗ _ aᵢninI₁ _ aₙninI₁'
@@ -1380,14 +1379,14 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
             symm
             exact List.ne_of_not_mem_cons aninΓa
           let aninΓ'aᵢaₙ := List.not_mem_cons.mpr ⟨aneaₙ, List.not_mem_cons.mpr ⟨aneaᵢ, aninΓ'⟩⟩
-          let keBₗ'' := keBₗ'.Monotype_open_preservation
+          let keBₗ'' := keBₗ'.Monotype_open_preservation Γcw
             (ΓaΓ'we.typeExt aᵢninΓaΓ' κe.row |>.typeExt aₙninΓaΓ'' κe.row) aninΓ'aᵢaₙ (by
               simp [freeTypeVars, QualifiedType.freeTypeVars, Monotype.freeTypeVars]
               exact ⟨aneaₙ, aneaᵢ, aninσ⟩) (Type.not_mem_freeTypeVars_TypeVar_open_intro
               (Type.not_mem_freeTypeVars_TypeVar_open_intro aninBₗ' aneaᵢ) aneaₙ) τke
           let ⟨_, .typeExt Γwe ..⟩ := ΓaΓ'we.append_left_elim
           let ⟨_, κ₀e⟩ := κ₀.Elaboration_total
-          let Blc := τke.soundness Γwe κ₀e |>.TypeVarLocallyClosed_of
+          let Blc := τke.soundness Γcw Γwe κ₀e |>.TypeVarLocallyClosed_of
           rw [TypeEnvironment.TypeVar_subst, TypeEnvironment.TypeVar_subst,
               ← Blc.Type_open_TypeVar_open_comm (Nat.succ_ne_zero _),
               ← Blc.weaken (n := 1).Type_open_TypeVar_open_comm (by simp_arith), Monotype_open,
@@ -1404,7 +1403,7 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
               Monotype.TypeVar_open, Monotype.TypeVar_open, TypeLambda.TypeVar_open]
           exact concatke
         rw [Monotype.freeTypeVars] at aninσ
-        let concatke'' := concatke'.Monotype_open_preservation ΓaΓ'we aninΓ' (by
+        let concatke'' := concatke'.Monotype_open_preservation Γcw ΓaΓ'we aninΓ' (by
             rw [freeTypeVars, QualifiedType.freeTypeVars, Monotype.freeTypeVars,
                 Monotype.freeTypeVars, Monotype.freeTypeVars, List.append_nil]
             exact aninσ
@@ -1421,9 +1420,9 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
         rw [← QualifiedType.TypeVar_open] at ψke
         rw [← TypeVar_open] at ψke γ'ke
         rw [Type.freeTypeVars] at aninA
-        let ψke' := ψke.Monotype_open_preservation ΓaΓ'we aninΓ' (aninσ <| List.mem_append_left _ ·)
+        let ψke' := ψke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ' (aninσ <| List.mem_append_left _ ·)
           (aninA <| List.mem_append_left _ ·) τke
-        let γ'ke' := γ'ke.Monotype_open_preservation ΓaΓ'we aninΓ'
+        let γ'ke' := γ'ke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ'
           (aninσ <| List.mem_append_right _ ·) (aninA <| List.mem_append_right _ ·) τke
         rw [Monotype_open] at ψke' γ'ke'
         rw [QualifiedType.Monotype_open] at ψke'
@@ -1446,33 +1445,31 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
       symm at ne
       let ⟨_, .typeExt Γwe ..⟩ := ΓaΓ'we.append_left_elim
       let ⟨_, κ₀e⟩ := κ₀.Elaboration_total
-      let Blc := τke.soundness Γwe κ₀e |>.TypeVarLocallyClosed_of
+      let Blc := τke.soundness Γcw Γwe κ₀e |>.TypeVarLocallyClosed_of
       rw [Blc.Type_open_TypeVar_open_comm <| Nat.succ_ne_zero _]
       have := σ'ke a' a'ninI
       rw [σ'.TypeVar_open_comm <| Nat.succ_ne_zero _,
           A.TypeVar_open_comm <| Nat.succ_ne_zero _, ← TypeEnvironment.append] at this
       rw [freeTypeVars] at aninσ
       rw [Type.freeTypeVars] at aninA
-      have := this.Monotype_open_preservation (ΓaΓ'we.typeExt a'ninΓaΓ'' κe)
+      have := this.Monotype_open_preservation Γcw (ΓaΓ'we.typeExt a'ninΓaΓ'' κe)
         (List.not_mem_cons.mpr ⟨ne, aninΓ'⟩) (not_mem_freeTypeVars_TypeVar_open_intro aninσ ne)
         (Type.not_mem_freeTypeVars_TypeVar_open_intro aninA ne) τke
       rw [← TypeEnvironment.append, ← TypeEnvironment.TypeVar_subst,
           ← σ'.TypeVar_open_Monotype_open_comm τlc <| Nat.zero_ne_add_one _]
       exact this
     all_goals nomatch σke
-termination_by [[(Γ, a : κ₀, Γ')]].sizeOf' + σ.sizeOf'
+termination_by [[Γ, a : κ₀, Γ']].sizeOf' + σ.sizeOf'
 decreasing_by
-  all_goals simp_arith; try simp_arith [h]
-  · rw [TypeEnvironment.sizeOf'_append, TypeEnvironment.sizeOf'_append, TypeEnvironment.sizeOf',
-        TypeEnvironment.sizeOf']
-    exact Nat.le_add_right _ _
-  · rw [← List.get!_eq_getElem!]
+  all_goals simp_arith; try simp_arith [h, TypeEnvironment.append, TypeEnvironment.sizeOf']
+  · simp_arith [TypeEnvironment.sizeOf'_append, TypeEnvironment.sizeOf']
+  · rw [← List.getD_eq_getElem?_getD, ← List.get!_eq_getD]
     apply Nat.le_add_right_of_le
     apply Nat.le_add_right_of_le
     apply List.le_sum_of_mem'
     apply List.mem_map.mpr
     exact ⟨_, List.get!_mem ilt, rfl⟩
-  · rw [← List.get!_eq_getElem!]
+  · rw [← List.getD_eq_getElem?_getD, ← List.get!_eq_getD]
     apply Nat.le_add_right_of_le
     apply Nat.le_trans _ <| Nat.le_add_left _ _
     apply List.le_sum_of_mem'
@@ -1482,9 +1479,10 @@ decreasing_by
   · exact Nat.succ_le_of_lt <| Monotype.sizeOf'_pos _
   · exact Nat.succ_le_of_lt <| Monotype.sizeOf'_pos _
   · exact Nat.succ_le_of_lt <| QualifiedType.sizeOf'_pos _
+  · simp_arith [TypeEnvironment.sizeOf'_append, TypeEnvironment.sizeOf']
 
 theorem TypeEnvironment.WellFormednessAndElaboration.TypeVar_subst_preservation
-  (ΓaΓ'we : [[Γc ⊢ Γ, a : κ, Γ' ⇝ Δ, a : K, Δ']]) (aninΓ' : [[a ∉ dom(Γ')]])
+  (ΓaΓ'we : [[Γc ⊢ Γ, a : κ, Γ' ⇝ Δ, a : K, Δ']]) (Γcw : [[⊢c Γc]]) (aninΓ' : [[a ∉ dom(Γ')]])
   (τke : [[Γc; Γ ⊢ τ : κ ⇝ B]]) : [[Γc ⊢ Γ, Γ' [τ / a] ⇝ Δ, Δ' [B / a] ]] := by match Γ' with
   | .empty => match Δ' with
     | .empty =>
@@ -1516,7 +1514,7 @@ theorem TypeEnvironment.WellFormednessAndElaboration.TypeVar_subst_preservation
       let a'ninΓ'' := a'ninΓ''.TypeVar_subst_preservation (a' := a) (τ := τ)
       let a'ninΓΓ'' := List.not_mem_append'.mpr ⟨a'ninΓ'', a'ninΓ⟩
       rw [← TypeEnvironment.typeVarDom_append] at a'ninΓΓ''
-      exact ΓaΓ''we.TypeVar_subst_preservation aninΓ'' τke |>.typeExt a'ninΓΓ'' κ'e
+      exact ΓaΓ''we.TypeVar_subst_preservation Γcw aninΓ'' τke |>.typeExt a'ninΓΓ'' κ'e
   | .termExt .. =>
     let .termExt .. := Δ'
     let .termExt ΓaΓ''we xninΓaΓ'' σke := ΓaΓ'we
@@ -1529,12 +1527,12 @@ theorem TypeEnvironment.WellFormednessAndElaboration.TypeVar_subst_preservation
     rw [TypeEnvironment.termVarDom] at xninΓa
     let xninΓΓ'' := List.not_mem_append'.mpr ⟨xninΓ'', xninΓa⟩
     rw [← TypeEnvironment.termVarDom_append] at xninΓΓ''
-    apply ΓaΓ''we.TypeVar_subst_preservation aninΓ' τke |>.termExt xninΓΓ'' _
+    apply ΓaΓ''we.TypeVar_subst_preservation Γcw aninΓ' τke |>.termExt xninΓΓ'' _
     let σlc := σke.TypeVarLocallyClosed_of
-    let Blc := σke.soundness ΓaΓ''we .star |>.TypeVarLocallyClosed_of
+    let Blc := σke.soundness Γcw ΓaΓ''we .star |>.TypeVarLocallyClosed_of
     rw [← σlc.TypeVar_open_TypeVar_close_id (a := a),
         ← Blc.TypeVar_open_TypeVar_close_id (a := a)] at σke
-    have := σke.Monotype_open_preservation ΓaΓ''we aninΓ' not_mem_freeTypeVars_TypeVar_close
+    have := σke.Monotype_open_preservation Γcw ΓaΓ''we aninΓ' not_mem_freeTypeVars_TypeVar_close
       Type.not_mem_freeTypeVars_TypeVar_close τke
     rw [σlc.Monotype_open_TypeVar_close_eq_TypeVar_subst,
         Blc.Type_open_TypeVar_close_eq_TypeVar_subst] at this
@@ -1551,17 +1549,19 @@ theorem TypeEnvironment.WellFormednessAndElaboration.TypeVar_subst_preservation
     rw [TypeEnvironment.termVarDom] at xninΓa
     let xninΓΓ'' := List.not_mem_append'.mpr ⟨xninΓ'', xninΓa⟩
     rw [← TypeEnvironment.termVarDom_append] at xninΓΓ''
-    apply ΓaΓ''we.TypeVar_subst_preservation aninΓ' τke |>.constrExt xninΓΓ'' _
+    apply ΓaΓ''we.TypeVar_subst_preservation Γcw aninΓ' τke |>.constrExt xninΓΓ'' _
     let ψlc := ψke.TypeVarLocallyClosed_of
-    let Blc := ψke.soundness ΓaΓ''we .constr |>.TypeVarLocallyClosed_of
+    let Blc := ψke.soundness Γcw ΓaΓ''we .constr |>.TypeVarLocallyClosed_of
     rw [← ψlc.TypeVar_open_TypeVar_close_id (a := a),
         ← Blc.TypeVar_open_TypeVar_close_id (a := a)] at ψke
-    have := ψke.Monotype_open_preservation ΓaΓ''we aninΓ' not_mem_freeTypeVars_TypeVar_close
+    have := ψke.Monotype_open_preservation Γcw ΓaΓ''we aninΓ' not_mem_freeTypeVars_TypeVar_close
       Type.not_mem_freeTypeVars_TypeVar_close τke
     rw [ψlc.Monotype_open_TypeVar_close_eq_TypeVar_subst,
         Blc.Type_open_TypeVar_close_eq_TypeVar_subst] at this
     exact this
-termination_by [[(Γ, a : κ, Γ')]].sizeOf'
+termination_by [[Γ, a : κ, Γ']].sizeOf'
+decreasing_by
+  all_goals simp_arith [TypeEnvironment.append, TypeEnvironment.sizeOf']
 
 end
 

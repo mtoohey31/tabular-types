@@ -17,8 +17,7 @@ def rec_uniform {motive : Term → Prop} (var : ∀ x : TermVar, motive (var x))
   (sumIntro : ∀ n E, motive E → motive (sumIntro n E))
   (sumElim : ∀ E Fs, motive E → (∀ F ∈ Fs, motive F) → motive (sumElim E Fs)) (E : Term)
   : motive E :=
-  rec (motive_1 := motive) var lam app typeLam typeApp prodIntro prodElim sumIntro sumElim
-    (fun _ => (nomatch ·))
+  rec (motive_1 := motive) var lam app typeLam typeApp prodIntro prodElim sumIntro sumElim nofun
     (fun _ _ ih₀ ih₁ _ mem => match mem with | .head _ => ih₀ | .tail _ mem' => ih₁ _ mem') E
 
 @[simp]
@@ -116,9 +115,7 @@ local instance : Inhabited «Type» where
 in
 theorem prodIntro' (wf: [[ ⊢ Δ ]]) (EstyAs : ∀ EA ∈ List.zip Es As, let (E, A) := EA; [[Δ ⊢ E : A]])
   (length_eq : Es.length = As.length) : Typing Δ (.prodIntro Es) (.prod (.list As)) := by
-  rw [← Std.Range.map_get!_eq (as := Es), ← Std.Range.map_get!_eq (as := As), ← length_eq,
-      Std.Range.map, Std.Range.map, ← List.map_singleton_flatten, ← Std.Range.map,
-      ← List.map_singleton_flatten, ← Std.Range.map]
+  rw [← Std.Range.map_get!_eq (as := Es), ← Std.Range.map_get!_eq (as := As), ← length_eq]
   apply Typing.prodIntro wf
   intro i mem
   have := EstyAs ((List.zip Es As).get! i) <| List.get!_mem <| by
@@ -137,10 +134,9 @@ theorem sumElim' (EtyA : Typing Δ E (.sum (.list As)))
   (FstyAsarrB : ∀ FA ∈ List.zip Fs As, let (F, A) := FA; [[Δ ⊢ F : A → B]])
   (Bki : [[Δ ⊢ B : *]])
   (length_eq : Fs.length = As.length) : Typing Δ (.sumElim E Fs) B := by
-  rw [← Std.Range.map_get!_eq (as := Fs), Std.Range.map, ← List.map_singleton_flatten,
-      ← Std.Range.map]
+  rw [← Std.Range.map_get!_eq (as := Fs)]
   apply Typing.sumElim (A := As.get!)
-  · rw [List.map_singleton_flatten, ← Std.Range.map, length_eq, Std.Range.map_get!_eq]
+  · rw [length_eq, Std.Range.map_get!_eq]
     exact EtyA
   · intro i mem
     have := FstyAsarrB ((List.zip Fs As).get! i) <| List.get!_mem <| by
@@ -181,7 +177,7 @@ theorem id (Δwf : [[⊢ Δ]]) (Aki : [[Δ ⊢ A : *]]) : [[Δ ⊢ λ x : A. x$0
   exact Typing.var (Δwf.termVarExt xnin Aki) .head
 
 theorem WellFormedness_of (EtyA : [[Δ ⊢ E : A]]) : [[ ⊢ Δ ]] := by
-  induction EtyA <;> try simp_all; done
+  induction EtyA <;> try simp_all
   . case lam Δ T E A I EtyA ih =>
     have ⟨x, notIn⟩ := I.exists_fresh
     specialize ih x notIn
@@ -264,7 +260,6 @@ theorem TermVarLocallyClosed_of (EtyA : [[Δ ⊢ E : A]]) : E.TermVarLocallyClos
   | typeApp _ _ ih => exact .typeApp ih
   | prodIntro _ _ ih =>
     exact .prodIntro fun E mem => by
-      rw [List.map_singleton_flatten] at mem
       let ⟨i, mem', eq⟩ := Std.Range.mem_of_mem_map mem
       cases eq
       exact ih i mem'
@@ -272,7 +267,6 @@ theorem TermVarLocallyClosed_of (EtyA : [[Δ ⊢ E : A]]) : E.TermVarLocallyClos
   | sumIntro _ _ _ ih => exact .sumIntro ih
   | sumElim _ _ _ ih₀ ih₁ =>
     exact .sumElim ih₀ fun i mem => by
-      rw [List.map_singleton_flatten] at mem
       let ⟨i, mem', eq⟩ := Std.Range.mem_of_mem_map mem
       cases eq
       exact ih₁ i mem'

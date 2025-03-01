@@ -6,6 +6,6 @@ nonterminal Kind, K :=
   | "*"         : star
   | K₁ " ↦ " K₂ : arr
   | "L " K      : list
-  | "(" K ")"   : paren (desugar := return K)
+  | "(" K ")"   : paren (expand := return K)
 
 end TabularTypeInterpreter.«F⊗⊕ω»

@@ -1,5 +1,5 @@
 import Aesop
-import TabularTypeInterpreter.Semantics.Type.KindingAndElaboration
+import TabularTypeInterpreter.Semantics.TypeEnvironment
 import TabularTypeInterpreter.Theorems.Kind
 
 namespace TabularTypeInterpreter.TypeEnvironment
@@ -95,7 +95,7 @@ namespace TypeVarIn
 
 theorem append_elim (aκin : [[a : κ ∈ Γ, Γ']])
   : ([[a : κ ∈ Γ]] ∧ [[a ∉ dom(Γ')]]) ∨ [[a : κ ∈ Γ']] := match Γ' with
-  | .empty => .inl ⟨aκin, (nomatch ·)⟩
+  | .empty => .inl ⟨aκin, nofun⟩
   | .typeExt .. => match aκin with
     | head => .inr head
     | typeExt ne aκin' => match aκin'.append_elim with
@@ -174,10 +174,10 @@ theorem TypeVar_subst_preservation : [[a : κ ∈ Γ]] → [[a : κ ∈ Γ [τ /
 end TypeVarIn
 
 theorem TypeVarNotInDom.TypeVar_subst_preservation : [[a ∉ dom(Γ)]] → [[a ∉ dom(Γ [τ / a'])]] := by
-  induction Γ <;> aesop (add simp [TypeVarNotInDom, typeVarDom])
+  induction Γ <;> aesop (add simp [TypeVarNotInDom, typeVarDom, TypeVar_subst])
 
 theorem TermVarNotInDom.TypeVar_subst_preservation : [[x ∉ dom'(Γ)]] → [[x ∉ dom'(Γ [τ / a])]] := by
-  induction Γ <;> aesop (add simp [TermVarNotInDom, termVarDom])
+  induction Γ <;> aesop (add simp [TermVarNotInDom, termVarDom, TypeVar_subst])
 
 theorem WellFormednessAndElaboration.TypeVarIn_weakening (ΓΓ'we : [[Γc ⊢ Γ, Γ' ⇝ Δ]]) (aκinΓ : [[a : κ ∈ Γ]]) : [[a : κ ∈ Γ, Γ']] := by
   match Γ' with

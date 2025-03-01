@@ -12,7 +12,7 @@ def rec_uniform {motive : «Type» → Prop} (var : ∀ a : TypeVar, motive (var
   (listApp : ∀ A B, motive A → motive B → motive (listApp A B))
   (prod : ∀ A, motive A → motive (prod A)) (sum : ∀ A, motive A → motive (sum A)) (A : «Type»)
   : motive A :=
-  rec (motive_1 := motive) var lam app «forall» arr list listApp prod sum (fun _ => (nomatch ·))
+  rec (motive_1 := motive) var lam app «forall» arr list listApp prod sum nofun
     (fun _ _ ih₀ ih₁ _ mem => match mem with | .head _ => ih₀ | .tail _ mem' => ih₁ _ mem') A
 
 @[simp]
@@ -205,7 +205,7 @@ theorem Type_open_drop (h : m < n) (Aoplc : (Type_open A B m).TypeVarLocallyClos
   | .list A's =>
     rw [Type_open] at Aoplc
     match h' : A's with
-    | [] => exact .list fun _ => (nomatch ·)
+    | [] => exact .list nofun
     | A' :: A's' =>
       apply list
       intro A'' A''in
@@ -270,7 +270,7 @@ theorem TypeVar_open_drop {A : «Type»} (h : m < n)
   | .list A's =>
     rw [TypeVar_open] at Aoplc
     match h' : A's with
-    | [] => exact .list fun _ => (nomatch ·)
+    | [] => exact .list nofun
     | A' :: A's' =>
       apply list
       intro A'' A''in

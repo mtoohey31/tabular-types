@@ -27,7 +27,6 @@ theorem TypeVarLocallyClosed_of : [[Δ ⊢ A : K]] → A.TypeVarLocallyClosed 0 
   | .list A', Aki =>
     let .list A'opki (A := A'') := Aki
     .list fun A''' A'''in => by
-      rw [List.map_singleton_flatten] at A'''in
       let ⟨i, mem, A'''eq⟩ := Std.Range.mem_of_mem_map A'''in
       cases A'''eq
       exact A'opki i mem |>.TypeVarLocallyClosed_of
@@ -38,7 +37,6 @@ theorem TypeVarLocallyClosed_of : [[Δ ⊢ A : K]] → A.TypeVarLocallyClosed 0 
 termination_by sizeOf A
 decreasing_by
   all_goals simp_arith
-  rw [List.map_singleton_flatten]
   apply Nat.le_of_lt
   exact List.sizeOf_lt_of_mem A'''in
 
@@ -64,7 +62,7 @@ theorem not_mem_freeTypeVars_of (Aki : [[Δ ⊢ A : K]]) (aninΔ : [[a ∉ dom(�
       Bki.not_mem_freeTypeVars_of aninΔ
     ⟩
   | .list Aski =>
-    rw [Type.freeTypeVars, List.mapMem_eq_map, List.map_singleton_flatten, List.map_map]
+    rw [Type.freeTypeVars, List.mapMem_eq_map, List.map_map]
     apply List.not_mem_flatten.mpr
     intro as mem
     let ⟨i, mem', eq⟩ := Std.Range.mem_of_mem_map mem
@@ -76,7 +74,6 @@ theorem not_mem_freeTypeVars_of (Aki : [[Δ ⊢ A : K]]) (aninΔ : [[a ∉ dom(�
 termination_by sizeOf A
 decreasing_by
   all_goals simp_arith
-  rw [List.map_singleton_flatten]
   apply Nat.le_of_lt
   exact List.sizeOf_lt_of_mem <| Std.Range.mem_map_of_mem mem'
 
@@ -271,14 +268,14 @@ theorem TypeVar_subst (wf: [[ ⊢ Δ, a: K, Δ' ]]) (BkiK: [[ Δ ⊢ B: K ]]) : 
     simp_all [TypeVarNotInDom, TypeVarInDom, typeVarDom_append, typeVarDom]
     obtain ⟨a'nin, _, _⟩ := a'nin
     clear * - a'nin
-    induction Δ' <;> simp_all [typeVarDom]
+    induction Δ' <;> simp_all [TypeVar_subst, typeVarDom]
   . case termExt Δ' x T ih =>
     cases wf; case termVarExt wf xnin TkiStar =>
     refine .termVarExt (ih wf) ?_ (TkiStar.subst' wf BkiK)
     simp_all [TermVarNotInDom, TermVarInDom, termVarDom_append, termVarDom]
     obtain ⟨xnin, _⟩ := xnin
     clear * - xnin
-    induction Δ' <;> simp_all [termVarDom]
+    induction Δ' <;> simp_all [TypeVar_subst, termVarDom]
 
 end EnvironmentWellFormedness
 
@@ -304,7 +301,7 @@ theorem freeTypeVars_in_Δ (AkiK: [[ Δ ⊢ A: K ]]) (ainA: a ∈ A.freeTypeVars
     aesop (add simp typeVarDom)
   . case list n Δ A K AkiK ih =>
     simp_all [freeTypeVars]
-    obtain ⟨Aifv, ⟨i, iRange, leq⟩, ainA⟩ := ainA; subst Aifv
+    obtain ⟨i, iRange, ainA⟩ := ainA
     exact ih i (Std.Range.mem_of_mem_toList iRange) ainA
 
 end Kinding
@@ -360,30 +357,27 @@ theorem det : [[ Δ ⊢ A: K ]] → [[ Δ ⊢ A: K' ]] → K = K' := by
 
 
 theorem inv_list (k: [[ Δ ⊢ { </ A@i // i in [:n] /> } : L K ]]): ∀i ∈ [0:n], [[ Δ ⊢ A@i : K ]] := by
-  generalize Teq : (Type.list ([0:n].map fun i => [A i]).flatten) = T at k
+  generalize Teq : (Type.list ([0:n].map fun i => A i)) = T at k
   cases k <;> simp_all
   . case list n_ A_ k =>
-    simp_all [List.map_singleton_flatten]
     have neq: n = n_ := by
       apply congrArg (f:= List.length) at Teq
       simp_all [List.length_map, Std.Range.length_toList]
-    simp_all [List.map_singleton_flatten, Std.Range.mem_toList_of_mem]
+    simp_all [Std.Range.mem_toList_of_mem]
 
 
 theorem inv_list' (k: [[ Δ ⊢ { </ A@i // i in [:n] /> } : K ]]): ∃ K', K = Kind.list K' ∧ ∀i ∈ [0:n], [[ Δ ⊢ A@i : K' ]] := by
-  generalize Teq : (Type.list ([0:n].map fun i => [A i]).flatten) = T at k
+  generalize Teq : (Type.list ([0:n].map fun i => A i)) = T at k
   cases k <;> simp_all
   . case list n_ A_ K_ k =>
-    simp_all [List.map_singleton_flatten]
     have neq: n = n_ := by
       apply congrArg (f:= List.length) at Teq
       simp_all [List.length_map, Std.Range.length_toList]
-    simp_all [List.map_singleton_flatten, Std.Range.mem_toList_of_mem]
+    simp_all [Std.Range.mem_toList_of_mem]
 
 theorem unit : [[Δ ⊢ ⊗ { } : *]] := by
   have := list (Δ := Δ) (A := fun _ => .list []) (K := .star) (n := 0) (fun _ => nomatch ·)
-  rw [List.map_singleton_flatten, Std.Range.toList, if_neg (nomatch ·),
-      if_neg (Nat.not_lt_of_le (Nat.le_refl _))] at this
+  rw [Std.Range.map, Std.Range.toList, if_neg (Nat.not_lt_of_le (Nat.le_refl _))] at this
   exact prod this
 
 theorem prj_evidence (Δwf : [[⊢ Δ]]) (A₀ki : [[Δ ⊢ A₀ : L K]]) (A₁ki : [[Δ ⊢ A₁ : L K]])
@@ -591,9 +585,8 @@ theorem ind_evidence (Δwf : [[⊢ Δ]])
   · apply arr
     · apply app
       · exact var .head
-      · rw [← Std.Range.map_get!_eq (as := []), Std.Range.map, ← List.map_singleton_flatten,
-            ← Std.Range.map]
-        exact list fun _ => (nomatch ·)
+      · rw [← Std.Range.map_get!_eq (as := [])]
+        exact list nofun
     · apply app
       · exact var .head
       · exact Aki.weakening (Δ' := .typeExt .empty ..) (Δ'' := .empty) Δaₘwf
@@ -622,7 +615,7 @@ theorem subst (wf: [[ ⊢ Δ, a: K, Δ' ]]) (kA: [[ Δ ⊢ A: K ]]): [[ ⊢ Δ, 
     . case a =>
       clear ih K' kA
       simp_all [TypeVarNotInDom, TypeVarInDom]
-      induction Δ' <;> simp_all [TypeVar_subst, append, typeVarDom] <;> cases wf <;> simp_all
+      induction Δ' <;> simp_all [TypeVar_subst, Environment.TypeVar_subst, append, typeVarDom] <;> cases wf <;> simp_all
   . case termExt Δ' a' T ih =>
     cases wf
     case termVarExt wf notIn kind =>
@@ -631,7 +624,7 @@ theorem subst (wf: [[ ⊢ Δ, a: K, Δ' ]]) (kA: [[ Δ ⊢ A: K ]]): [[ ⊢ Δ, 
     . case a =>
       clear ih kind
       simp_all [TermVarNotInDom, TermVarInDom]
-      induction Δ' <;> simp_all [TypeVar_subst, append, typeVarDom, termVarDom] <;> cases wf <;> aesop
+      induction Δ' <;> simp_all [TypeVar_subst, Environment.TypeVar_subst, append, typeVarDom, termVarDom] <;> cases wf <;> simp_all
     . case a => apply Kinding.subst' (K := K) <;> simp_all
 
 end EnvironmentWellFormedness

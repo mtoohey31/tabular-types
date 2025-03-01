@@ -47,16 +47,15 @@ theorem TypeScheme.KindingAndElaboration.deterministic (σke₀ : [[Γc; Γ ⊢ 
     let ⟨_, _, ⟨_, _, Aeq, κeq, _, κ'eq, τ₁ke⟩⟩ := σke₁.row_inversion (n := n)
     cases κeq
     cases Aeq
-    rw [List.map_singleton_flatten, List.map_singleton_flatten]
     constructor
     · match h with
       | .inl nnezero =>
-        let τ₀₀ke := τ₀ke 0 ⟨Nat.le_refl _, Nat.pos_of_ne_zero nnezero⟩
-        let τ₁₀ke := τ₁ke 0 ⟨Nat.le_refl _, Nat.pos_of_ne_zero nnezero⟩
+        let τ₀₀ke := τ₀ke 0 ⟨Nat.le_refl _, Nat.pos_of_ne_zero nnezero, Nat.mod_one _⟩
+        let τ₁₀ke := τ₁ke 0 ⟨Nat.le_refl _, Nat.pos_of_ne_zero nnezero, Nat.mod_one _⟩
         exact Kind.row.injEq .. |>.mpr <| τ₀₀ke.deterministic τ₁₀ke |>.left
       | .inr beq => exact Kind.row.injEq .. |>.mpr <| κ'eq beq
     · apply Type.list.injEq .. |>.mpr
-      apply Std.Range.map_eq_of_eq_of_mem
+      apply Range.map_eq_of_eq_of_mem
       intro i imem
       exact And.right <| τ₀ke i imem |>.deterministic <| τ₁ke i imem
   | .prod _ ρ₀ke, .prod _ ρ₁ke =>
@@ -152,7 +151,7 @@ theorem TypeScheme.KindingAndElaboration.deterministic (σke₀ : [[Γc; Γ ⊢ 
         ⟩
       ⟩
     ⟩
-  | .tc _ mem₀ τ₀ke, .tc _ mem₁ τ₁ke => by
+  | .tc mem₀ τ₀ke, .tc mem₁ τ₁ke => by
     let ⟨TCₛAₛeq, _, _, _, _, Aeq⟩ := ClassEnvironmentEntry.mk.inj <| mem₀.deterministic mem₁ rfl
     cases Aeq
     cases τ₀ke.deterministic τ₁ke |>.right
@@ -160,14 +159,12 @@ theorem TypeScheme.KindingAndElaboration.deterministic (σke₀ : [[Γc; Γ ⊢ 
     · rfl
     · apply Type.prod.injEq .. |>.mpr <| Type.list.injEq .. |>.mpr <| List.cons.injEq .. |>.mpr
         ⟨rfl, _⟩
-      rw [List.map_singleton_flatten, List.map_singleton_flatten] at TCₛAₛeq ⊢
-      let lengths_eq : List.length (List.map ..) = List.length _ := by rw [TCₛAₛeq]
-      rw [List.length_map, List.length_map, Std.Range.length_toList,
-          Std.Range.length_toList] at lengths_eq
+      let lengths_eq : List.length (Range.map ..) = List.length _ := by rw [TCₛAₛeq]
+      rw [List.length_map, List.length_map, Range.length_toList, Range.length_toList] at lengths_eq
       cases lengths_eq
-      apply Std.Range.map_eq_of_eq_of_mem
+      apply Range.map_eq_of_eq_of_mem
       intro i imem
-      rw [And.right <| Prod.mk.inj <| Std.Range.eq_of_mem_of_map_eq TCₛAₛeq i imem]
+      rw [And.right <| Prod.mk.inj <| Range.eq_of_mem_of_map_eq TCₛAₛeq i imem]
   | .all I₀ ψ₀ke κ₀e ρ₀ke (A := A₀), .all I₁ ψ₁ke κ₁e ρ₁ke (A := A₁) =>
     let ⟨a, anin⟩ := I₀ ++ I₁ ++ ↑A₀.freeTypeVars ++ ↑A₁.freeTypeVars |>.exists_fresh
     let ⟨aninI₀I₁A₀, aninA₁⟩ := List.not_mem_append'.mp anin
@@ -319,60 +316,61 @@ decreasing_by
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'
     rw [Std.Range.map_eq_of_eq_of_mem (by
-          intro _ _
-          simp only [Function.comp]
-          rw [List.map_singleton, List.sum_singleton]
-        )]
-    exact Range.mem_map_of_mem ⟨Nat.le_refl _, Nat.pos_of_ne_zero nnezero⟩
+      intro j _
+      show _ = (ξ j).sizeOf' + (τ j).sizeOf'
+      simp only [Function.comp]
+    )]
+    exact Range.mem_map_of_mem ⟨Nat.le_refl _, Nat.pos_of_ne_zero nnezero, Nat.mod_one _⟩
   · case _ ξ _ τ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ =>
     apply Nat.le_trans <| Nat.le_add_left (τ i).sizeOf' (ξ i).sizeOf'
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'
-    rw [Std.Range.map_eq_of_eq_of_mem (by
-          intro _ _
-          simp only [Function.comp]
-          rw [List.map_singleton, List.sum_singleton]
-        )]
+    rw [Range.map_eq_of_eq_of_mem (by
+      intro j _
+      show _ = (ξ j).sizeOf' + (τ j).sizeOf'
+      simp only [Function.comp]
+    )]
     exact Range.mem_map_of_mem imem
   · exact Nat.succ_le_of_lt <| Monotype.sizeOf'_pos _
 
 mutual
 
 theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ ⇝ A]])
-  (Γwe : [[Γc ⊢ Γ ⇝ Δ]]) (κe : [[⊢ κ ⇝ K]]) : [[Δ ⊢ A : K]] := open TypeScheme in match σ, σke with
+  (Γcw : [[⊢c Γc]]) (Γwe : [[Γc ⊢ Γ ⇝ Δ]]) (κe : [[⊢ κ ⇝ K]]) : [[Δ ⊢ A : K]] := open TypeScheme in
+  match σ, σke with
   | .qual (.mono (.var _)), .var aκinΓ => .var <| Γwe.TypeVarIn_preservation aκinΓ κe
   | .qual (.mono (.app φ τ)), .app φke τke (κ₀ := κ₀) =>
     let ⟨K₀, κ₀e⟩ := κ₀.Elaboration_total
-    .app (φke.soundness Γwe (.arr κ₀e κe)) (τke.soundness Γwe κ₀e)
+    .app (φke.soundness Γcw Γwe (.arr κ₀e κe)) (τke.soundness Γcw Γwe κ₀e)
   | .qual (.mono (.arr τ₀ τ₁)), .arr τ₀ke τ₁ke =>
     let .star := κe
-    .arr (τ₀ke.soundness Γwe .star) (τ₁ke.soundness Γwe .star)
+    .arr (τ₀ke.soundness Γcw Γwe .star) (τ₁ke.soundness Γcw Γwe .star)
   | .quant κ' σ', .scheme I σ'ke κ'e =>
     .scheme (I := Γ.typeVarDom ++ I) fun a anin =>
       let ⟨aninΓ, aninI⟩ := List.not_mem_append'.mp anin
-      σ'ke a aninI |>.soundness (Γwe.typeExt aninΓ κ'e) κe
+      σ'ke a aninI |>.soundness Γcw (Γwe.typeExt aninΓ κ'e) κe
   | .qual (.qual ψ γ), .qual φke γke κe' => by
     cases κe.deterministic κe'
-    exact .arr (φke.soundness Γwe .constr) (γke.soundness Γwe κe')
+    exact .arr (φke.soundness Γcw Γwe .constr) (γke.soundness Γcw Γwe κe')
   | .qual (.mono (.label _)), .label => let .label := κe; .unit
   | .qual (.mono (.floor _)), .floor _ => let .star := κe; .unit
   | .qual (.mono (.comm _)), .comm => let .comm := κe; .unit
   | .qual (.mono (.row ..)), .row _ _ τke _ =>
     let .row κ'e := κe
-    .list fun i imem => τke i imem |>.soundness Γwe κ'e
+    .list fun i imem => τke i imem |>.soundness Γcw Γwe κ'e
   | .qual (.mono (.prodOrSum .prod μ ρ)), .prod μke ρke =>
     let .star := κe
-    .prod <| ρke.soundness Γwe <| .row .star
+    .prod <| ρke.soundness Γcw Γwe <| .row .star
   | .qual (.mono (.prodOrSum .sum μ ρ)), .sum μke ρke =>
     let .star := κe
-    .sum <| ρke.soundness Γwe <| .row .star
+    .sum <| ρke.soundness Γcw Γwe <| .row .star
   | .qual (.mono (.lift (.mk κ' τ) ρ)), σke =>
     let .row κ₁e := κe
     let .lift I τke κ₀e ρke := σke
     let Aopki : «F⊗⊕ω».Kinding .. := .lam (I := Γ.typeVarDom ++ I) fun a anin =>
       let ⟨aninΓ, aninI⟩ := List.not_mem_append'.mp anin
-      τke a aninI |>.soundness (Γwe.typeExt aninΓ κ₀e) κ₁e
-    .listApp Aopki (ρke.soundness Γwe κ₀e.row)
+      τke a aninI |>.soundness Γcw (Γwe.typeExt aninΓ κ₀e) κ₁e
+    .listApp Aopki (ρke.soundness Γcw Γwe κ₀e.row)
   | .qual (.mono (.contain ρ₀ μ ρ₁)), .contain _ ρ₀ke ρ₁ke κ'e (K := K') (A₀ := A₀) (A₁ := A₁) => by
     let .constr := κe
     apply Kinding.prod
@@ -380,9 +378,9 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
       | 0 => [[∀ a : K' ↦ *. (⊗ (a$0 ⟦A₁⟧)) → ⊗ (a$0 ⟦A₀⟧)]]
       | 1 => [[∀ a : K' ↦ *. (⊕ (a$0 ⟦A₀⟧)) → ⊕ (a$0 ⟦A₁⟧)]]
       | _ => .list []
-    let Δwf := Γwe.soundness
-    let A₀k := ρ₀ke.soundness Γwe κ'e.row
-    let A₁k := ρ₁ke.soundness Γwe κ'e.row
+    let Δwf := Γwe.soundness Γcw
+    let A₀k := ρ₀ke.soundness Γcw Γwe κ'e.row
+    let A₁k := ρ₁ke.soundness Γcw Γwe κ'e.row
     have := Kinding.list (Δ := Δ) (A := A) (K := .star) (n := 2)
       fun | 0, _ => .prj_evidence Δwf A₀k A₁k | 1, _ => .inj_evidence Δwf A₀k A₁k
     simp [Range.map, Range.toList, A] at this
@@ -397,34 +395,34 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
       | 2 => Bₗ
       | 3 => Bᵣ
       | _ => .list []
-    let Δwf := Γwe.soundness
-    let A₀k := ρ₀ke.soundness Γwe κ'e.row
-    let A₁k := ρ₁ke.soundness Γwe κ'e.row
-    let A₂k := ρ₂ke.soundness Γwe κ'e.row
+    let Δwf := Γwe.soundness Γcw
+    let A₀k := ρ₀ke.soundness Γcw Γwe κ'e.row
+    let A₁k := ρ₁ke.soundness Γcw Γwe κ'e.row
+    let A₂k := ρ₂ke.soundness Γcw Γwe κ'e.row
     have := Kinding.list (Δ := Δ) (A := A) (K := .star) (n := 4)
       fun
         | 0, _ => .concat_evidence Δwf A₀k A₁k A₂k
         | 1, _ => .elim_evidence Δwf A₀k A₁k A₂k
-        | 2, _ => containₗ.soundness Γwe .constr
-        | 3, _ => containᵣ.soundness Γwe .constr
+        | 2, _ => containₗ.soundness Γcw Γwe .constr
+        | 3, _ => containᵣ.soundness Γcw Γwe .constr
     simp [Range.map, Range.toList, A] at this
     exact this
   | .qual (.mono (.typeClass _ τ)),
-    .tc Γcw inΓc τke (κ := κ') (A := A') (Aₛ := Aₛ) (B := B) (n := n) => by
+    .tc inΓc τke (κ := κ') (A := A') (Aₛ := Aₛ) (B := B) (n := n) => by
     let .constr := κe
     apply Kinding.prod
     let A'' i := if i = 0 then A'.Type_open B else (Aₛ (i - 1)).Type_open B
     have := Kinding.list (Δ := Δ) (n := n + 1) (A := A'') (K := .star) ?h
-    rw [List.map_singleton_flatten] at *
-    rw [Range.toList, if_neg (nomatch ·), if_pos (Nat.zero_lt_succ _), List.map] at this
+    rw [Range.map, Range.toList, if_pos (Nat.zero_lt_succ _), List.map] at this
     simp only at this
     dsimp only [A''] at this
-    rw [if_pos rfl, ← Range.map_shift (Nat.le_refl 1), Nat.sub_self, Nat.add_sub_cancel] at this
+    rw [if_pos rfl, ← Range.map, ← Range.map_shift (Nat.le_refl 1), Nat.sub_self,
+        Nat.add_sub_cancel] at this
     exact this
-    intro i ⟨_, iltnsucc⟩
+    intro i ⟨_, iltnsucc, _⟩
     dsimp only [A'']
     let ⟨K', κ'e⟩ := κ'.Elaboration_total
-    let Bk := τke.soundness Γwe κ'e
+    let Bk := τke.soundness Γcw Γwe κ'e
     let ⟨_, κ'e', _, A'k, _, Aₛk⟩ := Γcw.of_ClassEnvironment_in inΓc
     cases κ'e.deterministic κ'e'
     split
@@ -432,26 +430,28 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
       let ⟨a, anin⟩ := Γ.typeVarDom ++ ↑A'.freeTypeVars |>.exists_fresh
       let ⟨aninΓ, aninA'⟩ := List.not_mem_append'.mp anin
       rw [← Δ.empty_append] at Γwe Bk ⊢
-      exact A'k a |>.weakening (Γwe.soundness.typeVarExt <| Γwe.TypeVarNotInDom_preservation aninΓ)
-        (Δ := .empty) (Δ'' := .typeExt .empty ..) |>.Type_open_preservation (Δ' := .empty) aninA' Bk
+      exact A'k a |>.weakening (Δ := .empty) (Δ'' := .typeExt .empty ..)
+       (Γwe.soundness Γcw |>.typeVarExt <| Γwe.TypeVarNotInDom_preservation aninΓ)
+        |>.Type_open_preservation (Δ' := .empty) aninA' Bk
     · case isFalse h =>
       let ⟨a, anin⟩ := Γ.typeVarDom ++ ↑(Aₛ (i - 1)).freeTypeVars |>.exists_fresh
       let ⟨aninΓ, aninAₛ⟩ := List.not_mem_append'.mp anin
       rw [Nat.add_comm] at iltnsucc
       have : i - 1 < n := Nat.sub_lt_left_of_lt_add (Nat.pos_of_ne_zero h) iltnsucc
       rw [← Δ.empty_append] at Γwe Bk ⊢
-      exact Aₛk a (i - 1) ⟨Nat.zero_le _, this⟩ |>.weakening
-        (Γwe.soundness.typeVarExt <| Γwe.TypeVarNotInDom_preservation aninΓ)
-        (Δ := .empty) (Δ'' := .typeExt .empty ..) |>.Type_open_preservation (Δ' := .empty) aninAₛ Bk
+      exact Aₛk a (i - 1) ⟨Nat.zero_le _, this, Nat.mod_one _⟩ |>.weakening (Δ := .empty)
+        (Δ'' := .typeExt .empty ..)
+        (Γwe.soundness Γcw |>.typeVarExt <| Γwe.TypeVarNotInDom_preservation aninΓ)
+        |>.Type_open_preservation (Δ' := .empty) aninAₛ Bk
   | .qual (.mono (.all (.mk κ ψ) ρ)), .all I ψke κe' ρke =>
     let .constr := κe
     let Aopki : «F⊗⊕ω».Kinding .. := .lam (I := Γ.typeVarDom ++ I) fun a anin =>
       let ⟨aninΓ, aninI⟩ := List.not_mem_append'.mp anin
-      ψke a aninI |>.soundness (Γwe.typeExt aninΓ κe') .constr
-    .prod <| .listApp Aopki <| ρke.soundness Γwe κe'.row
+      ψke a aninI |>.soundness Γcw (Γwe.typeExt aninΓ κe') .constr
+    .prod <| .listApp Aopki <| ρke.soundness Γcw Γwe κe'.row
   | .qual (.mono (.ind ρ)), .ind I₀ I₁ ρke κ'e keBᵣ keBₗ => by
     let .constr := κe
-    apply Kinding.ind_evidence Γwe.soundness (ρke.soundness Γwe κ'e.row)
+    apply Kinding.ind_evidence (Γwe.soundness Γcw) (ρke.soundness Γcw Γwe κ'e.row)
       (I₀ := I₀ ++ Γ.typeVarDom) (I₁ := I₁ ++ Γ.typeVarDom)
     · intro aₗ aₗnin aₜ aₜnin aₚ aₚnin aᵢ aᵢnin aₙ aₙnin
       let ⟨aₗninI₀, aₗninΓ⟩ := List.not_mem_append'.mp aₗnin
@@ -492,7 +492,7 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
           ⟨aₙneaₚ, List.not_mem_cons.mpr ⟨aₙneaₜ, List.not_mem_cons.mpr ⟨aₙneaₗ, aₙninΓ⟩⟩⟩
       ⟩
 
-      exact keBᵣ aₗ aₗninI₀ aₜ aₜninI₀' aₚ aₚninI₀' aᵢ aᵢninI₀' aₙ aₙninI₀' |>.soundness
+      exact keBᵣ aₗ aₗninI₀ aₜ aₜninI₀' aₚ aₚninI₀' aᵢ aᵢninI₀' aₙ aₙninI₀' |>.soundness Γcw
         (Γwe.typeExt aₗninΓ .label |>.typeExt aₜninΓ' κ'e |>.typeExt aₚninΓ' κ'e.row
            |>.typeExt aᵢninΓ' κ'e.row |>.typeExt aₙninΓ' κ'e.row) .constr
     · intro aᵢ aᵢnin aₙ aₙnin
@@ -501,11 +501,11 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
       let ⟨aₙninI₁, aₙninΓ⟩ := List.not_mem_append'.mp aₙnin'
       let aₙninI₁' := List.not_mem_cons.mpr ⟨aₙneaᵢ, aₙninI₁⟩
       let aₙninΓ' := List.not_mem_cons.mpr ⟨aₙneaᵢ, aₙninΓ⟩
-      exact keBₗ _ aᵢninI₁ _ aₙninI₁' |>.soundness
+      exact keBₗ _ aᵢninI₁ _ aₙninI₁' |>.soundness Γcw
         (Γwe.typeExt aᵢninΓ κ'e.row |>.typeExt aₙninΓ' κ'e.row) .constr
   | .qual (.mono (.split «λτ» ρ₀ ρ₁ ρ₂)), σke =>
     let .split concatke := σke
-    concatke.soundness Γwe κe
+    concatke.soundness Γcw Γwe κe
 termination_by Γ.sizeOf' + σ.sizeOf'
 decreasing_by
   all_goals simp_arith
@@ -514,22 +514,23 @@ decreasing_by
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'
     rw [Range.map_eq_of_eq_of_mem (by
-          intro _ _
-          simp only [Function.comp]
-          rw [List.map_singleton, List.sum_singleton]
-        )]
+      intro j _
+      show _ = (ξ j).sizeOf' + (τ j).sizeOf'
+      simp only [Function.comp]
+    )]
     exact Range.mem_map_of_mem imem
   · exact Nat.succ_le_of_lt <| Monotype.sizeOf'_pos _
   · exact Nat.succ_le_of_lt <| Monotype.sizeOf'_pos _
 
-theorem TypeEnvironment.WellFormednessAndElaboration.soundness (Γwe : [[Γc ⊢ Γ ⇝ Δ]]) : [[⊢ Δ]] :=
-  match Γwe with
+theorem TypeEnvironment.WellFormednessAndElaboration.soundness (Γwe : [[Γc ⊢ Γ ⇝ Δ]])
+  (Γcw : [[⊢c Γc]]) : [[⊢ Δ]] := match Γwe with
   | .empty => .empty
-  | .typeExt Γ'we anin κe => Γ'we.soundness.typeVarExt <| Γ'we.TypeVarNotInDom_preservation anin
-  | .termExt Γ'we xnin σke =>
-    Γ'we.soundness.termVarExt (Γ'we.TermVarNotInDom_preservation xnin) (σke.soundness Γ'we .star)
-  | .constrExt Γ'we xnin ψke =>
-    Γ'we.soundness.termVarExt (Γ'we.TermVarNotInDom_preservation xnin) (ψke.soundness Γ'we .constr)
+  | .typeExt Γ'we anin κe =>
+    Γ'we.soundness Γcw |>.typeVarExt <| Γ'we.TypeVarNotInDom_preservation anin
+  | .termExt Γ'we xnin σke => Γ'we.soundness Γcw |>.termVarExt
+      (Γ'we.TermVarNotInDom_preservation xnin) (σke.soundness Γcw Γ'we .star)
+  | .constrExt Γ'we xnin ψke => Γ'we.soundness Γcw
+      |>.termVarExt (Γ'we.TermVarNotInDom_preservation xnin) (ψke.soundness Γcw Γ'we .constr)
 termination_by Γ.sizeOf'
 
 end
