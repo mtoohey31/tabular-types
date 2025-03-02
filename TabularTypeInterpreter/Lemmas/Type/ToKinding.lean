@@ -224,14 +224,9 @@ decreasing_by
     apply Nat.le_add_right_of_le
     apply Nat.le_add_right_of_le
     apply Nat.le_trans _ <| Nat.le_add_left ..
-    rw [funext (f := _ ∘ _) (by
-      intro x
-      show _ = [(ξ x).sizeOf' + (τ₀ x).sizeOf']
-      simp [Function.comp]
-    ), List.map_singleton_flatten]
     apply Nat.le_trans (Nat.le_add_left _ (ξ i).sizeOf')
     apply List.le_sum_of_mem'
-    exact Range.mem_map_of_mem mem
+    exact List.mem_map.mpr ⟨_, Range.mem_toList_of_mem mem, rfl⟩
   )
 
 end TabularTypeInterpreter

@@ -335,12 +335,12 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
   | annot _ ih => exact ih σke Γwe
   | label =>
     let .floor _ := σke
-    exact .prodIntro' (fun _ mem => nomatch mem) rfl
+    exact .prodIntro' Γwe.soundness (fun _ mem => nomatch mem) rfl
   | prod _ _ _ _ _ _ ih =>
     let .prod _ rowke := σke
     rcases rowke.row_inversion with ⟨_, _, _, _, rfl, κeq, _, _, τke⟩
     cases Kind.row.inj κeq
-    apply Typing.prodIntro
+    apply Typing.prodIntro Γwe.soundness
     intro i mem
     simp only
     exact ih i mem (τke i mem) Γwe
@@ -351,8 +351,12 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     rw [← Range.map_get!_eq (as := [_]), Range.map, ← List.map_singleton_flatten, ← Range.map,
         List.length_singleton]
     let mem : 0 ∈ [0:1] := ⟨Nat.le.refl, Nat.one_pos⟩
-    apply Typing.sumIntro mem
-    exact ih τke Γwe
+    apply Typing.sumIntro mem <| ih τke Γwe
+    intro i mem
+    simp only
+    let 0 := i
+    rw [List.get!_cons_zero]
+    exact τke.soundness Γwe .star
   | unlabelProd Mte _ ih =>
     let ⟨_, prodke@(.prod _ rowke)⟩ := Mte.to_Kinding Γwe
     rcases rowke.singleton_row_inversion with ⟨_, _, κeq, _, rfl, τke⟩
@@ -369,7 +373,8 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     cases Kind.row.inj κeq
     rcases σke.deterministic τke with ⟨_, rfl⟩
     rcases σke.deterministic τke' with ⟨_, rfl⟩
-    apply Typing.sumElim' (ih sumke Γwe) _ <| by rw [List.length_singleton, List.length_singleton]
+    apply Typing.sumElim' (ih sumke Γwe) _ (τke.soundness Γwe .star) <| by
+      rw [List.length_singleton, List.length_singleton]
     intro _ mem
     rw [List.zip_cons_cons, List.zip_nil_left] at mem
     cases List.mem_singleton.mp mem
@@ -639,7 +644,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     rw [List.length_map, Range.length_toList, List.length_cons, List.length_singleton] at length_eq
     cases length_eq
     rw [← Range.map_get!_eq (as := [_, _]), List.length_cons, List.length_singleton] at ξτseq
-    apply Typing.prodIntro' _ <| by
+    apply Typing.prodIntro' Γwe.soundness _ <| by
       rw [List.length_cons, List.length_singleton, List.length_map, Range.length_toList]
     intro EA mem
     conv => simp_match
