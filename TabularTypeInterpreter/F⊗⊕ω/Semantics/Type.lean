@@ -214,6 +214,8 @@ def MultiParallelReduction.delabMPRed: Lean.PrettyPrinter.Unexpander
     `([ $Δ $vdash $A $into $B ])
   | _ => throw ()
 
+def ParallelReduction.Multi_of (red: [[ Δ ⊢ A ≡> B ]]): [[ Δ ⊢ A ≡>* B ]] := .step red .refl
+
 judgement_syntax Δ " ⊢ " A " <≡>* " B : EqParallelReduction
 
 judgement EqParallelReduction :=
@@ -243,7 +245,7 @@ def EqParallelReduction.delabMPRed: Lean.PrettyPrinter.Unexpander
     `([ $Δ $vdash $A $into $B ])
   | _ => throw ()
 
-def ParallelReduction.ST_of (red: [[ Δ ⊢ A ≡> B ]]): [[ Δ ⊢ A <≡>* B ]] := .step red
+def ParallelReduction.Equiv_of (red: [[ Δ ⊢ A ≡> B ]]): [[ Δ ⊢ A <≡>* B ]] := .step red
 
 attribute [aesop unsafe simp constructors (rule_sets := [pred])] ParallelReduction MultiParallelReduction EqParallelReduction
 

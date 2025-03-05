@@ -726,7 +726,7 @@ theorem confluence_on_the_left (red1: [[ Δ ⊢ A ≡>* B ]]) (red2: [[ Δ ⊢ A
   induction red1 generalizing C
   . case refl A =>
     exists C
-    exact ⟨.step red2 .refl, ⟨.refl, red2.preserve_lc lc⟩⟩
+    exact ⟨red2.Multi_of, ⟨.refl, red2.preserve_lc lc⟩⟩
   . case step A B B' red1 red1' ih =>
     have ⟨T1, redBT1, redCT1, lcT1⟩ := ParallelReduction.diamond wf red1 red2 lc
     have ⟨T2, redB'T2, redT1T2, lcT2⟩ := ih redBT1 (red1.preserve_lc lc)
@@ -756,79 +756,43 @@ theorem common_reduct (red: [[ Δ ⊢ A ≡>* B ]]) (wf: [[ ⊢ Δ ]]) (lc: A.Ty
 end MultiParallelReduction
 
 namespace EqParallelReduction
-theorem inv_arr: [[ Δ ⊢ (A → B) <≡>* T ]] → (∃ A' B', T = [[(A' → B')]] ∧ [[ Δ ⊢ A <≡>* A' ]] ∧ [[ Δ ⊢ B <≡>* B' ]]) := sorry
--- by
---   intro mred
---   generalize AarrBeq : [[(A → B)]] = AarrB at mred
---   revert A B
---   induction mred
---   . case refl => aesop (rule_sets := [pred])
---   . case step T1 T2 T3 red mred ih =>
---     intro A B AarrBeq
---     subst AarrBeq
---     cases red <;> aesop (rule_sets := [pred])
-
--- TODO check why it's different from ParallelReduction.inv_lam
-theorem inv_typeLam: [[ Δ ⊢ (∀ a : K. A) <≡>* T ]] → (∃ A', T = [[∀ a : K. A']] ∧ (∃I, ∀a ∉ (I: List _), [[ Δ, a : K ⊢ A^a <≡>* A'^a ]])) := sorry
--- by
---   intro mred
---   generalize LamAeq : [[(∀ a : K. A)]] = LamA at mred
---   revert A
---   induction mred
---   . case refl => aesop (add unsafe tactic guessI) (rule_sets := [pred])
---   . case step T1 T2 T3 red mred ih =>
---     intro A LamAeq
---     subst LamAeq
---     cases red <;> aesop (add unsafe tactic guessI) (rule_sets := [pred])
-
-theorem inv_prodIntro: [[ Δ ⊢ ⊗A <≡>* T ]] → (∃ A', T = [[⊗A']] ∧ [[ Δ ⊢ A <≡>* A' ]]) := sorry
--- by
---   intro mred
---   generalize LamAeq : [[(⊗A)]] = ProdA at mred
---   revert A
---   induction mred
---   . case refl => aesop (add unsafe tactic guessI) (rule_sets := [pred])
---   . case step T1 T2 T3 red mred ih =>
---     intro A LamAeq
---     subst LamAeq
---     cases red <;> aesop (add unsafe tactic guessI) (rule_sets := [pred])
-
-theorem inv_sumIntro: [[ Δ ⊢ ⊕A <≡>* T ]] → (∃ A', T = [[⊕A']] ∧ [[ Δ ⊢ A <≡>* A' ]]) := sorry
--- by
---   intro mred
---   generalize LamAeq : [[(⊕A)]] = SumA at mred
---   revert A
---   induction mred
---   . case refl => aesop (add unsafe tactic guessI) (rule_sets := [pred])
---   . case step T1 T2 T3 red mred ih =>
---     intro A LamAeq
---     subst LamAeq
---     cases red <;> aesop (add unsafe tactic guessI) (rule_sets := [pred])
 
 theorem preserve_lc (red: [[ Δ ⊢ A <≡>* B ]]): (A.TypeVarLocallyClosed → B.TypeVarLocallyClosed) ∧ (B.TypeVarLocallyClosed → A.TypeVarLocallyClosed) := by
   induction red <;> try aesop (add unsafe ParallelReduction.preserve_lc); done
-  . case step A B stAB => exact ⟨stAB.preserve_lc, stAB.preserve_lc_rev⟩
+  . case step A B eAB => exact ⟨eAB.preserve_lc, eAB.preserve_lc_rev⟩
 
-theorem confluence (stAB: [[ Δ ⊢ A <≡>* B ]]) (stAC: [[ Δ ⊢ A <≡>* C ]]) (wf: [[ ⊢ Δ ]]) (Alc: A.TypeVarLocallyClosed) (Blc: B.TypeVarLocallyClosed): ∃ T, [[ Δ ⊢ B <≡>* T ]] ∧ [[ Δ ⊢ C <≡>* T ]] := by
-  induction stAB generalizing C
-  . case refl A => exists C; exact ⟨stAC, .refl⟩
+theorem common_reduct (eAB: [[ Δ ⊢ A <≡>* B ]]) (wf: [[ ⊢ Δ ]]) (Alc: A.TypeVarLocallyClosed) (Blc: B.TypeVarLocallyClosed): ∃ C, [[ Δ ⊢ A ≡>* C ]] ∧ [[ Δ ⊢ B ≡>* C ]] := by
+  induction eAB
+  . case refl A => exact ⟨A, .refl, .refl⟩
+  . case step A B AB => exact ⟨B, AB.Multi_of, .refl⟩
+  . case sym B A mBA ih =>
+    obtain ⟨C, mBC, mAC⟩ := ih Blc Alc
+    exact ⟨C, mAC, mBC⟩
+  . case trans A A' B eAA' eA'B ih1 ih2 =>
+    have A'lc := eAA'.preserve_lc.1 Alc
+    obtain ⟨C, mAC, mA'C⟩ := ih1 Alc A'lc
+    obtain ⟨C', mA'C', mBC'⟩ := ih2 A'lc Blc
+    have ⟨T, mCT, mC'T, _⟩ := mA'C.confluence mA'C' wf A'lc
+    exact ⟨T, mAC.trans mCT, mBC'.trans mC'T⟩
+
+-- TODO true, but not needed?
+theorem confluence (eAB: [[ Δ ⊢ A <≡>* B ]]) (eAC: [[ Δ ⊢ A <≡>* C ]]) (wf: [[ ⊢ Δ ]]) (Alc: A.TypeVarLocallyClosed) (Blc: B.TypeVarLocallyClosed): ∃ T, [[ Δ ⊢ B <≡>* T ]] ∧ [[ Δ ⊢ C <≡>* T ]] := by
+  induction eAB generalizing C
+  . case refl A => exists C; exact ⟨eAC, .refl⟩
   . case step A B AB =>
-    induction stAC generalizing B
-    . case refl A' => exact ⟨B, .refl, AB.ST_of⟩
+    induction eAC generalizing B
+    . case refl A' => exact ⟨B, .refl, AB.Equiv_of⟩
     . case step A A' AA' =>
       obtain ⟨T, BT, A'T, _⟩ := ParallelReduction.diamond wf AB AA' Alc
-      exact ⟨T, BT.ST_of, A'T.ST_of⟩
-    . case sym A' A stA'A ih => exact ⟨A, AB.ST_of.sym, stA'A⟩
-    . case trans A' B' C' stA'B' stB'C' ih1 ih2 => exact ⟨B', AB.ST_of.sym.trans stA'B', stB'C'.sym⟩
-  . case sym B A stBA ih =>
-    obtain ⟨T, AT, _⟩ := ih stBA Blc Alc
-    exact ⟨T, stBA.trans AT, stAC.sym.trans AT⟩
-  . case trans A B B' stAB stBB' ih1 ih2 =>
-    obtain ⟨T, BT, CT⟩ := ih1 stAC Alc (stBB'.preserve_lc.2 Blc)
-    exact ⟨T, stBB'.sym.trans BT, CT⟩
-
-theorem common_reduct (red: [[ Δ ⊢ A <≡>* B ]]) (wf: [[ ⊢ Δ ]]) (lc: A.TypeVarLocallyClosed): exists C, [[ Δ ⊢ A <≡>* C ]] ∧ [[ Δ ⊢ B <≡>* C ]] :=
-  refl.confluence red wf lc lc
+      exact ⟨T, BT.Equiv_of, A'T.Equiv_of⟩
+    . case sym A' A stA'A ih => exact ⟨A, AB.Equiv_of.sym, stA'A⟩
+    . case trans A' B' C' stA'B' stB'C' ih1 ih2 => exact ⟨B', AB.Equiv_of.sym.trans stA'B', stB'C'.sym⟩
+  . case sym B A eBA ih =>
+    obtain ⟨T, AT, _⟩ := ih eBA Blc Alc
+    exact ⟨T, eBA.trans AT, eAC.sym.trans AT⟩
+  . case trans A B B' eAB eBB' ih1 ih2 =>
+    obtain ⟨T, BT, CT⟩ := ih1 eAC Alc (eBB'.preserve_lc.2 Blc)
+    exact ⟨T, eBB'.sym.trans BT, CT⟩
 
 end EqParallelReduction
 
