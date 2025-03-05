@@ -5,6 +5,9 @@ import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Type.ParallelReduction
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
 
+theorem TypeEquivalence.common_reduct_of (eq: [[Δ ⊢ A ≡ B]]) (wf: [[ ⊢ Δ ]]) (lc: A.TypeVarLocallyClosed) : ∃C, [[Δ ⊢ A <≡>* C]] ∧ [[Δ ⊢ B <≡>* C]] :=
+  eq.EqParallelReduction_of.common_reduct wf lc
+
 namespace Value
 
 -- TODO rename, and will be affected by equiv definition change
