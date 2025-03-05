@@ -124,6 +124,40 @@ theorem preserve_lc (red: [[ Δ ⊢ A ≡> B ]]): A.TypeVarLocallyClosed → B.T
   all_goals
     aesop (add safe forward modus_ponens_open, safe forward Std.Range.mem_of_mem_toList, safe TypeVarLocallyClosed, unsafe cases TypeVarLocallyClosed)
 
+open «Type» TypeVarLocallyClosed in
+theorem preserve_lc_rev (red: [[ Δ ⊢ A ≡> B ]]): B.TypeVarLocallyClosed → A.TypeVarLocallyClosed := by
+  induction red
+  case lamApp Δ B K I A A' B' kindB redA redB ihA ihB =>
+    intro lcA'B'
+    have ⟨a, notIn⟩ := (I ++ A.freeTypeVars ++ A'.freeTypeVars).exists_fresh
+    rw [<- Type.TypeVar_subst_intro_of_not_mem_freeTypeVars (a := a) (by simp_all)] at lcA'B'
+    have Blc := kindB.TypeVarLocallyClosed_of
+    have Abody := ihA a (by simp_all) lcA'B'.TypeVar_subst_drop
+    apply TypeVar_close_inc (a := a) at Abody
+    rw [TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars (by simp_all)] at Abody
+    exact Abody.lam.app Blc
+  case lamListApp n Δ B K I A A' B' kindB redA redB Abody ihA ihB =>
+    intro lcA'B'
+    simp_all
+    have ⟨a, notIn⟩ := (I ++ A.freeTypeVars ++ A'.freeTypeVars).exists_fresh
+    cases lcA'B'; case list lcA'B' =>
+    refine Abody.lam.listApp ?_
+    cases n
+    . case zero => constructor; simp [Std.Range.map, Std.Range.toList]
+    . case succ n =>
+      specialize lcA'B' (A'.Type_open (B' 0)) (by
+        rw [List.map_singleton_flatten]
+        apply Std.Range.mem_map_of_mem
+        simp [Membership.mem]
+      )
+      have ⟨a, notIn⟩ := (I ++ A.freeTypeVars ++ A'.freeTypeVars).exists_fresh
+      rw [<- Type.TypeVar_subst_intro_of_not_mem_freeTypeVars (a := a) (by simp_all)] at lcA'B'
+      have Blc := λ i In => kindB i In |>.TypeVarLocallyClosed_of
+      constructor
+      simp_all [List.map_singleton_flatten, Std.Range.mem_map_of_mem, Std.Range.mem_of_mem_toList]
+  all_goals
+    aesop (add safe forward modus_ponens_open, safe forward Std.Range.mem_of_mem_toList, safe TypeVarLocallyClosed, unsafe cases TypeVarLocallyClosed)
+
 theorem weakening_type' (red: [[ Δ, Δ' ⊢ A ≡> B ]]) (freshΔ: a ∉ Δ.typeVarDom) : [[ Δ, a: K, Δ' ⊢ A ≡> B ]] := by
   generalize Δ_eq : Δ.append Δ' = Δ_ at red
   induction red generalizing Δ Δ' <;> try (aesop (add norm Type.freeTypeVars) (add safe constructors ParallelReduction); done)

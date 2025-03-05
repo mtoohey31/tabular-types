@@ -413,6 +413,10 @@ theorem TypeVar_close_inc {A: «Type»} (Alc: A.TypeVarLocallyClosed n): (A.Type
 theorem TypeVar_subst {A B: «Type»} (Alc: A.TypeVarLocallyClosed n) (Blc: B.TypeVarLocallyClosed n): (A.TypeVar_subst a B).TypeVarLocallyClosed n := by
   induction Alc <;> aesop (add norm Type.TypeVar_subst, norm weaken, safe TypeVarLocallyClosed)
 
+theorem TypeVar_subst_drop {A: «Type»} (Alc: (A.TypeVar_subst a T).TypeVarLocallyClosed n): A.TypeVarLocallyClosed n := by
+  induction A using Type.rec_uniform generalizing n <;>
+    aesop (add norm Type.TypeVar_subst, safe TypeVarLocallyClosed, unsafe cases TypeVarLocallyClosed)
+
 theorem modus_ponens_open {A B: «Type»} (lc: A.TypeVarLocallyClosed (n+1)) (mp: ∀a ∉ (I: List _), (A.TypeVar_open a n).TypeVarLocallyClosed n → (B.TypeVar_open a n).TypeVarLocallyClosed n): B.TypeVarLocallyClosed (n + 1) := by
   have ⟨a', notInI'⟩ := (I ++ B.freeTypeVars).exists_fresh
   have Alc := lc.strengthen (a:=a')
