@@ -124,6 +124,11 @@ judgement_syntax Δ " ⊢ " A " ≢ " B : TypeInequivalence
 
 def TypeInequivalence Δ A B := ¬[[Δ ⊢ A ≡ B]]
 
+judgement_syntax "body" T : TypeVarBody
+
+@[simp]
+def TypeVarBody (T: «Type») := T.TypeVarLocallyClosed 1
+
 judgement_syntax Δ " ⊢ " A " ≡> " B : ParallelReduction
 
 judgement ParallelReduction :=
@@ -140,6 +145,7 @@ judgement ParallelReduction :=
 </ Δ ⊢ B@i : K // i in [:n] />
 ∀ a ∉ (I: List _), Δ, a : K ⊢ A^a ≡> A'^a
 </ Δ ⊢ B@i ≡> B'@i // i in [:n] />
+body A
 ──────────────────────────────────────────────────────────────────────────────── lamListApp
 Δ ⊢ (λ a : K. A) ⟦{ </ B@i // i in [:n] /> }⟧ ≡> { </ A'^^B'@i // i in [:n] /> }
 
