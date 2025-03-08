@@ -475,6 +475,7 @@ theorem aux_iff : (TypeVarLocallyClosed_aux A ↔ A.TypeVarLocallyClosed) := ⟨
 end TypeVarLocallyClosed
 
 
+-- NOTE only this is needed
 theorem subst_open_var {T A: «Type»} (neq: x ≠ y) (lc: A.TypeVarLocallyClosed n): (T.TypeVar_open y n).TypeVar_subst x A = (T.TypeVar_subst x A).TypeVar_open y n := sorry
 
 
@@ -484,6 +485,9 @@ theorem subst_close_var {T A: «Type»} (neq: x ≠ y) (fresh: y ∉ A.freeTypeV
 theorem subst_fresh {A T : «Type»} (fresh: a ∉ A.freeTypeVars) : a ∉ (T.TypeVar_subst a A |>.freeTypeVars) := sorry
 
 
-theorem subst_fresh' {A T: «Type»} (freshA: a ∉ A.freeTypeVars) (freshT: a ∉ T.freeTypeVars) : a ∉ (T.TypeVar_subst a' A |>.freeTypeVars) := sorry -- TODO by induction on T
+theorem subst_fresh' {A T: «Type»} (freshA: a ∉ A.freeTypeVars) (freshT: a ∉ T.freeTypeVars) : a ∉ (T.TypeVar_subst a' A |>.freeTypeVars) := sorry -- TODO by induction on T, wait is the a a' part right?
+
+theorem freeTypeVars_TypeVar_open {T: «Type»} : a ∈ T.freeTypeVars -> a ∈ (T.TypeVar_open a' n).freeTypeVars := by
+  induction T using rec_uniform generalizing n <;> aesop (add simp [freeTypeVars, TypeVar_open])
 
 namespace TabularTypeInterpreter.«F⊗⊕ω».«Type»

@@ -236,8 +236,35 @@ theorem weakening_term' (red: [[ Δ, Δ' ⊢ A ≡> B ]]) : [[ Δ, x: T, Δ' ⊢
 theorem weakening_term (red: [[ Δ ⊢ A ≡> B ]]) : [[ Δ, x: T ⊢ A ≡> B ]] := by
   apply weakening_term' (Δ' := Environment.empty); assumption
 
--- NOTE a weaker version (replacing wf with ∀a ∈, ∉ ...) should also be provable, but this requries a "kind only" wf
--- NOTE using this weaker wf we can remove subst on Δ' for pred_subst theorems
+open Environment in
+theorem weakening' (red: [[ Δ, Δ'' ⊢ A ≡> B ]]) (wfτ: [[ ⊢τ Δ, Δ', Δ'' ]]) : [[ Δ, Δ', Δ'' ⊢ A ≡> B ]] := by
+  induction Δ' generalizing Δ''
+  . case empty => simp_all [empty_append]
+  . case typeExt Δ' a' K' ih =>
+    specialize ih red (by
+      rw [append_assoc, <- append_typeExt_assoc] at wfτ
+      rw [append_assoc]
+      exact wfτ.TypeVar_drop
+    )
+    rw [append_assoc]
+    apply weakening_type'
+    . rw [<- append_assoc]
+      exact ih
+    . rw [<- append_type_assoc, append_assoc] at wfτ
+      exact wfτ.append_typeVar_fresh_l a' (by simp_all [typeVarDom_append, typeVarDom])
+  . case termExt Δ' x T ih =>
+    specialize ih red (by
+      rw [append_assoc, <- append_termExt_assoc] at wfτ
+      rw [append_assoc]
+      exact wfτ.TermVar_drop
+    )
+    rw [append_assoc]
+    apply weakening_term'
+    rw [<- append_assoc]
+    exact ih
+
+-- NOTE we could use a weaker wf: wfτ
+-- NOTE using this weaker wf we can remove subst on Δ' for pred_subst theorems (25/03/07: what does this mean?)
 theorem weakening (red: [[ Δ ⊢ A ≡> B ]]) (wf: [[ ⊢ Δ, Δ' ]]) : [[ Δ, Δ' ⊢ A ≡> B ]] := by
   induction Δ'
   . case empty => simp_all [Environment.append]
@@ -278,6 +305,7 @@ theorem subst_in {A B T: «Type»} (red: [[ Δ ⊢ A ≡> B ]]) (lcA: A.TypeVarL
 -- NOTE this is also provable: no subst on Δ' is needed
 theorem subst_out2 {A T T' : «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red : [[ Δ, a: K, Δ' ⊢ T ≡> T' ]]) (kindA: [[ Δ ⊢ A: K ]]) : [[ Δ, Δ' ⊢ T[A/a] ≡> T'[A/a] ]] := by sorry
 
+-- NOTE we could use a weaker wf: wfτ
 theorem subst_out' {A T T' : «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red : [[ Δ, a: K, Δ' ⊢ T ≡> T' ]]) (kindA: [[ Δ ⊢ A: K ]]) : [[ Δ, Δ'[A/a] ⊢ T[A/a] ≡> T'[A/a] ]] := by
   generalize Δ_eq: (Δ.typeExt a K |>.append Δ') = Δ_ at red
   induction red generalizing Δ Δ' <;> (try simp_all [Type.TypeVar_subst]) <;> try (aesop (rule_sets := [pred]); done)
@@ -327,9 +355,11 @@ theorem subst_out' {A T T' : «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red : [[ �
     apply ih <;> simp_all [Environment.append]
     . constructor <;> simp_all [Environment.typeVarDom, Environment.typeVarDom_append, Environment.TypeVarNotInDom, Environment.TypeVarInDom]
 
+-- NOTE we could use a weaker wf: wfτ
 theorem subst_out {A T T' : «Type»} (wf: [[ ⊢ Δ, a: K ]]) (red : [[ Δ, a: K ⊢ T ≡> T' ]]) (kindA: [[ Δ ⊢ A: K ]]) : [[ Δ ⊢ T[A/a] ≡> T'[A/a] ]] := by
   apply subst_out' (Δ' := Environment.empty) <;> assumption
 
+-- NOTE we could use a weaker wf: wfτ
 set_option maxHeartbeats 400000 in  -- bruh
 theorem subst_all' {A B T: «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ, a: K, Δ' ⊢ T ≡> T' ]]) (kindA: [[ Δ ⊢ A: K ]]) (lcT: T.TypeVarLocallyClosed): [[ Δ, Δ'[A/a] ⊢ T[A/a] ≡> T'[B/a] ]] := by
   generalize Δ_eq: (Δ.typeExt a K |>.append Δ') = Δ_ at red2
@@ -756,6 +786,20 @@ theorem common_reduct (red: [[ Δ ⊢ A ≡>* B ]]) (wf: [[ ⊢ Δ ]]) (lc: A.Ty
 end MultiParallelReduction
 
 namespace EqParallelReduction
+
+theorem weakening (red: [[ Δ, Δ'' ⊢ A <≡>* B ]]) (wfτ: [[ ⊢τ Δ, Δ', Δ'' ]]) : [[ Δ, Δ', Δ'' ⊢ A <≡>* B ]] := by
+  induction red with
+  | refl => exact .refl
+  | step AB => exact .step (AB.weakening' wfτ)
+  | sym _ ih => exact ih.sym
+  | trans _ _ ih1 ih2 => exact ih1.trans ih2
+
+theorem subst_out' {A T T' : «Type»} (red : [[ Δ, a: K, Δ' ⊢ T <≡>* T' ]]) (wf: [[ ⊢ Δ, a: K, Δ' ]]) (kindA: [[ Δ ⊢ A: K ]]) : [[ Δ, Δ'[A/a] ⊢ T[A/a] <≡>* T'[A/a] ]] := by
+  induction red with
+  | refl => exact .refl
+  | step AB => exact .step (AB.subst_out' wf kindA)
+  | sym _ ih => exact ih.sym
+  | trans _ _ ih1 ih2 => exact ih1.trans ih2
 
 theorem preserve_lc (red: [[ Δ ⊢ A <≡>* B ]]): (A.TypeVarLocallyClosed → B.TypeVarLocallyClosed) ∧ (B.TypeVarLocallyClosed → A.TypeVarLocallyClosed) := by
   induction red <;> try aesop (add unsafe ParallelReduction.preserve_lc); done

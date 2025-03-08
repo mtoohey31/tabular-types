@@ -30,6 +30,9 @@ theorem append_type_assoc {Δ Δ': Environment} : [[ (Δ , ((ε , a : K) , Δ'))
 theorem append_term_assoc {Δ Δ': Environment} : [[ (Δ , ((ε , x : T) , Δ')) ]] = [[ (Δ , x : T) , Δ' ]] := by
   induction Δ' generalizing Δ <;> simp_all [append]
 
+theorem append_assoc {Δ Δ' Δ'': Environment} : [[ (Δ , (Δ', Δ'')) ]] = [[ (Δ , Δ'), Δ'' ]] := by
+  induction Δ'' <;> simp_all [append]
+
 theorem typeVarDom_TypeVar_subst {Δ: Environment} : (Δ.TypeVar_subst a A).typeVarDom = Δ.typeVarDom  := by
   induction Δ <;> simp_all [TypeVar_subst, typeVarDom]
 
@@ -72,6 +75,37 @@ theorem TypeVarInEnvironment_of (aInDomΔ : [[a ∈ dom(Δ)]]) : ∃ K, [[a : K 
     exact ih
 
 end TypeVarInDom
+
+namespace TermVarInDom
+
+open Environment in
+theorem TermVarInEnvironment_of (xInDomΔ : [[x ∈ dom(Δ)]]) : ∃ T, [[x : T ∈ Δ]] := by
+  induction Δ
+  . case empty => simp_all [TermVarInDom, termVarDom]
+  . case typeExt Δ a' K' ih =>
+    obtain ⟨K, ih⟩ := ih xInDomΔ
+    exists K
+    constructor
+    exact ih
+  . case termExt Δ x' T' ih =>
+    simp_all [TermVarInDom, termVarDom]
+    cases xInDomΔ
+    . case inl eq =>
+      exists T'
+      subst x'
+      constructor
+    . case inr h =>
+      obtain ⟨T, h⟩ := ih h
+      by_cases (x = x')
+      . case pos eq =>
+        subst x'
+        exists T'
+        constructor
+      . case neg neq =>
+        exists T
+        constructor <;> simp_all [TermVarNe]
+
+end TermVarInDom
 namespace TypeVarInEnvironment
 
 theorem eq_of (aKinΔ : [[a : K ∈ Δ]]) : ∃ Δ' Δ'', Δ = [[(Δ', a : K, Δ'')]] := by
@@ -142,7 +176,108 @@ theorem TypeVar_subst: [[ a: K ∈ Δ[A/a'] ]] ↔ [[ a: K ∈ Δ ]] := by
   induction Δ <;>
     aesop (add norm Environment.TypeVar_subst, unsafe cases TypeVarInEnvironment, unsafe constructors TypeVarInEnvironment)
 
+theorem TermVar_drop : [[ a: K ∈ Δ, x: T, Δ' ]] → [[ a: K ∈ Δ, Δ' ]] := by
+  induction Δ' <;>
+    aesop (add norm Environment.append, unsafe constructors TypeVarInEnvironment, safe cases TypeVarInEnvironment)
+
 end TypeVarInEnvironment
+
+namespace TermVarInEnvironment
+
+theorem eq_of (xTinΔ : [[x : T ∈ Δ]]) : ∃ Δ' Δ'', Δ = [[(Δ', x : T, Δ'')]] := by
+  match xTinΔ with
+  | .head => exact ⟨_, .empty, rfl⟩
+  | .typeVarExt aKinΔ' =>
+    rcases aKinΔ'.eq_of with ⟨_, _, rfl⟩
+    rw [← Environment.append]
+    exact ⟨_, _, rfl⟩
+  | .termVarExt aKinΔ' _ =>
+    rcases aKinΔ'.eq_of with ⟨_, _, rfl⟩
+    rw [← Environment.append]
+    exact ⟨_, _, rfl⟩
+
+theorem TermVarInDom_of (xTinΔ : [[x : T ∈ Δ]]) : [[x ∈ dom(Δ)]] :=
+  match xTinΔ with
+  | .head => .head _
+  | .typeVarExt xTinΔ' => xTinΔ'.TermVarInDom_of
+  | .termVarExt xTinΔ' xnex' => .tail _ xTinΔ'.TermVarInDom_of
+
+open Environment in
+theorem blabla (xninΔ: [[ x ∉ dom(Δ) ]]): ∀T, ¬[[ x : T ∈ Δ ]] := by
+  intro T h
+  have := h.TermVarInDom_of
+  simp_all [TermVarNotInDom]
+
+theorem unique: [[ x: T ∈ Δ ]] → [[ x: T' ∈ Δ ]] → T = T' := by
+  intro xTIn xT'In
+  induction Δ generalizing x T T'
+  . case empty => rcases xTIn
+  . case typeExt Δ x_ T_ ih =>
+    aesop (add unsafe cases TermVarInEnvironment)
+  . case termExt Δ a_ K ih =>
+    aesop (add norm TermVarNe, unsafe cases TermVarInEnvironment)
+
+theorem weakening_l : [[ x: T ∈ Δ' ]] → [[ x: T ∈ Δ, Δ' ]] := by
+  intro h
+  induction Δ' <;> aesop
+    (add norm Environment.append,
+      unsafe constructors TermVarInEnvironment, safe cases TermVarInEnvironment)
+
+open Environment in
+theorem weakening_r (fresh: [[ x ∉ dom(Δ') ]]): [[ x: T ∈ Δ ]] → [[ x: T ∈ Δ, Δ' ]] := by
+  intro h
+  induction Δ' <;> simp_all [append]
+    <;> constructor <;> simp_all [TermVarNotInDom, TermVarInDom, termVarDom, TermVarNe]
+
+open Environment in
+theorem append_elim : [[ x: T ∈ Δ, Δ' ]] → ([[ x ∉ dom(Δ') ]] ∧ [[ x: T ∈ Δ ]]) ∨ [[ x: T ∈ Δ' ]] := by
+  by_cases ([[ x ∈ dom(Δ') ]])
+  . case pos hIn =>
+    intro h
+    right
+    have ⟨T', hIn⟩ := TermVarInDom.TermVarInEnvironment_of hIn
+    have h' := hIn.weakening_l (Δ:=Δ)
+    have eq := unique h h'
+    subst T'
+    assumption
+  . case neg hNotIn =>
+    simp_all [TermVarInDom, TermVarNotInDom]
+    intro hIn
+    induction Δ'
+    . case empty => simp_all [append]
+    . case typeExt Δ' a' K' ih =>
+      simp_all [Environment.append]
+      specialize @ih (by simp_all [termVarDom]) (by cases hIn; simp_all)
+      cases ih <;> aesop (add safe constructors TermVarInEnvironment)
+    . case termExt Δ' a' T' ih =>
+      simp_all [Environment.append]
+      specialize @ih (by simp_all [termVarDom]) (by cases hIn <;> simp_all [termVarDom])
+      cases ih <;> aesop (add norm termVarDom, safe constructors TermVarInEnvironment)
+
+open Environment in
+theorem append_intro_l (xinΔ: [[ x: T ∈ Δ ]]) (xninΔ': ([[ x ∉ dom(Δ') ]])): [[ x: T ∈ Δ, Δ' ]] := by
+  induction Δ'
+  . case empty => simp_all [append]
+  . case typeExt Δ' a K ih =>
+    refine .typeVarExt (ih ?_)
+    simp_all [TermVarNotInDom, TermVarInDom, termVarDom]
+  . case termExt Δ' x' T' ih =>
+    refine .termVarExt (ih ?_) ?_
+    . simp_all [TermVarNotInDom, TermVarInDom, termVarDom]
+    . simp_all [TermVarNotInDom, TermVarInDom, termVarDom, TermVarNe]
+
+open Environment in
+theorem append_intro_r (xinΔ': [[ x: T ∈ Δ' ]]): [[ x: T ∈ Δ, Δ' ]] := by
+  induction xinΔ' with
+  | head => exact .head
+  | typeVarExt _ ih => exact .typeVarExt ih
+  | termVarExt _ neq ih => exact .termVarExt ih neq
+
+-- theorem TypeVar_subst: [[ a: K ∈ Δ[A/a'] ]] ↔ [[ a: K ∈ Δ ]] := by
+--   induction Δ <;>
+--     aesop (add norm Environment.TypeVar_subst, unsafe cases TypeVarInEnvironment, unsafe constructors TypeVarInEnvironment)
+
+end TermVarInEnvironment
 
 -- TODO I need these definitions to prove Type lemma
 namespace EnvironmentWellFormedness
@@ -165,6 +300,72 @@ open Environment in
 theorem append_termVar_fresh_l : [[ ⊢ Δ, Δ' ]] → ∀a ∈ Δ'.termVarDom, a ∉ Δ.termVarDom := by
   intro wf
   induction Δ' <;> aesop (add safe cases EnvironmentWellFormedness, norm termVarDom, norm termVarDom_append, norm TermVarNotInDom, norm TermVarInDom)
+
+def EnvironmentTypeWellFormedness_of : [[ ⊢ Δ ]] → [[ ⊢τ Δ ]]
+  | .empty => .empty
+  | .typeVarExt wf anin =>
+    .typeVarExt (wf.EnvironmentTypeWellFormedness_of) anin
+  | .termVarExt wf _ _ =>
+    .termVarExt (wf.EnvironmentTypeWellFormedness_of)
+
+open Environment in
+theorem weakening (wf: [[ ⊢ Δ, Δ' ]]): [[ ⊢ Δ ]] := by
+  induction Δ'
+  . case empty => simp_all [append]
+  . case typeExt Δ' a K ih => cases wf; simp_all
+  . case termExt Δ' x' T' ih => cases wf; simp_all
+
 end EnvironmentWellFormedness
+
+namespace EnvironmentTypeWellFormedness
+
+open Environment in
+theorem TermVar_drop (wf: [[ ⊢τ Δ, x: T, Δ' ]]) : [[ ⊢τ Δ, Δ' ]] := by
+  induction Δ'
+  . case empty => cases wf; assumption
+  . case typeExt Δ' a K ih =>
+    cases wf; case typeVarExt wf anin =>
+    exact .typeVarExt (ih wf) (by simp_all [TypeVarNotInDom, TypeVarInDom, typeVarDom_append, typeVarDom])
+  . case termExt Δ' x' T' ih =>
+    cases wf; case termVarExt wf =>
+    exact .termVarExt (ih wf)
+
+open Environment in
+theorem TypeVar_drop (wf: [[ ⊢τ Δ, a: K, Δ'' ]]) : [[ ⊢τ Δ, Δ'' ]] := by
+  induction Δ''
+  . case empty => cases wf; assumption
+  . case typeExt Δ'' a' K' ih =>
+    cases wf; case typeVarExt wf anin =>
+    exact .typeVarExt (ih wf) (by simp_all [TypeVarNotInDom, TypeVarInDom, typeVarDom_append, typeVarDom])
+  . case termExt Δ'' x' T' ih =>
+    cases wf; case termVarExt wf =>
+    exact .termVarExt (ih wf)
+
+open Environment in
+theorem weakening (wf: [[ ⊢τ Δ, Δ', Δ'' ]]): [[ ⊢τ Δ, Δ'' ]] := by
+  induction Δ' generalizing Δ''
+  . case empty => simp_all [empty_append]
+  . case typeExt Δ' a K ih =>
+    rw [<- append_type_assoc] at wf
+    specialize ih wf
+    rw [append_type_assoc] at ih
+    exact ih.TypeVar_drop
+  . case termExt Δ' x' T' ih =>
+    rw [<- append_term_assoc] at wf
+    specialize ih wf
+    rw [append_term_assoc] at ih
+    exact ih.TermVar_drop
+
+open Environment in
+theorem append_typeVar_fresh_r: [[ ⊢τ Δ, Δ' ]] → ∀a ∈ Δ.typeVarDom, a ∉ Δ'.typeVarDom := by
+  intro wf
+  induction Δ' <;> aesop (add safe cases EnvironmentTypeWellFormedness, norm typeVarDom, norm typeVarDom_append, norm TypeVarNotInDom, norm TypeVarInDom)
+
+open Environment in
+theorem append_typeVar_fresh_l : [[ ⊢τ Δ, Δ' ]] → ∀a ∈ Δ'.typeVarDom, a ∉ Δ.typeVarDom := by
+  intro wf
+  induction Δ' <;> aesop (add safe cases EnvironmentTypeWellFormedness, norm typeVarDom, norm typeVarDom_append, norm TypeVarNotInDom, norm TypeVarInDom)
+
+end EnvironmentTypeWellFormedness
 
 end TabularTypeInterpreter.«F⊗⊕ω»

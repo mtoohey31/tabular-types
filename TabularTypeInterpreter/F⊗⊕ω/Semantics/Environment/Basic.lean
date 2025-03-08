@@ -78,6 +78,8 @@ x ≠ x'
 ───────────────── termVarExt
 x : A ∈ Δ, x' : B
 
+attribute [app_unexpander TermVarInEnvironment] TypeVarInEnvironment.delabTypeVarInEnv
+
 judgement_syntax a " ∈ " "dom" "(" Δ ")" : Environment.TypeVarInDom (id a)
 
 def Environment.TypeVarInDom a (Δ : Environment) := a ∈ Δ.typeVarDom

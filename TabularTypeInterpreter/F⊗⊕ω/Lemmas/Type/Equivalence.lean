@@ -1,8 +1,11 @@
 import TabularTypeInterpreter.«F⊗⊕ω».Syntax.Type
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Type
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Environment
+import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Type.ParallelReduction
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
+
+theorem EqParallelReduction.TypeEquivalence_of (eAB: [[ Δ ⊢ A <≡>* B]]) : [[ Δ ⊢ A ≡ B]] := sorry
 
 namespace TypeEquivalence
 
@@ -27,8 +30,16 @@ def symm : [[Δ ⊢ A ≡ B]] → [[Δ ⊢ B ≡ A]]
 
 def trans : [[Δ ⊢ A₀ ≡ A₁]] → [[Δ ⊢ A₁ ≡ A₂]] → [[Δ ⊢ A₀ ≡ A₂]] := sorry
 
-end TypeEquivalence
+theorem weakening (equiv: [[ Δ, Δ'' ⊢ A ≡ B ]]) (wfτ: [[ ⊢τ Δ, Δ', Δ'' ]]) : [[ Δ, Δ', Δ'' ⊢ A ≡ B ]] :=
+  equiv.EqParallelReduction_of |>.weakening wfτ |>.TypeEquivalence_of
 
+theorem subst' {A T T' : «Type»} (equiv : [[ Δ, a: K, Δ' ⊢ T ≡ T' ]]) (wf: [[ ⊢ Δ, a: K, Δ' ]]) (kindA: [[ Δ ⊢ A: K ]]) : [[ Δ, Δ'[A/a] ⊢ T[A/a] ≡ T'[A/a] ]] :=
+  equiv.EqParallelReduction_of |>.subst_out' wf kindA |>.TypeEquivalence_of
+
+-- TODO this is not dt so properties on typing apparently have nothing to do with terms in env
+theorem TermVar_drop (equiv: [[ Δ, x: T, Δ'' ⊢ A ≡ B ]]): [[ Δ, Δ'' ⊢ A ≡ B ]] := sorry
+
+end TypeEquivalence
 namespace TypeInequivalence
 
 private
