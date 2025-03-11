@@ -25,6 +25,16 @@ def termVarDom : Environment → List TermVarId
   | .typeExt Γ .. => Γ.termVarDom
   | .termExt Γ x _ => x :: Γ.termVarDom
 
+@[app_unexpander append]
+def delabEnvAppend : Lean.PrettyPrinter.Unexpander
+  | `($(_) $Δ $Δ') =>
+    let info := Lean.SourceInfo.none
+    let comma := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info ",") }
+    `($Δ $comma $Δ')
+  | _ => throw ()
+
+attribute [app_unexpander TypeVar_subst] Type.delabTVSubst
+
 end Environment
 
 judgement_syntax a " : " K " ∈ " Δ : TypeVarInEnvironment (id a)
@@ -43,6 +53,15 @@ a : K ∈ Δ
 ──────────────── termVarExt
 a : K ∈ Δ, x : A
 
+@[app_unexpander TypeVarInEnvironment]
+def TypeVarInEnvironment.delabTypeVarInEnv: Lean.PrettyPrinter.Unexpander
+  | `($(_) $x $A $Δ) =>
+    let info := Lean.SourceInfo.none
+    let colon := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info ":") }
+    let in_ := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "∈") }
+    `([ $x $colon $A $in_ $Δ ])
+  | _ => throw ()
+
 judgement_syntax x " : " A " ∈ " Δ : TermVarInEnvironment (id x)
 
 judgement TermVarInEnvironment :=
@@ -59,6 +78,8 @@ x ≠ x'
 ───────────────── termVarExt
 x : A ∈ Δ, x' : B
 
+attribute [app_unexpander TermVarInEnvironment] TypeVarInEnvironment.delabTypeVarInEnv
+
 judgement_syntax a " ∈ " "dom" "(" Δ ")" : Environment.TypeVarInDom (id a)
 
 def Environment.TypeVarInDom a (Δ : Environment) := a ∈ Δ.typeVarDom
@@ -74,5 +95,27 @@ def Environment.TermVarInDom x (Δ : Environment) := x ∈ Δ.termVarDom
 judgement_syntax x " ∉ " "dom" "(" Δ ")" : Environment.TermVarNotInDom (id x)
 
 def Environment.TermVarNotInDom x Δ := ¬[[x ∈ dom(Δ)]]
+
+namespace Environment
+@[app_unexpander TypeVarInDom, app_unexpander TermVarInDom]
+def delabTVarInDom: Lean.PrettyPrinter.Unexpander
+  | `($(_) $x $Δ) =>
+    let info := Lean.SourceInfo.none
+    let in_ := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "∈") }
+    let domL := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "dom(") }
+    let R := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info ")") }
+    `([ $x $in_ $domL $Δ $R ])
+  | _ => throw ()
+
+@[app_unexpander TypeVarNotInDom, app_unexpander TermVarNotInDom]
+def delabTVarNotInDom: Lean.PrettyPrinter.Unexpander
+  | `($(_) $x $Δ) =>
+    let info := Lean.SourceInfo.none
+    let notIn := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "∉") }
+    let domL := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "dom(") }
+    let R := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info ")") }
+    `([ $x $notIn $domL $Δ $R ])
+  | _ => throw ()
+end Environment
 
 end TabularTypeInterpreter.«F⊗⊕ω»

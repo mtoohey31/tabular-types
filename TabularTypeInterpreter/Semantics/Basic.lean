@@ -1,5 +1,5 @@
-import Lott.DSL.Elab.Bool
-import Lott.DSL.Elab.Nat
+import Lott.Elab.Bool
+import Lott.Elab.Nat
 import TabularTypeInterpreter.«F⊗⊕ω».Syntax.Term
 import TabularTypeInterpreter.Syntax.Basic
 import TabularTypeInterpreter.Syntax.Type

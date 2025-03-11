@@ -12,7 +12,7 @@ nosubst
 nonterminal ClassEnvironment, Γc :=
   | "ε"         : empty
   | Γc ", " γc  : ext
-  | "(" Γc ")"  : paren (desugar := return Γc)
-  | Γc ", " Γc' : append (elab := return Lean.mkApp2 (.const `TabularTypeInterpreter.ClassEnvironment.append []) Γc Γc')
+  | "(" Γc ")"  : paren (expand := return Γc)
+  | Γc ", " Γc' : append (expand := return .mkCApp `TabularTypeInterpreter.ClassEnvironment.append #[Γc, Γc'])
 
 end TabularTypeInterpreter

@@ -20,4 +20,5 @@ jobs:
     - uses: Julian/setup-lean@v1
       with:
         default-toolchain-file: lean-toolchain
+    - run: lake exe cache get
     - run: lake build

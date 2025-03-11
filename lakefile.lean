@@ -2,6 +2,7 @@ import Lake
 open Lake DSL
 
 require lott from "vendor/lott"
+require mathlib from git "https://github.com/leanprover-community/mathlib4.git" @ "v4.17.0"
 
 package «tabular-type-interpreter»
 

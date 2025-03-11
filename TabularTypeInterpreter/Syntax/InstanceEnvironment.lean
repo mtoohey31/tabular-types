@@ -5,7 +5,7 @@ namespace TabularTypeInterpreter
 
 nosubst
 nonterminal InstanceEnvironmentEntry, γᵢ :=
-  | "(" "∀ " sepBy(a " : " κ, ", ") " ⇒ " TC τ ")" " ↦ " «F⊗⊕ω».E "; " sepBy(«F⊗⊕ω».E, ", ") : mk (bind a)
+  | "(" "∀ " sepBy(a " : " κ, ", ") ". " sepBy(ψ, ", ") " ⇒ " TC τ ")" " ↦ " «F⊗⊕ω».E "; " sepBy(«F⊗⊕ω».E, ", ") : mk (bind a)
 
 nosubst
 nonterminal InstanceEnvironment, Γᵢ :=

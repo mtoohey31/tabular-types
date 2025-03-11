@@ -29,8 +29,7 @@ def rec_uniform {motive : Monotype → Prop} (var : ∀ a, motive (.var a))
     (motive_4 := fun τs => motive τs.fst ∧ motive τs.snd) (fun _ _ mτ => mτ) var app arr label
     floor comm row prodOrSum (fun | .mk κ τ, ρ, mτ, mρ => lift κ τ ρ mτ mρ) contain concat typeClass
     (fun | .mk κ τ, ρ, mτ, mρ => all κ τ ρ mτ mρ) «ind»
-    (fun | .mk κ τ, ρ₀, ρ₁, ρ₂, mτ, mρ₀, mρ₁, mρ₂ => split κ τ ρ₀ ρ₁ ρ₂ mτ mρ₀ mρ₁ mρ₂)
-    (fun _ => (nomatch ·))
+    (fun | .mk κ τ, ρ₀, ρ₁, ρ₂, mτ, mρ₀, mρ₁, mρ₂ => split κ τ ρ₀ ρ₁ ρ₂ mτ mρ₀ mρ₁ mρ₂) nofun
     (fun _ _ mhead mtail _ mem => match mem with | .head _ => mhead | .tail _ mem' => mtail _ mem') (fun _ _ mτ₀ mτ₁ => ⟨mτ₀, mτ₁⟩) τ
 
 @[simp]
@@ -117,7 +116,7 @@ theorem TypeVar_open_id : TypeVarLocallyClosed τ n → τ.TypeVar_open a n = τ
   induction τ using rec_uniform generalizing n
   case row ih =>
     intro rowlc
-    let .row τslc ξslc := rowlc
+    let .row ξslc τslc := rowlc
     rw [TypeVar_open, List.mapMem_eq_map]
     congr
     apply List.map_eq_id_of_eq_id_of_mem
@@ -138,7 +137,7 @@ theorem TypeVar_open_TypeVar_close_id
   induction τ using rec_uniform generalizing n
   case row ih =>
     intro rowlc
-    let .row τslc ξslc := rowlc
+    let .row ξslc τslc := rowlc
     rw [TypeVar_close, List.mapMem_eq_map, TypeVar_open, List.mapMem_eq_map, List.map_map]
     congr
     apply List.map_eq_id_of_eq_id_of_mem
@@ -161,16 +160,16 @@ theorem TypeVar_open_drop
   case row ih =>
     intro mltn rowoplc
     rw [TypeVar_open, List.mapMem_eq_map] at rowoplc
-    let .row τopslc ξopslc := rowoplc
+    let .row ξopslc τopslc := rowoplc
     apply row
-    · intro _ mem
-      let τoplc := τopslc _ <| List.mem_map.mpr ⟨_, mem, rfl⟩
-      conv at τoplc => simp_match
-      exact ih _ mem |>.right mltn τoplc
     · intro _ mem
       let ξoplc := ξopslc _ <| List.mem_map.mpr ⟨_, mem, rfl⟩
       conv at ξoplc => simp_match
       exact ih _ mem |>.left mltn ξoplc
+    · intro _ mem
+      let τoplc := τopslc _ <| List.mem_map.mpr ⟨_, mem, rfl⟩
+      conv at τoplc => simp_match
+      exact ih _ mem |>.right mltn τoplc
   all_goals aesop
     (add simp [TypeVar_open, TypeLambda.TypeVar_open], safe cases TypeVarLocallyClosed,
       safe cases TypeLambda.TypeVarLocallyClosed, safe constructors TypeVarLocallyClosed,
@@ -180,7 +179,7 @@ theorem Monotype_open_TypeVar_close_eq_TypeVar_subst (τlc : TypeVarLocallyClose
   : (τ.TypeVar_close a n).Monotype_open τ' n = τ.TypeVar_subst a τ' := by
   induction τ using rec_uniform generalizing n
   case row ih =>
-    let .row τslc ξslc := τlc
+    let .row ξslc τslc := τlc
     rw [TypeVar_close, List.mapMem_eq_map, Monotype_open, List.mapMem_eq_map, List.map_map,
         TypeVar_subst, List.mapMem_eq_map]
     apply row.injEq .. |>.mpr ⟨_, rfl⟩
@@ -236,10 +235,10 @@ theorem not_mem_freeTypeVars_TypeVar_open_intro
     cases eq
     have := ih (ξ, τ) mem
     rw [freeTypeVars, List.mapMem_eq_map] at anin
-    let ⟨xninτ, xninξ⟩ := List.not_mem_append'.mp <|
-      List.not_mem_flatten.mp anin (τ.freeTypeVars ++ ξ.freeTypeVars) <|
+    let ⟨xninξ, xninτ⟩ := List.not_mem_append'.mp <|
+      List.not_mem_flatten.mp anin (ξ.freeTypeVars ++ τ.freeTypeVars) <|
       List.mem_map.mpr ⟨(ξ, τ), mem, rfl⟩
-    exact List.not_mem_append'.mpr ⟨this.right xninτ ne, this.left xninξ ne⟩
+    exact List.not_mem_append'.mpr ⟨this.left xninξ ne, this.right xninτ ne⟩
   all_goals aesop
     (add simp [TypeVar_open, TypeLambda.TypeVar_open, freeTypeVars, TypeLambda.freeTypeVars])
 
@@ -252,7 +251,7 @@ theorem not_mem_freeTypeVars_TypeVar_close : a ∉ (TypeVar_close τ a n).freeTy
     rcases List.mem_map.mp mem with ⟨_, mem', rfl⟩
     simp only [Function.comp]
     apply List.not_mem_append'.mpr
-    exact ⟨ih _ mem' |>.right, ih _ mem' |>.left⟩
+    exact ⟨ih _ mem' |>.left, ih _ mem' |>.right⟩
   all_goals aesop
     (add simp [TypeVar_close, freeTypeVars, TypeLambda.TypeVar_close, TypeLambda.freeTypeVars],
       safe cases TypeVar)
@@ -466,21 +465,20 @@ in
 theorem empty_row : [[Γc; Γ ⊢ ⟨ : κ ⟩ : R κ ⇝ { }]] := by
   have : some κ = Option.filter (fun _ => true) (some κ) := by rw [Option.filter, if_pos rfl]
   rw (occs := .pos [2]) [← Range.map_get!_eq (as := [])]
-  rw [← Range.map_get!_eq (as := []), Range.map, Range.map,
-      Range.map_eq_of_eq_of_mem (by
+  rw [← Range.map_get!_eq (as := []),
+      Range.map_eq_of_eq_of_mem'' (by
         intro i mem
         show _ = ([].get! i, [].get! i)
         nomatch mem
-      ), ← List.map_singleton_flatten, ← Range.map, ← List.map_singleton_flatten,
-      ← Range.map, this]
+      ), this]
   apply KindingAndElaboration.row (fun _ mem => by rw [List.length_nil] at mem; nomatch mem) _
     (fun _ mem => by rw [List.length_nil] at mem; nomatch mem) (.inr rfl)
     (B := fun _ => default)
-  rw [Range.map, Range.map_eq_of_eq_of_mem (by
+  rw [Range.map_eq_of_eq_of_mem'' (by
     intro i mem
-    show _ = [.label ((fun i => .zero) i)]
+    show _ = Monotype.label ((fun i => .zero) i)
     nomatch mem
-  ), ← Range.map]
+  )]
   apply Monotype.label.Uniqueness.concrete
   intro _ mem
   rw [List.length_nil] at mem
@@ -495,26 +493,26 @@ in
 theorem singleton_row (ξke : [[Γc; Γ ⊢ ξ : L ⇝ B]]) (τke : [[Γc; Γ ⊢ τ : κ ⇝ A]])
   : [[Γc; Γ ⊢ ⟨ξ ▹ τ⟩ : R κ ⇝ {A}]] := by
   have : none = Option.filter (fun _ => false) (some κ) := by
-    rw [Option.filter, if_neg (nomatch ·)]
+    rw [Option.filter, if_neg nofun]
   rw (occs := .pos [2]) [← Range.map_get!_eq (as := [_])]
-  rw [← Range.map_get!_eq (as := [_]), Range.map, Range.map, Range.map_eq_of_eq_of_mem (by
+  rw [← Range.map_get!_eq (as := [_]), Range.map_eq_of_eq_of_mem'' (by
         intro i mem
         show _ = (ξ, τ)
         cases Nat.eq_zero_of_le_zero <| Nat.le_of_lt_succ mem.upper
         rw [List.get!_cons_zero]
-      ), ← List.map_singleton_flatten, ← Range.map, Range.map_eq_of_eq_of_mem (by
+      ), Range.map_eq_of_eq_of_mem'' (f := fun i => [A].get! i) (by
         intro i mem
         show _ = A
+        simp only
         cases Nat.eq_zero_of_le_zero <| Nat.le_of_lt_succ mem.upper
         rw [List.get!_cons_zero]
-      ), ← List.map_singleton_flatten, ← Range.map, this,
+      ), this,
       List.length_singleton, List.length_singleton]
   apply row (ξ := fun _ => ξ) (τ := fun _ => τ) (A := fun _ => A) (B := fun _ => B) _ _ _ <|
     .inl Nat.one_ne_zero
   · intros
     exact ξke
-  · rw [List.map_singleton_flatten, Range.toList, if_neg (nomatch ·),
-        if_pos (Nat.succ_pos _), Range.toList, if_neg (nomatch ·), Nat.zero_add,
+  · rw [Range.map, Range.toList, if_pos (Nat.succ_pos _), Range.toList, Nat.zero_add,
         if_neg (Nat.not_lt_of_le Nat.le.refl), List.map_singleton]
     exact .var
   · intros
@@ -523,13 +521,12 @@ theorem singleton_row (ξke : [[Γc; Γ ⊢ ξ : L ⇝ B]]) (τke : [[Γc; Γ �
 theorem empty_row_inversion (rowke : [[Γc; Γ ⊢ ⟨ : κ'⟩ : κ ⇝ A]]) : κ = [[R κ']] ∧ A = [[{ }]] := by
   generalize ξτseq : [] = ξτs, κ?eq : some κ' = κ? at rowke
   let .row .. := rowke
-  rw [Option.filter] at κ?eq
+  rw [Option.someIf] at κ?eq
   split at κ?eq
   case isFalse => nomatch κ?eq
   cases κ?eq
-  rw [List.map_singleton_flatten] at ξτseq ⊢
   cases Nat.eq_zero_of_le_zero <| Range.toList_eq_nil_iff.mp <| List.map_eq_nil_iff.mp ξτseq.symm
-  rw [Range.toList_eq_nil_iff.mpr (Nat.le_refl _), List.map_nil]
+  rw [Range.map, Range.toList_eq_nil_iff.mpr (Nat.le_refl _), List.map_nil]
   exact ⟨rfl, rfl⟩
 
 theorem singleton_row_inversion (rowke : [[Γc; Γ ⊢ ⟨ξ ▹ τ⟩ : κ ⇝ A]])
@@ -537,20 +534,18 @@ theorem singleton_row_inversion (rowke : [[Γc; Γ ⊢ ⟨ξ ▹ τ⟩ : κ ⇝ 
     ∃ κ', κ = [[R κ']] ∧ ∃ A', A = [[{A'}]] ∧ [[Γc; Γ ⊢ τ : κ' ⇝ A']] := by
   generalize ξτseq : [_] = ξτs, κ?eq : none = κ? at rowke
   let .row ξ'ke _ τ'ke _ := rowke
-  rw [List.map_singleton_flatten] at ξτseq ⊢
   let length_eq : List.length [_] = List.length _ := by rw [ξτseq]
   rw [List.length_map, Range.length_toList, List.length_singleton] at length_eq
   cases length_eq
-  rw [Range.toList, if_neg (nomatch ·), if_pos Nat.one_pos, List.map_cons] at ξτseq ⊢
-  let mem : 0 ∈ [0:1] := ⟨Nat.le.refl, Nat.one_pos⟩
+  rw [Range.map, Range.toList, if_pos Nat.one_pos, List.map_cons] at ξτseq ⊢
+  let mem : 0 ∈ [0:1] := ⟨Nat.le.refl, Nat.one_pos, Nat.mod_one _⟩
   let ξ'ke' := ξ'ke 0 mem
   let τ'ke' := τ'ke 0 mem
   simp only at ξ'ke' τ'ke'
   let ⟨ξeq, τeq⟩ := Prod.mk.inj <| And.left <| List.cons.inj ξτseq
   rw [← ξeq] at ξ'ke'
   rw [← τeq] at τ'ke'
-  rw [Range.toList, if_neg (nomatch ·), Nat.zero_add, if_neg (Nat.not_lt_of_le Nat.le.refl),
-      List.map_nil]
+  rw [Range.toList, Nat.zero_add, if_neg (Nat.not_lt_of_le Nat.le.refl), List.map_nil]
   exact ⟨⟨_, ξ'ke'⟩, _, rfl, _, rfl, τ'ke'⟩
 
 theorem row_inversion
@@ -558,20 +553,17 @@ theorem row_inversion
   : (∃ B, ∀ i ∈ [:n], [[Γc; Γ ⊢ ξ@i : L ⇝ B@i]]) ∧ [[unique(</ ξ@i // i in [:n] />)]] ∧
     (∃ B κ'', A = [[{</ B@i // i in [:n] />}]] ∧ κ = [[R κ'']] ∧ (n ≠ 0 ∨ b) ∧ (b → κ' = κ'') ∧
       ∀ i ∈ [:n], [[Γc; Γ ⊢ τ@i : κ'' ⇝ B@i]]) := by
-  generalize ξτseq : ([:n].map fun i => [(ξ i, τ i)]).flatten = ξτs at rowke
-  generalize κ''eq : (some κ').filter (fun _ => b) = κ'' at rowke
+  generalize ξτseq : ([:n].map fun i => (ξ i, τ i)) = ξτs at rowke
+  generalize κ''eq : Option.someIf κ' b = κ'' at rowke
   let .row ξke uni τke h := rowke
   rename Nat => n'
-  rw [List.map_singleton_flatten, List.map_singleton_flatten] at ξτseq
-  let length_eq : List.length (List.map ..) = List.length _ := by rw [ξτseq]
+  let length_eq : List.length (Range.map ..) = List.length _ := by rw [ξτseq]
   let neqn' : n = n' := by
     repeat rw [List.length_map, Std.Range.length_toList] at length_eq
     exact length_eq
   cases neqn'
   let ξτeqs := Std.Range.eq_of_mem_of_map_eq ξτseq
-  rw [List.map_singleton_flatten,
-      Std.Range.map_eq_of_eq_of_mem (by rw [← And.left <| Prod.mk.inj <| ξτeqs · ·]),
-      ← List.map_singleton_flatten] at uni
+  rw [Range.map_eq_of_eq_of_mem'' (by rw [← And.left <| Prod.mk.inj <| ξτeqs · ·])] at uni
   exact ⟨
     ⟨
       _,
@@ -589,38 +581,37 @@ theorem row_inversion
       | .inl h => .inl h
       | .inr h => by
         rw [BoolId, id] at h
-        rw [h] at κ''eq
-        exact .inr <| And.right <| Option.filter_eq_some.mp κ''eq,
-      fun beq => by
-        rw [beq, Option.filter, if_pos rfl] at κ''eq
+        rw [h, Option.someIf_true] at κ''eq
+        exact .inr <| And.right <| Option.eq_of_someIf_eq_some κ''eq,
+      by
+        intro beq
+        rw [beq, Option.someIf_true] at κ''eq
         symm at κ''eq ⊢
-        exact Option.mem_some.mp <| And.left <| Option.filter_eq_some.mp κ''eq
-      ,
-      fun i imem => by
+        exact And.left <| Option.eq_of_someIf_eq_some κ''eq,
+      by
+        intro i imem
         rw [And.right <| Prod.mk.inj <| ξτeqs i imem]
         exact τke i imem
     ⟩
   ⟩
 
 theorem TypeVarLocallyClosed_of (σke : [[Γc; Γ ⊢ σ : κ ⇝ A]]) : σ.TypeVarLocallyClosed := by
-  induction σke using
-    rec (motive_2 := fun _ _ _ _ => True) (motive_3 := fun _ _ => ∀ {x : True}, True)
+  induction σke
   case scheme I _ _ ih =>
     let ⟨a, anin⟩ := I.exists_fresh
     exact .quant <| ih a anin |>.weakening.TypeVar_open_drop Nat.zero_lt_one
   case row ih₀ ih₁ =>
-    rw [List.map_singleton_flatten]
     apply TypeVarLocallyClosed.qual <| .mono <| .row _ _
-    · intro _ mem
-      rcases List.mem_map.mp mem with ⟨_, mem', rfl⟩
-      conv => simp_match
-      let .qual (.mono τlc) := ih₁ _ <| Range.mem_of_mem_toList mem'
-      exact τlc
     · intro _ mem
       rcases List.mem_map.mp mem with ⟨_, mem', rfl⟩
       conv => simp_match
       let .qual (.mono ξlc) := ih₀ _ <| Range.mem_of_mem_toList mem'
       exact ξlc
+    · intro _ mem
+      rcases List.mem_map.mp mem with ⟨_, mem', rfl⟩
+      conv => simp_match
+      let .qual (.mono τlc) := ih₁ _ <| Range.mem_of_mem_toList mem'
+      exact τlc
   case lift I _ _ _ ih₀ ih₁ =>
     let ⟨a, anin⟩ := I.exists_fresh
     let .qual (.mono τlc) := ih₀ a anin
@@ -656,21 +647,20 @@ def Monotype_open_preservation (uni : Uniqueness (List.map (TypeVar_open · a n)
   generalize ξ'eq : ξ.map (·.TypeVar_open a n) = ξ' at uni
   match uni with
   | concrete ne (ℓ := ℓ) =>
-    rw [List.map_singleton_flatten] at ξ'eq
     let length_eq : List.length (List.map ..) = List.length _ := by rw [ξ'eq]
     rw [List.length_map, List.length_map, Range.length_toList, Nat.sub_zero] at length_eq
     rw [← Range.map_get!_eq (as := ξ), length_eq, List.map_map] at ξ'eq ⊢
     rw [Range.map_eq_of_eq_of_mem (by
       intro i mem
       simp only [Function.comp]
-      show _ = .label (ℓ i)
+      show _ = Monotype.label (ℓ i)
       have := Range.eq_of_mem_of_map_eq ξ'eq i mem
       simp only [Function.comp] at this
       generalize ξ''eq : ξ.get! i = ξ'' at *
       cases ξ'' <;> rw [TypeVar_open] at this
       case label => rw [Monotype_open, label.inj this]
       all_goals nomatch this
-    ), ← List.map_singleton_flatten, ← Range.map]
+    )]
     exact concrete ne
   | var =>
     let [_] := ξ
@@ -679,49 +669,48 @@ def Monotype_open_preservation (uni : Uniqueness (List.map (TypeVar_open · a n)
 def Perm_preservation {ξ' : Nat → Monotype} (uni : [[unique(</ ξ@i // i in [:n] />)]])
   (perm : List.Perm p [:n]) (eq : ∀ i, ξ' i = ξ (p.get! i))
   : [[unique(</ ξ'@i // i in [:n] />)]] := by
-  generalize ξseq : ([:n].map fun i => [ξ i]).flatten = ξs at uni
+  generalize ξseq : ([:n].map fun i => ξ i) = ξs at uni
   match uni with
   | concrete ne (ℓ := ℓ) =>
-    rw [List.map_singleton_flatten, List.map_singleton_flatten] at ξseq
-    let lengths_eq : List.length (List.map ..) = List.length _ := by rw [ξseq]
+    let lengths_eq : List.length (Range.map ..) = List.length _ := by rw [ξseq]
     rw [List.length_map, List.length_map, Std.Range.length_toList,
         Std.Range.length_toList, Nat.sub_zero, Nat.sub_zero] at lengths_eq
     cases lengths_eq
     let lengths_eq := perm.length_eq
     rw [Std.Range.length_toList] at lengths_eq
     cases lengths_eq
-    rw [List.map_singleton_flatten, Std.Range.map_eq_of_eq_of_mem (by
+    rw [Range.map_eq_of_eq_of_mem'' (by
       intro i imem
       show ξ' i = label (ℓ (p.get! i))
       rw [← Std.Range.eq_of_mem_of_map_eq ξseq (p.get! i) <| Std.Range.mem_of_mem_toList <|
-            perm.mem_iff.mp <| List.get!_mem imem.right]
+            perm.mem_iff.mp <| List.get!_mem imem.upper]
       exact eq i
-    ), ← List.map_singleton_flatten]
+    )]
     apply concrete
     intro i imem
     simp only
-    let pimem := Std.Range.mem_of_mem_toList <| perm.mem_iff.mp <| List.get!_mem imem.right
+    let pimem := Std.Range.mem_of_mem_toList <| perm.mem_iff.mp <| List.get!_mem imem.upper
     intro j jmem
-    let pjmem := Std.Range.mem_of_mem_toList <| perm.mem_iff.mp <| List.get!_mem jmem.right
+    let pjmem := Std.Range.mem_of_mem_toList <| perm.mem_iff.mp <| List.get!_mem jmem.upper
     match Nat.lt_trichotomy (p.get! i) (p.get! j) with
     | .inl piltpj =>
-      exact ne _ ⟨Nat.zero_le _, pimem.right⟩ _ ⟨Nat.succ_le_of_lt piltpj, pjmem.right⟩
+      exact ne _ ⟨Nat.zero_le _, pimem.right⟩ _
+        ⟨Nat.succ_le_of_lt piltpj, pjmem.upper, Nat.mod_one _⟩
     | .inr (.inl pieqpj) =>
       let inej : i ≠ j := Nat.ne_of_lt <| Nat.lt_of_succ_le jmem.left
       let count_le_one : [:p.length].toList.count (p.get! i) ≤ 1 := Std.Range.count_toList_le_one
       rw [← perm.count_eq (p.get! i)] at count_le_one
-      let two_le_count := List.two_le_count_of_get!_eq_of_ne imem.right jmem.right pieqpj inej
+      let two_le_count := List.two_le_count_of_get!_eq_of_ne imem.upper jmem.upper pieqpj inej
       nomatch Nat.not_lt_of_le count_le_one <| Nat.lt_of_succ_le two_le_count
     | .inr (.inr pjltpi) =>
       apply Ne.symm
-      exact ne _ ⟨Nat.zero_le _, pjmem.right⟩ _ ⟨Nat.succ_le_of_lt pjltpi, pimem.right⟩
+      exact ne _ ⟨Nat.zero_le _, pjmem.right⟩ _
+        ⟨Nat.succ_le_of_lt pjltpi, pimem.upper, Nat.mod_one _⟩
   | var =>
-    let lengths_eq : List.length (List.flatten _) = List.length _ := by rw [ξseq]
-    rw [List.map_singleton_flatten, List.length_map, Std.Range.length_toList,
-        List.length_singleton, Nat.sub_zero] at lengths_eq
+    let lengths_eq : List.length (Range.map ..) = List.length _ := by rw [ξseq]
+    rw [List.length_map, Std.Range.length_toList, List.length_singleton, Nat.sub_zero] at lengths_eq
     cases lengths_eq
-    rw [List.map_singleton_flatten, Std.Range.toList, if_neg (nomatch ·), if_pos Nat.one_pos,
-        Std.Range.toList, if_neg (nomatch ·), Nat.zero_add,
+    rw [Range.map, Range.toList, if_pos Nat.one_pos, Range.toList, Nat.zero_add,
         if_neg (Nat.not_lt_of_le (Nat.le_refl _)), List.map_singleton]
     exact var
 
@@ -761,7 +750,7 @@ theorem weakening (σke : [[Γc; Γ, Γ'' ⊢ σ : κ ⇝ A]])
   | concat μke ρ₀ke ρ₁ke ρ₂ke κe concat₀₂ke concat₁₂ke =>
     exact concat (μke.weakening ΓΓ'Γ''we) (ρ₀ke.weakening ΓΓ'Γ''we) (ρ₁ke.weakening ΓΓ'Γ''we)
       (ρ₂ke.weakening ΓΓ'Γ''we) κe (concat₀₂ke.weakening ΓΓ'Γ''we) (concat₁₂ke.weakening ΓΓ'Γ''we)
-  | tc Γcw γcin τke => exact tc Γcw γcin <| τke.weakening ΓΓ'Γ''we
+  | tc γcin τke => exact tc γcin <| τke.weakening ΓΓ'Γ''we
   | all I ψke κe ρke =>
     apply all (I ++ [[(Γ, Γ', Γ'')]].typeVarDom) _ κe <| ρke.weakening ΓΓ'Γ''we
     intro a anin
@@ -837,20 +826,20 @@ decreasing_by
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'
     rw [Range.map_eq_of_eq_of_mem (by
-          intro _ _
-          simp only [Function.comp]
-          rw [List.map_singleton]
-        ), List.map_singleton_flatten]
+      intro j _
+      show _ = (ξ j).sizeOf' + (τ j).sizeOf'
+      simp only [Function.comp]
+    )]
     exact Range.mem_map_of_mem mem
   · case _ ξ _ τ _ _ _ _ i mem =>
     apply Nat.le_trans <| Nat.le_add_left (τ i).sizeOf' (ξ i).sizeOf'
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'
     rw [Range.map_eq_of_eq_of_mem (by
-          intro _ _
-          simp only [Function.comp]
-          rw [List.map_singleton]
-        ), List.map_singleton_flatten]
+      intro j _
+      show _ = (ξ j).sizeOf' + (τ j).sizeOf'
+      simp only [Function.comp]
+    )]
     exact Range.mem_map_of_mem mem
   · exact Monotype.sizeOf'_pos _
 
@@ -882,7 +871,7 @@ theorem TermVar_drop (σke : [[Γc; Γ, x : σ₁, Γ' ⊢ σ₀ : κ ⇝ A]])
   | concat μke ρ₀ke ρ₁ke ρ₂ke κe concat₀₂ke concat₁₂ke =>
     concat μke.TermVar_drop ρ₀ke.TermVar_drop ρ₁ke.TermVar_drop ρ₂ke.TermVar_drop κe
       concat₀₂ke.TermVar_drop concat₁₂ke.TermVar_drop
-  | tc Γcw γcin τke => tc Γcw γcin τke.TermVar_drop
+  | tc γcin τke => tc γcin τke.TermVar_drop
   | all I ψke κ₀e ρke => by
     apply all I _ κ₀e ρke.TermVar_drop
     intro a anin
@@ -905,20 +894,20 @@ decreasing_by
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'
     rw [Range.map_eq_of_eq_of_mem (by
-          intro _ _
-          simp only [Function.comp]
-          rw [List.map_singleton]
-        ), List.map_singleton_flatten]
+      intro j _
+      show _ = (ξ j).sizeOf' + (τ j).sizeOf'
+      simp only [Function.comp]
+    )]
     exact Range.mem_map_of_mem mem
   · case _ ξ _ τ _ _ _ _ i mem =>
     apply Nat.le_trans <| Nat.le_add_left (τ i).sizeOf' (ξ i).sizeOf'
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'
     rw [Range.map_eq_of_eq_of_mem (by
-          intro _ _
-          simp only [Function.comp]
-          rw [List.map_singleton]
-        ), List.map_singleton_flatten]
+      intro j _
+      show _ = (ξ j).sizeOf' + (τ j).sizeOf'
+      simp only [Function.comp]
+    )]
     exact Range.mem_map_of_mem mem
   · exact Monotype.sizeOf'_pos _
 
@@ -950,7 +939,7 @@ theorem Constr_drop (σke : [[Γc; Γ, ψ ⇝ x, Γ' ⊢ σ : κ ⇝ A]])
   | concat μke ρ₀ke ρ₁ke ρ₂ke κe concat₀₂ke concat₁₂ke =>
     concat μke.Constr_drop ρ₀ke.Constr_drop ρ₁ke.Constr_drop ρ₂ke.Constr_drop κe
       concat₀₂ke.Constr_drop concat₁₂ke.Constr_drop
-  | tc Γcw γcin τke => tc Γcw γcin τke.Constr_drop
+  | tc γcin τke => tc γcin τke.Constr_drop
   | all I ψke κ₀e ρke => by
     apply all I _ κ₀e ρke.Constr_drop
     intro a anin
@@ -973,20 +962,20 @@ decreasing_by
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'
     rw [Range.map_eq_of_eq_of_mem (by
-          intro _ _
-          simp only [Function.comp]
-          rw [List.map_singleton]
-        ), List.map_singleton_flatten]
+      intro j _
+      show _ = (ξ j).sizeOf' + (τ j).sizeOf'
+      simp only [Function.comp]
+    )]
     exact Range.mem_map_of_mem mem
   · case _ ξ _ τ _ _ _ _ i mem =>
     apply Nat.le_trans <| Nat.le_add_left (τ i).sizeOf' (ξ i).sizeOf'
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'
     rw [Range.map_eq_of_eq_of_mem (by
-          intro _ _
-          simp only [Function.comp]
-          rw [List.map_singleton]
-        ), List.map_singleton_flatten]
+      intro j _
+      show _ = (ξ j).sizeOf' + (τ j).sizeOf'
+      simp only [Function.comp]
+    )]
     exact Range.mem_map_of_mem mem
   · exact Monotype.sizeOf'_pos _
 

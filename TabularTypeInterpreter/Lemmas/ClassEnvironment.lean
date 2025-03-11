@@ -1,5 +1,5 @@
 import Aesop
-import TabularTypeInterpreter.Semantics.Type.KindingAndElaboration
+import TabularTypeInterpreter.Semantics.ClassEnvironment
 import TabularTypeInterpreter.Theorems.Kind
 
 namespace TabularTypeInterpreter
@@ -66,8 +66,7 @@ theorem WellFormedness.In_append_inl (ΓcΓc'w : [[⊢c Γc, Γc']]) (γcin : [[
     case ext ΓcΓc''w TCnin mnin _ _ =>
     have := ΓcΓc''w.In_append_inl γcin
     let .mk TCₛAₛ .. := γc
-    rw [← Range.map_get!_eq (as := TCₛAₛ), Range.map, ← List.map_singleton_flatten,
-        ← Range.map] at this ⊢
+    rw [← Range.map_get!_eq (as := TCₛAₛ)] at this ⊢
     rw [TCNotInDom, TCDom_append] at TCnin
     let ⟨_, TCninΓc⟩ := List.not_mem_append'.mp TCnin
     rw [MemberNotInDom, memberDom_append] at mnin
@@ -78,11 +77,10 @@ end ClassEnvironment
 
 theorem TypeScheme.KindingAndElaboration.class_weakening (σke : [[Γc; Γ ⊢ σ : κ ⇝ A]])
   (ΓcΓc'w : [[⊢c Γc, Γc']]) : [[Γc, Γc'; Γ ⊢ σ : κ ⇝ A]] := by
-  induction σke using rec (motive_2 := fun _ _ _ _ => True)
-    (motive_3 := fun _ _ => ∀ {x : True}, True)
+  induction σke
   case scheme I _ κ₀e ih => exact scheme I (ih · · ΓcΓc'w) κ₀e
   case lift I _ κ₀e _ τih ρih => exact lift I (τih · · ΓcΓc'w) κ₀e (ρih ΓcΓc'w)
-  case tc γcin _ _ ih => exact tc ΓcΓc'w (ΓcΓc'w.In_append_inl γcin) (ih ΓcΓc'w)
+  case tc γcin _ ih => exact tc (ΓcΓc'w.In_append_inl γcin) (ih ΓcΓc'w)
   case all I _ κ₀e _ ψih ρih => exact all I (ψih · · ΓcΓc'w) κ₀e (ρih ΓcΓc'w)
   case ind I₀ I₁ _ κe _ _ ρih Bᵣih Bₗih =>
     exact ind I₀ I₁ (ρih ΓcΓc'w) κe (Bᵣih · · · · · · · · · · ΓcΓc'w) (Bₗih · · · · ΓcΓc'w)
@@ -106,8 +104,7 @@ theorem of_ClassEnvironment_in {TC} (Γcw : [[⊢c Γc]])
   | .head =>
     let Γcw@(ext _ _ _ κe σke Ake TCₛke Aₛki) := Γcw
     injection γceq with TCₛAₛeq TCeq κeq meq σeq Aeq
-    rw [List.map_singleton_flatten, List.map_singleton_flatten] at TCₛAₛeq
-    let length_eq : List.length (List.map ..) = List.length _ := by rw [TCₛAₛeq]
+    let length_eq : List.length (Range.map ..) = List.length _ := by rw [TCₛAₛeq]
     rw [List.length_map, List.length_map, Range.length_toList, Range.length_toList] at length_eq
     cases length_eq
     cases κeq
@@ -134,8 +131,7 @@ theorem of_ClassEnvironment_in {TC} (Γcw : [[⊢c Γc]])
     let Γcw@(ext Γcw' ..) := Γcw
     let ⟨_, κe, σke, Aki, TCₛke, Aₛki⟩ := Γcw'.of_ClassEnvironment_in TCin'
     injection γceq with TCₛAₛeq TCeq κeq meq σeq Aeq
-    rw [List.map_singleton_flatten, List.map_singleton_flatten] at TCₛAₛeq
-    let length_eq : List.length (List.map ..) = List.length _ := by rw [TCₛAₛeq]
+    let length_eq : List.length (Range.map ..) = List.length _ := by rw [TCₛAₛeq]
     rw [List.length_map, List.length_map, Range.length_toList, Range.length_toList] at length_eq
     cases length_eq
     cases κeq

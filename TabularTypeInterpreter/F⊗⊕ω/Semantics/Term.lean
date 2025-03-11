@@ -31,6 +31,7 @@ x : A ∈ Δ
 ────────────────── typeApp
 Δ ⊢ E [B] : A^^B
 
+⊢ Δ
 </ Δ ⊢ E@i : A@i // i in [:n] />
 ───────────────────────────────────────────────────────── prodIntro
 Δ ⊢ (</ E@i // i in [:n] />) : ⊗ {</ A@i // i in [:n] />}
@@ -42,11 +43,13 @@ n ∈ [0:n']
 
 n ∈ [0:n']
 Δ ⊢ E : A@n
+</ Δ ⊢ A@i : * // i in [:n'] />
 ─────────────────────────────────────── sumIntro
 Δ ⊢ ι n E : ⊕ {</ A@i // i in [:n'] />}
 
 Δ ⊢ E : ⊕ {</ A@i // i in [:n] />}
 </ Δ ⊢ F@i : A@i → B // i in [:n] />
+Δ ⊢ B : *
 ─────────────────────────────────────── sumElim
 Δ ⊢ case E {</ F@i // i in [:n] />} : B
 
@@ -54,6 +57,8 @@ n ∈ [0:n']
 Δ ⊢ A ≡ B
 ───────── equiv
 Δ ⊢ E : B
+
+attribute [app_unexpander Typing] Kinding.delabK
 
 judgement_syntax E " -> " F : OperationalSemantics
 
@@ -104,5 +109,17 @@ case V {</ V'@i // i in [:n] />, E, </ F@j // j in [:m] />} -> case V {</ V'@i /
 n ∈ [0:n']
 ───────────────────────────────────────────────────── sumElimIntro
 case ι n V {</ V'@i // i in [:n'] />} -> V'@n ⦅ι n V⦆
+
+namespace OperationalSemantics
+
+@[app_unexpander OperationalSemantics]
+def delabOpSem: Lean.PrettyPrinter.Unexpander
+  | `($(_) $A $B) =>
+    let info := Lean.SourceInfo.none
+    let into := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "->") }
+    `([ $A $into $B ])
+  | _ => throw ()
+
+end OperationalSemantics
 
 end TabularTypeInterpreter.«F⊗⊕ω»

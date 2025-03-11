@@ -12,7 +12,7 @@ inductive Term.EvalError where
   | nonLamSumElim
 
 local instance instInhabitedValue' : Inhabited Value where
-  default := ⟨.prodIntro [], .prodIntro fun _ => (nomatch ·)⟩
+  default := ⟨.prodIntro [], .prodIntro nofun⟩
 in
 partial
 def Term.eval (E : Term) : Except EvalError Value := do match E with
@@ -39,7 +39,7 @@ def Term.eval (E : Term) : Except EvalError Value := do match E with
     let VsAreValues := match VsAreValues with | .prodIntro h => h
     if h : n < Vs.length then
       let V := Vs.get ⟨n, h⟩
-      return ⟨V, VsAreValues V <| Vs.get_mem n h⟩
+      return ⟨V, VsAreValues V <| Vs.get_mem ⟨n, h⟩⟩
     else
       throw <| .invalidProdIdx n Vs.length
   | sumIntro n E =>

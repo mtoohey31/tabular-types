@@ -1,4 +1,5 @@
 import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Value
+import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Term
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Term
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
@@ -7,18 +8,16 @@ open Std
 
 private
 theorem _root_.Membership.mem.inc {r : Range} (h : i ∈ r) : i ∈ { r with stop := r.stop + 1 } :=
-  ⟨h.lower, Nat.lt_add_right _ h.upper⟩
+  ⟨h.lower, Nat.lt_add_right _ h.upper, h.step⟩
 
 private
-theorem progress.sandwich {f : Nat → α} (h : i < n) : (List.map (fun j => [f j]) [0:n]).flatten =
-  (List.map (fun j => [f j]) [0:i]).flatten ++
-    f i :: (List.map (fun j => [f (j + (i + 1))]) [(i + 1) - (i + 1):n - (i + 1)]).flatten := by
-  simp only [List.map_singleton_flatten]
-  congr
+theorem progress.sandwich {f : Nat → α} (h : i < n) : [0:n].map (fun j => f j) =
+  [:i].map (fun j => f j) ++
+    f i :: [(i + 1) - (i + 1):n - (i + 1)].map (fun j => f (j + (i + 1))) := by
   rw [← List.singleton_append, Range.map_shift (Nat.le_refl _)]
   have : [f i] = List.map (fun j => f j) [i:i + 1] := by
-    rw [Range.toList, if_neg Nat.one_ne_zero, if_pos (Nat.lt_succ_self _), Range.toList,
-        if_neg Nat.one_ne_zero, if_neg (Nat.not_lt_of_le (Nat.le_refl _)), List.map, List.map]
+    rw [Range.toList, if_pos (Nat.lt_succ_self _), Range.toList,
+        if_neg (Nat.not_lt_of_le (Nat.le_refl _)), List.map, List.map]
   rw [this]
   rw [Range.map_append (Nat.le_succ _) (Nat.succ_le_of_lt h),
       Range.map_append (Nat.zero_le _) (Nat.le_of_lt h)]
@@ -31,12 +30,12 @@ theorem progress.fold {E : Nat → Term} (EtyA : ∀ i ∈ [0:n], [[ε ⊢ E@i :
   induction n
   · case zero =>
     right
-    intro _ ⟨_, lt_zero⟩
+    intro _ ⟨_, lt_zero, _⟩
     contradiction
   · case succ j ih' => match ih' (fun j mem => EtyA j mem.inc) (fun j mem => h j mem.inc) with
     | .inl ⟨i, mem, ⟨E'', toE''⟩⟩ => exact .inl ⟨i, mem.inc, ⟨E'', toE''⟩⟩
     | .inr IsValue =>
-      have jmem : j ∈ [0:j + 1] := ⟨Nat.zero_le _, Nat.lt_succ_self _⟩
+      have jmem : j ∈ [0:j + 1] := ⟨Nat.zero_le _, Nat.lt_succ_self _, Nat.mod_one _⟩
       match h j jmem with
       | .inl ⟨E'', toE''⟩ => exact .inl ⟨j, jmem, ⟨IsValue, ⟨E'', toE''⟩⟩⟩
       | .inr jIsValue =>
@@ -47,10 +46,11 @@ theorem progress.fold {E : Nat → Term} (EtyA : ∀ i ∈ [0:n], [[ε ⊢ E@i :
           rw [h]
           exact jIsValue
         · case neg h =>
-          exact IsValue i ⟨Nat.zero_le _, Nat.lt_of_le_of_ne (Nat.le_of_lt_succ mem.upper) h⟩
+          exact IsValue i
+            ⟨Nat.zero_le _, Nat.lt_of_le_of_ne (Nat.le_of_lt_succ mem.upper) h, Nat.mod_one _⟩
 
 local instance : Inhabited Value where
-  default := ⟨.prodIntro [], .prodIntro fun _ => (nomatch ·)⟩
+  default := ⟨.prodIntro [], .prodIntro nofun⟩
 in
 theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue := by
   generalize Δeq : Environment.empty = Δ at EtyA
@@ -64,7 +64,9 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
       | .inr FIsValue =>
         let VE' : Value := ⟨E', E'IsValue⟩
         have : E' = VE'.1 := rfl
-        have ⟨_, _, VE'eq⟩ := VE'.eq_lam_of_ty_arr E'tyA'arrB
+        have A'Blc := E'tyA'arrB.TypeVarLocallyClosed_of
+        cases A'Blc; case arr A'lc Blc =>
+        have ⟨_, _, VE'eq⟩ := VE'.eq_lam_of_ty_arr E'tyA'arrB A'lc Blc
         rw [this, VE'eq]
         exact .inl <| .intro _ <| .lamApp (V := ⟨F, FIsValue⟩)
   · case typeLam => exact .inr .typeLam
@@ -76,18 +78,20 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
       have ⟨_, _, Veq⟩ := V.eq_typeApp_of_ty_forall E'ty
       rw [this, Veq]
       exact .inl <| .intro _ <| .typeLamApp
-  · case prodIntro n E' A E'ty ih => match progress.fold E'ty (fun i mem => ih i mem rfl) with
-    | .inl ⟨i, ⟨_, iltn⟩, IsValue, E'', toE''⟩ =>
-      let V j : Value := if h' : j < i then ⟨E' j, IsValue j ⟨Nat.zero_le _, h'⟩⟩ else default
-      rw [progress.sandwich iltn, Range.map_eq_of_eq_of_mem (fun j jmem => by
-          show [E' j] = [(V j).val]
+  · case prodIntro n E' A wf E'ty ih => match progress.fold E'ty (fun i mem => ih i mem rfl) with
+    | .inl ⟨i, ⟨_, iltn, _⟩, IsValue, E'', toE''⟩ =>
+      let V j : Value := if h' : j < i then
+          ⟨E' j, IsValue j ⟨Nat.zero_le _, h', Nat.mod_one _⟩⟩
+        else
+          default
+      rw [progress.sandwich iltn, Range.map_eq_of_eq_of_mem'' (fun j jmem => by
+          show E' j = (V j).val
           dsimp only [V]
           rw [dif_pos jmem.upper]
       ), Nat.sub_self]
       exact .inl <| .intro _ <| .prodIntro toE''
     | .inr IsValue =>
       exact .inr <| .prodIntro fun E Emem => by
-        rw [List.map_singleton_flatten] at Emem
         have ⟨i, imem, Eeq⟩ := Range.mem_of_mem_map Emem
         rw [Eeq]
         exact IsValue i imem
@@ -102,31 +106,327 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
   · case sumIntro ih => match ih rfl with
     | .inl ⟨E', toE'⟩ => exact .inl <| .intro _ <| .sumIntro toE'
     | .inr E'IsValue => exact .inr <| .sumIntro E'IsValue
-  · case sumElim E' n As F _ E'ty Fty ih₁ ih₂ => match ih₁ rfl with
+  · case sumElim E' n As F _ E'ty Fty Fki ih₁ ih₂ => match ih₁ rfl with
     | .inl ⟨E'', E'toE''⟩ => exact .inl <| .intro _ <| .sumElimL E'toE''
     | .inr E'IsValue =>
       let VE' : Value := ⟨E', E'IsValue⟩
       have ⟨n', mem, VE'', VE'_eq⟩ := VE'.eq_sumIntro_of_ty_sum E'ty
       cases VE'_eq
       match progress.fold Fty (fun i mem => ih₂ i mem rfl) with
-      | .inl ⟨j, ⟨_, jltn⟩, IsValue, F', toF'⟩ =>
-        let VF k : Value := if h' : k < j then ⟨F k, IsValue k ⟨Nat.zero_le _, h'⟩⟩ else default
-        rw [progress.sandwich jltn, Range.map_eq_of_eq_of_mem (fun j jmem => by
-          show [F j] = [(VF j).val]
+      | .inl ⟨j, ⟨_, jltn, _⟩, IsValue, F', toF'⟩ =>
+        let VF k : Value := if h' : k < j then
+            ⟨F k, IsValue k ⟨Nat.zero_le _, h', Nat.mod_one _⟩⟩
+          else
+            default
+        rw [progress.sandwich jltn, Range.map_eq_of_eq_of_mem'' (fun j jmem => by
+          show F j = (VF j).val
           dsimp only [VF]
           rw [dif_pos jmem.upper]
         ), Nat.sub_self]
         exact .inl <| .intro _ <| .sumElimR (V := VE') toF'
       | .inr FIsValue =>
-        let VF j : Value := if h : j < n then ⟨F j, FIsValue j ⟨Nat.zero_le _, h⟩⟩ else default
-        rw [List.map_singleton_flatten, Range.map_eq_of_eq_of_mem (fun i mem => by
+        let VF j : Value := if h : j < n then
+            ⟨F j, FIsValue j ⟨Nat.zero_le _, h, Nat.mod_one _⟩⟩
+          else
+            default
+        rw [Range.map_eq_of_eq_of_mem'' (fun i mem => by
           show F i = (VF i).val
           dsimp only [VF]
           rw [dif_pos mem.upper]
-        ), ← List.map_singleton_flatten]
+        )]
         exact .inl <| .intro _ <| .sumElimIntro mem
   · case equiv ih => exact ih rfl
 
-theorem preservation : [[ε ⊢ E : A]] → [[E -> E']] → [[ε ⊢ E' : A]] := sorry
+-- TODO move to appropriate files
+theorem Typing.inv_arr (Ety: [[Δ ⊢ λ x? : T. E : A → B ]]) : [[ Δ ⊢ T ≡ A ]] ∧ (∃(I: List _), ∀x ∉ I, [[ Δ, x: T ⊢ E^x : B ]]) := by sorry
+theorem Typing.inv_forall (Ety: [[Δ ⊢ Λ a? : K. E : ∀ a?: K'. A ]]) : K = K' ∧ (∃(I: List _), ∀a ∉ I, [[ Δ, a: K ⊢ E^a : A^a ]]) := by sorry
+
+theorem Term.TermVar_subst_intro_of_not_mem_freeTermVars {A: Term}: a ∉ A.freeTermVars → (A.TermVar_open a n).TermVar_subst a B = A.Term_open B n := by sorry
+theorem Term.TypeVar_subst_intro_of_not_mem_freeTypeVars {A: Term}: a ∉ A.freeTypeVars → (A.TypeVar_open a n).TypeVar_subst a B = A.Type_open B n := by sorry
+
+namespace Term
+-- NOTE only this is needed. previously called `subst_open_var`
+theorem TermVar_subst_TermVar_open {E F : Term} (neq : x ≠ y) (lc : F.TermVarLocallyClosed n) : (E.TermVar_open y n).TermVar_subst x F = (E.TermVar_subst x F).TermVar_open y n := sorry
+theorem subst_close_var {E F : Term} (neq : x ≠ y) (lc : F.TermVarLocallyClosed n) : (E.TermVar_close y n).TermVar_subst x F = (E.TermVar_subst x F).TermVar_close y n := sorry
+theorem subst_fresh {F E : Term} (fresh: a ∉ F.freeTermVars) : a ∉ (E.TermVar_subst a F |>.freeTypeVars) := sorry
+theorem subst_fresh' {F E: Term} (freshF: a ∉ F.freeTermVars) (freshE: a ∉ E.freeTermVars) : a ∉ (E.TermVar_subst a' F |>.freeTermVars) := sorry -- TODO by induction on T, wait is the a a' part right?
+
+theorem TypeVar_subst_TypeVar_open {E : Term} (neq : x ≠ y) (lc : F.TypeVarLocallyClosed n) : (E.TypeVar_open y n).TypeVar_subst x F = (E.TypeVar_subst x F).TypeVar_open y n := sorry
+
+-- FIXME wrong: what if y ∈ F.freeTypeVars?
+theorem TermVar_subst_TypeVar_open {E: Term} (fresh: y ∉ F.freeTypeVars) : (E.TypeVar_open y n).TermVar_subst x F = (E.TermVar_subst x F).TypeVar_open y n := sorry
+theorem TypeVar_subst_TermVar_open {E: Term} : (E.TermVar_open y n).TypeVar_subst x A = (E.TypeVar_subst x A).TermVar_open y n := sorry
+end Term
+namespace Typing
+
+open Environment TermVarInEnvironment  in
+theorem weakening_r' (EtyT: [[ Δ, Δ'' ⊢ E: T ]]) (wf: [[ ⊢ Δ, Δ', Δ'' ]]): [[ Δ, Δ', Δ'' ⊢ E: T ]] := by
+  generalize Δ_eq : [[ (Δ, Δ'') ]] = Δ_ at EtyT
+  induction EtyT generalizing Δ''
+  case var Δ_ x T wf' xin =>
+    subst Δ_
+    refine .var wf ?_
+    clear wf'
+    induction Δ' generalizing Δ''
+    . case empty => simp_all [empty_append]
+    . case typeExt Δ' a K ih =>
+      rw [<- append_type_assoc]
+      apply ih
+      . simp_all [append_type_assoc]
+      . apply append_elim at xin
+        cases xin
+        . case inl xin =>
+          apply TermVarInEnvironment.weakening_r
+          . simp_all [TermVarNotInDom, TermVarInDom, termVarDom_append, termVarDom]
+          . simp_all
+        . case inr xin =>
+          simp_all [TermVarInEnvironment.weakening_l]
+    . case termExt _ Δ' x' T' ih =>
+      rw [<- append_term_assoc]
+      apply ih
+      . simp_all [append_term_assoc]
+      . rw [append_term_assoc]
+        apply TermVarInEnvironment.append_elim at xin
+        cases xin
+        . case inl xin =>
+          apply TermVarInEnvironment.weakening_r
+          . simp_all
+          . by_cases (x = x')
+            . case pos eq =>
+              -- contradiction
+              subst x'
+              rw [<- append_term_assoc, append_assoc] at wf
+              have xinfv := wf.append_termVar_fresh_l x (by simp_all [termVarDom_append, termVarDom])
+              rw [termVarDom_append] at xinfv
+              aesop (add norm TermVarNotInDom, norm TermVarInDom, safe forward TermVarInDom_of)
+            . case neg neq =>
+              constructor <;> simp_all [TermVarNe]
+        . case inr xin =>
+          simp_all [TermVarInEnvironment.weakening_l]
+  case lam Δ_ A E T I EtyT ih =>
+    subst Δ_
+    refine .lam (I := I ++ Δ.termVarDom ++ Δ'.termVarDom ++ Δ''.termVarDom) (λ x xnin => ?_)
+    rw [append_termExt_assoc, append_termExt_assoc]
+    refine ih x (by simp_all) ?_ (by rw [append_termExt_assoc])
+    -- wts. ⊢ Δ, Δ', Δ'', x: A
+    refine .termVarExt wf (by simp_all [TermVarNotInDom, TermVarInDom, termVarDom_append]) ?_
+    -- wts. Δ, Δ', Δ'' ⊢ A: *
+    have := EtyT x (by simp_all)
+    have := this.WellFormedness_of
+    cases this; case termVarExt h1 h2 AkiStar =>
+    refine AkiStar.weakening_r' (λ a anin => ?_)
+    exact wf.append_typeVar_fresh_l a (by simp_all [typeVarDom_append])
+  case typeLam Δ_ A E T I EtyT ih =>
+    subst Δ_
+    refine .typeLam (I := I ++ Δ.typeVarDom ++ Δ'.typeVarDom ++ Δ''.typeVarDom) (λ a anin => ?_)
+    rw [append_typeExt_assoc, append_typeExt_assoc]
+    refine ih a (by simp_all) ?_ (by rw [append_typeExt_assoc])
+    exact .typeVarExt wf (by simp_all [TypeVarNotInDom, TypeVarInDom, typeVarDom_append])
+  case typeApp Δ_ E K T B EtyT BkiK ih =>
+    subst Δ_
+    refine .typeApp (ih wf rfl) ?_
+    apply BkiK.weakening_r' (λ a anin => ?_)
+    exact wf.append_typeVar_fresh_l a (by simp_all [typeVarDom_append])
+  case sumIntro i n Δ_ _ T _ _ TkiStar ih =>
+    subst Δ_
+    refine .sumIntro (by simp_all) (by simp_all) (λ x xin => ?_)
+    specialize TkiStar x xin
+    refine TkiStar.weakening_r' (λ a anin => ?_)
+    exact wf.append_typeVar_fresh_l a (by simp_all [typeVarDom_append])
+  case sumElim Δ_ E n T F B EtyT FtyTB BkiStar ih1 ih2 =>
+    subst Δ_
+    refine .sumElim (ih1 wf rfl) (λ x xin => ih2 x xin wf rfl) ?_
+    apply BkiStar.weakening_r' (λ a anin => ?_)
+    exact wf.append_typeVar_fresh_l a (by simp_all [typeVarDom_append])
+  case equiv Δ_ E T T' EtyT equiv ih =>
+    subst Δ_
+    exact .equiv (ih wf rfl) (equiv.weakening wf.EnvironmentTypeWellFormedness_of)
+  all_goals aesop (add unsafe constructors Typing) (config := { enableSimp := false })
+
+theorem weakening_r (EtyT: [[ Δ ⊢ E: T ]]) (wf: [[ ⊢ Δ, Δ' ]]): [[ Δ, Δ' ⊢ E: T ]] := by
+  apply weakening_r' (Δ'' := Environment.empty) <;> simp_all [Environment.append]
+
+theorem term_subst' (EtyA: [[ Δ, x: T, Δ' ⊢ E: A ]]) (FtyT : [[ Δ ⊢ F: T ]]): [[ Δ, Δ' ⊢ E[F/x] : A ]] := by
+  generalize Δ_eq : [[ (Δ, x:T, Δ') ]] = Δ_ at EtyA
+  induction EtyA generalizing Δ' <;> try simp_all [Term.TermVar_subst]
+  . case var Δ_ x' A wf x'in =>
+    subst Δ_
+    by_cases (x = x')
+    . case pos eq =>
+      simp_all
+      subst x'
+      -- 1. by wf we know x ∉ Δ'.typeVarDom
+      have fresh := wf.append_termVar_fresh_r x (by constructor)
+      -- 2. then by uniqueness we know from x'In that A = T
+      have eq := x'in.unique (T':=T) (by
+        apply TermVarInEnvironment.weakening_r fresh
+        constructor
+      )
+      subst A
+      -- 3. then wts Δ, Δ' ⊢ F: T, by weakening FtyT we are done
+      apply weakening_r FtyT wf.TermVar_drop
+    . case neg neq =>
+      simp_all
+      -- 1. by x'in we know x': A is either in (Δ, x: T) or Δ'
+      apply TermVarInEnvironment.append_elim at x'in
+      refine .var wf.TermVar_drop ?_
+      cases x'in
+      . case inl x'in =>
+        -- 2a. If x': A ∈ Δ, x: T, we also know that x': A ∉ dom(Δ')
+        obtain ⟨notInΔ', x'in⟩ := x'in
+        -- 3a. and by x ≠ x' we know x': A ∈ Δ.
+        --     wts. x': A ∈ Δ, Δ', by weakening we are done
+        exact TermVarInEnvironment.weakening_r notInΔ' (by cases x'in <;> simp_all)
+      . case inr x'in =>
+        -- 2b. If x': A ∈ Δ', similarly by weakening we are done
+        exact TermVarInEnvironment.weakening_l x'in
+  . case lam Δ_ A E B I EtyB ih =>
+    subst Δ_
+    refine .lam (I := x :: I) (λ x' x'nin => ?_)
+    rw [<- Term.TermVar_subst_TermVar_open (by aesop) (FtyT.TermVarLocallyClosed_of)]
+    exact ih x' (by simp_all) (by rw [Environment.append_termExt_assoc])
+  . case app Δ_ E1 A B E2 E1tyAB E2tyA ih1 ih2 =>
+    subst Δ_
+    exact .app (ih1 rfl) (ih2 rfl)
+  . case typeLam Δ_ K E A I EtyA ih =>
+    subst Δ_
+    refine .typeLam (I := x :: (I ++ F.freeTypeVars)) (λ a' a'nin => ?_)
+    rw [<- Term.TermVar_subst_TypeVar_open (by simp_all)]
+    exact ih a' (by simp_all) (by rw [Environment.append_typeExt_assoc])
+  . case typeApp Δ_ E K A B EtyA BkiK ih =>
+    subst Δ_
+    exact .typeApp (ih rfl) BkiK.TypeVar_drop
+  . case prodIntro Δ_ _ _ _ wf _ _ =>
+    subst Δ_
+    exact .prodIntro wf.TermVar_drop (by simp_all)
+  . case prodElim Δ_ _ n _ _ _ _ _ =>
+    subst Δ_
+    exact .prodElim (n' := n) (by simp_all) (by simp_all)
+  . case sumIntro _ n Δ_ _ _ _ EtyA AkiStar _ =>
+    subst Δ_
+    refine .sumIntro (n' := n) (by simp_all) (by simp_all) (λ x xin => AkiStar x xin |>.TypeVar_drop)
+  . case sumElim Δ_ _ n _ _ _ _ _ BkiStar _ ih2 =>
+    subst Δ_
+    exact .sumElim (n := n) (by simp_all) (λ x xin => ih2 x xin rfl) BkiStar.TypeVar_drop
+  . case equiv Δ_ E A B EtyA equiv ih =>
+    subst Δ_
+    refine .equiv (ih rfl) equiv.TermVar_drop
+end Typing
+
+theorem Typing.term_subst (EtyA: [[ Δ, x: T ⊢ E: A ]]) (FtyT : [[ Δ ⊢ F: T ]]): [[ Δ ⊢ E[F/x] : A ]] :=
+  Typing.term_subst' (Δ' := [[ ε ]]) EtyA FtyT
+
+open Environment TermVarInEnvironment in
+theorem Typing.type_subst' (EtyA: [[ Δ, a: K, Δ' ⊢ E: A ]]) (BkiK : [[ Δ ⊢ B: K ]]): [[ Δ, Δ'[B/a] ⊢ E[B/a] : A[B/a] ]] := by
+  generalize Δ_eq : [[ (Δ, a:K, Δ') ]] = Δ_ at EtyA
+  induction EtyA generalizing Δ' <;> try simp_all [Term.TypeVar_subst, Type.TypeVar_subst]
+  . case var Δ_ x' A wf x'in =>
+    subst Δ_
+    refine .var (wf.TypeVar_subst BkiK) ?_
+    obtain ⟨x'nin, x'in'⟩ | x'in' := x'in.append_elim
+    . case inl.intro =>
+      -- a) x': A ∈ Δ, wts. x': A[B/α] ∈ Δ
+      refine append_intro_l ?_ (by
+        clear * - x'nin
+        simp_all [TermVarNotInDom, TermVarInDom]
+        induction Δ' <;> simp_all [TypeVar_subst, termVarDom]
+      )
+      -- 1. by wf we know ∀x: A ∈ Δ, a ∉ A.freeTypeVars
+      cases x'in'; case typeVarExt x'in' =>
+      rw [<- append_type_assoc] at wf
+      have anin := x'in'.freeTypeVars_in_Δ wf.weakening a
+        |>.mt (wf.append_typeVar_fresh_l a (by simp_all [typeVarDom_append, typeVarDom]))
+      -- 2. so a ∉ A, therefore A[B/a] = A, so x': A[B/α] ∈ Δ. Done.
+      rw [Type.TypeVar_subst_id_of_not_mem_freeTypeVars anin]
+      exact x'in'
+    . case inr =>
+      -- b) x': A ∈ Δ', by definition of Env.TypeVar_subst and Kind.TypeVar_subst we are done.
+      clear * - x'in'
+      induction x'in' <;> simp_all [TypeVar_subst] <;> constructor <;> simp_all
+  . case lam Δ_ A1 E A2 I EtyA2 ih =>
+    subst Δ_
+    refine .lam (I := I ++ Δ.termVarDom ++ Δ'.termVarDom) (λ x xnin => ?_)
+    rw [<- Term.TypeVar_subst_TermVar_open]
+    exact ih x (by simp_all) (by rw [append_termExt_assoc])
+  . case app Δ_ E1 A B E2 E1tyAB E2tyA ih1 ih2 =>
+    subst Δ_
+    exact .app (ih1 rfl) (ih2 rfl)
+  . case typeLam Δ_ K' E A I EtyA ih =>
+    subst Δ_
+    refine .typeLam (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom) (λ a' a'nin => ?_)
+    rw [
+      <- Term.TypeVar_subst_TypeVar_open (by aesop) BkiK.TypeVarLocallyClosed_of,
+      <- Type.subst_open_var (by aesop) BkiK.TypeVarLocallyClosed_of
+    ]
+    exact ih a' (by simp_all) (by rw [append_typeExt_assoc])
+  . case typeApp Δ_ E K2 A1 A2 EtyA1 A2kiK2 ih =>
+    subst Δ_
+    rw [BkiK.TypeVarLocallyClosed_of.Type_open_TypeVar_subst_dist]
+    refine .typeApp (ih rfl) ?_
+    exact A2kiK2.subst' EtyA1.WellFormedness_of BkiK
+  . case prodIntro Δ_ _ _ _ wf _ _ =>
+    subst Δ_
+    refine .prodIntro (wf.subst BkiK) (by simp_all)
+  . case prodElim Δ_ E n A i EtyA iRange ih =>
+    subst Δ_
+    specialize ih rfl
+    unfold Function.comp at ih
+    simp_all
+    have ⟨A', A'eq⟩: ∃A': ℕ → «Type», ∀i, A' i = (A i).TypeVar_subst a B := ⟨λi => (A i).TypeVar_subst a B, λi => by simp⟩
+    rw [<- A'eq i]; rw [<- funext (λi => A'eq i)] at ih
+    refine .prodElim (n' := n) ih iRange
+  . case sumIntro _ n Δ_ _ _ _ EtyA A'kiStar _ =>
+    subst Δ_
+    refine .sumIntro (n' := n) (by simp_all) (by simp_all) (λ x xin => ?_)
+    exact A'kiStar x xin |>.subst' EtyA.WellFormedness_of BkiK
+  . case sumElim Δ_ E n _ _ _ EtyA _ B'kiStar ih1 ih2 =>
+    subst Δ_
+    exact .sumElim (n := n) (by unfold Function.comp at ih1; simp_all) (λ x xin => ih2 x xin rfl) (B'kiStar.subst' EtyA.WellFormedness_of BkiK)
+  . case equiv Δ_ E A A' EtyA equiv ih =>
+    subst Δ_
+    refine .equiv (ih rfl) (equiv.subst' EtyA.WellFormedness_of BkiK)
+
+theorem Typing.type_subst (EtyA: [[ Δ, a: K ⊢ E: A ]]) (BkiK : [[ Δ ⊢ B: K ]]): [[ Δ ⊢ E[B/a] : A[B/a] ]] :=
+  Typing.type_subst' (Δ' := [[ ε ]]) EtyA BkiK
+
+theorem preservation (EtyA: [[Δ ⊢ E : A]]) (Estep: [[E -> E']]): [[Δ ⊢ E' : A]] := by
+  induction EtyA generalizing E' <;> (try cases Estep; done) -- values can't step
+  . case app => -- TODO subject to inversion and term subst
+    cases Estep
+    . case appL => aesop (add unsafe constructors Typing)
+    . case appR => aesop (add unsafe constructors Typing)
+    . case lamApp Δ A B T E V EtyAarrB ihE VtyA ihV =>
+      have ⟨TeqA, I, EtyAarrB⟩ := EtyAarrB.inv_arr
+      have ⟨x, notIn⟩ := (I ++ E.freeTermVars).exists_fresh
+      specialize EtyAarrB x (by simp_all)
+      rw [<- Term.TermVar_subst_intro_of_not_mem_freeTermVars (a := x) (by simp_all)]
+      apply Typing.term_subst
+      . assumption
+      . constructor
+        . assumption
+        . exact TeqA.symm
+  . case typeApp  =>
+    cases Estep
+    . case typeApp => aesop (add unsafe constructors Typing)
+    . case typeLamApp Δ K' A B BkiK K E EtyA ih =>
+      have ⟨Keq, I, EtyA⟩ := EtyA.inv_forall
+      subst K
+      have ⟨a, notIn⟩ := (I ++ E.freeTypeVars ++ A.freeTypeVars).exists_fresh
+      specialize EtyA a (by simp_all)
+      rw [<- Term.TypeVar_subst_intro_of_not_mem_freeTypeVars (a := a) (by simp_all)]
+      rw [<- Type.TypeVar_subst_intro_of_not_mem_freeTypeVars (a := a) (by simp_all)]
+      apply Typing.type_subst <;> assumption
+  . case prodIntro n Δ E A EtyA ih => sorry
+  . case prodElim Δ E n' A n EtyA In ih =>
+    cases Estep
+    . case prodElim E' Estep => aesop (add unsafe constructors Typing)
+    . case prodElimIntro n' E In =>
+      sorry -- TODO sandwith stuff
+  . case sumIntro => sorry
+  . case sumElim => sorry
+  . case equiv Δ E A B EtyA eq ih =>
+    specialize ih Estep
+    constructor <;> assumption
+
 
 end TabularTypeInterpreter.«F⊗⊕ω»

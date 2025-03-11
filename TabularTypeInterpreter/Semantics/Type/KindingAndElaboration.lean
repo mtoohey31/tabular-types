@@ -1,11 +1,11 @@
-import Lott.DSL.Elab.JudgementComprehension
-import Lott.DSL.Elab.OrJudgement
-import Lott.DSL.Elab.UniversalJudgement
+import Lott.Elab.JudgementComprehension
+import Lott.Elab.OrJudgement
+import Lott.Elab.UniversalJudgement
 import TabularTypeInterpreter.Data.Range
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Type
 import TabularTypeInterpreter.Semantics.Kind
-import TabularTypeInterpreter.Semantics.TypeEnvironment
-import TabularTypeInterpreter.Semantics.ClassEnvironment
+import TabularTypeInterpreter.Semantics.TypeEnvironment.Basic
+import TabularTypeInterpreter.Semantics.ClassEnvironment.Basic
 
 namespace TabularTypeInterpreter
 
@@ -27,10 +27,6 @@ unique(ξ)
 open «F⊗⊕ω»
 
 judgement_syntax Γc "; " Γ " ⊢ " σ " : " κ " ⇝ " A : TypeScheme.KindingAndElaboration
-
-judgement_syntax Γc " ⊢ " Γ " ⇝ " Δ : TypeEnvironment.WellFormednessAndElaboration
-
-judgement_syntax "⊢c " Γc : ClassEnvironment.WellFormedness
 
 mutual
 
@@ -111,7 +107,6 @@ n ≠ 0 ∨ b
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── concat
 Γc; Γ ⊢ ρ₀ ⊙(μ) ρ₁ ~ ρ₂ : C ⇝ ⊗ {∀ a : K ↦ *. (⊗ (a$0 ⟦A₀⟧)) → (⊗ (a$0 ⟦A₁⟧)) → ⊗ (a$0 ⟦A₂⟧), ∀ a : K ↦ *. ∀ aₜ : *. ((⊕ (a$1 ⟦A₀⟧)) → aₜ$0) → ((⊕ (a$1 ⟦A₁⟧)) → aₜ$0) → (⊕ (a$1 ⟦A₂⟧)) → aₜ$0, Bₗ, Bᵣ}
 
-⊢c Γc
 (</ TCₛ@i a ⇝ Aₛ@i // i in [:n] /> ⇒ TC a : κ) ↦ m : σ ⇝ A ∈ Γc
 Γc; Γ ⊢ τ : κ ⇝ B
 ─────────────────────────────────────────────────────────────── tc {TC}
@@ -133,45 +128,6 @@ n ≠ 0 ∨ b
 Γc; Γ ⊢ (Lift (λ a : *. τ) ρ₀) ⊙(C) ρ₁ ~ ρ₂ : C ⇝ A
 ─────────────────────────────────────────────────── split
 Γc; Γ ⊢ Split (λ a : *. τ) ρ₀ ⊙' ρ₁ ~ ρ₂ : C ⇝ A
-
-judgement TypeEnvironment.WellFormednessAndElaboration :=
-
-────────── empty
-Γc ⊢ ε ⇝ ε
-
-Γc ⊢ Γ ⇝ Δ
-a ∉ dom(Γ)
-⊢ κ ⇝ K
-──────────────────────── typeExt
-Γc ⊢ Γ, a : κ ⇝ Δ, a : K
-
-Γc ⊢ Γ ⇝ Δ
-x ∉ dom'(Γ)
-Γc; Γ ⊢ σ : * ⇝ A
-──────────────────────── termExt
-Γc ⊢ Γ, x : σ ⇝ Δ, x : A
-
-Γc ⊢ Γ ⇝ Δ
-x ∉ dom'(Γ)
-Γc; Γ ⊢ ψ : C ⇝ A
-──────────────────────── constrExt
-Γc ⊢ Γ, ψ ⇝ x ⇝ Δ, x : A
-
-judgement ClassEnvironment.WellFormedness :=
-
-──── empty
-⊢c ε
-
-⊢c Γc
-TC ∉ dom(Γc)
-m ∉ dom(Γc)
-⊢ κ ⇝ K
-∀ a, Γc; ε, a : κ ⊢ σ^a : * ⇝ A^a
-∀ a, ε, a : K ⊢ A^a : *
-</ ∀ a, Γc; ε, a : κ ⊢ TCₛ@i a : C ⇝ Aₛ@i^a // i in [:n] />
-</ ∀ a, ε, a : K ⊢ Aₛ@i^a : * // i in [:n] />
-───────────────────────────────────────────────────────────────── ext {TC}
-⊢c Γc, (</ TCₛ@i a ⇝ Aₛ@i // i in [:n] /> ⇒ TC a : κ) ↦ m : σ ⇝ A
 
 end
 
@@ -222,7 +178,7 @@ judgement TypeScheme.SubtypingAndElaboration :=
 ───────────────────────────── refl
 Γc; Γ ⊢ σ <: σ ⇝ λ x : A. x$0
 
--- TODO: Add transitivity and convert to subtyping
+-- TODO: Add transitivity
 
 -- TODO: Explain why we don't have an app rule here in the paper.
 
