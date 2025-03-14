@@ -30,6 +30,21 @@ theorem TermVar_open_sizeOf : sizeOf (TermVar_open E x n) = sizeOf E := by
   induction E using rec_uniform generalizing n <;> aesop
     (add simp TermVar_open, safe List.sizeOf_map_eq_of_eq_id_of_mem)
 
+theorem TypeVar_open_TermVar_open_comm
+  : (TermVar_open E x n).TypeVar_open a m = (E.TypeVar_open a m).TermVar_open x n := by
+  induction E using rec_uniform generalizing m n <;> aesop (add simp [TermVar_open, TypeVar_open])
+
+theorem TypeVar_open_TermVar_subst_comm {E: Term} : (E.TermVar_open y n).TypeVar_subst x A = (E.TypeVar_subst x A).TermVar_open y n := by
+  induction E using rec_uniform generalizing n <;> simp_all [TermVar_open, TypeVar_subst]
+
+theorem TermVar_subst_intro_of_not_mem_freeTermVars {A: Term}: a ∉ A.freeTermVars → (A.TermVar_open a n).TermVar_subst a B = A.Term_open B n := by
+  induction A using rec_uniform generalizing B n <;>
+    aesop (add simp [TermVar_subst, TermVar_open, Term_open, freeTermVars, TermVar_open])
+
+theorem TypeVar_subst_intro_of_not_mem_freeTypeVars {A: Term}: a ∉ A.freeTypeVars → (A.TypeVar_open a n).TypeVar_subst a B = A.Type_open B n := by
+  induction A using rec_uniform generalizing B n <;>
+    simp_all [TypeVar_subst, TypeVar_open, Type_open, freeTypeVars, TypeVar_open, Type.TypeVar_subst_intro_of_not_mem_freeTypeVars]
+
 namespace TypeVarLocallyClosed
 
 theorem TypeVar_open_id : TypeVarLocallyClosed E n → E.TypeVar_open a n = E := by
@@ -60,6 +75,10 @@ theorem weaken (Elc : TypeVarLocallyClosed E m) : E.TypeVarLocallyClosed (m + n)
 where
   of_eq {E m n} (Elc : TypeVarLocallyClosed E m) (eq : m = n) : E.TypeVarLocallyClosed n := by
     rwa [eq] at Elc
+
+theorem TermVar_open_TypeVar_subst_comm {E: Term} (lc: F.TypeVarLocallyClosed n) : (E.TypeVar_open y n).TermVar_subst x F = (E.TermVar_subst x F).TypeVar_open y n := by
+  induction E using rec_uniform generalizing n <;> aesop
+    (add simp [TypeVar_open, TermVar_subst], 40% forward TypeVar_open_id, 40% weaken)
 
 theorem prod_id (Alc : A.TypeVarLocallyClosed)
   : [[Λ a : K ↦ *. λ x : ⊗ (a$0 ⟦A⟧). x$0]].TypeVarLocallyClosed :=
@@ -97,13 +116,33 @@ where
   of_eq {E m n} (Elc : TermVarLocallyClosed E m) (eq : m = n) : E.TermVarLocallyClosed n := by
     rwa [eq] at Elc
 
+theorem Term_open_id : TermVarLocallyClosed A n → A.Term_open B n = A := by
+  induction A using rec_uniform generalizing n <;> aesop
+    (add simp [Term_open], safe cases TermVarLocallyClosed, safe List.map_eq_id_of_eq_id_of_mem)
+
+private
+theorem Term_open_id' : TermVarLocallyClosed A n → A = A.Term_open B n := (Term_open_id · |>.symm)
+
+theorem TermVar_open_TermVar_subst_comm {E F : Term} (lc : F.TermVarLocallyClosed n) (neq : x ≠ y) : (E.TermVar_open y n).TermVar_subst x F = (E.TermVar_subst x F).TermVar_open y n := by
+  set_option aesop.dev.statefulForward false in
+  induction E using rec_uniform generalizing n <;> aesop
+    (add simp [TermVar_open, TermVar_subst], 40% Term_open_id', 40% forward TermVar_open_id, 40% weaken)
+
 end TermVarLocallyClosed
 
-theorem TypeVar_open_TermVar_open_comm
-  : (TermVar_open E x n).TypeVar_open a m = (E.TypeVar_open a m).TermVar_open x n := by
-  induction E using rec_uniform generalizing m n <;> aesop (add simp [TermVar_open, TypeVar_open])
-
 end Term
+
+namespace Type.TypeVarLocallyClosed
+
+private
+theorem Type_open_id' : Term.TypeVarLocallyClosed A n → A = A.Type_open B n := (Term.TypeVarLocallyClosed.Type_open_id · |>.symm)
+
+theorem Term_TypeVar_open_TypeVar_subst_comm {E : Term} (lc : F.TypeVarLocallyClosed n) (neq : x ≠ y) : (E.TypeVar_open y n).TypeVar_subst x F = (E.TypeVar_subst x F).TypeVar_open y n := by
+  set_option aesop.dev.statefulForward false in
+  induction E using Term.rec_uniform generalizing n <;> aesop
+    (add simp [Term.TypeVar_open, Term.TypeVar_subst], 40% Type_open_id', 40% forward Term.TypeVarLocallyClosed.TypeVar_open_id, 40% Term.TypeVarLocallyClosed.weaken, 40% Type.TypeVarLocallyClosed.TypeVar_open_TypeVar_subst_comm, 40% Type.TypeVarLocallyClosed.weaken)
+
+end Type.TypeVarLocallyClosed
 
 namespace Typing
 
@@ -201,7 +240,7 @@ theorem Δext_TypeVarLocallyClosed_of' (EtyA : [[Δ, x: T, Δ' ⊢ E : A]]) : T.
 theorem Δext_TypeVarLocallyClosed_of (EtyA : [[Δ, x: T ⊢ E : A]]) : T.TypeVarLocallyClosed :=
   EtyA.Δext_TypeVarLocallyClosed_of' (Δ' := .empty)
 
-theorem TypeVarLocallyClosed_of (EtyA : [[Δ ⊢ E : A]]) : A.TypeVarLocallyClosed 0 := by
+theorem Type_TypeVarLocallyClosed_of (EtyA : [[Δ ⊢ E : A]]) : A.TypeVarLocallyClosed 0 := by
   induction EtyA
   . case var Δ x A wf In =>
     induction In <;> (try cases wf; simp_all)
@@ -244,7 +283,36 @@ theorem TypeVarLocallyClosed_of (EtyA : [[Δ ⊢ E : A]]) : A.TypeVarLocallyClos
     exact Aki j (by simp_all [Std.Range.mem_of_mem_toList]) |>.TypeVarLocallyClosed_of
   . case sumElim Δ E n As Fs B EtyA FtyAB Bki ih1 ih2 =>
     exact Bki.TypeVarLocallyClosed_of
-  . case equiv Δ E A B EtyA eqAB ih => sorry -- TODO by equiv -> equiv closure of pred -> equiv pred preserves lc
+  . case equiv Δ E A B EtyA eqAB ih =>
+    exact eqAB.EqParallelReduction_of.preserve_lc.1 ih
+
+theorem TypeVarLocallyClosed_of (EtyA : [[Δ ⊢ E : A]]) : E.TypeVarLocallyClosed := by
+  induction EtyA with
+  | var _ _ => exact .var
+  | lam I ihTy ihLc =>
+    let ⟨x, xnin⟩ := I.exists_fresh
+    exact .lam
+      (ihTy x xnin |>.Δext_TypeVarLocallyClosed_of)
+      (ihLc x xnin |>.TermVar_open_drop)
+  | app _ _ ih₀ ih₁ => exact .app ih₀ ih₁
+  | typeLam I _ ih =>
+    let ⟨x, xnin⟩ := I.exists_fresh
+    exact .typeLam <| ih x xnin |>.weaken.TypeVar_open_drop Nat.one_pos
+  | typeApp _ BkiK ih =>
+    refine .typeApp ih BkiK.TypeVarLocallyClosed_of
+  | prodIntro _ _ ih =>
+    exact .prodIntro fun E mem => by
+      let ⟨i, mem', eq⟩ := Std.Range.mem_of_mem_map mem
+      cases eq
+      exact ih i mem'
+  | prodElim _ _ ih => exact .prodElim ih
+  | sumIntro _ _ _ ih => exact .sumIntro ih
+  | sumElim _ _ _ ih₀ ih₁ =>
+    exact .sumElim ih₀ fun i mem => by
+      let ⟨i, mem', eq⟩ := Std.Range.mem_of_mem_map mem
+      cases eq
+      exact ih₁ i mem'
+  | equiv Ety' _ ih => exact ih
 
 
 theorem TermVarLocallyClosed_of (EtyA : [[Δ ⊢ E : A]]) : E.TermVarLocallyClosed := by

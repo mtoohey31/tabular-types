@@ -208,7 +208,7 @@ theorem subst' (kT: [[ Δ, a: K, Δ' ⊢ T: K' ]]) (wf: [[ ⊢ Δ, a: K, Δ' ]])
   case lam Δ_ K1 T K2 I kind ih =>
     subst Δ_
     refine .lam (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom) (λ a' notIn => ?_)
-    rw [<- Type.subst_open_var (by aesop) (kA.TypeVarLocallyClosed_of)]
+    rw [<- kA.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm (by aesop)]
     refine ih a' (by simp_all) ?_ (by rw [Environment.append_typeExt_assoc])
     -- wf
     refine .typeVarExt wf ?_
@@ -216,7 +216,7 @@ theorem subst' (kT: [[ Δ, a: K, Δ' ⊢ T: K' ]]) (wf: [[ ⊢ Δ, a: K, Δ' ]])
   case scheme Δ_ K1 T K2 I kind ih =>
     subst Δ_
     refine .scheme (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom) (λ a' notIn => ?_)
-    rw [<- Type.subst_open_var (by aesop) (kA.TypeVarLocallyClosed_of)]
+    rw [<- kA.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm (by aesop)]
     refine ih a' (by simp_all) ?_ (by rw [Environment.append_typeExt_assoc])
     -- wf
     refine .typeVarExt wf ?_

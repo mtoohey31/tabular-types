@@ -283,15 +283,15 @@ theorem subst_in {A B T: «Type»} (red: [[ Δ ⊢ A ≡> B ]]) (lcA: A.TypeVarL
   . case lam I K T lc ih =>
     apply ParallelReduction.lam (I := a :: I ++ A.freeTypeVars ++ Δ.typeVarDom)
     intro a' notIn
-    rw [<- Type.subst_open_var (neq := by aesop) (lc := lcA)]
-    rw [<- Type.subst_open_var (neq := by aesop) (lc := red.preserve_lc lcA)]
+    rw [<- lcA.TypeVar_open_TypeVar_subst_comm (by aesop)]
+    rw [<- red.preserve_lc lcA |>.TypeVar_open_TypeVar_subst_comm (by aesop)]
     obtain red := weakening_type (a := a') (K := K) (red := red) (freshΔ := by simp_all)
     simp_all
   . case «forall» I K T lc ih =>
     apply ParallelReduction.scheme (I := a :: I ++ A.freeTypeVars ++ Δ.typeVarDom)
     intro a' notIn
-    rw [<- Type.subst_open_var (neq := by aesop) (lc := lcA)]
-    rw [<- Type.subst_open_var (neq := by aesop) (lc := red.preserve_lc lcA)]
+    rw [<- lcA.TypeVar_open_TypeVar_subst_comm (by aesop)]
+    rw [<- red.preserve_lc lcA |>.TypeVar_open_TypeVar_subst_comm (by aesop)]
     obtain red := weakening_type (a := a') (K := K) (red := red) (freshΔ := by simp_all)
     simp_all
   . case list Tl lc ih =>
@@ -312,7 +312,7 @@ theorem subst_out' {A T T' : «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red : [[ �
     apply ParallelReduction.lamApp (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom)
     . apply Kinding.subst' (K := K) <;> simp_all
     . intro a' notIn
-      repeat rw [<- Type.subst_open_var (neq := by aesop) (lc := kindA.TypeVarLocallyClosed_of)]
+      repeat rw [<- kindA.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm (neq := by aesop)]
       rw [Environment.append_typeExt_assoc, Environment.typeExt_subst]
       apply ihT1 <;> simp_all [Environment.append]
       . constructor <;> simp_all [Environment.typeVarDom, Environment.typeVarDom_append, Environment.TypeVarNotInDom, Environment.TypeVarInDom]
@@ -328,7 +328,7 @@ theorem subst_out' {A T T' : «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red : [[ �
     . intro i mem
       apply Kinding.subst' (K := K) <;> simp_all
     . intro a' notIn
-      repeat rw [<- Type.subst_open_var (neq := by aesop) (lc := kindA.TypeVarLocallyClosed_of)]
+      repeat rw [<- kindA.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm (neq := by aesop)]
       rw [Environment.append_typeExt_assoc, Environment.typeExt_subst]
       apply ihT1 <;> simp_all [Environment.append]
       . constructor <;> simp_all [Environment.typeVarDom, Environment.typeVarDom_append, Environment.TypeVarNotInDom, Environment.TypeVarInDom]
@@ -339,7 +339,7 @@ theorem subst_out' {A T T' : «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red : [[ �
     subst Δ_
     apply ParallelReduction.lam (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom)
     intro a' notIn
-    repeat rw [<- Type.subst_open_var (neq := by aesop) (lc := kindA.TypeVarLocallyClosed_of)]
+    repeat rw [<- kindA.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm (neq := by aesop)]
     rw [Environment.append_typeExt_assoc, Environment.typeExt_subst]
     apply ih <;> simp_all [Environment.append]
     . constructor <;> simp_all [Environment.typeVarDom, Environment.typeVarDom_append, Environment.TypeVarNotInDom, Environment.TypeVarInDom]
@@ -347,7 +347,7 @@ theorem subst_out' {A T T' : «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red : [[ �
     subst Δ_
     apply ParallelReduction.scheme (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom)
     intro a' notIn
-    repeat rw [<- Type.subst_open_var (neq := by aesop) (lc := kindA.TypeVarLocallyClosed_of)]
+    repeat rw [<- kindA.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm (neq := by aesop)]
     rw [Environment.append_typeExt_assoc, Environment.typeExt_subst]
     apply ih <;> simp_all [Environment.append]
     . constructor <;> simp_all [Environment.typeVarDom, Environment.typeVarDom_append, Environment.TypeVarNotInDom, Environment.TypeVarInDom]
@@ -374,8 +374,8 @@ theorem subst_all' {A B T: «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red1: [[ Δ 
     . apply Kinding.subst' (K := K) <;> assumption
     . case a =>
       intro a' notIn
-      rw [<- Type.subst_open_var (neq := by aesop) (lc := kindA.TypeVarLocallyClosed_of)]
-      rw [<- Type.subst_open_var (neq := by aesop) (lc := (red1.preserve_lc kindA.TypeVarLocallyClosed_of))]
+      rw [<- kindA.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm (neq := by aesop)]
+      rw [<- red1.preserve_lc kindA.TypeVarLocallyClosed_of |>.TypeVar_open_TypeVar_subst_comm (neq := by aesop)]
       rw [Environment.append_typeExt_assoc, Environment.typeExt_subst]
       apply ihT1 <;> simp_all [Environment.append]
       . constructor <;> simp_all [Environment.typeVarDom, Environment.typeVarDom_append, Environment.TypeVarNotInDom, Environment.TypeVarInDom]
@@ -394,8 +394,8 @@ theorem subst_all' {A B T: «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red1: [[ Δ 
       apply Kinding.subst' (K := K) <;> simp_all
     . case a =>
       intro a' notIn
-      rw [<- Type.subst_open_var (neq := by aesop) (lc := kindA.TypeVarLocallyClosed_of)]
-      rw [<- Type.subst_open_var (neq := by aesop) (lc := (red1.preserve_lc kindA.TypeVarLocallyClosed_of))]
+      rw [<- kindA.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm (neq := by aesop)]
+      rw [<- red1.preserve_lc kindA.TypeVarLocallyClosed_of |>.TypeVar_open_TypeVar_subst_comm (neq := by aesop)]
       rw [Environment.append_typeExt_assoc, Environment.typeExt_subst]
       apply ihT1 <;> simp_all [Environment.append]
       . constructor <;> simp_all [Environment.typeVarDom, Environment.typeVarDom_append, Environment.TypeVarNotInDom, Environment.TypeVarInDom]
@@ -412,8 +412,8 @@ theorem subst_all' {A B T: «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red1: [[ Δ 
     simp [«Type».TypeVar_subst]
     apply ParallelReduction.lam (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom)
     intro a' notIn
-    rw [<- Type.subst_open_var (neq := by aesop) (lc := kindA.TypeVarLocallyClosed_of)]
-    rw [<- Type.subst_open_var (neq := by aesop) (lc := (red1.preserve_lc kindA.TypeVarLocallyClosed_of))]
+    rw [<- kindA.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm (neq := by aesop)]
+    rw [<- red1.preserve_lc kindA.TypeVarLocallyClosed_of |>.TypeVar_open_TypeVar_subst_comm (neq := by aesop)]
     rw [Environment.append_typeExt_assoc, Environment.typeExt_subst]
     apply ih <;> simp_all [Environment.append]
     . constructor <;> simp_all [Environment.typeVarDom, Environment.typeVarDom_append, Environment.TypeVarNotInDom, Environment.TypeVarInDom]
@@ -427,8 +427,8 @@ theorem subst_all' {A B T: «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red1: [[ Δ 
     simp [«Type».TypeVar_subst]
     apply ParallelReduction.scheme (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom)
     intro a' notIn
-    rw [<- Type.subst_open_var (neq := by aesop) (lc := kindA.TypeVarLocallyClosed_of)]
-    rw [<- Type.subst_open_var (neq := by aesop) (lc := (red1.preserve_lc kindA.TypeVarLocallyClosed_of))]
+    rw [<- kindA.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm (neq := by aesop)]
+    rw [<- red1.preserve_lc kindA.TypeVarLocallyClosed_of |>.TypeVar_open_TypeVar_subst_comm (neq := by aesop)]
     rw [Environment.append_typeExt_assoc, Environment.typeExt_subst]
     apply ih <;> simp_all [Environment.append]
     . constructor <;> simp_all [Environment.typeVarDom, Environment.typeVarDom_append, Environment.TypeVarNotInDom, Environment.TypeVarInDom]

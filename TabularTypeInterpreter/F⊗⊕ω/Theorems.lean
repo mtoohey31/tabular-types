@@ -64,7 +64,7 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
       | .inr FIsValue =>
         let VE' : Value := ⟨E', E'IsValue⟩
         have : E' = VE'.1 := rfl
-        have A'Blc := E'tyA'arrB.TypeVarLocallyClosed_of
+        have A'Blc := E'tyA'arrB.Type_TypeVarLocallyClosed_of
         cases A'Blc; case arr A'lc Blc =>
         have ⟨_, _, VE'eq⟩ := VE'.eq_lam_of_ty_arr E'tyA'arrB A'lc Blc
         rw [this, VE'eq]
@@ -141,22 +141,6 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
 theorem Typing.inv_arr (Ety: [[Δ ⊢ λ x? : T. E : A → B ]]) : [[ Δ ⊢ T ≡ A ]] ∧ (∃(I: List _), ∀x ∉ I, [[ Δ, x: T ⊢ E^x : B ]]) := by sorry
 theorem Typing.inv_forall (Ety: [[Δ ⊢ Λ a? : K. E : ∀ a?: K'. A ]]) : K = K' ∧ (∃(I: List _), ∀a ∉ I, [[ Δ, a: K ⊢ E^a : A^a ]]) := by sorry
 
-theorem Term.TermVar_subst_intro_of_not_mem_freeTermVars {A: Term}: a ∉ A.freeTermVars → (A.TermVar_open a n).TermVar_subst a B = A.Term_open B n := by sorry
-theorem Term.TypeVar_subst_intro_of_not_mem_freeTypeVars {A: Term}: a ∉ A.freeTypeVars → (A.TypeVar_open a n).TypeVar_subst a B = A.Type_open B n := by sorry
-
-namespace Term
--- NOTE only this is needed. previously called `subst_open_var`
-theorem TermVar_subst_TermVar_open {E F : Term} (neq : x ≠ y) (lc : F.TermVarLocallyClosed n) : (E.TermVar_open y n).TermVar_subst x F = (E.TermVar_subst x F).TermVar_open y n := sorry
-theorem subst_close_var {E F : Term} (neq : x ≠ y) (lc : F.TermVarLocallyClosed n) : (E.TermVar_close y n).TermVar_subst x F = (E.TermVar_subst x F).TermVar_close y n := sorry
-theorem subst_fresh {F E : Term} (fresh: a ∉ F.freeTermVars) : a ∉ (E.TermVar_subst a F |>.freeTypeVars) := sorry
-theorem subst_fresh' {F E: Term} (freshF: a ∉ F.freeTermVars) (freshE: a ∉ E.freeTermVars) : a ∉ (E.TermVar_subst a' F |>.freeTermVars) := sorry -- TODO by induction on T, wait is the a a' part right?
-
-theorem TypeVar_subst_TypeVar_open {E : Term} (neq : x ≠ y) (lc : F.TypeVarLocallyClosed n) : (E.TypeVar_open y n).TypeVar_subst x F = (E.TypeVar_subst x F).TypeVar_open y n := sorry
-
--- FIXME wrong: what if y ∈ F.freeTypeVars?
-theorem TermVar_subst_TypeVar_open {E: Term} (fresh: y ∉ F.freeTypeVars) : (E.TypeVar_open y n).TermVar_subst x F = (E.TermVar_subst x F).TypeVar_open y n := sorry
-theorem TypeVar_subst_TermVar_open {E: Term} : (E.TermVar_open y n).TypeVar_subst x A = (E.TypeVar_subst x A).TermVar_open y n := sorry
-end Term
 namespace Typing
 
 open Environment TermVarInEnvironment  in
@@ -283,7 +267,7 @@ theorem term_subst' (EtyA: [[ Δ, x: T, Δ' ⊢ E: A ]]) (FtyT : [[ Δ ⊢ F: T 
   . case lam Δ_ A E B I EtyB ih =>
     subst Δ_
     refine .lam (I := x :: I) (λ x' x'nin => ?_)
-    rw [<- Term.TermVar_subst_TermVar_open (by aesop) (FtyT.TermVarLocallyClosed_of)]
+    rw [<- FtyT.TermVarLocallyClosed_of.TermVar_open_TermVar_subst_comm (by aesop)]
     exact ih x' (by simp_all) (by rw [Environment.append_termExt_assoc])
   . case app Δ_ E1 A B E2 E1tyAB E2tyA ih1 ih2 =>
     subst Δ_
@@ -291,7 +275,7 @@ theorem term_subst' (EtyA: [[ Δ, x: T, Δ' ⊢ E: A ]]) (FtyT : [[ Δ ⊢ F: T 
   . case typeLam Δ_ K E A I EtyA ih =>
     subst Δ_
     refine .typeLam (I := x :: (I ++ F.freeTypeVars)) (λ a' a'nin => ?_)
-    rw [<- Term.TermVar_subst_TypeVar_open (by simp_all)]
+    rw [<- FtyT.TypeVarLocallyClosed_of.TermVar_open_TypeVar_subst_comm]
     exact ih a' (by simp_all) (by rw [Environment.append_typeExt_assoc])
   . case typeApp Δ_ E K A B EtyA BkiK ih =>
     subst Δ_
@@ -346,7 +330,7 @@ theorem Typing.type_subst' (EtyA: [[ Δ, a: K, Δ' ⊢ E: A ]]) (BkiK : [[ Δ �
   . case lam Δ_ A1 E A2 I EtyA2 ih =>
     subst Δ_
     refine .lam (I := I ++ Δ.termVarDom ++ Δ'.termVarDom) (λ x xnin => ?_)
-    rw [<- Term.TypeVar_subst_TermVar_open]
+    rw [<- Term.TypeVar_open_TermVar_subst_comm]
     exact ih x (by simp_all) (by rw [append_termExt_assoc])
   . case app Δ_ E1 A B E2 E1tyAB E2tyA ih1 ih2 =>
     subst Δ_
@@ -355,8 +339,8 @@ theorem Typing.type_subst' (EtyA: [[ Δ, a: K, Δ' ⊢ E: A ]]) (BkiK : [[ Δ �
     subst Δ_
     refine .typeLam (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom) (λ a' a'nin => ?_)
     rw [
-      <- Term.TypeVar_subst_TypeVar_open (by aesop) BkiK.TypeVarLocallyClosed_of,
-      <- Type.subst_open_var (by aesop) BkiK.TypeVarLocallyClosed_of
+      <- BkiK.TypeVarLocallyClosed_of.Term_TypeVar_open_TypeVar_subst_comm (by aesop),
+      <- BkiK.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm (by aesop)
     ]
     exact ih a' (by simp_all) (by rw [append_typeExt_assoc])
   . case typeApp Δ_ E K2 A1 A2 EtyA1 A2kiK2 ih =>
