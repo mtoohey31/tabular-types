@@ -120,6 +120,15 @@ judgement TypeEquivalence :=
 ───────────── sum
 Δ ⊢ ⊕ A ≡ ⊕ B
 
+@[app_unexpander TypeEquivalence]
+def TypeEquivalence.delab: Lean.PrettyPrinter.Unexpander
+  | `($(_) $Δ $A $B) =>
+    let info := Lean.SourceInfo.none
+    let vdash := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "⊢") }
+    let into := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "≡") }
+    `([ $Δ $vdash $A $into $B ])
+  | _ => throw ()
+
 judgement_syntax Δ " ⊢ " A " ≢ " B : TypeInequivalence
 
 def TypeInequivalence Δ A B := ¬[[Δ ⊢ A ≡ B]]
@@ -246,6 +255,11 @@ def EqParallelReduction.delabMPRed: Lean.PrettyPrinter.Unexpander
   | _ => throw ()
 
 def ParallelReduction.Equiv_of (red: [[ Δ ⊢ A ≡> B ]]): [[ Δ ⊢ A <≡>* B ]] := .step red
+
+def MultiParallelReduction.Equiv_of (red: [[ Δ ⊢ A ≡>* B ]]): [[ Δ ⊢ A <≡>* B ]] := by
+  induction red with
+  | refl => exact .refl
+  | step base _ ih => exact base.Equiv_of |>.trans ih
 
 attribute [aesop unsafe simp constructors (rule_sets := [pred])] ParallelReduction MultiParallelReduction EqParallelReduction
 

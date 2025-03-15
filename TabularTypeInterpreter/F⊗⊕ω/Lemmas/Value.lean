@@ -37,19 +37,19 @@ theorem eq_lam_of_ty_arr (VtyAarrB : [[ε ⊢ V : A → B]]) (Alc: A.TypeVarLoca
   .case typeLam K E =>
     have ⟨T, Eeq⟩ := ty_lam_ty_eq_forall VtyAarrB
     have ⟨U, mredArr, mredForall⟩ := Eeq.common_reduct_of .empty (by constructor <;> simp_all)
-    have := mredForall.inv_typeLam; rcases this
+    have := mredForall.inv_forall; rcases this
     have := mredArr.inv_arr; rcases this
     simp_all
   .case prodIntro E isV =>
     have ⟨T, Eeq⟩ := ty_prodIntro_ty_eq_prod VtyAarrB
     have ⟨U, mredArr, mredProd⟩ := Eeq.common_reduct_of .empty (by constructor <;> simp_all)
-    have := mredProd.inv_prodIntro; rcases this
+    have := mredProd.inv_prod; rcases this
     have := mredArr.inv_arr; rcases this
     simp_all
   .case sumIntro n E isV =>
     have ⟨T, Eeq⟩ := ty_sumIntro_ty_eq_sum VtyAarrB
     have ⟨U, mredArr, mredSum⟩ := Eeq.common_reduct_of .empty (by constructor <;> simp_all)
-    have := mredSum.inv_sumIntro; rcases this
+    have := mredSum.inv_sum; rcases this
     have := mredArr.inv_arr; rcases this
     simp_all
 

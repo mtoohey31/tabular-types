@@ -49,17 +49,31 @@ def lamListApp' (A A' : «Type») (Bs B's : List «Type») (length_eq: Bs.length
       exact this
     . exact Abody
 
-theorem inv_lam : ∀I: List _, [[ Δ ⊢ (λ a? : K. A) ≡> T ]] → ∃ a A', a ∉ I ∧ T = [[λ a : K. A']] ∧ [[ Δ, a : K ⊢ A^a ≡> A'^a ]] := by
-  intro I red
-  cases red
-  . case refl =>
-    have ⟨a, notInI⟩ := I.exists_fresh
-    exists a, A
-    aesop (rule_sets := [pred])
-  . case lam I' A' red =>
-    have ⟨a, notInI⟩ := (I ++ I').exists_fresh
-    exists a, A'
-    constructor <;> aesop
+theorem inv_arr (red: [[ Δ ⊢ (A → B) ≡> T ]]): ∃ A' B', T = [[(A' → B')]] ∧ [[ Δ ⊢ A ≡> A' ]] ∧ [[ Δ ⊢ B ≡> B' ]] := by
+  cases red <;> aesop  (rule_sets := [pred])
+
+theorem inv_lam (red: [[ Δ ⊢ (λ a? : K. A) ≡> T ]]): ∃ A', T = [[λ a : K. A']] ∧ ∃I: List _, ∀a ∉ I, [[ Δ, a : K ⊢ A^a ≡> A'^a ]] := by
+  cases red <;> aesop (add unsafe tactic guessI) (rule_sets := [pred])
+
+theorem inv_forall (red: [[ Δ ⊢ (∀ a? : K. A) ≡> T ]]): ∃ A', T = [[∀ a : K. A']] ∧ ∃I: List _, ∀a ∉ I, [[ Δ, a : K ⊢ A^a ≡> A'^a ]] := by
+  cases red <;> aesop (add unsafe tactic guessI) (rule_sets := [pred])
+
+theorem inv_prod (red: [[ Δ ⊢ ⊗A ≡> T ]]): ∃ A', T = [[⊗A']] ∧ [[ Δ ⊢ A ≡> A' ]] := by
+  cases red <;> aesop (rule_sets := [pred])
+
+theorem inv_sum (red: [[ Δ ⊢ ⊕A ≡> T ]]): ∃ A', T = [[⊕A']] ∧ [[ Δ ⊢ A ≡> A' ]] := by
+  cases red <;> aesop (rule_sets := [pred])
+
+theorem inv_list (red: [[ Δ ⊢ { </ A@i // i in [:n] /> } ≡> T ]] ): ∃ B, T = [[{ </ B@i // i in [:n] /> }]] ∧ [[ </ Δ ⊢ A@i ≡> B@i // i in [:n] /> ]] := by
+  generalize T_eq : [[{ </ A@i // i in [:n] /> }]] = T_ at red
+  cases red <;> try cases T_eq
+  . case refl.refl => exact ⟨A, rfl, fun i mem => refl⟩
+  . case list n' A_ B AB =>
+    injection T_eq with eq
+    have eqnn' := Std.Range.length_eq_of_mem_eq eq
+    subst eqnn'
+    have eqAA_ := Std.Range.eq_of_mem_of_map_eq eq; clear eq
+    exact ⟨B, rfl, λx nin => by simp_all⟩
 
 open «Type» in
 theorem preserve_not_mem_freeTypeVars (red: [[ Δ ⊢ A ≡> B ]]) a (notInFV: a ∉ A.freeTypeVars): a ∉ B.freeTypeVars := by
@@ -570,8 +584,11 @@ theorem diamond : [[ ⊢ Δ ]] → [[ Δ ⊢ A ≡> B ]] -> [[ Δ ⊢ A ≡> C ]
     cases lcA
     case lam lcA =>
 
-    have ⟨a, C', notIn, eqC, red2'⟩ := ParallelReduction.inv_lam (I ++ A'.freeTypeVars ++ B'.freeTypeVars ++ C.freeTypeVars ++ Δ'.typeVarDom) red2
+    have ⟨C', eqC, I', red2'⟩ := red2.inv_lam
+    have ⟨a, nin⟩ := I ++ I' ++ A'.freeTypeVars ++ B'.freeTypeVars ++ C.freeTypeVars ++ Δ'.typeVarDom |>.exists_fresh
+    specialize red2' a (by simp_all)
     subst C
+
     have freshC' : a ∉ C'.freeTypeVars := by
       apply preserve_not_mem_freeTypeVars  at red2
       simp_all [«Type».freeTypeVars]
@@ -700,54 +717,59 @@ def rec_one {Δ: Environment} {motive: ∀A B, [[ Δ ⊢ A ≡>* B ]] → Prop}
   . case refl A => exact base .refl
   . case step A B C red1 red2 ih => exact step red1 red2 ih
 
-theorem inv_arr: [[ Δ ⊢ (A → B) ≡>* T ]] → (∃ A' B', T = [[(A' → B')]] ∧ [[ Δ ⊢ A ≡>* A' ]] ∧ [[ Δ ⊢ B ≡>* B' ]]) :=
+theorem inv_arr (mred: [[ Δ ⊢ (A → B) ≡>* T ]]): ∃ A' B', T = [[(A' → B')]] ∧ [[ Δ ⊢ A ≡>* A' ]] ∧ [[ Δ ⊢ B ≡>* B' ]] :=
 by
-  intro mred
   generalize AarrBeq : [[(A → B)]] = AarrB at mred
-  revert A B
-  induction mred
+  induction mred generalizing A B
   . case refl => aesop (rule_sets := [pred])
   . case step T1 T2 T3 red mred ih =>
-    intro A B AarrBeq
     subst AarrBeq
-    cases red <;> aesop (rule_sets := [pred])
+    have := red.inv_arr
+    aesop (rule_sets := [pred])
 
--- TODO check why it's different from ParallelReduction.inv_lam
-theorem inv_typeLam: [[ Δ ⊢ (∀ a : K. A) ≡>* T ]] → (∃ A', T = [[∀ a : K. A']] ∧ (∃I, ∀a ∉ (I: List _), [[ Δ, a : K ⊢ A^a ≡>* A'^a ]])) :=
+theorem inv_forall (mred: [[ Δ ⊢ (∀ a? : K. A) ≡>* T ]]): ∃ A', T = [[∀ a? : K. A']] ∧ (∃I, ∀a ∉ (I: List _), [[ Δ, a : K ⊢ A^a ≡>* A'^a ]]) :=
 by
-  intro mred
   generalize LamAeq : [[(∀ a : K. A)]] = LamA at mred
-  revert A
-  induction mred
+  induction mred generalizing A
   . case refl => aesop (add unsafe tactic guessI) (rule_sets := [pred])
   . case step T1 T2 T3 red mred ih =>
-    intro A LamAeq
     subst LamAeq
-    cases red <;> aesop (add unsafe tactic guessI) (rule_sets := [pred])
+    have ⟨A', eqT2, I, AA'⟩ := red.inv_forall
+    have ⟨A'', ih⟩ := ih eqT2.symm
+    exists A''
+    aesop (add unsafe tactic guessI) (rule_sets := [pred])
 
-theorem inv_prodIntro: [[ Δ ⊢ ⊗A ≡>* T ]] → (∃ A', T = [[⊗A']] ∧ [[ Δ ⊢ A ≡>* A' ]]) :=
+theorem inv_prod (mred: [[ Δ ⊢ ⊗A ≡>* T ]]): ∃ A', T = [[⊗A']] ∧ [[ Δ ⊢ A ≡>* A' ]] :=
 by
-  intro mred
-  generalize LamAeq : [[(⊗A)]] = ProdA at mred
-  revert A
-  induction mred
-  . case refl => aesop (add unsafe tactic guessI) (rule_sets := [pred])
+  generalize ProdAeq : [[(⊗A)]] = ProdA at mred
+  induction mred generalizing A
+  . case refl => aesop (rule_sets := [pred])
   . case step T1 T2 T3 red mred ih =>
-    intro A LamAeq
-    subst LamAeq
-    cases red <;> aesop (add unsafe tactic guessI) (rule_sets := [pred])
+    subst ProdAeq
+    have := red.inv_prod
+    aesop (rule_sets := [pred])
 
-theorem inv_sumIntro: [[ Δ ⊢ ⊕A ≡>* T ]] → (∃ A', T = [[⊕A']] ∧ [[ Δ ⊢ A ≡>* A' ]]) :=
+theorem inv_sum (mred: [[ Δ ⊢ ⊕A ≡>* T ]]): ∃ A', T = [[⊕A']] ∧ [[ Δ ⊢ A ≡>* A' ]] :=
 by
-  intro mred
-  generalize LamAeq : [[(⊕A)]] = SumA at mred
-  revert A
-  induction mred
-  . case refl => aesop (add unsafe tactic guessI) (rule_sets := [pred])
+  generalize SumAeq : [[(⊕A)]] = SumA at mred
+  induction mred generalizing A
+  . case refl => aesop (rule_sets := [pred])
   . case step T1 T2 T3 red mred ih =>
-    intro A LamAeq
-    subst LamAeq
-    cases red <;> aesop (add unsafe tactic guessI) (rule_sets := [pred])
+    subst SumAeq
+    have := red.inv_sum
+    aesop (rule_sets := [pred])
+
+theorem inv_list (mred: [[ Δ ⊢ { </ A@i // i in [:n] /> } ≡>* T ]] ): ∃ B, T = [[{ </ B@i // i in [:n] /> }]] ∧ [[ </ Δ ⊢ A@i ≡>* B@i // i in [:n] /> ]] :=
+by
+  generalize ListAeq : [[{ </ A@i // i in [:n] /> }]] = ListA at mred
+  induction mred generalizing A
+  . case refl => aesop (rule_sets := [pred])
+  . case step T1 T2 T3 red mred ih =>
+    subst ListAeq
+    have ⟨B, eqT2, AB⟩ := red.inv_list
+    have ⟨B', ih⟩ := ih eqT2.symm
+    exists B'
+    aesop (rule_sets := [pred])
 
 theorem confluence_on_the_left (red1: [[ Δ ⊢ A ≡>* B ]]) (red2: [[ Δ ⊢ A ≡> C ]]) (wf: [[ ⊢ Δ ]])  (lc: A.TypeVarLocallyClosed): ∃ T, [[ Δ ⊢ B ≡>* T ]] ∧ [[ Δ ⊢ C ≡>* T ]] ∧ T.TypeVarLocallyClosed := by
   induction red1 generalizing C
@@ -834,6 +856,152 @@ theorem confluence (eAB: [[ Δ ⊢ A <≡>* B ]]) (eAC: [[ Δ ⊢ A <≡>* C ]])
   . case trans A B B' eAB eBB' ih1 ih2 =>
     obtain ⟨T, BT, CT⟩ := ih1 eAC Alc (eBB'.preserve_lc.2 Blc)
     exact ⟨T, eBB'.sym.trans BT, CT⟩
+
+theorem inv_arr (ered: [[ Δ ⊢ (A → B) <≡>* (A' → B') ]]) (wf: [[ ⊢ Δ ]]) (ABlc: [[ A → B ]].TypeVarLocallyClosed): [[ Δ ⊢ A <≡>* A' ]] ∧ [[ Δ ⊢ B <≡>* B' ]] := by
+  generalize AarrBeq : [[(A → B)]] = AarrB at ered
+  generalize A'arrB'eq : [[(A' → B')]] = A'arrB' at ered
+  induction ered generalizing A B A' B'
+  . case refl AarrB => aesop (rule_sets := [pred])
+  . case step AarrB A'arrB' step => aesop (add safe forward ParallelReduction.inv_arr) (rule_sets := [pred])
+  . case sym A'arrB' AarrB eq ih =>
+    subst AarrB A'arrB'
+    have A'B'lc := eq.preserve_lc.2 ABlc
+    have ⟨eA'A, eB'B⟩ := ih A'B'lc rfl rfl
+    exact ⟨eA'A.sym, eB'B.sym⟩
+  . case trans AarrB C A'arrB' AB_C C_A'B' ih1 ih2 =>
+    clear ih1 ih2
+    subst AarrB A'arrB'
+    have Clc := AB_C.preserve_lc.1 ABlc
+    have A'B'lc := C_A'B'.preserve_lc.1 Clc
+    have ⟨T, mAB_T, mCT⟩ := AB_C.common_reduct wf ABlc Clc
+    have ⟨U, mCU, mA'B'_U⟩ := C_A'B'.common_reduct wf Clc A'B'lc
+    have ⟨W, mTW, mUW, Wlc⟩ := mCT.confluence mCU wf Clc
+    have ⟨A1, B1, eqW, mAA1, mBB1⟩ := mAB_T.trans mTW |>.inv_arr
+    have ⟨A2, B2, eqW', mA'A2, mB'B2⟩ := mA'B'_U.trans mUW |>.inv_arr
+    subst W
+    cases eqW'; case refl =>
+    exact ⟨mAA1.Equiv_of.trans mA'A2.Equiv_of.sym, mBB1.Equiv_of.trans mB'B2.Equiv_of.sym⟩
+
+theorem inv_forall (ered: [[ Δ ⊢ (∀ a? : K. A) <≡>* (∀ a? : K'. A') ]]) (wf: [[ ⊢ Δ ]]) (Alc: [[ (∀ a : K. A) ]].TypeVarLocallyClosed): K = K' ∧ ∃I: List _, ∀a ∉ I, [[ Δ, a: K ⊢ A^a <≡>* A'^a ]] := by
+  generalize TLamAeq : [[(∀ a? : K. A)]] = TLamA at ered
+  generalize TLamA'eq : [[(∀ a? : K'. A')]] = TLamA' at ered
+  induction ered generalizing A A' K K'
+  . case refl TLamA => aesop (add unsafe tactic guessI) (rule_sets := [pred])
+  . case step TLamA TLamA' step => aesop (add safe forward ParallelReduction.inv_forall, unsafe tactic guessI) (rule_sets := [pred])
+  . case sym TLamA' TLamA eq ih =>
+    subst TLamA TLamA'
+    have A'lc := eq.preserve_lc.2 Alc
+    have ⟨eqK, I, eA'A⟩ := ih A'lc rfl rfl
+    cases eqK; case refl =>
+    exact ⟨rfl, I, λa nin => eA'A a nin |>.sym⟩
+  . case trans TLamA TLamA'' TLamA' eAA'' eA''A' ih1 ih2 =>
+    clear ih1 ih2
+    subst TLamA TLamA'
+    have A''lc := eAA''.preserve_lc.1 Alc
+    have A'lc := eA''A'.preserve_lc.1 A''lc
+    have ⟨T, mAT, mA''T⟩ := eAA''.common_reduct wf Alc A''lc
+    have ⟨U, mA''U, mA'U⟩ := eA''A'.common_reduct wf A''lc A'lc
+    have ⟨W, mTW, mUW, Wlc⟩ := mA''T.confluence mA''U wf A''lc
+    have ⟨A1, eqW, I, mAA1⟩ := mAT.trans mTW |>.inv_forall
+    have ⟨A2, eqW', I', mA'A2⟩ := mA'U.trans mUW |>.inv_forall
+    subst W
+    cases eqW'; case refl =>
+    exact ⟨rfl, I ++ I', λa nin => mAA1 a (by simp_all) |>.Equiv_of.trans <| mA'A2 a (by simp_all) |>.Equiv_of.sym⟩
+
+theorem inv_prod (ered: [[ Δ ⊢ ⊗A <≡>* ⊗A' ]]) (wf: [[ ⊢ Δ ]]) (Alc: [[ ⊗A ]].TypeVarLocallyClosed): [[ Δ ⊢ A <≡>* A' ]] :=
+by
+  generalize ProdAeq : [[(⊗A)]] = ProdA at ered
+  generalize ProdA'eq : [[(⊗A')]] = ProdA' at ered
+  induction ered generalizing A A'
+  . case refl => aesop (rule_sets := [pred])
+  . case step ProdA ProdA' step => aesop (add safe forward ParallelReduction.inv_prod) (rule_sets := [pred])
+  . case sym ProdA' ProdA eq ih =>
+    subst ProdA ProdA'
+    have A'lc := eq.preserve_lc.2 Alc
+    have eA'A := ih A'lc rfl rfl
+    exact eA'A.sym
+  . case trans ProdA ProdA'' ProdA' eAA'' eA''A' ih1 ih2 =>
+    clear ih1 ih2
+    subst ProdA ProdA'
+    have A''lc := eAA''.preserve_lc.1 Alc
+    have A'lc := eA''A'.preserve_lc.1 A''lc
+    have ⟨T, mAT, mA''T⟩ := eAA''.common_reduct wf Alc A''lc
+    have ⟨U, mA''U, mA'U⟩ := eA''A'.common_reduct wf A''lc A'lc
+    have ⟨W, mTW, mUW, Wlc⟩ := mA''T.confluence mA''U wf A''lc
+    have ⟨A1, eqW, mAA1⟩ := mAT.trans mTW |>.inv_prod
+    have ⟨A2, eqW', mA'A2⟩ := mA'U.trans mUW |>.inv_prod
+    subst W
+    cases eqW'; case refl =>
+    exact mAA1.Equiv_of.trans mA'A2.Equiv_of.sym
+
+theorem inv_sum (ered: [[ Δ ⊢ ⊕A <≡>* ⊕A' ]]) (wf: [[ ⊢ Δ ]]) (Alc: [[ ⊕A ]].TypeVarLocallyClosed): [[ Δ ⊢ A <≡>* A' ]] :=
+by
+  generalize SumAeq : [[(⊕A)]] = SumA at ered
+  generalize SumA'eq : [[(⊕A')]] = SumA' at ered
+  induction ered generalizing A A'
+  . case refl => aesop (rule_sets := [pred])
+  . case step SumA SumA' step => aesop (add safe forward ParallelReduction.inv_sum) (rule_sets := [pred])
+  . case sym SumA' SumA eq ih =>
+    subst SumA SumA'
+    have A'lc := eq.preserve_lc.2 Alc
+    have eA'A := ih A'lc rfl rfl
+    exact eA'A.sym
+  . case trans SumA SumA'' SumA' eAA'' eA''A' ih1 ih2 =>
+    clear ih1 ih2
+    subst SumA SumA'
+    have A''lc := eAA''.preserve_lc.1 Alc
+    have A'lc := eA''A'.preserve_lc.1 A''lc
+    have ⟨T, mAT, mA''T⟩ := eAA''.common_reduct wf Alc A''lc
+    have ⟨U, mA''U, mA'U⟩ := eA''A'.common_reduct wf A''lc A'lc
+    have ⟨W, mTW, mUW, Wlc⟩ := mA''T.confluence mA''U wf A''lc
+    have ⟨A1, eqW, mAA1⟩ := mAT.trans mTW |>.inv_sum
+    have ⟨A2, eqW', mA'A2⟩ := mA'U.trans mUW |>.inv_sum
+    subst W
+    cases eqW'; case refl =>
+    exact mAA1.Equiv_of.trans mA'A2.Equiv_of.sym
+
+theorem inv_list (mred: [[ Δ ⊢ { </ A@i // i in [:n] /> } <≡>* { </ B@i // i in [:n'] /> } ]]) (wf: [[ ⊢ Δ ]]) (Alc: [[ { </ A@i // i in [:n] /> } ]].TypeVarLocallyClosed): n = n' ∧ [[ </ Δ ⊢ A@i <≡>* B@i // i in [:n] /> ]] :=
+by
+  generalize ListAeq : [[{ </ A@i // i in [:n] /> }]] = ListA at mred
+  generalize ListBeq : [[{ </ B@i // i in [:n'] /> }]] = ListB at mred
+  induction mred generalizing A B n n'
+  . case refl A' =>
+    subst A'
+    injection ListBeq with eq
+    have eqn'n := Std.Range.length_eq_of_mem_eq eq; subst eqn'n
+    have eqBA := Std.Range.eq_of_mem_of_map_eq eq; clear eq
+    simp_all
+    exact λ _ _ => .refl
+  . case step ListA ListB step =>
+    subst ListA ListB
+    have ⟨B', eqBB', AB'⟩ := step.inv_list
+    injection eqBB' with eq
+    have eqn'n := Std.Range.length_eq_of_mem_eq eq; subst eqn'n
+    have eqBB' := Std.Range.eq_of_mem_of_map_eq eq; clear eq
+    simp_all
+    exact λ x xin => AB' x xin |>.Equiv_of
+  . case sym ListB ListA eq ih =>
+    subst ListA ListB
+    have Blc := eq.preserve_lc.2 Alc
+    have ⟨eqn'n, eBA⟩ := ih Blc rfl rfl
+    subst n'
+    exact ⟨rfl, λ x xin => eBA x xin |>.sym⟩
+  . case trans ListA ListB' ListB eAB eB'B ih1 ih2 =>
+    clear ih1 ih2
+    subst ListA ListB
+    have B'lc := eAB.preserve_lc.1 Alc
+    have Blc := eB'B.preserve_lc.1 B'lc
+    have ⟨T, mAT, mB'T⟩ := eAB.common_reduct wf Alc B'lc
+    have ⟨U, mB'U, mBU⟩ := eB'B.common_reduct wf B'lc Blc
+    have ⟨W, mTW, mUW, Wlc⟩ := mB'T.confluence mB'U wf B'lc
+    have ⟨A_, eqW, mAA_⟩ := mAT.trans mTW |>.inv_list
+    have ⟨B_, eqW', mAB_⟩ := mBU.trans mUW |>.inv_list
+    subst W
+    injection eqW' with eq
+    have eqn'n := Std.Range.length_eq_of_mem_eq eq; subst eqn'n
+    have eqW' := Std.Range.eq_of_mem_of_map_eq eq; clear eq
+    simp_all
+    refine λ x xin => mAA_ x xin |>.Equiv_of.trans <| mAB_ x xin |>.Equiv_of.sym
 
 end EqParallelReduction
 

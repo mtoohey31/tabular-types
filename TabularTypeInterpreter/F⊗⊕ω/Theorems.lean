@@ -137,9 +137,6 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
         exact .inl <| .intro _ <| .sumElimIntro mem
   · case equiv ih => exact ih rfl
 
--- TODO move to appropriate files
-theorem Typing.inv_arr (Ety: [[Δ ⊢ λ x? : T. E : A → B ]]) : [[ Δ ⊢ T ≡ A ]] ∧ (∃(I: List _), ∀x ∉ I, [[ Δ, x: T ⊢ E^x : B ]]) := by sorry
-theorem Typing.inv_forall (Ety: [[Δ ⊢ Λ a? : K. E : ∀ a?: K'. A ]]) : K = K' ∧ (∃(I: List _), ∀a ∉ I, [[ Δ, a: K ⊢ E^a : A^a ]]) := by sorry
 
 namespace Typing
 
@@ -295,13 +292,12 @@ theorem term_subst' (EtyA: [[ Δ, x: T, Δ' ⊢ E: A ]]) (FtyT : [[ Δ ⊢ F: T 
   . case equiv Δ_ E A B EtyA equiv ih =>
     subst Δ_
     refine .equiv (ih rfl) equiv.TermVar_drop
-end Typing
 
-theorem Typing.term_subst (EtyA: [[ Δ, x: T ⊢ E: A ]]) (FtyT : [[ Δ ⊢ F: T ]]): [[ Δ ⊢ E[F/x] : A ]] :=
+theorem term_subst (EtyA: [[ Δ, x: T ⊢ E: A ]]) (FtyT : [[ Δ ⊢ F: T ]]): [[ Δ ⊢ E[F/x] : A ]] :=
   Typing.term_subst' (Δ' := [[ ε ]]) EtyA FtyT
 
 open Environment TermVarInEnvironment in
-theorem Typing.type_subst' (EtyA: [[ Δ, a: K, Δ' ⊢ E: A ]]) (BkiK : [[ Δ ⊢ B: K ]]): [[ Δ, Δ'[B/a] ⊢ E[B/a] : A[B/a] ]] := by
+theorem type_subst' (EtyA: [[ Δ, a: K, Δ' ⊢ E: A ]]) (BkiK : [[ Δ ⊢ B: K ]]): [[ Δ, Δ'[B/a] ⊢ E[B/a] : A[B/a] ]] := by
   generalize Δ_eq : [[ (Δ, a:K, Δ') ]] = Δ_ at EtyA
   induction EtyA generalizing Δ' <;> try simp_all [Term.TypeVar_subst, Type.TypeVar_subst]
   . case var Δ_ x' A wf x'in =>
@@ -370,8 +366,10 @@ theorem Typing.type_subst' (EtyA: [[ Δ, a: K, Δ' ⊢ E: A ]]) (BkiK : [[ Δ �
     subst Δ_
     refine .equiv (ih rfl) (equiv.subst' EtyA.WellFormedness_of BkiK)
 
-theorem Typing.type_subst (EtyA: [[ Δ, a: K ⊢ E: A ]]) (BkiK : [[ Δ ⊢ B: K ]]): [[ Δ ⊢ E[B/a] : A[B/a] ]] :=
+theorem type_subst (EtyA: [[ Δ, a: K ⊢ E: A ]]) (BkiK : [[ Δ ⊢ B: K ]]): [[ Δ ⊢ E[B/a] : A[B/a] ]] :=
   Typing.type_subst' (Δ' := [[ ε ]]) EtyA BkiK
+
+end Typing
 
 theorem preservation (EtyA: [[Δ ⊢ E : A]]) (EE': [[E -> E']]): [[Δ ⊢ E' : A]] := by
   induction EtyA generalizing E' <;> (try cases EE'; done) -- values can't step
@@ -395,12 +393,15 @@ theorem preservation (EtyA: [[Δ ⊢ E : A]]) (EE': [[E -> E']]): [[Δ ⊢ E' : 
       rw [<- Term.TypeVar_subst_intro_of_not_mem_freeTypeVars (a := a) (by simp_all)]
       rw [<- Type.TypeVar_subst_intro_of_not_mem_freeTypeVars (a := a) (by simp_all)]
       exact EtyA.type_subst BkiK
-  . case prodIntro n Δ E A EtyA ih => sorry
-  . case prodElim Δ E n' A n EtyA In ih =>
+  . case prodIntro Δ n E A wf EtyA ih =>
+    sorry
+  . case prodElim Δ E n A i EtyA iltn ih =>
     cases EE'
-    . case prodElim E' EE' => exact .prodElim (ih EE') In
-    . case prodElimIntro n' E In =>
-      sorry -- TODO sandwith stuff
+    . case prodElim E' EE' => exact .prodElim (ih EE') iltn
+    . case prodElimIntro n' E iltn' =>
+      clear ih
+      have ⟨eqn'n, EtyA⟩ := EtyA.inv_prod
+      simp_all [NatInRange]
   . case sumIntro => sorry
   . case sumElim => sorry
   . case equiv Δ E A B EtyA eq ih => exact .equiv (ih EE') eq

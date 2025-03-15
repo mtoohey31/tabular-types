@@ -2,6 +2,12 @@ import Lott.Data.Range
 
 namespace Std.Range
 
+theorem length_eq_of_mem_eq {f g : Nat → α}
+  (h : List.map (fun i => f i) [m:n] = List.map (fun i => g i) [m':n']) : n - m = n' - m' := by
+  have := congrArg List.length h
+  rw [List.length_map, length_toList, List.length_map, length_toList] at this
+  exact this
+
 def get!InverseOn (p p' : List Nat) (n : Nat) :=
   (∀ i ∈ [:n], p'.get! (p.get! i) = i) ∧ ∀ i ∈ [:n], p.get! (p'.get! i) = i
 

@@ -342,6 +342,112 @@ theorem TermVarLocallyClosed_of (EtyA : [[Δ ⊢ E : A]]) : E.TermVarLocallyClos
 
 theorem weakening : [[Δ, Δ'' ⊢ E : A]] → [[⊢ Δ, Δ', Δ'']] → [[Δ, Δ', Δ'' ⊢ E : A]] := sorry
 
+theorem inv_arr' (Ety: [[Δ ⊢ λ x? : T. E : C ]]) (eqC: [[ Δ ⊢ C ≡ A → B ]]): [[ Δ ⊢ T ≡ A ]] ∧ (∃(I: List _), ∀x ∉ I, [[ Δ, x: T ⊢ E^x : B ]]) := by
+  generalize T_eq : [[ λ x? : T. E ]] = T_ at Ety
+  induction Ety <;> cases T_eq
+  . case lam.refl Δ B' I EtyB' _ =>
+    have := eqC.EqParallelReduction_of
+    have ⟨wf, TB'lc⟩ := (
+      have ⟨x, xnin⟩ := I.exists_fresh
+      have EtyB' := EtyB' x xnin
+      have wf := match EtyB'.WellFormedness_of with | .termVarExt wf _ _ => wf
+      have B'lc := EtyB'.Type_TypeVarLocallyClosed_of
+      have Tlc := EtyB'.Δext_TypeVarLocallyClosed_of
+      And.intro wf (Tlc.arr B'lc)
+    )
+    have ⟨eTA, eB'B⟩ := this.inv_arr wf TB'lc
+    refine ⟨eTA.TypeEquivalence_of, ?_⟩
+    refine ⟨I, λ x xnin => ?_⟩
+    refine .equiv (EtyB' x xnin) ?_
+    exact eB'B.weakening (Δ'' := [[ ε ]]) (Δ' := [[ ε, x: T ]]) (.termVarExt wf.EnvironmentTypeWellFormedness_of)
+      |>.TypeEquivalence_of
+  . case equiv.refl _ _ _ eqA'B' _ ih => exact ih (eqA'B'.trans eqC) rfl
+
+theorem inv_arr (Ety: [[Δ ⊢ λ x? : T. E : A → B ]]) : [[ Δ ⊢ T ≡ A ]] ∧ (∃(I: List _), ∀x ∉ I, [[ Δ, x: T ⊢ E^x : B ]]) := Ety.inv_arr' .refl
+
+theorem inv_forall' (Ety: [[Δ ⊢ Λ a? : K. E : T ]]) (eqT: [[ Δ ⊢ T ≡ ∀ a?: K'. A ]]): K = K' ∧ (∃(I: List _), ∀a ∉ I, [[ Δ, a: K ⊢ E^a : A^a ]]) := by
+  generalize T_eq : [[ Λ a? : K. E ]] = T_ at Ety
+  induction Ety <;> cases T_eq
+  . case typeLam.refl Δ A' I EtyA' _ =>
+    have := eqT.EqParallelReduction_of
+    -- have ⟨a, nin⟩ := (I ++ A'.freeTypeVars).exists_fresh
+    -- have EtyA' := EtyA' a (by simp_all)
+    -- have wf := match EtyA'.WellFormedness_of with | .typeVarExt wf _ => wf
+    -- have A'lc := EtyA'.Type_TypeVarLocallyClosed_of |>.TypeVar_close_inc (a := a)
+    -- simp at A'lc
+    -- rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars (by simp_all)] at A'lc
+    have ⟨wf, A'lc⟩ := (
+      have ⟨a, nin⟩ := (I ++ A'.freeTypeVars).exists_fresh
+      have EtyA' := EtyA' a (by simp_all)
+      have wf := match EtyA'.WellFormedness_of with | .typeVarExt wf _ => wf
+      have A'lc := EtyA'.Type_TypeVarLocallyClosed_of |>.TypeVar_close_inc (a := a)
+      have A'lc: A'.TypeVarLocallyClosed 1 := (by
+        rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars (by simp_all)] at A'lc
+        exact A'lc
+      )
+      And.intro wf A'lc
+    )
+    have ⟨eqKK', I', eA'A⟩ := this.inv_forall wf A'lc.forall
+    refine ⟨eqKK', ?_⟩
+    refine ⟨I ++ I', λ a anin => ?_⟩
+    refine .equiv (EtyA' a (by simp_all)) ?_
+    exact eA'A a (by simp_all) |>.TypeEquivalence_of
+  . case equiv.refl _ _ _ eqA'B' _ ih => exact ih (eqA'B'.trans eqT) rfl
+
+theorem inv_forall (Ety: [[Δ ⊢ Λ a? : K. E : ∀ a?: K'. A ]]) : K = K' ∧ (∃(I: List _), ∀a ∉ I, [[ Δ, a: K ⊢ E^a : A^a ]]) := Ety.inv_forall' .refl
+
+theorem inv_prod' (Ety: [[ Δ ⊢ (</ E@i // i in [:n] />) : T ]]) (eqT: [[ Δ ⊢ T ≡ ⊗ {</ A@i // i in [:n'] />} ]]) (Alc: [[⊗ {</ A@i // i in [:n'] />}]].TypeVarLocallyClosed): n = n' ∧ [[ </ Δ ⊢ E@i : A@i // i in [:n] /> ]] := by
+  generalize T_eq : [[ (</ E@i // i in [:n] />) ]] = T_ at Ety
+  induction Ety <;> try cases T_eq
+  . case prodIntro Δ n_ E_ A_ wf EtyA ih =>
+    clear ih
+    injection T_eq with eq
+    have eqnn_ := Std.Range.length_eq_of_mem_eq eq; simp at eqnn_; subst n_
+    have eqEE_ := Std.Range.eq_of_mem_of_map_eq eq; clear eq
+    have Alc' := match Alc with | .prod Alc => Alc
+    have ⟨eqn'n, eAA_⟩ := eqT.EqParallelReduction_of.sym.inv_prod wf Alc |>.inv_list wf Alc'
+    subst n'
+    refine ⟨rfl, λ x xin => ?_⟩
+    simp_all
+    exact .equiv (EtyA x xin) <| eAA_ x xin |>.sym.TypeEquivalence_of
+  . case equiv.refl _ _ _ eqA'B' _ ih => exact ih (eqA'B'.trans eqT) rfl
+
+theorem inv_prod (Ety: [[ Δ ⊢ (</ E@i // i in [:n] />) : ⊗ {</ A@i // i in [:n'] />} ]]) : n = n' ∧ [[ </ Δ ⊢ E@i : A@i // i in [:n] /> ]] := Ety.inv_prod' .refl Ety.Type_TypeVarLocallyClosed_of
+
+-- NOTE I believe this stronger version holds but idk how to prove it. For details, check the notes.
+-- theorem inv_sum' (Ety: [[ Δ ⊢ ι n E : T ]]) (eqT: [[ Δ ⊢ T ≡ ⊕ {</ A@i // i in [:n'] />} ]]) (Alc: [[ ⊕ {</ A@i // i in [:n'] />} ]].TypeVarLocallyClosed) : n ∈ [0:n'] ∧ [[ Δ ⊢ E : A@n ]] ∧ [[ </ Δ ⊢ A@i : * // i in [:n'] /> ]] := by
+--   generalize T_eq : [[ ι n E ]] = T_ at Ety
+--   induction Ety <;> cases T_eq
+--   . case sumIntro.refl n_ Δ A' A'kiStar nin EtyA' ih =>
+--     clear ih
+--     have wf := EtyA'.WellFormedness_of
+--     have Alc' := match Alc with | .sum Alc => Alc
+--     have ⟨eqn'n_, eAA'⟩ := eqT.EqParallelReduction_of.sym.inv_sum wf Alc |>.inv_list wf Alc'
+--     subst n_
+--     refine ⟨nin, ?_, ?_⟩
+--     . exact .equiv EtyA' (eAA' n nin |>.sym.TypeEquivalence_of)
+--     . refine λ i iin => ?_
+--       have A'kiStar := A'kiStar i iin
+--       have eAA' := eAA' i iin
+--       -- NOTE this requires preservation of type equivalence (aka type parallelreduction), and idk how to prove this
+--       sorry
+
+-- theorem inv_sum (Ety: [[ Δ ⊢ ι n E : ⊕ {</ A@i // i in [:n'] />} ]]) : n ∈ [0:n'] ∧ [[ Δ ⊢ E : A@n ]] ∧ [[ </ Δ ⊢ A@i : * // i in [:n'] /> ]] := Ety.inv_sum' .refl Ety.Type_TypeVarLocallyClosed_of
+
+theorem inv_sum' (Ety: [[ Δ ⊢ ι n E : T ]]) (eqT: [[ Δ ⊢ T ≡ ⊕ {</ A@i // i in [:n'] />} ]]) (Alc: [[ ⊕ {</ A@i // i in [:n'] />} ]].TypeVarLocallyClosed) : n ∈ [0:n'] ∧ [[ Δ ⊢ E : A@n ]] := by
+  generalize T_eq : [[ ι n E ]] = T_ at Ety
+  induction Ety <;> cases T_eq
+  . case sumIntro.refl n_ Δ A' A'kiStar nin EtyA' ih =>
+    clear ih
+    have wf := EtyA'.WellFormedness_of
+    have Alc' := match Alc with | .sum Alc => Alc
+    have ⟨eqn'n_, eAA'⟩ := eqT.EqParallelReduction_of.sym.inv_sum wf Alc |>.inv_list wf Alc'
+    subst n_
+    exact ⟨nin, .equiv EtyA' <| eAA' n nin |>.sym.TypeEquivalence_of⟩
+  . case equiv.refl _ _ _ eqA'B' _ ih => exact ih (eqA'B'.trans eqT) rfl
+
+theorem inv_sum (Ety: [[ Δ ⊢ ι n E : ⊕ {</ A@i // i in [:n'] />} ]]) : n ∈ [0:n'] ∧ [[ Δ ⊢ E : A@n ]] := Ety.inv_sum' .refl Ety.Type_TypeVarLocallyClosed_of
+
 end Typing
 
 end TabularTypeInterpreter.«F⊗⊕ω»
