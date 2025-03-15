@@ -373,44 +373,37 @@ theorem Typing.type_subst' (EtyA: [[ Δ, a: K, Δ' ⊢ E: A ]]) (BkiK : [[ Δ �
 theorem Typing.type_subst (EtyA: [[ Δ, a: K ⊢ E: A ]]) (BkiK : [[ Δ ⊢ B: K ]]): [[ Δ ⊢ E[B/a] : A[B/a] ]] :=
   Typing.type_subst' (Δ' := [[ ε ]]) EtyA BkiK
 
-theorem preservation (EtyA: [[Δ ⊢ E : A]]) (Estep: [[E -> E']]): [[Δ ⊢ E' : A]] := by
-  induction EtyA generalizing E' <;> (try cases Estep; done) -- values can't step
-  . case app => -- TODO subject to inversion and term subst
-    cases Estep
-    . case appL => aesop (add unsafe constructors Typing)
-    . case appR => aesop (add unsafe constructors Typing)
-    . case lamApp Δ A B T E V EtyAarrB ihE VtyA ihV =>
-      have ⟨TeqA, I, EtyAarrB⟩ := EtyAarrB.inv_arr
+theorem preservation (EtyA: [[Δ ⊢ E : A]]) (EE': [[E -> E']]): [[Δ ⊢ E' : A]] := by
+  induction EtyA generalizing E' <;> (try cases EE'; done) -- values can't step
+  . case app Δ E A B F EtyAarrB FtyA ihE ihF =>
+    cases EE'
+    . case appL E' EE' => exact .app (ihE EE') FtyA
+    . case appR F' E FF' => exact .app EtyAarrB (ihF FF')
+    . case lamApp A' E F =>
+      have ⟨eqA'A, I, EtyAarrB⟩ := EtyAarrB.inv_arr
       have ⟨x, notIn⟩ := (I ++ E.freeTermVars).exists_fresh
-      specialize EtyAarrB x (by simp_all)
       rw [<- Term.TermVar_subst_intro_of_not_mem_freeTermVars (a := x) (by simp_all)]
-      apply Typing.term_subst
-      . assumption
-      . constructor
-        . assumption
-        . exact TeqA.symm
-  . case typeApp  =>
-    cases Estep
-    . case typeApp => aesop (add unsafe constructors Typing)
-    . case typeLamApp Δ K' A B BkiK K E EtyA ih =>
+      exact EtyAarrB x (by simp_all) |>.term_subst (.equiv FtyA eqA'A.symm)
+  . case typeApp Δ E K A B EtyA BkiK ih =>
+    cases EE'
+    . case typeApp E' EE' => exact .typeApp (ih EE') BkiK
+    . case typeLamApp K' E =>
       have ⟨Keq, I, EtyA⟩ := EtyA.inv_forall
-      subst K
+      subst K'
       have ⟨a, notIn⟩ := (I ++ E.freeTypeVars ++ A.freeTypeVars).exists_fresh
       specialize EtyA a (by simp_all)
       rw [<- Term.TypeVar_subst_intro_of_not_mem_freeTypeVars (a := a) (by simp_all)]
       rw [<- Type.TypeVar_subst_intro_of_not_mem_freeTypeVars (a := a) (by simp_all)]
-      apply Typing.type_subst <;> assumption
+      exact EtyA.type_subst BkiK
   . case prodIntro n Δ E A EtyA ih => sorry
   . case prodElim Δ E n' A n EtyA In ih =>
-    cases Estep
-    . case prodElim E' Estep => aesop (add unsafe constructors Typing)
+    cases EE'
+    . case prodElim E' EE' => exact .prodElim (ih EE') In
     . case prodElimIntro n' E In =>
       sorry -- TODO sandwith stuff
   . case sumIntro => sorry
   . case sumElim => sorry
-  . case equiv Δ E A B EtyA eq ih =>
-    specialize ih Estep
-    constructor <;> assumption
+  . case equiv Δ E A B EtyA eq ih => exact .equiv (ih EE') eq
 
 
 end TabularTypeInterpreter.«F⊗⊕ω»
