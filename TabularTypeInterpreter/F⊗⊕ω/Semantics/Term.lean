@@ -108,7 +108,7 @@ case V {</ V'@i // i in [:n] />, E, </ F@j // j in [:m] />} -> case V {</ V'@i /
 
 n ∈ [0:n']
 ───────────────────────────────────────────────────── sumElimIntro
-case ι n V {</ V'@i // i in [:n'] />} -> V'@n ⦅ι n V⦆
+case ι n V {</ V'@i // i in [:n'] />} -> V'@n V
 
 namespace OperationalSemantics
 
