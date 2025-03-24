@@ -6,28 +6,32 @@ import TabularTypeInterpreter.Syntax.Type
 
 namespace TabularTypeInterpreter
 
+termonly
 instance : Coe TypeVarId «F⊗⊕ω».TypeVarId where coe a := a
 
+termonly
 instance : Coe TypeVarId «F⊗⊕ω».TypeVar where coe a := .free a
 
+termonly
 instance : Coe TermVarId «F⊗⊕ω».TermVarId where coe x := x
 
+termonly
 instance : Coe TermVarId «F⊗⊕ω».TermVar where coe x := .free x
 
 judgement_syntax a " ≠ " a' : TypeVarNe (id a, a')
 
-def TypeVarNe := Ne (α := TypeVarId)
+judgement TypeVarNe := Ne (α := TypeVarId)
 
 judgement_syntax x " ≠ " x' : TermVarNe (id x, x')
 
-def TermVarNe := Ne (α := TermVarId)
+judgement TermVarNe := Ne (α := TermVarId)
 
 judgement_syntax n " ≠ " n' : NatNe
 
-abbrev NatNe := Ne (α := Nat)
+judgement NatNe := Ne (α := Nat)
 
 judgement_syntax b : BoolId
 
-abbrev BoolId := id (α := Bool)
+judgement BoolId := id (α := Bool)
 
 end TabularTypeInterpreter

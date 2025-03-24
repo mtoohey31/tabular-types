@@ -4,11 +4,11 @@ import TabularTypeInterpreter.Syntax.Type
 namespace TabularTypeInterpreter
 
 nosubst
-nonterminal InstanceEnvironmentEntry, γᵢ :=
-  | "(" "∀ " sepBy(a " : " κ, ", ") ". " sepBy(ψ, ", ") " ⇒ " TC τ ")" " ↦ " «F⊗⊕ω».E "; " sepBy(«F⊗⊕ω».E, ", ") : mk (bind a)
+nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") InstanceEnvironmentEntry, γᵢ :=
+  | "(" "∀ " sepBy(a " : " κ, ", ") ". " sepBy(ψ, ", ") " ⇒ " TC τ ")" " ↦ " «F⊗⊕ω».E "; " sepBy(«F⊗⊕ω».Eₛ, ", ") : mk (bind a)
 
 nosubst
-nonterminal InstanceEnvironment, Γᵢ :=
+nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") InstanceEnvironment, Γᵢ (tex := "Γ_{I}") :=
   | "ε"        : empty
   | Γᵢ ", " γᵢ : ext
 

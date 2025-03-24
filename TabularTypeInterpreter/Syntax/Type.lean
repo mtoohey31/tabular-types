@@ -4,53 +4,53 @@ import TabularTypeInterpreter.Syntax.Kind
 
 namespace TabularTypeInterpreter
 
-nonterminal Commutativity, u :=
+nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") Commutativity, u :=
   | "C" : comm
   | "N" : non
 
 locally_nameless
-metavar TypeVar, a
+metavar (tex pre := "\\sourcepre", post := "\\sourcepost") TypeVar, a
 
-metavar Label, ℓ
+metavar (tex pre := "\\sourcepre", post := "\\sourcepost") Label, ℓ
 
-nonterminal ProdOrSum, Ξ :=
+nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") ProdOrSum, Ξ :=
   | "Π" : prod
   | "Σ" : sum
 
-metavar TypeClass, TC
+metavar (tex pre := "\\sourcepre", post := "\\sourcepost") TypeClass, TC
 
 variable (TC : Unit) -- To silence warning about TC deprecation.
 
 mutual
 
-nonterminal TypeLambda, «λτ» :=
+nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") TypeLambda, «λτ» :=
   | "(" "λ " a " : " κ ". " τ ")" : mk (bind a in τ)
 
-nonterminal Monotype, τ, ξ, μ, ρ, ψ, φ :=
+nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") Monotype, τ, ξ, μ, ρ, ψ, ϕ :=
   | a                                                : var
-  | φ τ                                              : app
+  | ϕ τ                                              : app
   | τ₀ " → " τ₁                                      : arr
   | ℓ                                                : label nosubst
   | "⌊" ξ "⌋"                                        : floor
   | u                                                : comm
   | "⟨" sepBy(ξ " ▹ " τ, ", ") optional(" : " κ) "⟩" : row
-  | Ξ "(" μ ") " ρ                                   : prodOrSum
+  | Ξ "(" μ ") " ρ                                   : prodOrSum (tex := s!"\{{Ξ}}_\{{μ}} \\, {ρ}")
   | "Lift " «λτ» ρ                                   : lift
-  | ρ₀ " ≲" "(" μ ") " ρ₁                            : contain
-  | ρ₀ " ⊙" "(" μ ") " ρ₁ " ~ " ρ₂                   : concat
+  | ρ₀ " ≲" "(" μ ") " ρ₁                            : contain (tex := s!"{ρ₀} \\, \\lottsym\{≲}_\{{μ}} \\, {ρ₁}")
+  | ρ₀ " ⊙" "(" μ ") " ρ₁ " ~ " ρ₂                   : concat (tex := s!"{ρ₀} \\, \\lottsym\{⊙}_\{{μ}} \\, {ρ₁} \\, \\lottsym\{\\sim} \\, {ρ₂}")
   | TC τ                                             : typeClass
   | "All " «λτ» ρ                                    : all
   | "Ind " ρ                                         : ind
-  | "Split " «λτ» ρ₀ " ⊙' " ρ₁ " ~ " ρ₂              : split
-  | "(" τ ")"                                        : paren (expand := return τ)
+  | "Split " «λτ» ρ₀ " ⊙' " ρ₁ " ~ " ρ₂              : split (tex := s!"\\lottkw\{Split} \\, {«λτ»} \\, {ρ₀} \\, {ρ₁} \\, {ρ₂}")
+  | "(" τ ")"                                        : paren notex (expand := return τ)
 
 end
 
-nonterminal QualifiedType, γ :=
+nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") QualifiedType, γ :=
   | τ         : mono
   | ψ " ⇒ " γ : qual
 
-nonterminal TypeScheme, σ :=
+nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") TypeScheme, σ :=
   | γ                     : qual
   | "∀ " a " : " κ ". " σ : quant (bind a)
 

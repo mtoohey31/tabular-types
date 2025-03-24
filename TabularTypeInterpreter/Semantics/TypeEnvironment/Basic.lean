@@ -6,34 +6,40 @@ namespace TabularTypeInterpreter
 
 namespace TypeEnvironment
 
+termonly
 def multiTypeExt (Γ : TypeEnvironment) : List (TypeVarId × Kind) → TypeEnvironment
   | [] => Γ
   | (a, κ) :: aκs => Γ.typeExt a κ |>.multiTypeExt aκs
 
+termonly
 def append (Γ : TypeEnvironment) : TypeEnvironment → TypeEnvironment
   | empty => Γ
   | typeExt Γ' a κ => Γ.append Γ' |>.typeExt a κ
   | termExt Γ' x σ => Γ.append Γ' |>.termExt x σ
   | constrExt Γ' ψ x => Γ.append Γ' |>.constrExt ψ x
 
+termonly
 def TypeVar_subst (Γ : TypeEnvironment) (a : TypeVarId) (τ : Monotype) := match Γ with
   | empty => empty
   | typeExt Γ' a' κ => Γ'.TypeVar_subst a τ |>.typeExt a' κ
   | termExt Γ' x σ => Γ'.TypeVar_subst a τ |>.termExt x <| σ.TypeVar_subst a τ
   | constrExt Γ' ψ x => Γ'.TypeVar_subst a τ |>.constrExt (ψ.TypeVar_subst a τ) x
 
+termonly
 def typeVarDom : TypeEnvironment → List TypeVarId
   | empty => []
   | typeExt Γ a _ => a :: Γ.typeVarDom
   | termExt Γ .. => Γ.typeVarDom
   | constrExt Γ .. => Γ.typeVarDom
 
+termonly
 def termVarDom : TypeEnvironment → List TermVarId
   | empty => []
   | typeExt Γ .. => Γ.termVarDom
   | termExt Γ x _ => x :: Γ.termVarDom
   | constrExt Γ _ x => x :: Γ.termVarDom
 
+termonly
 @[simp]
 noncomputable
 def sizeOf' : TypeEnvironment → Nat
@@ -46,7 +52,7 @@ end TypeEnvironment
 
 judgement_syntax a " : " κ " ∈ " Γ : TypeEnvironment.TypeVarIn (id a)
 
-judgement TypeEnvironment.TypeVarIn :=
+judgement TypeEnvironment.TypeVarIn where
 
 ──────────────── head
 a : κ ∈ Γ, a : κ
@@ -66,7 +72,7 @@ a : κ ∈ Γ, ψ ⇝ x
 
 judgement_syntax x " : " σ " ∈ " Γ : TypeEnvironment.TermVarIn (id x)
 
-judgement TypeEnvironment.TermVarIn :=
+judgement TypeEnvironment.TermVarIn where
 
 ──────────────── head
 x : σ ∈ Γ, x : σ
@@ -87,7 +93,7 @@ x : σ ∈ Γ, ψ ⇝ x'
 
 judgement_syntax ψ " ⇝ " «F⊗⊕ω».x " ∈ " Γ : TypeEnvironment.ConstrIn (id x)
 
-judgement TypeEnvironment.ConstrIn :=
+judgement TypeEnvironment.ConstrIn where
 
 ──────────────── head
 ψ ⇝ x ∈ Γ, ψ ⇝ x
@@ -108,12 +114,13 @@ x ≠ x'
 
 judgement_syntax a " ∉ " "dom" "(" Γ ")" : TypeEnvironment.TypeVarNotInDom (id a)
 
-def TypeEnvironment.TypeVarNotInDom a (Γ : TypeEnvironment) := a ∉ Γ.typeVarDom
+judgement TypeEnvironment.TypeVarNotInDom := fun a (Γ : TypeEnvironment) => a ∉ Γ.typeVarDom
 
+termonly
 instance : Coe TermVarId «F⊗⊕ω».TermVarId where coe x := x
 
 judgement_syntax x " ∉ " "dom'" "(" Γ ")" : TypeEnvironment.TermVarNotInDom (id x)
 
-def TypeEnvironment.TermVarNotInDom x (Γ : TypeEnvironment) := x ∉ Γ.termVarDom
+judgement TypeEnvironment.TermVarNotInDom := fun x (Γ : TypeEnvironment) => x ∉ Γ.termVarDom
 
 end TabularTypeInterpreter

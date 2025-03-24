@@ -47,7 +47,6 @@ theorem Monotype.RowEquivalenceAndElaboration.to_Kinding (ρee : [[Γc; Γ ⊢ �
         let ⟨aninτ₁A, aninΓ⟩ := List.not_mem_append'.mp aninτ₁AΓ
         let ⟨aninτ₁, aninA⟩ := List.not_mem_append'.mp aninτ₁A
         have := τ₁ke a aninI
-        simp only
         rw [← QualifiedType.Monotype_open, ← TypeScheme.Monotype_open]
         rw [← QualifiedType.TypeVar_open, ← TypeScheme.TypeVar_open] at this
         exact this.Monotype_open_preservation Γcw (Γwe.typeExt aninΓ κ₀e) nofun aninτ₁ aninA
@@ -68,7 +67,6 @@ theorem Monotype.RowEquivalenceAndElaboration.to_Kinding (ρee : [[Γc; Γ ⊢ �
         let ⟨aninτ₁A, aninΓ⟩ := List.not_mem_append'.mp aninτ₁AΓ
         let ⟨aninτ₁, aninA⟩ := List.not_mem_append'.mp aninτ₁A
         have := τ₁ke a aninI
-        simp only
         rw [← QualifiedType.Monotype_open, ← TypeScheme.Monotype_open]
         rw [← QualifiedType.TypeVar_open, ← TypeScheme.TypeVar_open] at this
         exact this.Monotype_open_preservation Γcw (Γwe.typeExt aninΓ κ₀e) nofun aninτ₁ aninA

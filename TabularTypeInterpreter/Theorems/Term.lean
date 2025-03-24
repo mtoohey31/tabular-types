@@ -32,8 +32,8 @@ theorem to_Kinding (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (Γcw : [[⊢c Γ
     let ⟨xninI, xninΓ⟩ := List.not_mem_append'.mp xnin
     let ⟨_, τ₁ke⟩ := ih x xninI Γcw Γᵢw <| Γwe.termExt xninΓ τ₀ke
     exact ⟨_, τ₀ke.arr <| τ₁ke.TermVar_drop (Γ' := .empty)⟩
-  | app _ _ φih τih =>
-    let ⟨_, .arr _ τ₁ke⟩ := φih Γcw Γᵢw Γwe
+  | app _ _ ϕih τih =>
+    let ⟨_, .arr _ τ₁ke⟩ := ϕih Γcw Γᵢw Γwe
     exact ⟨_, τ₁ke⟩
   | qualI I ψke _ ih =>
     rename TypeEnvironment => Γ
@@ -176,7 +176,7 @@ theorem to_Kinding (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (Γcw : [[⊢c Γ
     let τke' := τke a aninI
     rw [← QualifiedType.TypeVar_open, ← TypeScheme.TypeVar_open] at τke'
     exact ⟨_, τke'.Monotype_open_preservation Γcw Γawe nofun aninτ aninB ρke (Γ' := .empty)⟩
-  | «splitₚ» _ _ prodih splitih =>
+  | splitP _ _ prodih splitih =>
     let ⟨_, .prod μke ρ₂ke⟩ := prodih Γcw Γᵢw Γwe
     let ⟨_, .split concatke⟩ := splitih Γcw Γᵢw Γwe
     let .concat _ ρ₀ke ρ₁ke ρ₂ke' _ _ _ (A₀ := A₀) (A₁ := A₁) := concatke
@@ -203,7 +203,7 @@ theorem to_Kinding (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (Γcw : [[⊢c Γ
         | 1 => rw [List.get!_cons_succ, List.get!_cons_zero]
       ), List.length_cons, List.length_singleton]
       apply Monotype.label.Uniqueness.concrete
-      intro _ mem i
+      intro i mem
       match i with
       | 0 =>
         intro j mem
@@ -217,16 +217,12 @@ theorem to_Kinding (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (Γcw : [[⊢c Γ
     · intro i mem
       match i with
       | 0 =>
-        intro i
-        dsimp [i]
         rw [List.get!_cons_zero]
         exact .prod μke ρ₀ke
       | 1 =>
-        intro i
-        dsimp [i]
         rw [List.get!_cons_succ, List.get!_cons_zero]
         exact .prod μke ρ₁ke
-  | «splitₛ» _ _ _ _ _ arrρ₁ih splitih =>
+  | splitS _ _ _ _ _ arrρ₁ih splitih =>
     let ⟨_, .arr (.sum μke ρ₁ke) τ₁ke⟩ := arrρ₁ih Γcw Γᵢw Γwe
     let ⟨_, .split concatke⟩ := splitih Γcw Γᵢw Γwe
     let .concat _ _ ρ₁ke' ρ₂ke .. := concatke
@@ -343,7 +339,6 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     cases Kind.row.inj κeq
     apply Typing.prodIntro (Γwe.soundness Γcw)
     intro i mem
-    simp only
     exact ih i mem (τke i mem) Γcw Γᵢw Γwe
   | sum _ _ _ _ ih =>
     let .sum _ rowke := σke
@@ -353,7 +348,6 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     let mem : 0 ∈ [0:1] := ⟨Nat.le.refl, Nat.one_pos, Nat.mod_one _⟩
     apply Typing.sumIntro mem <| ih τke Γcw Γᵢw Γwe
     intro i mem
-    simp only
     let 0 := i
     rw [List.get!_cons_zero]
     exact τke.soundness Γcw Γwe .star
@@ -619,11 +613,9 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
         Bopaₚlc.weaken (n := 3).TypeVar_open_id, Bopaₚlc.weaken (n := 2).TypeVar_open_id,
         Bopaₚlc.weaken (n := 1).TypeVar_open_id, Bopaᵢlc.weaken (n := 5).TypeVar_open_id,
         Bopaᵢlc.weaken (n := 4).TypeVar_open_id, Bopaᵢlc.weaken (n := 3).TypeVar_open_id,
-        Bopaᵢlc.weaken (n := 2).TypeVar_open_id, Bopaᵢlc.weaken (n := 1).TypeVar_open_id,
-        ← Monotype.TypeVar_open_eq_Monotype_open_var,
-        ← Monotype.TypeVar_open_eq_Monotype_open_var]
+        Bopaᵢlc.weaken (n := 2).TypeVar_open_id, Bopaᵢlc.weaken (n := 1).TypeVar_open_id]
     exact arr τopaₚke τopaᵢke
-  | «splitₚ» Mte splitce Mih splitih =>
+  | splitP Mte splitce Mih splitih =>
     let ⟨_, .prod μke ρ₂ke⟩ := Mte.to_Kinding Γcw Γᵢw Γwe
     let ⟨_, splitke@(.split concatke)⟩ := splitce.to_Kinding Γcw Γᵢw Γwe
     let .concat _ liftke ρ₁ke ρ₂ke' κe contain₀ke contain₁ke := concatke
@@ -706,7 +698,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
       simp only at τ'ke'
       rw [And.right <| τ'ke'.deterministic <| .prod μke ρ₁ke]
       exact .equiv this <| .arr (.prod .listAppIdL) <| .prod .listAppIdL
-  | «splitₛ» Mte Nte splitce τ₁ke Mih Nih splitih =>
+  | splitS Mte Nte splitce τ₁ke Mih Nih splitih =>
     let ⟨_, arr₁ke@(.arr sum₁ke τ₁ke')⟩ := Nte.to_Kinding Γcw Γᵢw Γwe
     rcases τ₁ke.deterministic τ₁ke' with ⟨_, rfl⟩
     let .sum _ ρ₁ke := sum₁ke

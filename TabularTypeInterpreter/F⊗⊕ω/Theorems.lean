@@ -301,10 +301,10 @@ theorem term_subst' (EtyA: [[ Δ, x: T, Δ' ⊢ E: A ]]) (FtyT : [[ Δ ⊢ F: T 
     exact .prodIntro wf.TermVar_drop (by simp_all)
   . case prodElim Δ_ _ n _ _ _ _ _ =>
     subst Δ_
-    exact .prodElim (n' := n) (by simp_all) (by simp_all)
+    exact .prodElim (n := n) (by simp_all) (by simp_all)
   . case sumIntro _ n Δ_ _ _ _ EtyA AkiStar _ =>
     subst Δ_
-    refine .sumIntro (n' := n) (by simp_all) (by simp_all) (λ x xin => AkiStar x xin |>.TypeVar_drop)
+    refine .sumIntro (n := n) (by simp_all) (by simp_all) (λ x xin => AkiStar x xin |>.TypeVar_drop)
   . case sumElim Δ_ _ n _ _ _ _ _ BkiStar _ ih2 =>
     subst Δ_
     exact .sumElim (n := n) (by simp_all) (λ x xin => ih2 x xin rfl) BkiStar.TypeVar_drop
@@ -374,10 +374,10 @@ theorem Typing.type_subst' (EtyA: [[ Δ, a: K, Δ' ⊢ E: A ]]) (BkiK : [[ Δ �
     simp_all
     have ⟨A', A'eq⟩: ∃A': ℕ → «Type», ∀i, A' i = (A i).TypeVar_subst a B := ⟨λi => (A i).TypeVar_subst a B, λi => by simp⟩
     rw [<- A'eq i]; rw [<- funext (λi => A'eq i)] at ih
-    refine .prodElim (n' := n) ih iRange
+    refine .prodElim (n := n) ih iRange
   . case sumIntro _ n Δ_ _ _ _ EtyA A'kiStar _ =>
     subst Δ_
-    refine .sumIntro (n' := n) (by simp_all) (by simp_all) (λ x xin => ?_)
+    refine .sumIntro (n := n) (by simp_all) (by simp_all) (λ x xin => ?_)
     exact A'kiStar x xin |>.subst' EtyA.WellFormedness_of BkiK
   . case sumElim Δ_ E n _ _ _ EtyA _ B'kiStar ih1 ih2 =>
     subst Δ_

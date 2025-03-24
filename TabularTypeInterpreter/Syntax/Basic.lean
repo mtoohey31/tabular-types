@@ -3,6 +3,6 @@ import Lott
 namespace TabularTypeInterpreter
 
 locally_nameless
-metavar TermVar, x
+metavar (tex pre := "\\sourcepre", post := "\\sourcepost") TermVar, x
 
 end TabularTypeInterpreter
