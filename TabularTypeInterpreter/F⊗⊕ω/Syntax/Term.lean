@@ -1,4 +1,3 @@
-import Lott.Elab.Nat
 import TabularTypeInterpreter.«F⊗⊕ω».Syntax.Type
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»

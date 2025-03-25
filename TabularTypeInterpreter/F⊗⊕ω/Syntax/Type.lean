@@ -4,6 +4,9 @@ import TabularTypeInterpreter.«F⊗⊕ω».Syntax.Kind
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
 
+run_cmd Lott.addNatAlias `i
+run_cmd Lott.addNatAlias `j
+
 locally_nameless
 metavar (tex pre := "\\targetpre", post := "\\targetpost") TypeVar, a
 
