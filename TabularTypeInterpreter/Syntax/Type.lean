@@ -27,22 +27,22 @@ nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") TypeLambda, «λ�
   | "(" "λ " a " : " κ ". " τ ")" : mk (bind a in τ)
 
 nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") Monotype, τ, ξ, μ, ρ, ψ, ϕ :=
-  | a                                                : var
-  | ϕ τ                                              : app
-  | τ₀ " → " τ₁                                      : arr
-  | ℓ                                                : label nosubst
-  | "⌊" ξ "⌋"                                        : floor
-  | u                                                : comm
-  | "⟨" sepBy(ξ " ▹ " τ, ", ") optional(" : " κ) "⟩" : row
-  | Ξ "(" μ ") " ρ                                   : prodOrSum (tex := s!"\{{Ξ}}_\{{μ}} \\, {ρ}")
-  | "Lift " «λτ» ρ                                   : lift
-  | ρ₀ " ≲" "(" μ ") " ρ₁                            : contain (tex := s!"{ρ₀} \\, \\lottsym\{≲}_\{{μ}} \\, {ρ₁}")
-  | ρ₀ " ⊙" "(" μ ") " ρ₁ " ~ " ρ₂                   : concat (tex := s!"{ρ₀} \\, \\lottsym\{⊙}_\{{μ}} \\, {ρ₁} \\, \\lottsym\{\\sim} \\, {ρ₂}")
-  | TC τ                                             : typeClass
-  | "All " «λτ» ρ                                    : all
-  | "Ind " ρ                                         : ind
-  | "Split " «λτ» ρ₀ " ⊙' " ρ₁ " ~ " ρ₂              : split (tex := s!"\\lottkw\{Split} \\, {«λτ»} \\, {ρ₀} \\, {ρ₁} \\, {ρ₂}")
-  | "(" τ ")"                                        : paren notex (expand := return τ)
+  | a                                                  : var
+  | ϕ τ                                                : app
+  | τ₀ " → " τ₁                                        : arr
+  | ℓ                                                  : label nosubst
+  | "⌊" ξ "⌋"                                          : floor
+  | u                                                  : comm
+  | "⟨" f:sepBy(ξ " ▹ " τ, ", ") optional(" : " κ) "⟩" : row (tex := s!"\\lottsym\{⟨} {f} \\lottsym\{⟩}")
+  | Ξ "(" μ ") " ρ                                     : prodOrSum (tex := s!"\{{Ξ}}_\{{μ}} \\, {ρ}")
+  | "Lift " «λτ» ρ                                     : lift
+  | ρ₀ " ≲" "(" μ ") " ρ₁                              : contain (tex := s!"{ρ₀} \\, \\lottsym\{≲}_\{{μ}} \\, {ρ₁}")
+  | ρ₀ " ⊙" "(" μ ") " ρ₁ " ~ " ρ₂                     : concat (tex := s!"{ρ₀} \\, \\lottsym\{⊙}_\{{μ}} \\, {ρ₁} \\, \\lottsym\{\\sim} \\, {ρ₂}")
+  | TC τ                                               : typeClass
+  | "All " «λτ» ρ                                      : all
+  | "Ind " ρ                                           : ind
+  | "Split " «λτ» ρ₀ " ⊙' " ρ₁ " ~ " ρ₂                : split (tex := s!"\\lottkw\{Split} \\, {«λτ»} \\, {ρ₀} \\, {ρ₁} \\, {ρ₂}")
+  | "(" τ ")"                                          : paren notex (expand := return τ)
 
 end
 

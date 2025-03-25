@@ -13,7 +13,7 @@ theorem Monotype.RowEquivalenceAndElaboration.to_Kinding (ρee : [[Γc; Γ ⊢ �
   : ∃ κ A B, [[Γc; Γ ⊢ ρ₀ : R κ ⇝ A]] ∧ [[Γc; Γ ⊢ ρ₁ : R κ ⇝ B]] := by
   match ρee with
   | refl ρek .. => exact ⟨_, _, _, ρek, ρek⟩
-  | comm perm _ _ ξτke κe (p := p) =>
+  | comm perm _ _ ξτke κe (p_ := p) =>
     let ⟨⟨_, ξke⟩, uni, ⟨_, _, eq, eqκ, h, _, τke⟩⟩ := ξτke.row_inversion
     cases eqκ
     rw [← Std.Range.map_get!_eq (as := p), List.map_map]

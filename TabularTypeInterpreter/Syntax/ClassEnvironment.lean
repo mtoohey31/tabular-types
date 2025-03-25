@@ -10,7 +10,7 @@ nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") ClassEnvironmentE
 
 nosubst
 nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") ClassEnvironment, Γc (tex := "Γ_{C}") :=
-  | "ε"         : empty
+  | "ε"         : empty (tex := "\\epsilon")
   | Γc ", " γc  : ext
   | "(" Γc ")"  : paren notex (expand := return Γc)
   | Γc ", " Γc' : append notex (expand := return .mkCApp `TabularTypeInterpreter.ClassEnvironment.append #[Γc, Γc'])

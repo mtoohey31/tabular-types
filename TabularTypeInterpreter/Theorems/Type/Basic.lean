@@ -17,7 +17,7 @@ namespace Monotype.RowEquivalenceAndElaboration
 theorem symm (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (Γcw : [[⊢c Γc]]) (Γwe : [[Γc ⊢ Γ ⇝ Δ]])
   : ∃ Fₚ' Fₛ', [[Γc; Γ ⊢ ρ₁ ≡(μ) ρ₀ ⇝ Fₚ', Fₛ']] := match ρee with
   | refl ρek κe => ⟨_, _, refl ρek κe⟩
-  | comm perm perm' inv ξτske κe (ξ := ξ) (τ := τ) (A := A) (p := p) (p' := p') (n := n) => by
+  | comm perm perm' inv ξτske κe (ξ := ξ) (τ := τ) (A := A) (p_ := p) (p_' := p') (n := n) => by
     let ξ' i := ξ (p.get! i)
     let τ' i := τ (p.get! i)
     rw [← Range.map_get!_eq (as := p), List.map_map]
@@ -164,7 +164,7 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (�
         .app (.typeApp Fₛ₁₂lc.weaken (.var_bound Nat.one_pos)) <|
         .app (.typeApp Fₛ₀₁lc.weaken (.var_bound Nat.one_pos)) .var
     ⟩
-  | comm perm perm' inv ξτske κe' (A := A') (p := p) (p' := p') =>
+  | comm perm perm' inv ξτske κe' (A := A') (p_ := p) (p_' := p') =>
     rw [← Range.map_get!_eq (as := p)] at ρ₁ke ⊢
     rw [List.map_map, ← Range.map] at ρ₁ke
     let ⟨⟨_, ξke⟩, _, ⟨B', _, Beq, κeq, _, _, τke⟩⟩ := ρ₁ke.row_inversion

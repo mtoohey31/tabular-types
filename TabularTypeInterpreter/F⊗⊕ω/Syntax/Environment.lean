@@ -4,7 +4,7 @@ namespace TabularTypeInterpreter.«F⊗⊕ω»
 
 nosubst
 nonterminal (tex pre := "\\targetpre", post := "\\targetpost") Environment, Δ :=
-  | "ε"                  : empty
+  | "ε"                  : empty (tex := "\\epsilon")
   | Δ ", " a " : " K     : typeExt (id a)
   | Δ ", " x " : " A     : termExt (id x)
   | "(" Δ ")"            : paren notex (expand := return Δ)

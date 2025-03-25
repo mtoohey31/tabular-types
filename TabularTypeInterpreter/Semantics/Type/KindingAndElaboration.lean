@@ -1,7 +1,6 @@
 import Lott.Elab.JudgementComprehension
 import Lott.Elab.OrJudgement
 import Lott.Elab.UniversalJudgement
-import TabularTypeInterpreter.Data.Range
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Type
 import TabularTypeInterpreter.Semantics.Kind
 import TabularTypeInterpreter.Semantics.TypeEnvironment.Basic
@@ -68,7 +67,7 @@ a : κ ∈ Γ
 </ Γc; Γ ⊢ ξ@i : L ⇝ B@i // i in [:n] notex />
 unique(</ ξ@i // i in [:n] notex />)
 </ Γc; Γ ⊢ τ@i : κ ⇝ A@i // i in [:n] notex />
-n ≠ 0 ∨ b
+notex n ≠ 0 ∨ b
 ────────────────────────────────────────────────────────────────────────────────────────────────── row
 Γc; Γ ⊢ ⟨</ ξ@i ▹ τ@i // i in [:n] notex /> </ : κ // b />⟩ : R κ ⇝ {</ A@i // i in [:n] notex />}
 
@@ -155,12 +154,15 @@ Fₛ := Λ a : K ↦ *. λ x : ⊕ (a$0 ⟦A₀⟧). Fₛ₁₂ [a$0] ⦅Fₛ₀
 ────────────────────────────────────────────────────────────────── trans
 Γc; Γ ⊢ ρ₀ ≡(μ) ρ₂ ⇝ Fₚ, Fₛ
 
+p_ permutes [:n]
+p_' permutes [:n]
+p_ inverts p_' on [:n]
 Γc; Γ ⊢ ⟨</ ξ@i ▹ τ@i // i in [:n] /> </ : κ // b notex />⟩ : R κ ⇝ {</ A@i // i in [:n] />}
 ⊢ κ ⇝ K
-Fₚ := Λ a : K ↦ *. λ x : ⊗ (a$0 ⟦{</ A@i // i in [:n] />}⟧). (</ π i x$0 // i in p />)
-Fₛ := Λ a : K ↦ *. λ x : ⊕ (a$0 ⟦{</ A@i // i in [:n] />}⟧). case x$0 {</ λ x' : a$0 A@i. ι j x'$0 // (tex := "i \\in [:n], j \\in p'") (i, j) in [:n].toList.zip p' />}
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── comm (comment := "$p$ permutes $[:n]$ and $p'$ inverts $p$") {p p' : List Nat} (perm : List.Perm p [:n]) (perm' : List.Perm p' [:n]) (inv : Std.Range.get!InverseOn p p' n)
-Γc; Γ ⊢ ⟨</ ξ@i ▹ τ@i // i in [:n] /> </ : κ // b notex />⟩ ≡(C) ⟨</ ξ@i ▹ τ@i // i in p /> </ : κ // b notex />⟩ ⇝ Fₚ, Fₛ
+Fₚ := Λ a : K ↦ *. λ x : ⊗ (a$0 ⟦{</ A@i // i in [:n] />}⟧). (</ π i x$0 // (tex := "i \\in p") i in p_ />)
+Fₛ := Λ a : K ↦ *. λ x : ⊕ (a$0 ⟦{</ A@i // i in [:n] />}⟧). case x$0 {</ λ x' : a$0 A@i. ι j x'$0 // (tex := "i \\in [:n], j \\in p'") (i, j) in [:n].toList.zip p_' />}
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── comm
+Γc; Γ ⊢ ⟨</ ξ@i ▹ τ@i // i in [:n] /> </ : κ // b notex />⟩ ≡(C) ⟨</ ξ@i ▹ τ@i // i in p_ /> </ : κ // b notex />⟩ ⇝ Fₚ, Fₛ
 
 Γc; Γ ⊢ Lift (λ a : κ₀. τ₁) ⟨</ ξ@i ▹ τ₀@i // i in [:n] notex /> </ : κ₀ // b notex />⟩ : R κ₁ ⇝ A
 ⊢ κ₁ ⇝ K

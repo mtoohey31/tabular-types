@@ -9,7 +9,7 @@ nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") InstanceEnvironme
 
 nosubst
 nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") InstanceEnvironment, Γᵢ (tex := "Γ_{I}") :=
-  | "ε"        : empty
+  | "ε"        : empty (tex := "\\epsilon")
   | Γᵢ ", " γᵢ : ext
 
 end TabularTypeInterpreter

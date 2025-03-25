@@ -1,5 +1,8 @@
+import Lott.Data.Range
 import Lott.Elab.Bool
 import Lott.Elab.Nat
+import TabularTypeInterpreter.Data.List
+import TabularTypeInterpreter.Elab.Permutation
 import TabularTypeInterpreter.«F⊗⊕ω».Syntax.Term
 import TabularTypeInterpreter.Syntax.Basic
 import TabularTypeInterpreter.Syntax.Type
@@ -34,4 +37,10 @@ judgement_syntax b : BoolId
 
 judgement BoolId := id (α := Bool)
 
+judgement_syntax p_ " permutes " "[" ":" n "]" : Permutes
+
+judgement Permutes := fun p n => List.Perm p [:n].toList
+
 end TabularTypeInterpreter
+
+judgement_syntax TabularTypeInterpreter.p_ " inverts " TabularTypeInterpreter.p_' " on " "[" ":" n "]" : Std.Range.get!InverseOn
