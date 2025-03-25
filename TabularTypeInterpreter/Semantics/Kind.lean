@@ -7,7 +7,7 @@ open «F⊗⊕ω»
 
 judgement_syntax "⊢ " κ " ⇝ " K : Kind.Elaboration
 
-judgement Kind.Elaboration :=
+judgement Kind.Elaboration where
 
 ─────── star
 ⊢ * ⇝ *

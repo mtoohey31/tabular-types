@@ -13,8 +13,8 @@ open Std
 theorem TypeScheme.KindingAndElaboration.deterministic (σke₀ : [[Γc; Γ ⊢ σ : κ₀ ⇝ A]])
   (σke₁ : [[Γc; Γ ⊢ σ : κ₁ ⇝ B]]) : κ₀ = κ₁ ∧ A = B := match σke₀, σke₁ with
   | .var aκ₀in, .var aκ₁in => ⟨aκ₀in.deterministic aκ₁in, rfl⟩
-  | .app φ₀ke τ₀ke, .app φ₁ke τ₁ke =>
-    let ⟨κ₀eq, Aeq⟩ := φ₀ke.deterministic φ₁ke
+  | .app ϕ₀ke τ₀ke, .app ϕ₁ke τ₁ke =>
+    let ⟨κ₀eq, Aeq⟩ := ϕ₀ke.deterministic ϕ₁ke
     ⟨Kind.arr.inj κ₀eq |>.right, Type.app.injEq .. |>.mpr ⟨Aeq, τ₀ke.deterministic τ₁ke |>.right⟩⟩
   | .arr τ₀₀ke τ₁₀ke, .arr τ₀₁ke τ₁₁ke => ⟨
       rfl,
@@ -339,9 +339,9 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
   (Γcw : [[⊢c Γc]]) (Γwe : [[Γc ⊢ Γ ⇝ Δ]]) (κe : [[⊢ κ ⇝ K]]) : [[Δ ⊢ A : K]] := open TypeScheme in
   match σ, σke with
   | .qual (.mono (.var _)), .var aκinΓ => .var <| Γwe.TypeVarIn_preservation aκinΓ κe
-  | .qual (.mono (.app φ τ)), .app φke τke (κ₀ := κ₀) =>
+  | .qual (.mono (.app ϕ τ)), .app ϕke τke (κ₀ := κ₀) =>
     let ⟨K₀, κ₀e⟩ := κ₀.Elaboration_total
-    .app (φke.soundness Γcw Γwe (.arr κ₀e κe)) (τke.soundness Γcw Γwe κ₀e)
+    .app (ϕke.soundness Γcw Γwe (.arr κ₀e κe)) (τke.soundness Γcw Γwe κ₀e)
   | .qual (.mono (.arr τ₀ τ₁)), .arr τ₀ke τ₁ke =>
     let .star := κe
     .arr (τ₀ke.soundness Γcw Γwe .star) (τ₁ke.soundness Γcw Γwe .star)
@@ -349,9 +349,9 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
     .scheme (I := Γ.typeVarDom ++ I) fun a anin =>
       let ⟨aninΓ, aninI⟩ := List.not_mem_append'.mp anin
       σ'ke a aninI |>.soundness Γcw (Γwe.typeExt aninΓ κ'e) κe
-  | .qual (.qual ψ γ), .qual φke γke κe' => by
+  | .qual (.qual ψ γ), .qual ϕke γke κe' => by
     cases κe.deterministic κe'
-    exact .arr (φke.soundness Γcw Γwe .constr) (γke.soundness Γcw Γwe κe')
+    exact .arr (ϕke.soundness Γcw Γwe .constr) (γke.soundness Γcw Γwe κe')
   | .qual (.mono (.label _)), .label => let .label := κe; .unit
   | .qual (.mono (.floor _)), .floor _ => let .star := κe; .unit
   | .qual (.mono (.comm _)), .comm => let .comm := κe; .unit

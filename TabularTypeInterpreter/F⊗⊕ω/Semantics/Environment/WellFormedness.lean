@@ -4,7 +4,7 @@ namespace TabularTypeInterpreter.«F⊗⊕ω»
 
 judgement_syntax "⊢ " Δ : EnvironmentWellFormedness
 
-judgement EnvironmentWellFormedness :=
+judgement EnvironmentWellFormedness where
 
 ─── empty
 ⊢ ε
@@ -20,6 +20,7 @@ x ∉ dom(Δ)
 ────────── termVarExt
 ⊢ Δ, x : A
 
+termonly
 @[app_unexpander EnvironmentWellFormedness]
 def EnvironmentWellFormedness.delab: Lean.PrettyPrinter.Unexpander
   | `($(_) $Δ) =>
@@ -30,7 +31,7 @@ def EnvironmentWellFormedness.delab: Lean.PrettyPrinter.Unexpander
 
 judgement_syntax "⊢τ" Δ : EnvironmentTypeWellFormedness
 
-judgement EnvironmentTypeWellFormedness :=
+judgement EnvironmentTypeWellFormedness where
 
 ─── empty
 ⊢τ ε

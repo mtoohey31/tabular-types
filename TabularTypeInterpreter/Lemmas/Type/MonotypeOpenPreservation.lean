@@ -736,21 +736,21 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
                 | .typeExt _ a'inΓ => a'inΓ.append_inl a'ninΓ'.TypeVar_subst_preservation
               | .inr a'inΓ' => a'inΓ'.TypeVar_subst_preservation.append_inr
         all_goals split at σke <;> nomatch σke
-      | .app φ τ'' =>
+      | .app ϕ τ'' =>
         rw [Monotype.TypeVar_open] at σke
         cases A <;> rw [Type.TypeVar_open] at σke
         case app =>
-          let .app φke τ''ke := σke
+          let .app ϕke τ''ke := σke
           rw [Monotype.Monotype_open, Type.Type_open]
-          rw [← QualifiedType.TypeVar_open, ← TypeVar_open] at φke τ''ke
+          rw [← QualifiedType.TypeVar_open, ← TypeVar_open] at ϕke τ''ke
           rw [Monotype.freeTypeVars] at aninσ
           rw [Type.freeTypeVars] at aninA
-          let φke' := φke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ'
+          let ϕke' := ϕke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ'
             (aninσ <| List.mem_append_left _ ·) (aninA <| List.mem_append_left _ ·) τke
           let τ''ke' := τ''ke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ'
             (aninσ <| List.mem_append_right _ ·) (aninA <| List.mem_append_right _ ·) τke
-          rw [Monotype_open, QualifiedType.Monotype_open] at φke' τ''ke'
-          exact app φke' τ''ke'
+          rw [Monotype_open, QualifiedType.Monotype_open] at ϕke' τ''ke'
+          exact app ϕke' τ''ke'
         all_goals nomatch σke
       | .arr τ₀ τ₁ =>
         rw [Monotype.TypeVar_open] at σke

@@ -11,7 +11,7 @@ namespace Monotype
 
 @[elab_as_elim]
 def rec_uniform {motive : Monotype → Prop} (var : ∀ a, motive (.var a))
-  (app : ∀ φ τ, motive φ → motive τ → motive (.app φ τ))
+  (app : ∀ ϕ τ, motive ϕ → motive τ → motive (.app ϕ τ))
   (arr : ∀ τ₀ τ₁, motive τ₀ → motive τ₁ → motive (.arr τ₀ τ₁)) (label : ∀ ℓ, motive (.label ℓ))
   (floor : ∀ ξ, motive ξ → motive (.floor ξ)) (comm : ∀ u, motive (.comm u))
   (row : ∀ ξτs κ?, (∀ ξτ ∈ ξτs, motive ξτ.fst ∧ motive ξτ.snd) → motive (.row ξτs κ?))
@@ -688,7 +688,6 @@ def Perm_preservation {ξ' : Nat → Monotype} (uni : [[unique(</ ξ@i // i in [
     )]
     apply concrete
     intro i imem
-    simp only
     let pimem := Std.Range.mem_of_mem_toList <| perm.mem_iff.mp <| List.get!_mem imem.upper
     intro j jmem
     let pjmem := Std.Range.mem_of_mem_toList <| perm.mem_iff.mp <| List.get!_mem jmem.upper
@@ -723,7 +722,7 @@ theorem weakening (σke : [[Γc; Γ, Γ'' ⊢ σ : κ ⇝ A]])
   | var aκinΓΓ'' => exact var <| match aκinΓΓ''.append_elim with
     | .inl ⟨aκinΓ, aninΓ''⟩ => ΓΓ'Γ''we.TypeVarIn_weakening aκinΓ
     | .inr aκinΓ'' => aκinΓ''.append_inr.append_inr
-  | app φke τke => exact app (φke.weakening ΓΓ'Γ''we) (τke.weakening ΓΓ'Γ''we)
+  | app ϕke τke => exact app (ϕke.weakening ΓΓ'Γ''we) (τke.weakening ΓΓ'Γ''we)
   | arr τ₀ke τ₁ke => exact arr (τ₀ke.weakening ΓΓ'Γ''we) (τ₁ke.weakening ΓΓ'Γ''we)
   | qual ψke γke κe => exact qual (ψke.weakening ΓΓ'Γ''we) (γke.weakening ΓΓ'Γ''we) κe
   | scheme I σ'ke κ₀e =>
@@ -848,7 +847,7 @@ theorem TermVar_drop (σke : [[Γc; Γ, x : σ₁, Γ' ⊢ σ₀ : κ ⇝ A]])
   | var aκinΓxσΓ' => var <| match aκinΓxσΓ'.append_elim with
     | .inl ⟨.termExt aκinΓ, aninΓ'⟩ => aκinΓ.append_inl aninΓ'
     | .inr aκinΓ' => aκinΓ'.append_inr
-  | app φke τke => app φke.TermVar_drop τke.TermVar_drop
+  | app ϕke τke => app ϕke.TermVar_drop τke.TermVar_drop
   | arr τ₀ke τ₁ke => arr τ₀ke.TermVar_drop τ₁ke.TermVar_drop
   | qual ψke γke κe => qual ψke.TermVar_drop γke.TermVar_drop κe
   | scheme I σ'ke κ₀e => by
@@ -916,7 +915,7 @@ theorem Constr_drop (σke : [[Γc; Γ, ψ ⇝ x, Γ' ⊢ σ : κ ⇝ A]])
   | var aκinΓψxΓ' => var <| match aκinΓψxΓ'.append_elim with
     | .inl ⟨.constrExt aκinΓ, aninΓ'⟩ => aκinΓ.append_inl aninΓ'
     | .inr aκinΓ' => aκinΓ'.append_inr
-  | app φke τke => app φke.Constr_drop τke.Constr_drop
+  | app ϕke τke => app ϕke.Constr_drop τke.Constr_drop
   | arr τ₀ke τ₁ke => arr τ₀ke.Constr_drop τ₁ke.Constr_drop
   | qual ψke γke κe => qual ψke.Constr_drop γke.Constr_drop κe
   | scheme I σ'ke κ₀e => by

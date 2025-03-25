@@ -5,9 +5,9 @@ import TabularTypeInterpreter.«F⊗⊕ω».Syntax.Kind
 namespace TabularTypeInterpreter.«F⊗⊕ω»
 
 locally_nameless
-metavar TypeVar, a
+metavar (tex pre := "\\targetpre", post := "\\targetpost") TypeVar, a
 
-nonterminal «Type», A, B, C, T :=
+nonterminal (tex pre := "\\targetpre", post := "\\targetpost") «Type», A, B, C, T :=
   | a                      : var
   | "λ " a " : " K ". " A  : lam (bind a in A)
   | A B                    : app
@@ -17,11 +17,14 @@ nonterminal «Type», A, B, C, T :=
   | A " ⟦" B "⟧"           : listApp
   | "⊗ " A                 : prod
   | "⊕ " A                 : sum
-  | "(" A ")"              : paren (expand := return A)
+  | "(" A ")"              : paren notex (expand := return A)
 
+termonly
 attribute [aesop norm (rule_sets := [topen])] Type.Type_open Type.TypeVar_open
 
 namespace «Type»
+
+termonly
 @[app_unexpander TypeVar_open]
 def delabTVOpen: Lean.PrettyPrinter.Unexpander
   | `($(_) $T $a)
@@ -31,6 +34,7 @@ def delabTVOpen: Lean.PrettyPrinter.Unexpander
     `( $T^$a @ $n )
   | _ => throw ()
 
+termonly
 @[app_unexpander Type_open]
 def delabTOpen: Lean.PrettyPrinter.Unexpander
   | `($(_) $T $a)
@@ -40,6 +44,7 @@ def delabTOpen: Lean.PrettyPrinter.Unexpander
     `( $T^^$a @ $n )
   | _ => throw ()
 
+termonly
 @[app_unexpander TypeVar_subst]
 def delabTVSubst: Lean.PrettyPrinter.Unexpander
   | `($(_) $T $a $A) =>
@@ -47,10 +52,12 @@ def delabTVSubst: Lean.PrettyPrinter.Unexpander
     let mapsto := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "↦") }
     `( $T[$a $mapsto $A])
   | _ => throw ()
+
 end «Type»
 
 namespace «Type»
 
+termonly
 inductive TypeVarLocallyClosed_aux : «Type» → Prop where
 | var_free: ∀{x}, (var (TypeVar.free x)).TypeVarLocallyClosed_aux
 | lam: ∀{I: List _} {K A}, (∀a ∉ I, (A.TypeVar_open a).TypeVarLocallyClosed_aux) → (Type.lam K A).TypeVarLocallyClosed_aux

@@ -5,7 +5,7 @@ namespace TabularTypeInterpreter
 
 judgement_syntax Γc " ⊢ " Γᵢ : InstanceEnvironment.WellFormedness
 
-judgement InstanceEnvironment.WellFormedness :=
+judgement InstanceEnvironment.WellFormedness where
 
 ─────── empty
 Γc ⊢ Γᵢ

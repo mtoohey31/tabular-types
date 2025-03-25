@@ -2,17 +2,17 @@ import TabularTypeInterpreter.Syntax.Type
 
 namespace TabularTypeInterpreter
 
-metavar Member, m
+metavar (tex pre := "\\sourcepre", post := "\\sourcepost") Member, m
 
 nosubst
-nonterminal ClassEnvironmentEntry, γc :=
+nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") ClassEnvironmentEntry, γc :=
   | "(" sepBy(TCₛ a " ⇝ " «F⊗⊕ω».Aₛ, ", ") " ⇒ " TC a " : " κ ")" " ↦ " m " : " σ " ⇝ " «F⊗⊕ω».A : mk (bind a)
 
 nosubst
-nonterminal ClassEnvironment, Γc :=
-  | "ε"         : empty
+nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") ClassEnvironment, Γc (tex := "Γ_{C}") :=
+  | "ε"         : empty (tex := "\\epsilon")
   | Γc ", " γc  : ext
-  | "(" Γc ")"  : paren (expand := return Γc)
-  | Γc ", " Γc' : append (expand := return .mkCApp `TabularTypeInterpreter.ClassEnvironment.append #[Γc, Γc'])
+  | "(" Γc ")"  : paren notex (expand := return Γc)
+  | Γc ", " Γc' : append notex (expand := return .mkCApp `TabularTypeInterpreter.ClassEnvironment.append #[Γc, Γc'])
 
 end TabularTypeInterpreter

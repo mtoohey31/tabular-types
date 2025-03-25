@@ -2,6 +2,7 @@ import TabularTypeInterpreter.Syntax.Type
 
 namespace TabularTypeInterpreter
 
+termonly
 mutual
 
 @[simp]
@@ -12,7 +13,7 @@ def TypeLambda.sizeOf' : TypeLambda → Nat | .mk κ τ => 1 + sizeOf κ + τ.si
 noncomputable
 def Monotype.sizeOf' : Monotype → Nat
   | .var a => 1 + sizeOf a
-  | .app φ τ => 1 + φ.sizeOf' + τ.sizeOf'
+  | .app ϕ τ => 1 + ϕ.sizeOf' + τ.sizeOf'
   | .arr τ₀ τ₁ => 1 + τ₀.sizeOf' + τ₁.sizeOf'
   | .label ℓ => 1 + sizeOf ℓ
   | .floor ξ => 1 + ξ.sizeOf'
@@ -29,12 +30,14 @@ def Monotype.sizeOf' : Monotype → Nat
 
 end
 
+termonly
 @[simp]
 noncomputable
 def QualifiedType.sizeOf' : QualifiedType → Nat
   | mono τ => 1 + τ.sizeOf'
   | qual ψ γ => 1 + ψ.sizeOf' + γ.sizeOf'
 
+termonly
 @[simp]
 noncomputable
 def TypeScheme.sizeOf' : TypeScheme → Nat

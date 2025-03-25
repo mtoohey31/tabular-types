@@ -8,7 +8,7 @@ namespace TabularTypeInterpreter.«F⊗⊕ω»
 
 judgement_syntax Δ " ⊢ " A " : " K : Kinding
 
-judgement Kinding :=
+judgement Kinding where
 
 a : K ∈ Δ
 ───────── var
@@ -32,9 +32,9 @@ a : K ∈ Δ
 ───────────── arr
 Δ ⊢ A → B : *
 
-</ Δ ⊢ A@i : K // i in [:n] />
-────────────────────────────────── list
-Δ ⊢ {</ A@i // i in [:n] />} : L K
+</ Δ ⊢ A@i : K // i in [:n] notex />
+──────────────────────────────────────── list
+Δ ⊢ {</ A@i // i in [:n] notex />} : L K
 
 Δ ⊢ A : K₁ ↦ K₂
 Δ ⊢ B : L K₁
@@ -50,6 +50,7 @@ a : K ∈ Δ
 Δ ⊢ ⊕ A : *
 
 namespace Kinding
+
 @[app_unexpander Kinding]
 def delabK: Lean.PrettyPrinter.Unexpander
   | `($(_) $Δ $A $B) =>
@@ -58,26 +59,27 @@ def delabK: Lean.PrettyPrinter.Unexpander
     let colon := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info ":") }
     `([ $Δ $vdash $A $colon $B ])
   | _ => throw ()
+
 end Kinding
 
 judgement_syntax Δ " ⊢ " A " ≡ " B : TypeEquivalence
 
-judgement TypeEquivalence :=
+judgement TypeEquivalence where
 
 ───────── refl
 Δ ⊢ A ≡ A
 
-───────────────────────── lamAppL
-Δ ⊢ (λ a : K. A) B ≡ A^^B
+─────────────────────────── lamAppL
+Δ ⊢ (λ a : K. A) B ≡ A^^B/a
 
-───────────────────────── lamAppR
-Δ ⊢ A^^B ≡ (λ a : K. A) B
+─────────────────────────── lamAppR
+Δ ⊢ A^^B/a ≡ (λ a : K. A) B
 
-───────────────────────────────────────────────────────────────── listAppL
-Δ ⊢ A ⟦{ </ B@i // i in [:n] /> }⟧ ≡ { </ A B@i // i in [:n] /> }
+───────────────────────────────────────────────────────────────────────────── listAppL
+Δ ⊢ A ⟦{ </ B@i // i in [:n] notex /> }⟧ ≡ { </ A B@i // i in [:n] notex /> }
 
-───────────────────────────────────────────────────────────────── listAppR
-Δ ⊢ { </ A B@i // i in [:n] /> } ≡ A ⟦{ </ B@i // i in [:n] /> }⟧
+───────────────────────────────────────────────────────────────────────────── listAppR
+Δ ⊢ { </ A B@i // i in [:n] notex /> } ≡ A ⟦{ </ B@i // i in [:n] notex /> }⟧
 
 ────────────────────────── listAppIdL
 Δ ⊢ (λ a : K. a$0) ⟦A⟧ ≡ A
@@ -103,9 +105,9 @@ judgement TypeEquivalence :=
 ───────────────────── arr
 Δ ⊢ A₁ → B₁ ≡ A₂ → B₂
 
-</ Δ ⊢ A@i ≡ B@i // i in [:n] />
-─────────────────────────────────────────────────────── list
-Δ ⊢ {</ A@i // i in [:n] />} ≡ {</ B@i // i in [:n] />}
+</ Δ ⊢ A@i ≡ B@i // i in [:n] notex />
+─────────────────────────────────────────────────────────────────── list
+Δ ⊢ {</ A@i // i in [:n] notex />} ≡ {</ B@i // i in [:n] notex />}
 
 Δ ⊢ A₁ ≡ A₂
 Δ ⊢ B₁ ≡ B₂
@@ -122,16 +124,17 @@ judgement TypeEquivalence :=
 
 judgement_syntax Δ " ⊢ " A " ≢ " B : TypeInequivalence
 
-def TypeInequivalence Δ A B := ¬[[Δ ⊢ A ≡ B]]
+judgement TypeInequivalence := fun Δ A B => ¬[[Δ ⊢ A ≡ B]]
 
 judgement_syntax "body" T : TypeVarBody
 
+termonly
 @[simp]
 def TypeVarBody (T: «Type») := T.TypeVarLocallyClosed 1
 
 judgement_syntax Δ " ⊢ " A " ≡> " B : ParallelReduction
 
-judgement ParallelReduction :=
+judgement ParallelReduction where
 
 ───────── refl
 Δ ⊢ A ≡> A
@@ -140,14 +143,14 @@ judgement ParallelReduction :=
 ∀ a ∉ (I: List _), Δ, a : K ⊢ A^a ≡> A'^a
 Δ ⊢ B ≡> B'
 ────────────────────────────── lamApp
-Δ ⊢ (λ a : K. A) B ≡> A'^^B'
+Δ ⊢ (λ a : K. A) B ≡> A'^^B'/a
 
-</ Δ ⊢ B@i : K // i in [:n] />
+</ Δ ⊢ B@i : K // i in [:n] notex />
 ∀ a ∉ (I: List _), Δ, a : K ⊢ A^a ≡> A'^a
-</ Δ ⊢ B@i ≡> B'@i // i in [:n] />
+</ Δ ⊢ B@i ≡> B'@i // i in [:n] notex />
 body A
-──────────────────────────────────────────────────────────────────────────────── lamListApp
-Δ ⊢ (λ a : K. A) ⟦{ </ B@i // i in [:n] /> }⟧ ≡> { </ A'^^B'@i // i in [:n] /> }
+────────────────────────────────────────────────────────────────────────────────────────────── lamListApp
+Δ ⊢ (λ a : K. A) ⟦{ </ B@i // i in [:n] notex /> }⟧ ≡> { </ A'^^B'@i/a // i in [:n] notex /> }
 
 ∀ a ∉ (I : List _), Δ, a : K ⊢ A^a ≡> B^a
 ─────────────────────────── lam
@@ -167,9 +170,9 @@ body A
 ───────────────────── arr
 Δ ⊢ A₁ → B₁ ≡> A₂ → B₂
 
-</ Δ ⊢ A@i ≡> B@i // i in [:n] />
-──────────────────────────────────────────────────────────────────────────────── list
-Δ ⊢ { </ A@i // i in [:n] /> } ≡> { </ B@i // i in [:n] /> }
+</ Δ ⊢ A@i ≡> B@i // i in [:n] notex />
+──────────────────────────────────────────────────────────────────────── list
+Δ ⊢ { </ A@i // i in [:n] notex /> } ≡> { </ B@i // i in [:n] notex /> }
 
 Δ ⊢ A₁ ≡> A₂
 Δ ⊢ B₁ ≡> B₂
@@ -195,7 +198,7 @@ def ParallelReduction.delabPRed: Lean.PrettyPrinter.Unexpander
 
 judgement_syntax Δ " ⊢ " A " ≡>* " B : MultiParallelReduction
 
-judgement MultiParallelReduction :=
+judgement MultiParallelReduction where
 
 ───────── refl
 Δ ⊢ A ≡>* A
@@ -214,11 +217,12 @@ def MultiParallelReduction.delabMPRed: Lean.PrettyPrinter.Unexpander
     `([ $Δ $vdash $A $into $B ])
   | _ => throw ()
 
+termonly
 def ParallelReduction.Multi_of (red: [[ Δ ⊢ A ≡> B ]]): [[ Δ ⊢ A ≡>* B ]] := .step red .refl
 
 judgement_syntax Δ " ⊢ " A " <≡>* " B : EqParallelReduction
 
-judgement EqParallelReduction :=
+judgement EqParallelReduction where
 
 ──────────── refl
 Δ ⊢ A <≡>* A
@@ -245,8 +249,10 @@ def EqParallelReduction.delabMPRed: Lean.PrettyPrinter.Unexpander
     `([ $Δ $vdash $A $into $B ])
   | _ => throw ()
 
+termonly
 def ParallelReduction.Equiv_of (red: [[ Δ ⊢ A ≡> B ]]): [[ Δ ⊢ A <≡>* B ]] := .step red
 
+termonly
 attribute [aesop unsafe simp constructors (rule_sets := [pred])] ParallelReduction MultiParallelReduction EqParallelReduction
 
 end TabularTypeInterpreter.«F⊗⊕ω»
