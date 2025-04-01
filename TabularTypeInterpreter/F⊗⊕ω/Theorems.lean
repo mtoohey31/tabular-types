@@ -2,6 +2,8 @@ import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Value
 import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Term
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Term
 
+macro "rwomega" equality:term : tactic => `(tactic | (have _eq : $equality := (by omega); rw [_eq]; clear _eq))
+
 namespace TabularTypeInterpreter.«F⊗⊕ω»
 
 open Std
@@ -374,16 +376,14 @@ theorem preservation.sandwich {α: Type} {nl nr : ℕ} {F1 F3: ℕ → α} {F2: 
   let G i := if i < nl then F1 i else if i = nl then F2 else F3 (i - nl - 1)
   [0:nl].map (λi => F1 i) ++ F2 :: [0:nr].map (λi => F3 i) = [0:nl + 1 + nr].map G := by
   intro G
-  rw [progress.sandwich (n := nl + 1 + nr) (i := nl) (by linarith)]
+  rw [progress.sandwich (n := nl + 1 + nr) (i := nl) (by omega)]
   simp_all
   refine List.append_eq_append ?_ ?_
   . exact Std.Range.map_eq_of_eq_of_mem (λ i iltnl => by simp_all [Membership.mem])
   . refine List.cons_eq_cons.mpr ⟨rfl, ?_⟩
     refine Std.Range.map_eq_of_eq_of_mem (λ i iltnl => ?_)
-    rw [if_neg (by simp_all; linarith)]
-    rw [if_neg (by linarith)]
-    apply congrArg
-    rw [Nat.sub_sub, Nat.add_sub_cancel]
+    repeat' rw [if_neg (by omega)]
+    exact congrArg _ (by omega)
 
 local instance : Inhabited Term where
   default := .prodIntro []
@@ -410,7 +410,35 @@ theorem preservation (EtyA: [[Δ ⊢ E : A]]) (EE': [[E -> E']]): [[Δ ⊢ E' : 
       rw [<- Type.TypeVar_subst_intro_of_not_mem_freeTypeVars (a := a) (by simp_all)]
       exact EtyA.type_subst BkiK
   . case prodIntro Δ n E A wf EtyA ih =>
-    sorry
+    generalize eqE_: Term.prodIntro ([0:n].map (λi => E i)) = E_ at EE'
+    cases EE' <;> try cases eqE_
+    . case prodIntro E_ E' nl V nr Er EE' =>
+      injection eqE_ with eq
+      have llt : nl < n := by
+        have := congrArg List.length eq
+        simp [List.length_append, List.length_cons, List.length_map, Std.Range.length_toList] at this
+        omega
+      rw [progress.sandwich llt] at eq
+      have ⟨eql, eqr⟩ := List.append_inj eq (by simp_all [Std.Range.length_toList]); clear eq
+      have eqEV := Std.Range.eq_of_mem_of_map_eq eql; clear eql
+      injection eqr with eqEE_ eqr; simp at eqr; subst eqEE_
+      have := Std.Range.length_eq_of_mem_eq eqr; subst this
+      have eqEEr_shift := Std.Range.eq_of_mem_of_map_eq eqr; clear eqr
+      rw [preservation.sandwich]
+      simp_all; rwomega nl + 1 + (n - (nl + 1)) = n
+      refine .prodIntro wf (λ i iltn => ?_)
+      simp_all
+      repeat' split
+      . case _ iltnl =>
+        rw [← eqEV i (by simp_all [Membership.mem])]
+        exact EtyA i (by simp_all [Membership.mem])
+      . case _ igenl ieqnl =>
+        subst i
+        exact ih nl (by simp_all) EE'
+      . case _ igenl inenl =>
+        rw [← eqEEr_shift _ (by simp_all [Membership.mem]; omega)]
+        rwomega i - nl - 1 + (nl + 1) = i
+        exact EtyA i (by simp_all [Membership.mem])
   . case prodElim Δ E n A i EtyA iltn ih =>
     cases EE'
     . case prodElim E' EE' => exact .prodElim (ih EE') iltn
@@ -418,7 +446,7 @@ theorem preservation (EtyA: [[Δ ⊢ E : A]]) (EE': [[E -> E']]): [[Δ ⊢ E' : 
       clear ih
       have ⟨eqn'n, EtyA⟩ := EtyA.inv_prod
       simp_all [NatInRange]
-  . case sumIntro => sorry
+  . case sumIntro i n Δ E A ilen EtyA AkiStar ih => cases EE'; constructor <;> simp_all
   . case sumElim Δ E n A F B EtyA FtyAB BkiStar ih1 ih2 =>
     generalize eqEF: [[ case E {</ F@i // i in [:n] />} ]] = EF at EE'
     cases EE' <;> try cases eqEF
@@ -445,18 +473,18 @@ theorem preservation (EtyA: [[Δ ⊢ E : A]]) (EE': [[E -> E']]): [[Δ ⊢ E' : 
           have := congrArg (λ i => i.get! nl) eq
           simp only at this
           rw [
-            Std.Range.get!_map (Nat.lt_add_right _ <| Nat.lt_add_one _),
-            Std.Range.get!_map (Nat.lt_add_right _ <| Nat.lt_add_one _)] at this
+            Std.Range.get!_map (by omega),
+            Std.Range.get!_map (by omega)] at this
           exact this
         clear eq
         have := congrArg (λ i => i.get! nl) Geq
         simp only at this
-        rw [Std.Range.get!_map (Nat.lt_add_right _ <| Nat.lt_add_one _)] at this
+        rw [Std.Range.get!_map (by omega)] at this
         rw [List.get!_eq_getD, List.getD_eq_getElem?_getD, List.getElem?_append,
           if_neg (by simp_all [Std.Range.length_toList]), List.length_map, Std.Range.length_toList] at this
         simp_all
       subst F_
-      have F'tyAB := ih2 nl (by simp_all [Membership.mem]; exact ⟨by linarith, Nat.mod_one _⟩) FF'
+      have F'tyAB := ih2 nl (by simp_all [Membership.mem]; omega) FF'
       refine .sumElim EtyA (λ i iltn => ?_) BkiStar
       simp_all
       split
@@ -472,7 +500,6 @@ theorem preservation (EtyA: [[Δ ⊢ E : A]]) (EE': [[E -> E']]): [[Δ ⊢ E' : 
           subst i
           exact ih2 nl (by simp_all) FF'
         . case isFalse inenl =>
-          have igtnl: i >= nl := by linarith
           have eqFG := eq i (Std.Range.mem_toList_of_mem (by simp_all [Membership.mem]))
           specialize FtyAB i (by simp_all [Membership.mem])
           rw [eqFG] at FtyAB
