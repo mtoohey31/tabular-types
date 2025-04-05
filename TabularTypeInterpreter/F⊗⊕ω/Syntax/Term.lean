@@ -20,9 +20,11 @@ nonterminal Term, E, F :=
 
 namespace Term
 attribute [app_unexpander TypeVar_open] Type.delabTVOpen
+attribute [app_unexpander TypeVar_close] Type.delabTVClose
 attribute [app_unexpander Type_open] Type.delabTOpen
 attribute [app_unexpander TypeVar_subst] Type.delabTVSubst
 attribute [app_unexpander TermVar_open] Type.delabTVOpen
+attribute [app_unexpander TermVar_close] Type.delabTVClose
 attribute [app_unexpander Term_open] Type.delabTOpen
 attribute [app_unexpander TermVar_subst] Type.delabTVSubst
 end Term
