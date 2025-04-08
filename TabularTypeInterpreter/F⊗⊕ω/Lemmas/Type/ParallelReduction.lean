@@ -572,34 +572,14 @@ theorem preservation  (red: [[ Δ ⊢ A ≡> B ]]) (wf: [[ ⊢ Δ ]]) (lc: A.Typ
 
 -- NOTE critical
 
+local instance : Inhabited «Type» where
+  default := .list []
+in
 open Environment «Type» TypeVarLocallyClosed in
 theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ ⊢ A ≡> C ]]) (lc: A.TypeVarLocallyClosed): ∃ T, [[ Δ ⊢ B ≡> T ]] ∧ [[ Δ ⊢ C ≡> T ]] ∧ T.TypeVarLocallyClosed := by
   induction red1 generalizing C
-  case lam I Δ K A B red1 ih =>
-    -- We know A is of shape (λ _: K. A)
-    -- By inversion on the second reduction, C is of shape (λ _: K. C'), and [Δ, a: K ⊢ A^a ≡> C'^a]
-    have ⟨C', eqC, I', red2'⟩ := red2.inv_lam
-    have ⟨a, nin⟩ := I ++ I' ++ A.freeTypeVars ++ B.freeTypeVars ++ C.freeTypeVars ++ Δ.typeVarDom |>.exists_fresh
-    specialize red2' a (by simp_all)
-    subst C
-    -- By I.H. [Δ, a: K ⊢ B^a ≡> T'] and [Δ, a: K ⊢ C'^a ≡> T']
-    have wf' : [[ ⊢ Δ, a: K ]] := .typeVarExt wf (by simp_all [TypeVarNotInDom, TypeVarInDom])
-    have lc' := match lc with |.lam lc => lc.strengthen (a := a)
-    have ⟨T', predA, predB, lcT'⟩ := ih a (by simp_all) wf' red2' lc'; clear ih
-    -- Important: to introduce lam reduction, we need both sides to be (?^a), so we close and open rhs.
-    rw [<- TypeVar_open_TypeVar_close_id (A:=T') (a:=a)] at predA predB <;> try assumption
-    -- Now we know that [Δ, a: K ⊢ B^a ≡> T'\a^a], and we want [[ Δ ⊢ λ?: K. B ≡> ?T ]]
-    exists [[λa?: K. \a^T']]
-    -- One more thing: we also need to prove a is fresh in C' to use the intro rule
-    have freshC' : a ∉ C'.freeTypeVars := by
-      have := red2.preserve_not_mem_freeTypeVars a (by simp_all [freeTypeVars])
-      simp_all [freeTypeVars]
-    exact ⟨
-      lam_intro_ex a (by simp_all [not_mem_freeTypeVars_TypeVar_close]) wf predA,
-      lam_intro_ex a (by simp_all [not_mem_freeTypeVars_TypeVar_close]) wf predB,
-      .lam lcT'.TypeVar_close_inc
-    ⟩
-  case lamApp Δ B K I A A' B' k redA redB ihA ihB =>
+  . case refl Δ A => exact ⟨C, red2, .refl, red2.preserve_lc lc⟩
+  . case lamApp Δ B K I A A' B' k redA redB ihA ihB =>
     -- Assume [[ Δ, a: K ⊢ A^a ≡> A'^a ]] [[ Δ ⊢ B ≡> B' ]]
     -- Also, red2: [[ Δ ⊢ (λ?: K. A) B ≡> C ]]
     -- wts. [[ Δ ⊢ A'^^B' ≡> ?T ]] and [[ Δ ⊢ C ≡> ?T ]]
@@ -691,7 +671,32 @@ theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ �
           . simp_all [not_mem_freeTypeVars_TypeVar_close ]
           . apply preservation (red := redB') <;> simp_all
         . simp_all [Type_open_dec, TypeVar_close_inc]
-  case app Δ A A' B B' AA' BB' ih1 ih2 =>
+  . case lamListApp => sorry
+  . case lam I Δ K A B red1 ih =>
+    -- We know A is of shape (λ _: K. A)
+    -- By inversion on the second reduction, C is of shape (λ _: K. C'), and [Δ, a: K ⊢ A^a ≡> C'^a]
+    have ⟨C', eqC, I', red2'⟩ := red2.inv_lam
+    have ⟨a, nin⟩ := I ++ I' ++ A.freeTypeVars ++ B.freeTypeVars ++ C.freeTypeVars ++ Δ.typeVarDom |>.exists_fresh
+    specialize red2' a (by simp_all)
+    subst C
+    -- By I.H. [Δ, a: K ⊢ B^a ≡> T'] and [Δ, a: K ⊢ C'^a ≡> T']
+    have wf' : [[ ⊢ Δ, a: K ]] := .typeVarExt wf (by simp_all [TypeVarNotInDom, TypeVarInDom])
+    have lc' := match lc with |.lam lc => lc.strengthen (a := a)
+    have ⟨T', predA, predB, lcT'⟩ := ih a (by simp_all) wf' red2' lc'; clear ih
+    -- Important: to introduce lam reduction, we need both sides to be (?^a), so we close and open rhs.
+    rw [<- TypeVar_open_TypeVar_close_id (A:=T') (a:=a)] at predA predB <;> try assumption
+    -- Now we know that [Δ, a: K ⊢ B^a ≡> T'\a^a], and we want [[ Δ ⊢ λ?: K. B ≡> ?T ]]
+    exists [[λa?: K. \a^T']]
+    -- One more thing: we also need to prove a is fresh in C' to use the intro rule
+    have freshC' : a ∉ C'.freeTypeVars := by
+      have := red2.preserve_not_mem_freeTypeVars a (by simp_all [freeTypeVars])
+      simp_all [freeTypeVars]
+    exact ⟨
+      lam_intro_ex a (by simp_all [not_mem_freeTypeVars_TypeVar_close]) wf predA,
+      lam_intro_ex a (by simp_all [not_mem_freeTypeVars_TypeVar_close]) wf predB,
+      .lam lcT'.TypeVar_close_inc
+    ⟩
+  . case app Δ A A' B B' AA' BB' ih1 ih2 =>
     cases lc; case app Alc Blc =>
     cases red2
     . case refl => exact ⟨[[ (A' B') ]], .refl, .app AA' BB', .app (AA'.preserve_lc Alc) (BB'.preserve_lc Blc)⟩
@@ -706,8 +711,7 @@ theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ �
       have B'kiK := BB'.preservation wf Blc BkiK
       refine ⟨.lamApp B'kiK A'T1 B'T2, ?_, T1T2lc⟩
       have ⟨a, nin⟩ := I ++ I' ++ Δ.typeVarDom ++ A''.freeTypeVars ++ T1.freeTypeVars |>.exists_fresh
-      rw [<- TypeVar_subst_intro_of_not_mem_freeTypeVars (a := a) (by simp_all)]
-      rw [<- TypeVar_subst_intro_of_not_mem_freeTypeVars (a := a) (by simp_all)]
+      repeat' rw [<- TypeVar_subst_intro_of_not_mem_freeTypeVars (a := a) (by simp_all)]
       have wf' : [[ ⊢ Δ, a: K ]] := .typeVarExt wf (by simp_all [TypeVarNotInDom, TypeVarInDom])
       have A''open_lc := match Alc with | .lam Alc => AA'' a (by simp_all) |>.preserve_lc <| Alc.strengthen
       have B''kiK := BB''.preservation wf Blc BkiK
@@ -716,7 +720,47 @@ theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ �
       have ⟨T1, A'T1, A''T1, T1lc⟩ := ih1 wf AA'' Alc
       have ⟨T2, B'T2, B''T2, T2lc⟩ := ih2 wf BB'' Blc
       exact ⟨[[ (T1 T2) ]], .app A'T1 B'T2, .app A''T1 B''T2, .app T1lc T2lc⟩
-  all_goals sorry
+  . case scheme I' Δ K A B AB ih =>
+    have ⟨C, eqC, I, AC⟩:= red2.inv_forall; subst eqC; clear red2
+    have ⟨a, notInI⟩ := (I ++ I' ++ B.freeTypeVars ++ C.freeTypeVars ++ Δ.typeVarDom).exists_fresh
+    have wf' : [[ ⊢ Δ, a: K ]] := .typeVarExt wf (by simp_all [TypeVarNotInDom, TypeVarInDom])
+    have lc' := match lc with |.forall lc => lc.strengthen (a := a)
+    have ⟨T, BT, CT, Tlc⟩ := ih a (by simp_all) wf' (AC a (by simp_all)) lc'; clear ih
+    rw [<- TypeVar_open_TypeVar_close_id (A:=T) (a:=a) (by assumption)] at BT CT
+    exact ⟨
+      [[ ∀a?: K. \a^T ]],
+      forall_intro_ex a (by simp_all [not_mem_freeTypeVars_TypeVar_close]) wf BT,
+      forall_intro_ex a (by simp_all [not_mem_freeTypeVars_TypeVar_close]) wf CT,
+      .forall Tlc.TypeVar_close_inc
+    ⟩
+  . case arr Δ A1 B1 A2 B2 A1B1 A2B2 ih1 ih2 =>
+    cases lc; case arr A1lc A2lc =>
+    have ⟨C1, C2, eqC, A1C1, A2C2⟩ := red2.inv_arr; subst eqC; clear red2
+    have ⟨T1, B1T1, C1T1, T1lc⟩ := ih1 wf A1C1 A1lc
+    have ⟨T2, B2T2, C2T2, T2lc⟩ := ih2 wf A2C2 A2lc
+    exact ⟨[[ (T1 → T2) ]], .arr B1T1 B2T2, .arr C1T1 C2T2, .arr T1lc T2lc⟩
+  . case list n Δ A B AB ih =>
+    cases lc; case list Alc =>
+    have ⟨C, eqC, AC⟩ := red2.inv_list; subst eqC; clear red2
+    have ih := λi iltn => ih i iltn wf (AC i iltn) (Alc (A i) (Std.Range.mem_map_of_mem iltn))
+    have ⟨T, ih⟩ := Std.Range.skolem ih
+    refine ⟨[[ { </ T@i // i in [:n] /> } ]], .list λi iltn => ?_, .list λi iltn => ?_, .list λTi Tiin => ?_⟩
+    . have ⟨BT, _⟩ := ih i iltn; exact BT
+    . have ⟨_, CT, _⟩ := ih i iltn; exact CT
+    . have ⟨i, iltn, eqT⟩ := Std.Range.mem_of_mem_map Tiin; subst eqT
+      have ⟨_, _, Tlc⟩ := ih i iltn
+      exact Tlc
+  . case listApp => sorry
+  . case prod Δ A B AB ih =>
+    cases lc; case prod Alc =>
+    have ⟨C, eqC, AC⟩ := red2.inv_prod; subst eqC; clear red2
+    have ⟨T, BT, CT, Tlc⟩ := ih wf AC Alc
+    exact ⟨[[ ⊗T ]], .prod BT, .prod CT, .prod Tlc⟩
+  . case sum Δ A B AB ih =>
+    cases lc; case sum Alc =>
+    have ⟨C, eqC, AC⟩ := red2.inv_sum; subst eqC; clear red2
+    have ⟨T, BT, CT, Tlc⟩ := ih wf AC Alc
+    exact ⟨[[ ⊕T ]], .sum BT, .sum CT, .sum Tlc⟩
 
 end ParallelReduction
 
