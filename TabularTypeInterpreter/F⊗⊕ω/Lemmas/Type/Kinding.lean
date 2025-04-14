@@ -227,18 +227,8 @@ theorem subst' (kT: [[ Δ, a: K, Δ' ⊢ T: K' ]]) (wf: [[ ⊢ Δ, a: K, Δ' ]])
     simp_all
   all_goals aesop (add safe constructors Kinding) (config := { enableSimp := false })
 
--- NOTE this is also provable. Difference with subst' is that we don't do substitution on Environment.
--- Check branch before merge for proof.
-theorem subst2' (kT: [[ Δ, a: K, Δ' ⊢ T: K' ]]) (wf: [[ ⊢ Δ, a: K, Δ' ]]) (kA: [[ Δ ⊢ A: K ]]): [[ (Δ , Δ') ⊢ T[A/a] : K' ]] := by sorry
-
-theorem subst  (kT: [[ Δ, a: K ⊢ T: K' ]]) (wf: [[ ⊢ Δ, a: K ]]) (kA: [[ Δ ⊢ A: K ]]): [[ Δ ⊢ T[A/a]: K' ]] :=
+theorem subst (kT: [[ Δ, a: K ⊢ T: K' ]]) (wf: [[ ⊢ Δ, a: K ]]) (kA: [[ Δ ⊢ A: K ]]): [[ Δ ⊢ T[A/a]: K' ]] :=
  by apply subst' (Δ' := Environment.empty) <;> assumption
-
--- NOTE provable by subst but might not be necessary
-theorem lam_intro_ex_k : ∀a, a ∉ A.freeTypeVars → a ∉ Δ.typeVarDom → [[ Δ, a : K1 ⊢ A^a: K2 ]] → [[ Δ ⊢ (λ a : K1. A) : K1 ↦ K2 ]] := sorry
-
--- NOTE provable by subst but might not be necessary
-theorem forall_intro_ex_k : ∀a, a ∉ A.freeTypeVars → a ∉ Δ.typeVarDom → [[ Δ, a : K1 ⊢ A^a: K2 ]] → [[ Δ ⊢ (∀ a : K1. A) : K2 ]] := sorry
 
 end Kinding
 
