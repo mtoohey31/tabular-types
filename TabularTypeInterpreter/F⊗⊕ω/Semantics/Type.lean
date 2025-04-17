@@ -120,6 +120,11 @@ judgement TypeEquivalence :=
 ───────────── sum
 Δ ⊢ ⊕ A ≡ ⊕ B
 
+Δ ⊢ A ≡ B
+Δ ⊢ B ≡ C
+───────── trans
+Δ ⊢ A ≡ C
+
 @[app_unexpander TypeEquivalence]
 def TypeEquivalence.delab: Lean.PrettyPrinter.Unexpander
   | `($(_) $Δ $A $B) =>
@@ -128,10 +133,6 @@ def TypeEquivalence.delab: Lean.PrettyPrinter.Unexpander
     let into := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "≡") }
     `([ $Δ $vdash $A $into $B ])
   | _ => throw ()
-
-judgement_syntax Δ " ⊢ " A " ≢ " B : TypeInequivalence
-
-def TypeInequivalence Δ A B := ¬[[Δ ⊢ A ≡ B]]
 
 judgement_syntax "body" T : TypeVarBody
 
