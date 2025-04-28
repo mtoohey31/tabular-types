@@ -44,4 +44,14 @@ def TypeScheme.sizeOf' : TypeScheme → Nat
   | qual γ => 1 + γ.sizeOf'
   | quant _ σ => 2 + σ.sizeOf'
 
+termonly
+def Monotype.TypeVar_multi_open (τ : Monotype) (a : Nat → TypeVarId) : Nat → Monotype
+  | 0 => τ
+  | n + 1 => τ.TypeVar_open (a n) n |>.TypeVar_multi_open a n
+
+termonly
+def Monotype.Monotype_multi_open (τ₀ : Monotype) (τ₁ : Nat → Monotype) : Nat → Monotype
+  | 0 => τ₀
+  | n + 1 => τ₀.Monotype_open (τ₁ n) n |>.Monotype_multi_open τ₁ n
+
 end TabularTypeInterpreter

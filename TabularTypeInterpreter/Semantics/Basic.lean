@@ -33,9 +33,16 @@ judgement_syntax n " ≠ " n' : NatNe
 
 judgement NatNe := Ne (α := Nat)
 
+run_cmd Lott.addNatAlias `k
+run_cmd Lott.addNatAlias `l
+run_cmd Lott.addNatAlias `o
+
 judgement_syntax b : BoolId
 
 judgement BoolId := id (α := Bool)
+
+instance {α β : Type} {γ : (α → β) → Prop } : CoeFun { a : α → β // γ a } (fun _ => α → β) where
+  coe := Subtype.val
 
 judgement_syntax p_ " permutes " "[" ":" n "]" : Permutes
 

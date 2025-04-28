@@ -12,6 +12,11 @@ def multiTypeExt (Γ : TypeEnvironment) : List (TypeVarId × Kind) → TypeEnvir
   | (a, κ) :: aκs => Γ.typeExt a κ |>.multiTypeExt aκs
 
 termonly
+def multiConstrExt (Γ : TypeEnvironment) : List (Monotype × «F⊗⊕ω».TermVarId) → TypeEnvironment
+  | [] => Γ
+  | (ψ, x) :: ψxs => Γ.constrExt ψ x |>.multiConstrExt ψxs
+
+termonly
 def append (Γ : TypeEnvironment) : TypeEnvironment → TypeEnvironment
   | empty => Γ
   | typeExt Γ' a κ => Γ.append Γ' |>.typeExt a κ

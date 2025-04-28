@@ -50,7 +50,8 @@ m ≠ m'
 judgement_syntax TC " : " κ " ⇝ " A " ∈ " Γc : ClassEnvironment.TCIn
 
 judgement ClassEnvironment.TCIn := fun TC κ A Γc =>
-  ∃ TCₛ Aₛ n m σ, [[(</ TCₛ@i a ⇝ Aₛ@i // i in [:n] /> ⇒ TC a : κ) ↦ m : σ ⇝ A ∈ Γc]]
+  ∃ TCₛ Aₛ n m σ A', A = [[⊗ {A', </ Aₛ@i // i in [:n] />}]] ∧
+    [[(</ TCₛ@i a ⇝ Aₛ@i // i in [:n] /> ⇒ TC a : κ) ↦ m : σ ⇝ A' ∈ Γc]]
 
 judgement_syntax TC " ∉ " "dom" "(" Γc ")" : ClassEnvironment.TCNotInDom
 

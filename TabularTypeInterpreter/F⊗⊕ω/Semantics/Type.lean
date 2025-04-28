@@ -6,6 +6,16 @@ import TabularTypeInterpreter.RuleSets
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
 
+termonly
+def Type.TypeVar_multi_open (A : «Type») (a : Nat → TypeVarId) : Nat → «Type»
+  | 0 => A
+  | n + 1 => A.TypeVar_open (a n) n |>.TypeVar_multi_open a n
+
+termonly
+def Type.Type_multi_open (A : «Type») (B : Nat → «Type») : Nat → «Type»
+  | 0 => A
+  | n + 1 => A.Type_open (B n) n |>.Type_multi_open B n
+
 judgement_syntax Δ " ⊢ " A " : " K : Kinding
 
 judgement Kinding where
@@ -86,6 +96,12 @@ judgement TypeEquivalence where
 
 ────────────────────────── listAppIdR
 Δ ⊢ A ≡ (λ a : K. a$0) ⟦A⟧
+
+───────────────────────────────────────────────── listAppCompL
+Δ ⊢ A₀ ⟦(λ a : K. A₁) ⟦B⟧⟧ ≡ (λ a : K. A₀ A₁) ⟦B⟧
+
+───────────────────────────────────────────────── listAppCompR
+Δ ⊢ (λ a : K. A₀ A₁) ⟦B⟧ ≡ A₀ ⟦(λ a : K. A₁) ⟦B⟧⟧
 
 ∀ a ∉ I, Δ, a : K ⊢ A^a ≡ B^a
 ───────────────────────────── lam (I : List TypeVarId)

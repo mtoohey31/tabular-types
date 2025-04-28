@@ -2,7 +2,7 @@ import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Type
 import TabularTypeInterpreter.Lemmas.ClassEnvironment
 import TabularTypeInterpreter.Lemmas.Type.Basic
 import TabularTypeInterpreter.Lemmas.TypeEnvironment.Basic
-import TabularTypeInterpreter.Semantics.Type
+import TabularTypeInterpreter.Semantics.Type.KindingAndElaboration
 import TabularTypeInterpreter.Theorems.Kind
 
 namespace TabularTypeInterpreter
@@ -423,7 +423,7 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
     dsimp only [A'']
     let ⟨K', κ'e⟩ := κ'.Elaboration_total
     let Bk := τke.soundness Γcw Γwe κ'e
-    let ⟨_, κ'e', _, A'k, _, Aₛk⟩ := Γcw.of_ClassEnvironment_in inΓc
+    let ⟨_, κ'e', _, A'k, _, Aₛk⟩ := Γcw.In_inversion inΓc
     cases κ'e.deterministic κ'e'
     split
     · case isTrue h =>

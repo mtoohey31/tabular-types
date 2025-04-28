@@ -1,6 +1,6 @@
 import TabularTypeInterpreter.Lemmas.Type.Basic
 import TabularTypeInterpreter.Lemmas.Type.MonotypeOpenPreservation
-import TabularTypeInterpreter.Semantics.Type
+import TabularTypeInterpreter.Semantics.Type.KindingAndElaboration
 import TabularTypeInterpreter.Theorems.Type.KindingAndElaboration
 
 namespace TabularTypeInterpreter
@@ -83,26 +83,35 @@ in
 theorem TypeScheme.SubtypingAndElaboration.to_Kinding (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]])
   (Γcw : [[⊢c Γc]]) (Γwe : [[Γc ⊢ Γ ⇝ Δ]])
   : ∃ κ A B, [[Γc; Γ ⊢ σ₀ : κ ⇝ A]] ∧ [[Γc; Γ ⊢ σ₁ : κ ⇝ B]] := by
-  match σse with
+  induction σse generalizing Δ with
   | refl σke => exact ⟨_, _, _, σke, σke⟩
-  | arr τ₂₀se τ₁₃se τ₀τ₁ke τ₂ke =>
+  | trans σ₀ke σ₀₁se σ₁₂se σ₀₁ih σ₁₂ih =>
+    let ⟨_, _, _, σ₀ke', σ₁ke⟩ := σ₀₁ih Γcw Γwe
+    rcases σ₀ke.deterministic σ₀ke' with ⟨rfl, rfl⟩
+    let ⟨_, _, _, σ₁ke', σ₂ke⟩ := σ₁₂ih Γcw Γwe
+    rcases σ₁ke.deterministic σ₁ke' with ⟨rfl, rfl⟩
+    exact ⟨_, _, _, σ₀ke, σ₂ke⟩
+  | arr _ _ τ₀τ₁ke τ₂ke _ τ₁₃ih =>
     let .arr _ τ₁ke := τ₀τ₁ke
-    let ⟨_, _, _, τ₁ke', τ₃ke⟩ := τ₁₃se.to_Kinding Γcw Γwe
+    let ⟨_, _, _, τ₁ke', τ₃ke⟩ := τ₁₃ih Γcw Γwe
     cases τ₁ke.deterministic τ₁ke' |>.left
     exact ⟨_, _, _, τ₀τ₁ke, τ₂ke.arr τ₃ke⟩
-  | qual ψ₁₀se γ₀₁se ψ₀γ₀ke ψ₁ke =>
+  | qual ψ₁₀se _ ψ₀γ₀ke ψ₁ke _ γ₀₁ih =>
     let .qual _ γ₀ke κe := ψ₀γ₀ke
-    let ⟨_, _, _, γ₀ke', γ₁ke⟩ := γ₀₁se.to_Kinding Γcw Γwe
+    let ⟨_, _, _, γ₀ke', γ₁ke⟩ := γ₀₁ih Γcw Γwe
     cases γ₀ke.deterministic γ₀ke' |>.left
     exact ⟨_, _, _, ψ₀γ₀ke, ψ₁ke.qual γ₁ke κe⟩
-  | scheme I σ'se κ₀e σ₀ke (κ₁ := κ₁) (σ₁ := σ₁') =>
+  | scheme I _ κ₀e σ₀ke σ'ih =>
+    rename Kind => κ₁
+    rename TypeScheme => σ₁'
+    rename TypeEnvironment => Γ
     let .scheme I' σ₀'ke _ := σ₀ke
     let ⟨a, anin⟩ := I ++ I' ++ Γ.typeVarDom ++ σ₁'.freeTypeVars |>.exists_fresh
     let ⟨aninII'Γ, aninσ₁'⟩ := List.not_mem_append'.mp anin
     let ⟨aninII', aninΓ⟩ := List.not_mem_append'.mp aninII'Γ
     let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp aninII'
     let Γawe := Γwe.typeExt aninΓ κ₀e
-    let ⟨_, _, B, σ₀'ke', σ₁'ke⟩ := σ'se a aninI |>.to_Kinding Γcw Γawe
+    let ⟨_, _, B, σ₀'ke', σ₁'ke⟩ := σ'ih a aninI Γcw Γawe
     cases σ₀'ke a aninI' |>.deterministic σ₀'ke' |>.left
     exact ⟨_, _, _, σ₀ke, .scheme (a :: Γ.typeVarDom) (A := B.TypeVar_close a) (by
       intro a' a'nin
@@ -119,7 +128,8 @@ theorem TypeScheme.SubtypingAndElaboration.to_Kinding (σse : [[Γc; Γ ⊢ σ�
           ← TypeVar_open_eq_Monotype_open_var] at this
       exact this
     ) κ₀e⟩
-  | prod τ₀₁se prodke (n := n) (ξ := ξ) (τ₀ := τ₀) (τ₁ := τ₁) (b := b) =>
+  | prod _ prodke τ₀₁ih =>
+    rename_i n Γc Γ τ₀ τ₁ _ _ ξ b _ _
     let .prod μke ξτ₀ke := prodke
     generalize ξτ₀s'eq : ([:n].map fun i => (ξ i, τ₀ i)) = ξτ₀s' at *
     generalize κ?eq : Option.someIf Kind.star b = κ? at *
@@ -143,11 +153,12 @@ theorem TypeScheme.SubtypingAndElaboration.to_Kinding (σse : [[Γc; Γ ⊢ σ�
     let ⟨_, τ₁ke⟩ := Range.skolem (n := n)
       (p := fun i A => KindingAndElaboration Γc Γ (.qual (.mono (τ₁ i))) .star A) <| by
       intro i mem
-      let ⟨_, _, A, τ₀ke', τ₁ke⟩ := τ₀₁se i mem |>.to_Kinding Γcw Γwe
+      let ⟨_, _, A, τ₀ke', τ₁ke⟩ := τ₀₁ih i mem Γcw Γwe
       cases τ₀ke i mem |>.deterministic τ₀ke' |>.left
       exact ⟨A, τ₁ke⟩
     exact ⟨_, _, _, prodke, .prod μke <| .row ξke uni τ₁ke h⟩
-  | sum τ₀₁se sumke τ₀ke (n := n) (ξ := ξ) (τ₀ := τ₀) (τ₁ := τ₁) (b := b) =>
+  | sum _ sumke τ₀ke τ₀₁ih =>
+    rename_i n Γc Γ τ₀ τ₁ _ _ ξ b _ _ _
     let .sum μke ξτ₀ke := sumke
     generalize ξτ₀s'eq : ([:n].map fun i => (ξ i, τ₀ i)) = ξτ₀s' at *
     generalize κ?eq : Option.someIf Kind.star b = κ? at *
@@ -166,19 +177,22 @@ theorem TypeScheme.SubtypingAndElaboration.to_Kinding (σse : [[Γc; Γ ⊢ σ�
     let ⟨_, τ₁ke⟩ := Range.skolem (n := n)
       (p := fun i A => KindingAndElaboration Γc Γ (.qual (.mono (τ₁ i))) .star A) <| by
       intro i mem
-      let ⟨_, _, A, τ₀ke', τ₁ke⟩ := τ₀₁se i mem |>.to_Kinding Γcw Γwe
+      let ⟨_, _, A, τ₀ke', τ₁ke⟩ := τ₀₁ih i mem Γcw Γwe
       cases τ₀ke i mem |>.deterministic τ₀ke' |>.left
       exact ⟨A, τ₁ke⟩
     exact ⟨_, _, _, sumke, .sum μke <| .row ξke uni τ₁ke h⟩
-  | prodRow ρ₀₁se prodke@(.prod μke ρ₀ke) =>
+  | prodRow ρ₀₁se prodke =>
+    let .prod μke ρ₀ke := prodke
     let ⟨_, _, _, ρ₀ke', ρ₁ke⟩ := ρ₀₁se.to_Kinding Γcw Γwe
     cases ρ₀ke.deterministic ρ₀ke' |>.left
     exact ⟨_, _, _, prodke, .prod μke ρ₁ke⟩
-  | sumRow ρ₀₁se sumke@(.sum μke ρ₀ke) =>
+  | sumRow ρ₀₁se sumke =>
+    let .sum μke ρ₀ke := sumke
     let ⟨_, _, _, ρ₀ke', ρ₁ke⟩ := ρ₀₁se.to_Kinding Γcw Γwe
     cases ρ₀ke.deterministic ρ₀ke' |>.left
     exact ⟨_, _, _, sumke, .sum μke ρ₁ke⟩
-  | decay prodOrSumke μke (Ξ := Ξ) =>
+  | decay prodOrSumke μke =>
+    rename ProdOrSum => Ξ
     match Ξ with
     | .prod =>
       let .prod _ ρke := prodOrSumke
@@ -199,30 +213,23 @@ theorem TypeScheme.SubtypingAndElaboration.to_Kinding (σse : [[Γc; Γ ⊢ σ�
       concatke,
       .concat μke ρ₃ke ρ₄ke ρ₅ke κe (.contain μke ρ₃ke ρ₅ke κe) (.contain μke ρ₄ke ρ₅ke κe)
     ⟩
-  | tc τ₀₁se σop₀₁se _ TCₛse TCτ₀ke
-  | tcRow τ₀₁se σop₀₁se _ TCₛse TCτ₀ke =>
-    let ⟨_, _, _, τ₀ke, τ₁ke⟩ := τ₀₁se.to_Kinding Γcw Γwe
+  | tc _ σop₀₁se _ TCₛse TCτ₀ke τ₀₁ih =>
+    let ⟨_, _, _, τ₀ke, τ₁ke⟩ := τ₀₁ih Γcw Γwe
     let .tc γcin τ₀ke' := TCτ₀ke
     cases τ₀ke.deterministic τ₀ke' |>.left
     exact ⟨_, _, _, TCτ₀ke, .tc γcin τ₁ke⟩
+  | tcRow ρ₀₁ee σop₀₁se _ TCₛse TCτ₀ke =>
+    let ⟨_, _, _, ρ₀ke, ρ₁ke⟩ := ρ₀₁ee.to_Kinding Γcw Γwe
+    let .tc γcin ρ₀ke' := TCτ₀ke
+    cases ρ₀ke.deterministic ρ₀ke' |>.left
+    exact ⟨_, _, _, TCτ₀ke, .tc γcin ρ₁ke⟩
   | allRow I ρ₀₁ee allke ψke κe =>
     let ⟨_, _, _, ρ₀ke, ρ₁ke⟩ := ρ₀₁ee.to_Kinding Γcw Γwe
     let .all _ _ _ ρ₀ke' := allke
     cases ρ₀ke.deterministic ρ₀ke' |>.left
     exact ⟨_, _, _, allke, .all I ψke κe ρ₁ke⟩
-  | split concatse =>
-    let ⟨_, _, _, concatke@(.concat ..), concatke'@(.concat ..)⟩ := concatse.to_Kinding Γcw Γwe
+  | split _ concatih =>
+    let ⟨_, _, _, concatke@(.concat ..), concatke'@(.concat ..)⟩ := concatih Γcw Γwe
     exact ⟨_, _, _, concatke.split, concatke'.split⟩
-termination_by σ₀.sizeOf'
-decreasing_by
-  all_goals simp_arith
-  all_goals (
-    apply Nat.le_add_right_of_le
-    apply Nat.le_add_right_of_le
-    apply Nat.le_trans _ <| Nat.le_add_left ..
-    apply Nat.le_trans (Nat.le_add_left _ (ξ i).sizeOf')
-    apply List.le_sum_of_mem'
-    exact List.mem_map.mpr ⟨_, Range.mem_toList_of_mem mem, rfl⟩
-  )
 
 end TabularTypeInterpreter

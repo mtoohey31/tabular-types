@@ -1,4 +1,4 @@
-import TabularTypeInterpreter.Semantics.Type
+import TabularTypeInterpreter.Semantics.Type.KindingAndElaboration
 
 namespace TabularTypeInterpreter
 

@@ -94,13 +94,13 @@ theorem ext_eliml (Γcγcw : [[⊢c Γc, γc]]) : [[⊢c Γc]] :=
   let .ext Γcw .. := Γcγcw
   Γcw
 
-theorem of_ClassEnvironment_in {TC} (Γcw : [[⊢c Γc]])
-  (TCin : [[(</ TCₛ@i a ⇝ Aₛ@i // i in [:n] /> ⇒ TC a : κ) ↦ m : σ ⇝ A ∈ Γc]])
+theorem In_inversion {TC} (Γcw : [[⊢c Γc]])
+  (γcin : [[(</ TCₛ@i a ⇝ Aₛ@i // i in [:n] /> ⇒ TC a : κ) ↦ m : σ ⇝ A ∈ Γc]])
   : ∃ K, [[⊢ κ ⇝ K]] ∧ (∀ a, [[Γc; ε, a : κ ⊢ σ^a : * ⇝ A^a]]) ∧ (∀ a, [[ε, a : K ⊢ A^a : *]]) ∧
     (∀ a, ∀ i ∈ [:n], [[Γc; ε, a : κ ⊢ TCₛ@i a : C ⇝ Aₛ@i^a]]) ∧
     (∀ a, ∀ i ∈ [:n], [[ε, a : K ⊢ Aₛ@i^a : *]]) := by
-  generalize γceq : ClassEnvironmentEntry.mk .. = γc at TCin
-  match TCin with
+  generalize γceq : ClassEnvironmentEntry.mk .. = γc at γcin
+  match γcin with
   | .head =>
     let Γcw@(ext _ _ _ κe σke Ake TCₛke Aₛki) := Γcw
     injection γceq with TCₛAₛeq TCeq κeq meq σeq Aeq
@@ -129,7 +129,7 @@ theorem of_ClassEnvironment_in {TC} (Γcw : [[⊢c Γc]])
   | .ext TCin' TCneTC' mnem' (TC' := TC') =>
     generalize ClassEnvironmentEntry.mk _ TC' .. = γc at *
     let Γcw@(ext Γcw' ..) := Γcw
-    let ⟨_, κe, σke, Aki, TCₛke, Aₛki⟩ := Γcw'.of_ClassEnvironment_in TCin'
+    let ⟨_, κe, σke, Aki, TCₛke, Aₛki⟩ := Γcw'.In_inversion TCin'
     injection γceq with TCₛAₛeq TCeq κeq meq σeq Aeq
     let length_eq : List.length (Range.map ..) = List.length _ := by rw [TCₛAₛeq]
     rw [List.length_map, List.length_map, Range.length_toList, Range.length_toList] at length_eq

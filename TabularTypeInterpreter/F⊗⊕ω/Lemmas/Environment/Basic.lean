@@ -1,9 +1,12 @@
 import Aesop
+import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Type.Basic
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Environment
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
 
 namespace Environment
+
+open Std
 
 theorem append_empty (Δ : Environment) : Δ.append empty = Δ := rfl
 
@@ -42,6 +45,100 @@ theorem append_termExt_assoc {Δ Δ': Environment} : [[ (Δ, Δ'), x: T ]] = [[ 
 
 theorem typeExt_subst {Δ: Environment} : (Δ.TypeVar_subst a K).typeExt a' K' = (Δ.typeExt a' K').TypeVar_subst a K := by
   induction Δ <;> simp_all [TypeVar_subst, typeExt]
+
+theorem TypeVar_multi_subst_snoc :
+  TypeVar_multi_subst Δ (Aa ++ [(A, a)]) = TypeVar_multi_subst (TypeVar_subst Δ a A) Aa := by
+  match Aa with
+  | [] => rw [List.nil_append, TypeVar_multi_subst, TypeVar_multi_subst, TypeVar_multi_subst]
+  | (A', a') :: Aa' =>
+    rw [List.cons_append, TypeVar_multi_subst, TypeVar_multi_subst, TypeVar_multi_subst_snoc]
+
+theorem TypeVar_multi_subst_empty : TypeVar_multi_subst empty Aa = empty := by
+  match Aa with
+  | [] => rw [TypeVar_multi_subst]
+  | (A, a) :: Aa' => rw [TypeVar_multi_subst, TypeVar_multi_subst_empty, TypeVar_subst]
+
+theorem typeExt_append_assoc : [[(Δ, a : K), Δ']] = [[Δ, (ε, a : K, Δ')]] := by
+  match Δ' with
+  | empty => rw [append, append, append, append]
+  | [[Δ', a' : K']] | [[Δ', x : A]] => rw [append, typeExt_append_assoc, ← append, ← append]
+
+theorem termExt_append_assoc : [[(Δ, x : A), Δ']] = [[Δ, (ε, x : A, Δ')]] := by
+  match Δ' with
+  | empty => rw [append, append, append, append]
+  | [[Δ', a : K]] | [[Δ', x' : A']] => rw [append, termExt_append_assoc, ← append, ← append]
+
+theorem multiTypeExt_snoc
+  : multiTypeExt Δ (aKs ++ [(a, K)]) = (multiTypeExt Δ aKs).typeExt a K := by match aKs with
+  | [] => rw [List.nil_append, multiTypeExt, multiTypeExt, multiTypeExt]
+  | (_, _) :: _ => rw [List.cons_append, multiTypeExt, multiTypeExt, multiTypeExt_snoc]
+
+theorem multiTermExt_snoc
+  : multiTermExt Δ (xAs ++ [(x, A)]) = (multiTermExt Δ xAs).termExt x A := by match xAs with
+  | [] => rw [List.nil_append, multiTermExt, multiTermExt, multiTermExt]
+  | (_, _) :: _ => rw [List.cons_append, multiTermExt, multiTermExt, multiTermExt_snoc]
+
+theorem multiTypeExt_eq_append
+  : [[Δ,, </ a@i : K@i // i in [:n] />, Δ']] = [[Δ, ε,, </ a@i : K@i // i in [:n] />, Δ']] := by
+  match n with
+  | 0 => rw [Range.map_same_eq_nil, multiTypeExt, multiTypeExt, empty_append]
+  | n' + 1 =>
+    rw [Range.map_eq_snoc_of_lt (Nat.zero_lt_succ _), Nat.succ_sub_one, multiTypeExt_snoc,
+        multiTypeExt_snoc, typeExt_append_assoc, typeExt_append_assoc (Δ := .multiTypeExt ..),
+        multiTypeExt_eq_append]
+
+theorem multiTermExt_eq_append
+  : [[Δ,,, </ x@i : A@i // i in [:n] />, Δ']] = [[Δ, ε,,, </ x@i : A@i // i in [:n] />, Δ']] := by
+  match n with
+  | 0 => rw [Range.map_same_eq_nil, multiTermExt, multiTermExt, empty_append]
+  | n' + 1 =>
+    rw [Range.map_eq_snoc_of_lt (Nat.zero_lt_succ _), Nat.succ_sub_one, multiTermExt_snoc,
+        multiTermExt_snoc, termExt_append_assoc, termExt_append_assoc (Δ := .multiTermExt ..),
+        multiTermExt_eq_append]
+
+theorem TypeVar_multi_subst_termExt (aninA : ∀ i < n, a i ∉ A.freeTypeVars)
+  (aninB : ∀ i < n, ∀ j < n, a i ∉ (B j).freeTypeVars) (ainj : a.Injective')
+  (Blc : ∀ i < n, (B i).TypeVarLocallyClosed)
+  : [[(Δ, x : A^^^a#n) ! </ [B@i / a@i] // i in [:n] />]] =
+    [[Δ ! </ [B@i / a@i] // i in [:n] />, x : A^^^^B@@i#n/a]] := by
+  match n with
+  | 0 =>
+    rw [Range.map_same_eq_nil, TypeVar_multi_subst, TypeVar_multi_subst, Type.TypeVar_multi_open,
+        Type.Type_multi_open]
+  | n' + 1 =>
+    rw [Range.map_eq_snoc_of_lt (Nat.zero_lt_succ _), TypeVar_multi_subst_snoc,
+        TypeVar_multi_subst_snoc, Type.TypeVar_multi_open, Nat.succ_sub_one, TypeVar_subst,
+        Type.TypeVar_open_TypeVar_multi_open_comm Nat.le.refl,
+        Type.TypeVar_open_TypeVar_subst_eq_Type_open_of_not_mem_freeTypeVars
+          (Type.not_mem_freeTypeVars_TypeVar_multi_open_intro (aninA _ Nat.le.refl)
+            (fun _ lt eq => Nat.ne_of_lt lt <| ainj _ _ eq.symm)),
+        ← Type.TypeVarLocallyClosed.Type_open_TypeVar_multi_open_comm (Blc _ Nat.le.refl)
+          Nat.le.refl, TypeVar_multi_subst_termExt _ _ ainj _, Type.Type_multi_open]
+    · intro i lt
+      apply Type.not_mem_freeTypeVars_Type_open_intro <| aninA _ <| Nat.lt_add_right _ lt
+      exact aninB _ (Nat.lt_add_right _ lt) _ Nat.le.refl
+    · intro i ilt j jlt
+      apply aninB _ (Nat.lt_add_right _ ilt) _ (Nat.lt_add_right _ jlt)
+    · intro i lt
+      exact Blc _ <| Nat.lt_add_right _ lt
+
+
+run_cmd Lott.addNatAlias `m
+
+theorem multiTermExt_Type_multi_open_TypeVar_multi_subst_TypeVar_multi_open
+  (aninA : ∀ i < m, ∀ j < n, a i ∉ (A j).freeTypeVars)
+  (aninB : ∀ i < m, ∀ j < m, a i ∉ (B j).freeTypeVars) (ainj : a.Injective')
+  (Blc : ∀ i < m, (B i).TypeVarLocallyClosed)
+  : [[ε,,, </ x@i : A@i^^^^B@@j#m/a // i in [:n] />]] =
+    [[(ε,,, </ x@i : A@i^^^a#m // i in [:n] />) ! </ [B@j / a@j] // j in [:m] />]] := by
+  match n with
+  | 0 => rw [Range.map_same_eq_nil, Range.map_same_eq_nil, multiTermExt, TypeVar_multi_subst_empty]
+  | n' + 1 =>
+    rw [Range.map_eq_snoc_of_lt (Nat.zero_lt_succ _), multiTermExt_snoc, Nat.succ_sub_one,
+        Range.map_eq_snoc_of_lt (Nat.zero_lt_succ _), multiTermExt_snoc, Nat.succ_sub_one,
+        TypeVar_multi_subst_termExt (aninA · · _ Nat.le.refl) aninB ainj Blc,
+        multiTermExt_Type_multi_open_TypeVar_multi_subst_TypeVar_multi_open
+          (aninA · · · <| Nat.lt_add_right _ ·) aninB ainj Blc]
 
 end Environment
 

@@ -1,6 +1,6 @@
 import Aesop
 import TabularTypeInterpreter.Lemmas.TypeEnvironment.Basic
-import TabularTypeInterpreter.Semantics.Type
+import TabularTypeInterpreter.Semantics.Type.KindingAndElaboration
 
 namespace TabularTypeInterpreter
 
@@ -90,6 +90,15 @@ theorem TypeVar_open_comm (τ : Monotype)
     exact ⟨ih _ mem |>.left mnen, ih _ mem |>.right mnen⟩
   all_goals aesop (add simp [TypeVar_open, TypeLambda.TypeVar_open])
 
+theorem TypeVar_multi_open_comm : n ≤ m → (TypeVar_open τ a m).TypeVar_multi_open a' n =
+    (τ.TypeVar_multi_open a' n).TypeVar_open a m := by
+  intro nlem
+  match n with
+  | 0 => rw [TypeVar_multi_open, TypeVar_multi_open]
+  | n' + 1 =>
+    rw [TypeVar_multi_open, TypeVar_multi_open, TypeVar_open_comm _ (Ne.symm (Nat.ne_of_lt nlem)),
+        TypeVar_multi_open_comm <| Nat.le_trans Nat.le.refl.step nlem]
+
 theorem TypeVar_open_eq_Monotype_open_var : TypeVar_open τ a n = τ.Monotype_open (.var a) n := by
   induction τ using rec_uniform generalizing n
   case row _ _ ih =>
@@ -130,6 +139,26 @@ theorem TypeVar_open_id : TypeVarLocallyClosed τ n → τ.TypeVar_open a n = τ
     · exact ih _ mem |>.right τlc
   all_goals aesop
     (add simp [TypeVar_open, TypeLambda.TypeVar_open], 50% cases TypeVarLocallyClosed,
+      safe cases TypeLambda.TypeVarLocallyClosed)
+
+theorem Monotype_open_id : TypeVarLocallyClosed τ n → τ.Monotype_open τ' n = τ := by
+  induction τ using rec_uniform generalizing n
+  case row ih =>
+    intro rowlc
+    let .row ξslc τslc := rowlc
+    rw [Monotype_open, List.mapMem_eq_map]
+    congr
+    apply List.map_eq_id_of_eq_id_of_mem
+    intro _ mem
+    let ξlc := ξslc _ mem
+    conv at ξlc => simp_match
+    let τlc := τslc _ mem
+    conv at τlc => simp_match
+    congr
+    · exact ih _ mem |>.left ξlc
+    · exact ih _ mem |>.right τlc
+  all_goals aesop
+    (add simp [Monotype_open, TypeLambda.Monotype_open], 50% cases TypeVarLocallyClosed,
       safe cases TypeLambda.TypeVarLocallyClosed)
 
 theorem TypeVar_open_TypeVar_close_id
@@ -224,6 +253,55 @@ theorem TypeVar_open_Monotype_open_comm (τ : Monotype) {τ'} : TypeVarLocallyCl
     (add simp [TypeVar_open, Monotype_open, TypeLambda.TypeVar_open, TypeLambda.Monotype_open],
       20% [TypeVarLocallyClosed.TypeVar_open_id, Eq.symm, TypeVarLocallyClosed.weakening])
 
+theorem TypeVar_open_Monotype_multi_open_comm (nlem : n ≤ m)
+  (τ'lc : ∀ i ≤ n, TypeVarLocallyClosed (τ' i) m) : (TypeVar_open τ a m).Monotype_multi_open τ' n =
+    (τ.Monotype_multi_open τ' n).TypeVar_open a m := by
+  match n with
+  | 0 => rw [Monotype_multi_open, Monotype_multi_open]
+  | n' + 1 =>
+    rw [Monotype_multi_open, Monotype_multi_open,
+        TypeVar_open_Monotype_open_comm _ (τ'lc _ Nat.le.refl.step) (Ne.symm (Nat.ne_of_lt nlem)),
+        TypeVar_open_Monotype_multi_open_comm (Nat.le_trans Nat.le.refl.step nlem) (τ'lc · ·.step)]
+
+theorem Monotype_open_comm : TypeVarLocallyClosed τ₀ n → TypeVarLocallyClosed τ₁ m → m ≠ n →
+    (Monotype_open τ τ₀ m).Monotype_open τ₁ n = (τ.Monotype_open τ₁ n).Monotype_open τ₀ m := by
+  induction τ using rec_uniform generalizing m n
+  case var =>
+    intro τ₀lc τ₁lc mnen
+    simp [Monotype_open]
+    split
+    · case isTrue h =>
+      simp [← h, Monotype_open, mnen.symm]
+      exact τ₀lc.Monotype_open_id
+    · case isFalse h =>
+      simp [Monotype_open]
+      split
+      · case isTrue h' => exact τ₁lc.Monotype_open_id.symm
+      · case isFalse h' => simp [Monotype_open, h]
+  case row ih =>
+    intro τ₀lc τ₁lc mnen
+    rw [Monotype_open, Monotype_open, Monotype_open, Monotype_open, List.mapMem_eq_map,
+        List.mapMem_eq_map, List.mapMem_eq_map, List.mapMem_eq_map, List.map_map, List.map_map]
+    apply row.injEq .. |>.mpr ⟨_, rfl⟩
+    apply List.map_eq_map_iff.mpr
+    intro _ mem
+    simp
+    exact ⟨ih _ mem |>.left τ₀lc τ₁lc mnen, ih _ mem |>.right τ₀lc τ₁lc mnen⟩
+  all_goals aesop (add simp [Monotype_open, TypeLambda.Monotype_open], safe TypeVarLocallyClosed.weakening)
+
+theorem Monotype_open_Monotype_multi_open_comm (nlem : n ≤ m) (τ₀lc : TypeVarLocallyClosed τ₀)
+  (τ₁lc : ∀ i ≤ n, TypeVarLocallyClosed (τ₁ i) m) : (Monotype_open τ τ₀ m).Monotype_multi_open τ₁ n =
+    (τ.Monotype_multi_open τ₁ n).Monotype_open τ₀ m := by
+  match n with
+  | 0 => rw [Monotype_multi_open, Monotype_multi_open]
+  | n' + 1 =>
+    let τ₀lc' := τ₀lc.weakening (n := n')
+    rw [Nat.zero_add] at τ₀lc'
+    rw [Monotype_multi_open, Monotype_multi_open,
+        ← Monotype_open_comm (τ₁lc _ Nat.le.refl.step) τ₀lc' (Nat.ne_of_lt nlem),
+        Monotype_open_Monotype_multi_open_comm (Nat.le_trans Nat.le.refl.step nlem) τ₀lc
+          (τ₁lc · ·.step)]
+
 theorem not_mem_freeTypeVars_TypeVar_open_intro
   : a ∉ freeTypeVars τ → a ≠ a' → a ∉ (τ.TypeVar_open a' n).freeTypeVars := by
   induction τ using rec_uniform generalizing n
@@ -242,6 +320,53 @@ theorem not_mem_freeTypeVars_TypeVar_open_intro
   all_goals aesop
     (add simp [TypeVar_open, TypeLambda.TypeVar_open, freeTypeVars, TypeLambda.freeTypeVars])
 
+theorem not_mem_freeTypeVars_Monotype_open_intro
+  : a ∉ freeTypeVars τ → a ∉ freeTypeVars τ' → a ∉ (τ.Monotype_open τ' n).freeTypeVars := by
+  induction τ using rec_uniform generalizing n
+  case row ih =>
+    intro aninτ aninτ'
+    rw [Monotype_open, freeTypeVars]
+    simp [Function.comp]
+    intro I ξ τ mem eq
+    cases eq
+    have := ih (ξ, τ) mem
+    rw [freeTypeVars, List.mapMem_eq_map] at aninτ
+    let ⟨xninξ, xninτ⟩ := List.not_mem_append'.mp <|
+      List.not_mem_flatten.mp aninτ (ξ.freeTypeVars ++ τ.freeTypeVars) <|
+      List.mem_map.mpr ⟨(ξ, τ), mem, rfl⟩
+    exact List.not_mem_append'.mpr ⟨this.left xninξ aninτ', this.right xninτ aninτ'⟩
+  all_goals aesop
+    (add simp [Monotype_open, TypeLambda.Monotype_open, freeTypeVars, TypeLambda.freeTypeVars])
+
+theorem not_mem_freeTypeVars_Monotype_multi_open_intro (aninτ : a ∉ freeTypeVars τ)
+  (aninτ' : ∀ i < n, a ∉ freeTypeVars (τ' i)) : a ∉ (τ.Monotype_multi_open τ' n).freeTypeVars := by
+  match n with
+  | 0 =>
+    rw [Monotype_multi_open]
+    exact aninτ
+  | n' + 1 =>
+    rw [Monotype_multi_open]
+    exact not_mem_freeTypeVars_Monotype_multi_open_intro
+      (not_mem_freeTypeVars_Monotype_open_intro aninτ <| aninτ' _ Nat.le.refl)
+      (aninτ' · <| Nat.lt_add_right _ ·)
+
+theorem not_mem_freeTypeVars_TypeVar_open_elim
+  : a ∉ freeTypeVars (TypeVar_open τ a' n) → a ∉ τ.freeTypeVars := by
+  induction τ using rec_uniform generalizing n
+  case row ih =>
+    intro anin
+    rw [TypeVar_open, List.mapMem_eq_map, freeTypeVars, List.mapMem_eq_map, List.map_map] at anin
+    rw [freeTypeVars, List.mapMem_eq_map]
+    apply List.not_mem_flatten.mpr
+    intro _ mem
+    rcases List.mem_map.mp mem with ⟨_, mem', rfl⟩
+    let anin' := List.not_mem_flatten.mp anin _ <| List.mem_map.mpr ⟨_, mem', rfl⟩
+    simp at anin'
+    let ⟨aninξop, aninτop⟩ := anin'
+    exact List.not_mem_append'.mpr ⟨ih _ mem' |>.left aninξop, ih _ mem' |>.right aninτop⟩
+  all_goals aesop
+    (add simp [TypeVar_open, TypeLambda.TypeVar_open, freeTypeVars, TypeLambda.freeTypeVars])
+
 theorem not_mem_freeTypeVars_TypeVar_close : a ∉ (TypeVar_close τ a n).freeTypeVars := by
   induction τ using rec_uniform generalizing n
   case row ih =>
@@ -255,6 +380,21 @@ theorem not_mem_freeTypeVars_TypeVar_close : a ∉ (TypeVar_close τ a n).freeTy
   all_goals aesop
     (add simp [TypeVar_close, freeTypeVars, TypeLambda.TypeVar_close, TypeLambda.freeTypeVars],
       safe cases TypeVar)
+
+theorem TypeVar_subst_id_of_not_mem_freeTypeVars
+  : a ∉ freeTypeVars τ → TypeVar_subst τ a τ' = τ := by
+  induction τ using rec_uniform
+  case row ih =>
+    intro anin
+    rw [freeTypeVars, List.mapMem_eq_map] at anin
+    rw [TypeVar_subst, List.mapMem_eq_map]
+    apply row.injEq .. |>.mpr ⟨_, rfl⟩
+    apply List.map_eq_id_of_eq_id_of_mem
+    intro ξτ mem
+    let ⟨aninξ, aninτ⟩ := List.not_mem_append'.mp <| List.not_mem_flatten.mp anin _ <|
+      List.mem_map_of_mem _ mem
+    rw [ih _ mem |>.left aninξ, ih _ mem |>.right aninτ]
+  all_goals aesop (add simp [freeTypeVars, TypeVar_subst, TypeLambda.freeTypeVars, TypeLambda.TypeVar_subst])
 
 end Monotype
 
@@ -349,6 +489,21 @@ theorem not_mem_freeTypeVars_TypeVar_open_intro (anin : a ∉ freeTypeVars γ) (
       not_mem_freeTypeVars_TypeVar_open_intro aninγ' anea'
     ⟩
 
+theorem not_mem_freeTypeVars_TypeVar_open_elim (anin : a ∉ freeTypeVars (TypeVar_open γ a' n))
+  : a ∉ γ.freeTypeVars := by match γ with
+  | .mono .. =>
+    rw [freeTypeVars]
+    rw [TypeVar_open, freeTypeVars] at anin
+    exact Monotype.not_mem_freeTypeVars_TypeVar_open_elim anin
+  | .qual .. =>
+    rw [freeTypeVars]
+    rw [TypeVar_open, freeTypeVars] at anin
+    let ⟨aninψ, aninγ'⟩ := List.not_mem_append'.mp anin
+    exact List.not_mem_append'.mpr ⟨
+      Monotype.not_mem_freeTypeVars_TypeVar_open_elim aninψ,
+      not_mem_freeTypeVars_TypeVar_open_elim aninγ'
+    ⟩
+
 theorem not_mem_freeTypeVars_TypeVar_close : a ∉ (TypeVar_close γ a n).freeTypeVars := by
   induction γ with
   | mono _ => exact Monotype.not_mem_freeTypeVars_TypeVar_close
@@ -356,6 +511,11 @@ theorem not_mem_freeTypeVars_TypeVar_close : a ∉ (TypeVar_close γ a n).freeTy
     rw [TypeVar_close, freeTypeVars]
     apply List.not_mem_append'.mpr
     exact ⟨Monotype.not_mem_freeTypeVars_TypeVar_close, ih⟩
+
+theorem TypeVar_subst_id_of_not_mem_freeTypeVars
+  : a ∉ freeTypeVars γ → TypeVar_subst γ a τ = γ := by
+  induction γ <;> aesop
+    (add simp [TypeVar_subst, freeTypeVars], 40% Monotype.TypeVar_subst_id_of_not_mem_freeTypeVars)
 
 end QualifiedType
 
@@ -447,12 +607,28 @@ theorem not_mem_freeTypeVars_TypeVar_open_intro (anin : a ∉ freeTypeVars σ) (
     rw [freeTypeVars] at anin ⊢
     exact not_mem_freeTypeVars_TypeVar_open_intro anin anea'
 
+theorem not_mem_freeTypeVars_TypeVar_open_elim (anin : a ∉ freeTypeVars (TypeVar_open σ a' n))
+  : a ∉ σ.freeTypeVars := by match σ with
+  | .qual .. =>
+    rw [freeTypeVars]
+    rw [TypeVar_open, freeTypeVars] at anin
+    exact QualifiedType.not_mem_freeTypeVars_TypeVar_open_elim anin
+  | .quant .. =>
+    rw [freeTypeVars]
+    rw [TypeVar_open, freeTypeVars] at anin
+    exact not_mem_freeTypeVars_TypeVar_open_elim anin
+
 theorem not_mem_freeTypeVars_TypeVar_close : a ∉ (TypeVar_close σ a n).freeTypeVars := by
   induction σ generalizing n with
   | qual _ => exact QualifiedType.not_mem_freeTypeVars_TypeVar_close
   | quant _ _ ih =>
     rw [TypeVar_close, freeTypeVars]
     exact ih
+
+theorem TypeVar_subst_id_of_not_mem_freeTypeVars
+  : a ∉ freeTypeVars σ → TypeVar_subst σ a τ = σ := by
+  induction σ <;> aesop
+    (add simp [TypeVar_subst, freeTypeVars], 40% QualifiedType.TypeVar_subst_id_of_not_mem_freeTypeVars)
 
 namespace KindingAndElaboration
 
@@ -595,6 +771,11 @@ theorem row_inversion
     ⟩
   ⟩
 
+theorem tc_inversion {TC} (TCke : [[Γc; Γ ⊢ TC τ : κ ⇝ A]])
+  : ∃ γc κ' B, γc.2 = TC ∧ γc.3 = κ' ∧ [[γc ∈ Γc]] ∧ κ = .constr ∧ [[Γc; Γ ⊢ τ : κ' ⇝ B]] := by
+  let .tc γcin τke := TCke
+  exact ⟨_, _, _, rfl, rfl, γcin, rfl, τke⟩
+
 theorem TypeVarLocallyClosed_of (σke : [[Γc; Γ ⊢ σ : κ ⇝ A]]) : σ.TypeVarLocallyClosed := by
   induction σke
   case scheme I _ _ ih =>
@@ -632,6 +813,50 @@ theorem TypeVarLocallyClosed_of (σke : [[Γc; Γ ⊢ σ : κ ⇝ A]]) : σ.Type
     40% cases QualifiedType.TypeVarLocallyClosed, safe constructors TypeVarLocallyClosed,
     safe constructors QualifiedType.TypeVarLocallyClosed,
     safe constructors Monotype.TypeVarLocallyClosed)
+
+theorem not_in_freeTypeVars_of (σke : [[Γc; Γ ⊢ σ : κ ⇝ A]]) (aninΓ : [[a ∉ dom(Γ)]])
+  : a ∉ σ.freeTypeVars := by
+  induction σke
+  case var a'inΓ =>
+    rw [freeTypeVars, QualifiedType.freeTypeVars, Monotype.freeTypeVars]
+    apply List.not_mem_singleton.mpr
+    rintro rfl
+    exact a'inΓ.not_of_NotInDom aninΓ
+  case scheme I _ _ ih =>
+    rw [freeTypeVars]
+    let ⟨_, a'nin⟩ := a :: I |>.exists_fresh
+    let ⟨ane, a'ninI⟩ := List.not_mem_cons.mp a'nin
+    apply not_mem_freeTypeVars_TypeVar_open_elim
+    apply ih _ a'ninI
+    rw [TypeEnvironment.TypeVarNotInDom, TypeEnvironment.typeVarDom]
+    exact List.not_mem_cons.mpr ⟨ane.symm, aninΓ⟩
+  case row _ _ ξih τih =>
+    rw [freeTypeVars, QualifiedType.freeTypeVars, Monotype.freeTypeVars, List.mapMem_eq_map]
+    apply List.not_mem_flatten.mpr
+    intro _ mem
+    rcases List.mem_map.mp mem with ⟨_, mem', rfl⟩
+    rcases Range.mem_of_mem_map mem' with ⟨_, mem'', rfl⟩
+    exact List.not_mem_append'.mpr ⟨ξih _ mem'' aninΓ, τih _ mem'' aninΓ⟩
+  case lift I _ _ _ τih ρih =>
+    rw [freeTypeVars, QualifiedType.freeTypeVars, Monotype.freeTypeVars, TypeLambda.freeTypeVars]
+    let ⟨_, a'nin⟩ := a :: I |>.exists_fresh
+    let ⟨ane, a'ninI⟩ := List.not_mem_cons.mp a'nin
+    exact List.not_mem_append'.mpr ⟨
+      Monotype.not_mem_freeTypeVars_TypeVar_open_elim <| τih _ a'ninI <|
+        List.not_mem_cons.mpr ⟨ane.symm, aninΓ⟩,
+      ρih aninΓ
+    ⟩
+  case all I _ _ _ ψih ρih =>
+    rw [freeTypeVars, QualifiedType.freeTypeVars, Monotype.freeTypeVars, TypeLambda.freeTypeVars]
+    let ⟨_, a'nin⟩ := a :: I |>.exists_fresh
+    let ⟨ane, a'ninI⟩ := List.not_mem_cons.mp a'nin
+    exact List.not_mem_append'.mpr ⟨
+      Monotype.not_mem_freeTypeVars_TypeVar_open_elim <| ψih _ a'ninI <|
+        List.not_mem_cons.mpr ⟨ane.symm, aninΓ⟩,
+      ρih aninΓ
+    ⟩
+  all_goals aesop (add simp
+    [freeTypeVars, QualifiedType.freeTypeVars, Monotype.freeTypeVars, TypeLambda.freeTypeVars])
 
 end KindingAndElaboration
 
@@ -712,6 +937,73 @@ def Perm_preservation {ξ' : Nat → Monotype} (uni : [[unique(</ ξ@i // i in [
     rw [Range.map, Range.toList, if_pos Nat.one_pos, Range.toList, Nat.zero_add,
         if_neg (Nat.not_lt_of_le (Nat.le_refl _)), List.map_singleton]
     exact var
+
+def of_les (uni : [[unique(</ ξ@i // i in [m₀:n₀] />)]]) (le₀ : m₀ ≤ n₀) (le₁ : m₀ ≤ m₁)
+  (le₂ : n₁ ≤ n₀) (le₃ : m₁ ≤ n₁) : [[unique(</ ξ@i // i in [m₁:n₁] />)]] := by
+  generalize ξseq : [m₀:n₀].map ξ = ξs at uni
+  cases uni
+  case var =>
+    let lengths_eq : List.length (Range.map ..) = List.length _ := by rw [ξseq]
+    rw [List.length_singleton, List.length_map, Range.length_toList] at lengths_eq
+    cases Nat.eq_add_of_sub_eq le₀ lengths_eq
+    have : n₁ - m₁ ≤ 1 := Nat.sub_le_of_le_add <| Nat.le_trans le₂ <| Nat.add_le_add_left le₁ _
+    generalize leq : n₁ - m₁ = l at *
+    match l with
+    | 0 =>
+      cases Nat.eq_add_of_sub_eq le₃ leq
+      let ℓ (i : Nat) : Label := .zero
+      rw [Nat.zero_add, ← Range.map_shift Nat.le.refl, Nat.sub_self, Range.map_eq_of_eq_of_mem'' (by
+        intro i mem
+        show _ = label (ℓ i)
+        exfalso
+        exact Nat.not_le_of_lt mem.upper mem.lower
+      )]
+      apply concrete
+      nofun
+    | 1 =>
+      cases Nat.eq_add_of_sub_eq le₃ leq
+      rw [Nat.add_comm, Range.map_eq_cons_of_lt Nat.le.refl, Range.map_same_eq_nil]
+      exact var
+    | _ + 2 => nomatch this
+  case _ n' ℓ h =>
+  let lengths_eq : List.length (Range.map ..) = List.length _ := by rw [ξseq]
+  rw [Range.map, List.length_map, Range.length_toList, Range.map, List.length_map,
+      Range.length_toList, Nat.sub_zero] at lengths_eq
+  cases lengths_eq
+  rw [Range.map_eq_of_eq_of_mem'' (by
+    intro i mem
+    show _ = label (ℓ (i - m₀))
+    apply Range.eq_of_mem_of_map_eq _ _ ⟨
+      le₁.trans mem.lower,
+      Nat.lt_of_lt_of_le mem.upper le₂,
+      Nat.mod_one _
+    ⟩
+    rw [Range.map, Range.map] at ξseq
+    rw [← Range.map, ← Range.map, Range.map, ← Range.map_shift Nat.le.refl (j := m₀),
+        Range.map_eq_of_eq_of_mem'' (by
+          intro _ _
+          rw [Nat.add_sub_cancel]
+        ), Range.map, Nat.sub_self]
+    exact ξseq
+  )]
+  rw [← Range.map_shift Nat.le.refl, Nat.sub_self]
+  apply concrete
+  intro i imem j jmem
+  apply h _ ⟨
+    Nat.zero_le _,
+    Nat.sub_lt_sub_right (le₁.trans (Nat.le_add_left ..)) <|
+      Nat.lt_of_lt_of_le (Nat.add_lt_of_lt_sub imem.upper) le₂,
+    Nat.mod_one _
+  ⟩ _ ⟨
+    by
+      rw [Nat.add_comm, ← Nat.add_sub_assoc (le₁.trans (Nat.le_add_left ..)), ← Nat.add_assoc]
+      apply Nat.sub_le_sub_right <| Nat.add_le_add_right _ _
+      rw [Nat.add_comm]
+      exact jmem.lower,
+    Nat.sub_lt_sub_right (le₁.trans (Nat.le_add_left ..)) <|
+      Nat.lt_of_lt_of_le (Nat.add_lt_of_lt_sub jmem.upper) le₂,
+      Nat.mod_one _
+  ⟩
 
 end Monotype.label.Uniqueness
 

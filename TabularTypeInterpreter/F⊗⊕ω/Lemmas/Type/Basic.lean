@@ -1,5 +1,6 @@
+import Lott.Data.Function
 import Mathlib.Tactic
-import TabularTypeInterpreter.«F⊗⊕ω».Syntax.Type
+import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Type
 
 namespace TabularTypeInterpreter.«F⊗⊕ω».«Type»
 
@@ -98,6 +99,15 @@ theorem TypeVar_open_comm (A : «Type»)
   : m ≠ n → (A.TypeVar_open a m).TypeVar_open a' n = (A.TypeVar_open a' n).TypeVar_open a m := by
   induction A using rec_uniform generalizing m n <;> aesop (add simp TypeVar_open)
 
+theorem TypeVar_open_TypeVar_multi_open_comm (mlen : m ≤ n)
+  : TypeVar_multi_open (TypeVar_open A a n) a' m =
+    TypeVar_open (TypeVar_multi_open A a' m) a n := by
+  match m with
+  | 0 => rw [TypeVar_multi_open, TypeVar_multi_open]
+  | m' + 1 =>
+    rw [TypeVar_multi_open, TypeVar_multi_open, ← TypeVar_open_comm _ (Nat.ne_of_lt mlen),
+        TypeVar_open_TypeVar_multi_open_comm (Nat.le_of_add_right_le mlen)]
+
 theorem TypeVar_open_eq_Type_open_var : TypeVar_open A a n = A.Type_open (.var a) n := by
   induction A using rec_uniform generalizing n <;> aesop (add simp [TypeVar_open, Type_open])
 
@@ -140,10 +150,34 @@ theorem not_mem_freeTypeVars_TypeVar_open_intro
   induction A using rec_uniform generalizing n <;> aesop
     (add simp [TypeVar_open, freeTypeVars], safe cases TypeVar)
 
+theorem not_mem_freeTypeVars_TypeVar_multi_open_intro (aninA : a ∉ freeTypeVars A)
+  (anea' : ∀ i < n, a ≠ a' i) : a ∉ (A.TypeVar_multi_open a' n).freeTypeVars := by
+  match n with
+  | 0 =>
+    rw [TypeVar_multi_open]
+    exact aninA
+  | n' + 1 =>
+    rw [TypeVar_multi_open]
+    exact not_mem_freeTypeVars_TypeVar_multi_open_intro
+      (not_mem_freeTypeVars_TypeVar_open_intro aninA <| anea' _ Nat.le.refl)
+      (anea' · <| Nat.lt_add_right _ ·)
+
 theorem not_mem_freeTypeVars_Type_open_intro
   : a ∉ freeTypeVars A → a ∉ freeTypeVars B → a ∉ (A.Type_open B n).freeTypeVars := by
   induction A using rec_uniform generalizing n <;> aesop
     (add simp [Type_open, freeTypeVars], safe cases TypeVar)
+
+theorem not_mem_freeTypeVars_Type_multi_open_intro (aninA : a ∉ freeTypeVars A)
+  (aninB : ∀ i < n, a ∉ freeTypeVars (B i)) : a ∉ (A.Type_multi_open B n).freeTypeVars := by
+  match n with
+  | 0 =>
+    rw [Type_multi_open]
+    exact aninA
+  | n' + 1 =>
+    rw [Type_multi_open]
+    exact not_mem_freeTypeVars_Type_multi_open_intro
+      (not_mem_freeTypeVars_Type_open_intro aninA <| aninB _ Nat.le.refl)
+      (aninB · <| Nat.lt_add_right _ ·)
 
 theorem not_mem_freeTypeVars_TypeVar_open_drop
   : a ∉ (TypeVar_open A a' n).freeTypeVars → a ∉ A.freeTypeVars := by
@@ -326,11 +360,61 @@ theorem Type_open_var_TypeVar_close_id
   rw [← TypeVar_open_eq_Type_open_var]
   exact TypeVar_open_TypeVar_close_id
 
-theorem Type_open_TypeVar_open_comm
-  : TypeVarLocallyClosed B n → m ≠ n →
+theorem Type_open_TypeVar_open_comm : TypeVarLocallyClosed B n → m ≠ n →
     (Type_open A B m).TypeVar_open a n = (A.TypeVar_open a n).Type_open B m := by
   induction A using rec_uniform generalizing m n <;> aesop
     (add simp [Type_open, TypeVar_open], 40% TypeVar_open_id, safe weaken)
+
+theorem TypeVar_open_Type_multi_open_comm (nlem : n ≤ m)
+  (Blc : ∀ i ≤ n, TypeVarLocallyClosed (B i) m) : (TypeVar_open A a m).Type_multi_open B n =
+    (A.Type_multi_open B n).TypeVar_open a m := by
+  match n with
+  | 0 => rw [Type_multi_open, Type_multi_open]
+  | n' + 1 =>
+    rw [Type_multi_open, Type_multi_open,
+        ← Type_open_TypeVar_open_comm (Blc _ Nat.le.refl.step) (Nat.ne_of_lt nlem),
+        TypeVar_open_Type_multi_open_comm (Nat.le_trans Nat.le.refl.step nlem) (Blc · ·.step)]
+
+theorem Type_open_TypeVar_multi_open_comm : Type.TypeVarLocallyClosed B → m ≤ n →
+    (Type_open A B n).TypeVar_multi_open a m = (A.TypeVar_multi_open a m).Type_open B n := by
+  intro Alc mlen
+  match m with
+  | 0 => rw [TypeVar_multi_open, TypeVar_multi_open]
+  | m' + 1 =>
+    let Alc' := Alc.weaken (n := m')
+    rw [Nat.zero_add] at Alc'
+    rw [TypeVar_multi_open, TypeVar_multi_open,
+        Type_open_TypeVar_open_comm Alc' (Ne.symm (Nat.ne_of_lt mlen)),
+        Type_open_TypeVar_multi_open_comm Alc <| Nat.le_trans Nat.le.refl.step mlen]
+
+theorem Type_open_comm : TypeVarLocallyClosed B₀ n → TypeVarLocallyClosed B₁ m → m ≠ n →
+    (Type_open A B₀ m).Type_open B₁ n = (A.Type_open B₁ n).Type_open B₀ m := by
+  induction A using rec_uniform generalizing m n
+  case var =>
+    intro B₀lc B₁lc mnen
+    simp [Type_open]
+    split
+    · case isTrue h =>
+      simp [← h, Type_open, mnen.symm]
+      exact B₀lc.Type_open_id
+    · case isFalse h =>
+      simp [Type_open]
+      split
+      · case isTrue h' => exact B₁lc.Type_open_id.symm
+      · case isFalse h' => simp [Type_open, h]
+  all_goals aesop (add simp Type_open, safe weaken)
+
+theorem Type_open_Type_multi_open_comm (nlem : n ≤ m) (Blc : TypeVarLocallyClosed B)
+  (B'lc : ∀ i ≤ n, TypeVarLocallyClosed (B' i) m) : (Type_open A B m).Type_multi_open B' n =
+    (A.Type_multi_open B' n).Type_open B m := by
+  match n with
+  | 0 => rw [Type_multi_open, Type_multi_open]
+  | n' + 1 =>
+    let Blc' := Blc.weaken (n := n')
+    rw [Nat.zero_add] at Blc'
+    rw [Type_multi_open, Type_multi_open,
+        ← Type_open_comm (B'lc _ Nat.le.refl.step) Blc' (Nat.ne_of_lt nlem),
+        Type_open_Type_multi_open_comm (Nat.le_trans Nat.le.refl.step nlem) Blc (B'lc · ·.step)]
 
 theorem Type_open_TypeVar_open_eq
   : TypeVarLocallyClosed B n → (Type_open A B n).TypeVar_open a n = A.Type_open B n := by
@@ -489,5 +573,39 @@ theorem subst_fresh' {A T: «Type»} (freshA: a ∉ A.freeTypeVars) (freshT: a �
 
 theorem freeTypeVars_TypeVar_open {T: «Type»} : a ∈ T.freeTypeVars -> a ∈ (T.TypeVar_open a' n).freeTypeVars := by
   induction T using rec_uniform generalizing n <;> aesop (add simp [freeTypeVars, TypeVar_open])
+
+theorem Type_open_TypeVar_open_comm : TypeVarLocallyClosed B m → m ≠ n →
+    (TypeVar_open A a m).Type_open B n = (Type_open A B n).TypeVar_open a m := by
+  induction A using rec_uniform generalizing m n
+  case var =>
+    intro Blc mnen
+    rw [TypeVar_open]
+    split
+    · case isTrue h =>
+      cases h
+      rw [Type_open, if_neg nofun, Type_open, if_neg (mnen.symm <| TypeVar.bound.inj ·),
+          TypeVar_open, if_pos rfl]
+    · case isFalse h =>
+      rw [Type_open]
+      split
+      · case isTrue h' => exact Blc.TypeVar_open_id.symm
+      · case isFalse h' => rw [TypeVar_open, if_neg h]
+  case lam ih =>
+    intro Blc mnen
+    rw [TypeVar_open, Type_open, Type_open, TypeVar_open,
+        ih (Blc.weaken (n := 1)) (mnen <| Nat.add_one_inj.mp ·)]
+  case «forall» ih =>
+    intro Blc mnen
+    rw [TypeVar_open, Type_open, Type_open, TypeVar_open,
+        ih (Blc.weaken (n := 1)) (mnen <| Nat.add_one_inj.mp ·)]
+  all_goals aesop
+    (add simp [TypeVar_open, Type_open], safe cases TypeVarLocallyClosed,
+      20% [TypeVarLocallyClosed.TypeVar_open_id, TypeVarLocallyClosed.Type_open_id, Eq.symm,
+             TypeVarLocallyClosed.weaken])
+
+theorem TypeVar_open_TypeVar_subst_eq_Type_open_of_not_mem_freeTypeVars
+  : a ∉ freeTypeVars A → (TypeVar_open A a n).TypeVar_subst a B = A.Type_open B n := by
+  induction A using rec_uniform generalizing n <;> aesop
+    (add simp [freeTypeVars, TypeVar_open, TypeVar_subst, Type_open])
 
 namespace TabularTypeInterpreter.«F⊗⊕ω».«Type»

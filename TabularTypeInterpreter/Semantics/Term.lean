@@ -1,8 +1,17 @@
 import TabularTypeInterpreter.Semantics.Type
-import TabularTypeInterpreter.Syntax.InstanceEnvironment
 import TabularTypeInterpreter.Syntax.Term
 
 namespace TabularTypeInterpreter
+
+termonly
+def Term.TypeVar_multi_open (M : Term) (a : Nat → TypeVarId) : Nat → Term
+  | 0 => M
+  | n + 1 => M.TypeVar_open (a n) n |>.TypeVar_multi_open a n
+
+termonly
+def Term.TermVar_multi_open (M : Term) (x : Nat → TermVarId) : Nat → Term
+  | 0 => M
+  | n + 1 => M.TermVar_open (x n) n |>.TermVar_multi_open x n
 
 open «F⊗⊕ω»
 
@@ -13,10 +22,6 @@ abbrev ℓₘ := 0
 abbrev ℓᵣ := 1
 
 judgement_syntax Γᵢ "; " Γc "; " Γ " ⊢ " M " : " σ " ⇝ " E : Term.TypingAndElaboration
-
-judgement_syntax Γᵢ "; " Γc "; " Γ " ⊨ " ψ " ⇝ " E : Monotype.ConstraintSolvingAndElaboration
-
-mutual
 
 judgement Term.TypingAndElaboration where
 
@@ -132,11 +137,12 @@ notex n ≠ 0 ∨ b
 Γc; Γ ⊢ ρ : R κ ⇝ A
 ∀ a ∉ Iₘ, Γc; Γ, a : R κ ⊢ τ^a : * ⇝ B^a
 ⊢ κ ⇝ K
-∀ aₗ ∉ Iₛ, ∀ aₜ ∉ aₗ :: Iₛ, ∀ aₚ ∉ aₜ :: aₗ :: Iₛ, ∀ aᵢ ∉ aₚ :: aₜ :: aₗ :: Iₛ, ∀ aₙ ∉ aᵢ :: aₚ :: aₜ :: aₗ :: Iₛ, Γᵢ; Γc; Γ, aₗ : L, aₜ : κ, aₚ : R κ, aᵢ : R κ, aₙ : R κ ⊢ M : ⟨aₗ ▹ aₜ⟩ ⊙(N) aₚ ~ aᵢ ⇒ aₙ ⊙(N) aᵢ ~ ρ ⇒ ⌊aₗ⌋ → τ^aₚ → τ^aᵢ ⇝ E₀^aₗ#4^aₜ#3^aₚ#2^aᵢ#1^aₙ
+∀ aₗ ∉ Iₛ, ∀ aₜ ∉ aₗ :: Iₛ, ∀ aₚ ∉ aₜ :: aₗ :: Iₛ, ∀ aᵢ ∉ aₚ :: aₜ :: aₗ :: Iₛ, ∀ aₙ ∉ aᵢ :: aₚ :: aₜ :: aₗ :: Iₛ, Γᵢ; Γc; Γ, aₗ : L, aₜ : κ, aₚ : R κ, aᵢ : R κ, aₙ : R κ ⊢ M : aₚ ⊙(N) ⟨aₗ ▹ aₜ⟩ ~ aᵢ ⇒ aᵢ ⊙(N) aₙ ~ ρ ⇒ ⌊aₗ⌋ → τ^aₚ → τ^aᵢ ⇝ E₀^aₗ#4^aₜ#3^aₚ#2^aᵢ#1^aₙ
 Γᵢ; Γc; Γ ⊢ «N» : τ^^⟨ : κ ⟩/a ⇝ E₁
 Γᵢ; Γc; Γ ⊨ Ind ρ ⇝ F
+E := ⦅F [λ a : L K. B] ⦅Λ aₗ : *. Λ aₜ : K. Λ aₚ : L K. Λ aᵢ : L K. Λ aₙ : L K. E₀⦆⦆ E₁
 ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── «ind» (Iₘ Iₛ : List TypeVarId)
-Γᵢ; Γc; Γ ⊢ ind (λ a : R κ. τ) ρ; M; «N» : τ^^ρ/a ⇝ ⦅F [λ a : L K. B] ⦅Λ aₗ : *. Λ aₜ : K. Λ aₚ : L K. Λ aᵢ : L K. Λ aₙ : L K. E₀⦆⦆ E₁
+Γᵢ; Γc; Γ ⊢ ind (λ a : R κ. τ) ρ; M; «N» : τ^^ρ/a ⇝ E
 
 Γᵢ; Γc; Γ ⊢ M : Π(μ) ρ₂ ⇝ E₀
 Γᵢ; Γc; Γ ⊨ Split (λ a : *. τ) ρ₀ ⊙' ρ₁ ~ ρ₂ ⇝ F
@@ -150,9 +156,5 @@ E := (⦅π 0 π 2 F⦆ [λ a : *. a$0] E₀, ⦅π 0 π 3 F⦆ [λ a : *. a$0] 
 Γc; Γ ⊢ τ₁ : * ⇝ A
 ──────────────────────────────────────────────────────────────────────────────────────────── splitS
 Γᵢ; Γc; Γ ⊢ splitₛ (λ a : *. τ) M; «N» : (Σ(μ) ρ₂) → τ₁ ⇝ ⦅⦅π 1 F⦆ [λ a : *. a$0] [A] E₀⦆ E₁
-
-judgement Monotype.ConstraintSolvingAndElaboration where
-
-end
 
 end TabularTypeInterpreter

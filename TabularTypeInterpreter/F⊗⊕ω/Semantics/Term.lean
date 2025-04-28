@@ -4,6 +4,35 @@ import TabularTypeInterpreter.«F⊗⊕ω».Syntax.Value
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
 
+namespace Term
+
+termonly
+def multi_app (Es : List Term) (F : Term) : Term := match Es with
+  | [] => F
+  | E :: Es' => multi_app Es' <| E.app F
+
+termonly
+def TypeVar_multi_open (E : Term) (a : Nat → TypeVarId) : Nat → Term
+  | 0 => E
+  | n + 1 => E.TypeVar_open (a n) n |>.TypeVar_multi_open a n
+
+termonly
+def TermVar_multi_open (E : Term) (x : Nat → TermVarId) : Nat → Term
+  | 0 => E
+  | n + 1 => E.TermVar_open (x n) n |>.TermVar_multi_open x n
+
+termonly
+def Type_multi_open (E : Term) (A : Nat → «Type») : Nat → Term
+  | 0 => E
+  | n + 1 => E.Type_open (A n) n |>.Type_multi_open A n
+
+termonly
+def Term_multi_open (E : Term) (F : Nat → Term) : Nat → Term
+  | 0 => E
+  | n + 1 => E.Term_open (F n) n |>.Term_multi_open F n
+
+end Term
+
 judgement_syntax Δ " ⊢ " E " : " A : Typing
 
 judgement Typing where
