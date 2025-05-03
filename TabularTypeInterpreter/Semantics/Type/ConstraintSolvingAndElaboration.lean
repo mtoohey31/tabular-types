@@ -1,7 +1,7 @@
 import Lott.Elab.NotExistentialJudgement
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Term
 import TabularTypeInterpreter.Semantics.InstanceEnvironment
-import TabularTypeInterpreter.Semantics.Type.KindingAndElaboration
+import TabularTypeInterpreter.Semantics.Type.SubtypingAndElaboration
 
 namespace TabularTypeInterpreter
 

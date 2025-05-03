@@ -1,6 +1,6 @@
 import TabularTypeInterpreter.Lemmas.Type.Basic
 import TabularTypeInterpreter.Lemmas.Type.MonotypeOpenPreservation
-import TabularTypeInterpreter.Semantics.Type.KindingAndElaboration
+import TabularTypeInterpreter.Semantics.Type.SubtypingAndElaboration
 import TabularTypeInterpreter.Theorems.Type.KindingAndElaboration
 
 namespace TabularTypeInterpreter
