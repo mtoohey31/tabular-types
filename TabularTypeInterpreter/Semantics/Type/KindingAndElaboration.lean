@@ -141,8 +141,7 @@ judgement Monotype.RowEquivalenceAndElaboration where
 /-
 symm is not included directly as a rule because the elaboration functions are directional (they
 convert from an elaborated prod or sum of the lhs to the same of the rhs), so a symm rule would have
-to magically find the inverse function term based on the original direction. Instead, we include a
-lemma proving symmetry in ../../Lemmas/Type.lean.
+to magically find the inverse function term based on the original direction.
 -/
 
 Γc; Γ ⊢ ρ₀ : R κ ⇝ A₀
