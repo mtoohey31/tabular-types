@@ -182,13 +182,13 @@ theorem to_Kinding (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]])
     rcases ρ₀ke.deterministic ρ₀ke' with ⟨κeq, rfl⟩
     cases κeq
     exact ⟨_, .all I ψke κe ρ₂ke⟩
-  | ind I₀ I₁ τke ξke κe keBᵣ keBₗ =>
-    rename «Type» => Bₗ
+  | ind I₀ I₁ τke ξke κe keBₗ keBᵣ =>
+    rename «Type» => Bᵣ
     let ⟨aᵢ, aᵢnin⟩ := I₁.exists_fresh
     let ⟨aₙ, aₙnin⟩ := aᵢ :: I₁ |>.exists_fresh
-    let ⟨_, .concat _ _ _ ξτke ..⟩ := generalize <| keBₗ _ aᵢnin _ aₙnin
+    let ⟨_, .concat _ _ _ ξτke ..⟩ := generalize <| keBᵣ _ aᵢnin _ aₙnin
     let ⟨_, uni, _, _, _, _, h, _⟩ := ξτke.row_inversion
-    exact ⟨_, .ind I₀ I₁ (.row ξke uni τke h) κe keBᵣ keBₗ⟩
+    exact ⟨_, .ind I₀ I₁ (.row ξke uni τke h) κe keBₗ keBᵣ⟩
   | splitEmpty I τke =>
     rename Kind => κ
     let ⟨_, κe⟩ := κ.Elaboration_total
@@ -2928,10 +2928,10 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
       exact .refl
     )) .refl
     exact this
-  | ind I₀ I₁ τke ℓke κe keBᵣ keBₗ ceEᵣ ceEₗ ihEᵣ ihEₗ =>
+  | ind I₀ I₁ τke ℓke κe keBₗ keBᵣ ceEᵣ ceEᵣ ihEₗ ihEᵣ =>
     rename «Type» => A_
-    rename_i n _ Γ τ κ A ℓ _ K Bᵣ b Bₗ _ _ _
-    let .ind I₀' I₁' ρke κe' keBᵣ' keBₗ' (κ := κ') := ψke
+    rename_i n _ Γ τ κ A ℓ _ K Bₗ b Bᵣ _ _ _ _
+    let .ind I₀' I₁' ρke κe' keBₗ' keBᵣ' (κ := κ') := ψke
     rcases ρke.row_inversion with ⟨⟨_, ℓke'⟩, uni, _, _, rfl, κeq, h, κ'eq, τke'⟩
     cases κeq
     let κeq : κ = κ' := by
@@ -2988,21 +2988,21 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
         |>.typeExt aᵢninΓ₀ κe.row |>.typeExt aₙninΓ₀ κe.row
       let Γ₁we := Γwe.typeExt aᵢninΓ₁ κe.row |>.typeExt aₙninΓ₁ κe.row
       apply TypeEquivalence.arr _ <| .arr _ .refl
-      · let keBᵣ := keBᵣ _ aₗninI₀ _ aₜninI₀ _ aₚninI₀ _ aᵢninI₀ _ aₙninI₀
-        rcases keBᵣ.deterministic <| keBᵣ' _ aₗninI₀' _ aₜninI₀' _ aₚninI₀' _ aᵢninI₀' _ aₙninI₀' with
-          ⟨_, Bᵣeq⟩
-        let Bᵣlc := keBᵣ.soundness Γcw Γ₀we .constr |>.TypeVarLocallyClosed_of.weaken (n := 5)
+      · let keBₗ := keBₗ _ aₗninI₀ _ aₜninI₀ _ aₚninI₀ _ aᵢninI₀ _ aₙninI₀
+        rcases keBₗ.deterministic <| keBₗ' _ aₗninI₀' _ aₜninI₀' _ aₚninI₀' _ aᵢninI₀' _ aₙninI₀' with
+          ⟨_, Bₗeq⟩
+        let Bₗlc := keBₗ.soundness Γcw Γ₀we .constr |>.TypeVarLocallyClosed_of.weaken (n := 5)
         rw [Type.TypeVar_open_comm (m := 5), Type.TypeVar_open_comm (m := 5),
             Type.TypeVar_open_comm (m := 5), Type.TypeVar_open_comm (m := 5),
             Type.TypeVar_open_comm (m := 5), Type.TypeVar_open_comm (m := 5),
             Type.TypeVar_open_comm (m := 5), Type.TypeVar_open_comm (m := 5),
-            Type.TypeVar_open_comm (m := 5), Type.TypeVar_open_comm (m := 5), ← Bᵣeq,
-             Bᵣlc.TypeVar_open_id]
+            Type.TypeVar_open_comm (m := 5), Type.TypeVar_open_comm (m := 5), ← Bₗeq,
+             Bₗlc.TypeVar_open_id]
         exact .refl
         all_goals nofun
-      · let keBₗ := keBₗ _ aᵢninI₁ _ aₙninI₁
-        rcases keBₗ.deterministic <| keBₗ' _ aᵢninI₁' _ aₙninI₁' with ⟨_, Bₗeq⟩
-        let Bₗlc := keBₗ.soundness Γcw Γ₁we .constr |>.TypeVarLocallyClosed_of
+      · let keBᵣ := keBᵣ _ aᵢninI₁ _ aₙninI₁
+        rcases keBᵣ.deterministic <| keBᵣ' _ aᵢninI₁' _ aₙninI₁' with ⟨_, Bᵣeq⟩
+        let Bᵣlc := keBᵣ.soundness Γcw Γ₁we .constr |>.TypeVarLocallyClosed_of
         rw [Type.TypeVar_open_comm (m := 5), Type.TypeVar_open_comm (m := 5),
             Type.TypeVar_open_comm (m := 5), Type.TypeVar_open_comm (m := 5),
             Type.TypeVar_open_comm (m := 5), Type.TypeVar_open_comm (m := 4),
@@ -3010,8 +3010,8 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
             Type.TypeVar_open_comm (m := 4), Type.TypeVar_open_comm (m := 3),
             Type.TypeVar_open_comm (m := 3), Type.TypeVar_open_comm (m := 3),
             Type.TypeVar_open_comm (m := 2), Type.TypeVar_open_comm (m := 2),
-            Bₗlc.weaken (n := 2).TypeVar_open_id, Bₗlc.weaken (n := 3).TypeVar_open_id,
-            Bₗlc.weaken (n := 4).TypeVar_open_id, Bₗlc.weaken (n := 5).TypeVar_open_id,
+            Bᵣlc.weaken (n := 2).TypeVar_open_id, Bᵣlc.weaken (n := 3).TypeVar_open_id,
+            Bᵣlc.weaken (n := 4).TypeVar_open_id, Bᵣlc.weaken (n := 5).TypeVar_open_id,
             Type.TypeVar_open_comm (m := 5), Type.TypeVar_open_comm (m := 5),
             Type.TypeVar_open_comm (m := 5), Type.TypeVar_open_comm (m := 5),
             Type.TypeVar_open_comm (m := 5), Type.TypeVar_open_comm (m := 4),
@@ -3019,11 +3019,11 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
             Type.TypeVar_open_comm (m := 4), Type.TypeVar_open_comm (m := 3),
             Type.TypeVar_open_comm (m := 3), Type.TypeVar_open_comm (m := 3),
             Type.TypeVar_open_comm (m := 2), Type.TypeVar_open_comm (m := 2),
-            ← Bₗeq, Bₗlc.weaken (n := 2).TypeVar_open_id, Bₗlc.weaken (n := 3).TypeVar_open_id,
-            Bₗlc.weaken (n := 4).TypeVar_open_id, Bₗlc.weaken (n := 5).TypeVar_open_id]
+            ← Bᵣeq, Bᵣlc.weaken (n := 2).TypeVar_open_id, Bᵣlc.weaken (n := 3).TypeVar_open_id,
+            Bᵣlc.weaken (n := 4).TypeVar_open_id, Bᵣlc.weaken (n := 5).TypeVar_open_id]
         exact .refl
         all_goals nofun
-    let Bᵣlc : Type.TypeVarLocallyClosed _ 5 := by
+    let Bₗlc : Type.TypeVarLocallyClosed _ 5 := by
       let ⟨aₗ, aₗnin⟩ := I₀ ++ Γ.typeVarDom |>.exists_fresh
       let ⟨aₗninI, aₗninΓ⟩ := List.not_mem_append'.mp aₗnin
       let ⟨aₜ, aₜnin⟩ := aₗ :: I₀ ++ aₗ :: Γ.typeVarDom |>.exists_fresh
@@ -3037,22 +3037,22 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
       let ⟨aₙninI, aₙninΓ⟩ := List.not_mem_append'.mp aₙnin
       let Γ'we := Γwe.typeExt aₗninΓ .label |>.typeExt aₜninΓ κe |>.typeExt aₚninΓ κe.row
         |>.typeExt aᵢninΓ κe.row |>.typeExt aₙninΓ κe.row
-      exact keBᵣ _ aₗninI _ aₜninI _ aₚninI _ aᵢninI _ aₙninI |>.soundness Γcw Γ'we .constr
+      exact keBₗ _ aₗninI _ aₜninI _ aₚninI _ aᵢninI _ aₙninI |>.soundness Γcw Γ'we .constr
         |>.TypeVarLocallyClosed_of.weaken (n := 5).TypeVar_open_drop Nat.le.refl.step.step.step.step
         |>.TypeVar_open_drop Nat.le.refl.step.step.step
         |>.TypeVar_open_drop Nat.le.refl.step.step
         |>.TypeVar_open_drop Nat.le.refl.step
         |>.TypeVar_open_drop Nat.le.refl
-    let Bₗlc : Type.TypeVarLocallyClosed _ 5 := by
+    let Bᵣlc : Type.TypeVarLocallyClosed _ 5 := by
       let ⟨aᵢ, aᵢnin⟩ := I₁ ++ Γ.typeVarDom |>.exists_fresh
       let ⟨aᵢninI, aᵢninΓ⟩ := List.not_mem_append'.mp aᵢnin
       let ⟨aₙ, aₙnin⟩ := aᵢ :: I₁ ++ aᵢ :: Γ.typeVarDom |>.exists_fresh
       let ⟨aₙninI, aₙninΓ⟩ := List.not_mem_append'.mp aₙnin
       let Γ'we := Γwe.typeExt aᵢninΓ κe.row |>.typeExt aₙninΓ κe.row
-      exact keBₗ _ aᵢninI _ aₙninI |>.soundness Γcw Γ'we .constr
+      exact keBᵣ _ aᵢninI _ aₙninI |>.soundness Γcw Γ'we .constr
         |>.TypeVarLocallyClosed_of.weaken (n := 5).TypeVar_open_drop Nat.le.refl.step.step.step.step
         |>.TypeVar_open_drop Nat.le.refl.step.step.step
-    rw [Bᵣlc.TypeVar_open_id, Bₗlc.TypeVar_open_id]
+    rw [Bₗlc.TypeVar_open_id, Bᵣlc.TypeVar_open_id]
     intro xₛ xₛnin
     simp [«F⊗⊕ω».Term.TermVar_open]
     let Δaxₛwf := Δawf.termVarExt xₛnin <| by
@@ -3098,7 +3098,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
         ⟩
         let Γ'we := Γawe.typeExt aₗninΓ .label |>.typeExt aₜninΓ κe |>.typeExt aₚninΓ κe.row
           |>.typeExt aᵢninΓ κe.row |>.typeExt aₙninΓ κe.row
-        exact keBᵣ _ aₗninI _ aₜninI _ aₚninI _ aᵢninI _ aₙninI |>.weakening Γ'we
+        exact keBₗ _ aₗninI _ aₜninI _ aₚninI _ aᵢninI _ aₙninI |>.weakening Γ'we
           (Γ' := .typeExt .empty ..)
           (Γ'' := .typeExt (.typeExt (.typeExt (.typeExt (.typeExt .empty ..) ..) ..) ..) ..)
           |>.soundness Γcw Γ'we .constr
@@ -3110,7 +3110,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
         let aₙninI := List.not_mem_cons.mpr ⟨aₙneaᵢ, aₙninI⟩
         let aₙninΓ := List.not_mem_cons.mpr ⟨aₙneaᵢ, aₙninΓ⟩
         let Γ'we := Γawe.typeExt aᵢninΓ κe.row |>.typeExt aₙninΓ κe.row
-        exact keBₗ _ aᵢninI _ aₙninI |>.weakening Γ'we
+        exact keBᵣ _ aᵢninI _ aₙninI |>.weakening Γ'we
           (Γ' := .typeExt .empty ..) (Γ'' := .typeExt (.typeExt .empty ..) ..)
           |>.soundness Γcw Γ'we .constr
     apply Typing.lam <| xₛ :: Δ.termVarDom
@@ -3217,32 +3217,32 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
                 simp [A'eqA k kmem', Aki k kmem' |>.TypeVarLocallyClosed_of.TypeVar_open_id]
               )]
           exact xₛty'''''
-        · let ⟨aₗ, aₗnin⟩ := ↑I₀ ++ ↑([:n].map (freeTypeVars ∘ τ)).flatten ++ ↑Bᵣ.freeTypeVars ++
+        · let ⟨aₗ, aₗnin⟩ := ↑I₀ ++ ↑([:n].map (freeTypeVars ∘ τ)).flatten ++ ↑Bₗ.freeTypeVars ++
             ↑(A i).freeTypeVars ++ ↑([:i].map (Type.freeTypeVars ∘ A)).flatten ++
             ↑([:i+1].map (Type.freeTypeVars ∘ A)).flatten ++
             ↑([i+1:n].map (Type.freeTypeVars ∘ A)).flatten ++ Γ.typeVarDom
             |>.exists_fresh
-          let ⟨aₗninIτBᵣAA'A''A''', aₗninΓ⟩ := List.not_mem_append'.mp aₗnin
-          let ⟨aₗninIτBᵣAA'A'', aₗninA'''⟩ := List.not_mem_append'.mp aₗninIτBᵣAA'A''A'''
-          let ⟨aₗninIτBᵣAA', aₗninA''⟩ := List.not_mem_append'.mp aₗninIτBᵣAA'A''
-          let ⟨aₗninIτBᵣA, aₗninA'⟩ := List.not_mem_append'.mp aₗninIτBᵣAA'
-          let ⟨aₗninIτBᵣ, aₗninA⟩ := List.not_mem_append'.mp aₗninIτBᵣA
-          let ⟨aₗninIτ, aₗninBᵣ⟩ := List.not_mem_append'.mp aₗninIτBᵣ
+          let ⟨aₗninIτBₗAA'A''A''', aₗninΓ⟩ := List.not_mem_append'.mp aₗnin
+          let ⟨aₗninIτBₗAA'A'', aₗninA'''⟩ := List.not_mem_append'.mp aₗninIτBₗAA'A''A'''
+          let ⟨aₗninIτBₗAA', aₗninA''⟩ := List.not_mem_append'.mp aₗninIτBₗAA'A''
+          let ⟨aₗninIτBₗA, aₗninA'⟩ := List.not_mem_append'.mp aₗninIτBₗAA'
+          let ⟨aₗninIτBₗ, aₗninA⟩ := List.not_mem_append'.mp aₗninIτBₗA
+          let ⟨aₗninIτ, aₗninBₗ⟩ := List.not_mem_append'.mp aₗninIτBₗ
           let ⟨aₗninI, aₗninτ⟩ := List.not_mem_append'.mp aₗninIτ
           let aₗninτ' : ∀ i ∈ [:n], aₗ ∉ (τ i).freeTypeVars := by
             intro i imem
             have := List.not_mem_flatten.mp aₗninτ _ <| Range.mem_map_of_mem imem
             rw [Function.comp] at this
             exact this
-          let ⟨aₜ, aₜnin⟩ := aₗ :: I₀ ++ ↑([:n].map (freeTypeVars ∘ τ)).flatten ++ ↑Bᵣ.freeTypeVars ++
+          let ⟨aₜ, aₜnin⟩ := aₗ :: I₀ ++ ↑([:n].map (freeTypeVars ∘ τ)).flatten ++ ↑Bₗ.freeTypeVars ++
             ↑([:i].map (Type.freeTypeVars ∘ A)).flatten ++
             ↑([:i+1].map (Type.freeTypeVars ∘ A)).flatten ++
             ↑([i+1:n].map (Type.freeTypeVars ∘ A)).flatten ++ aₗ :: Γ.typeVarDom |>.exists_fresh
-          let ⟨aₜninIτBᵣAA'A'', aₜninΓ⟩ := List.not_mem_append'.mp aₜnin
-          let ⟨aₜninIτBᵣAA', aₜninA''⟩ := List.not_mem_append'.mp aₜninIτBᵣAA'A''
-          let ⟨aₜninIτBᵣA, aₜninA'⟩ := List.not_mem_append'.mp aₜninIτBᵣAA'
-          let ⟨aₜninIτBᵣ, aₜninA⟩ := List.not_mem_append'.mp aₜninIτBᵣA
-          let ⟨aₜninIτ, aₜninBᵣ⟩ := List.not_mem_append'.mp aₜninIτBᵣ
+          let ⟨aₜninIτBₗAA'A'', aₜninΓ⟩ := List.not_mem_append'.mp aₜnin
+          let ⟨aₜninIτBₗAA', aₜninA''⟩ := List.not_mem_append'.mp aₜninIτBₗAA'A''
+          let ⟨aₜninIτBₗA, aₜninA'⟩ := List.not_mem_append'.mp aₜninIτBₗAA'
+          let ⟨aₜninIτBₗ, aₜninA⟩ := List.not_mem_append'.mp aₜninIτBₗA
+          let ⟨aₜninIτ, aₜninBₗ⟩ := List.not_mem_append'.mp aₜninIτBₗ
           let ⟨aₜninI, aₜninτ⟩ := List.not_mem_append'.mp aₜninIτ
           let aₜninτ' : ∀ i ∈ [:n], aₜ ∉ (τ i).freeTypeVars := by
             intro i imem
@@ -3251,13 +3251,13 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
             exact this
           let aₜneaₗ := List.ne_of_not_mem_cons aₜninI
           let ⟨aₚ, aₚnin⟩ := aₜ :: aₗ :: I₀ ++ ↑([:n].map (freeTypeVars ∘ τ)).flatten ++
-            ↑Bᵣ.freeTypeVars ++ ↑([:i+1].map (Type.freeTypeVars ∘ A)).flatten ++
+            ↑Bₗ.freeTypeVars ++ ↑([:i+1].map (Type.freeTypeVars ∘ A)).flatten ++
             ↑([i+1:n].map (Type.freeTypeVars ∘ A)).flatten ++
             aₜ :: aₗ :: Γ.typeVarDom |>.exists_fresh
-          let ⟨aₚninIτBᵣAA', aₚninΓ⟩ := List.not_mem_append'.mp aₚnin
-          let ⟨aₚninIτBᵣA, aₚninA'⟩ := List.not_mem_append'.mp aₚninIτBᵣAA'
-          let ⟨aₚninIτBᵣ, aₚninA⟩ := List.not_mem_append'.mp aₚninIτBᵣA
-          let ⟨aₚninIτ, aₚninBᵣ⟩ := List.not_mem_append'.mp aₚninIτBᵣ
+          let ⟨aₚninIτBₗAA', aₚninΓ⟩ := List.not_mem_append'.mp aₚnin
+          let ⟨aₚninIτBₗA, aₚninA'⟩ := List.not_mem_append'.mp aₚninIτBₗAA'
+          let ⟨aₚninIτBₗ, aₚninA⟩ := List.not_mem_append'.mp aₚninIτBₗA
+          let ⟨aₚninIτ, aₚninBₗ⟩ := List.not_mem_append'.mp aₚninIτBₗ
           let ⟨aₚninI, aₚninτ⟩ := List.not_mem_append'.mp aₚninIτ
           let aₚninτ' : ∀ i ∈ [:n], aₚ ∉ (τ i).freeTypeVars := by
             intro i imem
@@ -3266,27 +3266,27 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
             exact this
           let aₚneaₜ := List.ne_of_not_mem_cons aₚninI
           let aₚneaₗ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons aₚninI
-          let ⟨aᵢ, aᵢnin⟩ := aₚ :: aₜ :: aₗ :: I₀ ++ ↑Bᵣ.freeTypeVars ++
+          let ⟨aᵢ, aᵢnin⟩ := aₚ :: aₜ :: aₗ :: I₀ ++ ↑Bₗ.freeTypeVars ++
             ↑([i+1:n].map (Type.freeTypeVars ∘ A)).flatten ++ aₚ :: aₜ :: aₗ :: Γ.typeVarDom
             |>.exists_fresh
-          let ⟨aᵢninIBᵣA, aᵢninΓ⟩ := List.not_mem_append'.mp aᵢnin
-          let ⟨aᵢninIBᵣ, aᵢninA⟩ := List.not_mem_append'.mp aᵢninIBᵣA
-          let ⟨aᵢninI, aᵢninBᵣ⟩ := List.not_mem_append'.mp aᵢninIBᵣ
+          let ⟨aᵢninIBₗA, aᵢninΓ⟩ := List.not_mem_append'.mp aᵢnin
+          let ⟨aᵢninIBₗ, aᵢninA⟩ := List.not_mem_append'.mp aᵢninIBₗA
+          let ⟨aᵢninI, aᵢninBₗ⟩ := List.not_mem_append'.mp aᵢninIBₗ
           let aᵢneaₚ := List.ne_of_not_mem_cons aᵢninI
           let aᵢneaₜ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons aᵢninI
           let aᵢneaₗ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
             List.not_mem_of_not_mem_cons aᵢninI
-          let ⟨aₙ, aₙnin⟩ := aᵢ :: aₚ :: aₜ :: aₗ :: I₀ ++ ↑Bᵣ.freeTypeVars ++
+          let ⟨aₙ, aₙnin⟩ := aᵢ :: aₚ :: aₜ :: aₗ :: I₀ ++ ↑Bₗ.freeTypeVars ++
             aᵢ :: aₚ :: aₜ :: aₗ :: Γ.typeVarDom |>.exists_fresh
-          let ⟨aₙninIBᵣ, aₙninΓ⟩ := List.not_mem_append'.mp aₙnin
-          let ⟨aₙninI, aₙninBᵣ⟩ := List.not_mem_append'.mp aₙninIBᵣ
+          let ⟨aₙninIBₗ, aₙninΓ⟩ := List.not_mem_append'.mp aₙnin
+          let ⟨aₙninI, aₙninBₗ⟩ := List.not_mem_append'.mp aₙninIBₗ
           let aₙneaᵢ := List.ne_of_not_mem_cons aₙninI
           let aₙneaₚ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons aₙninI
           let aₙneaₜ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
             List.not_mem_of_not_mem_cons aₙninI
           let aₙneaₗ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
             List.not_mem_of_not_mem_cons <| List.not_mem_of_not_mem_cons aₙninI
-          let keBᵣ' := keBᵣ _ aₗninI _ aₜninI _ aₚninI _ aᵢninI _ aₙninI
+          let keBₗ' := keBₗ _ aₗninI _ aₜninI _ aₚninI _ aᵢninI _ aₙninI
           let Γaₗwe := Γwe.typeExt aₗninΓ .label
           let Γaₗaₜwe := Γaₗwe.typeExt aₜninΓ κe
           let Γaₗaₜaₚwe := Γaₗaₜwe.typeExt aₚninΓ κe.row
@@ -3301,15 +3301,15 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
           rw [this, ← QualifiedType.TypeVar_open, ← TypeScheme.TypeVar_open,
               ← QualifiedType.TypeVar_open, ← TypeScheme.TypeVar_open, ← QualifiedType.TypeVar_open,
               ← TypeScheme.TypeVar_open, ← QualifiedType.TypeVar_open, ← TypeScheme.TypeVar_open,
-              ← QualifiedType.TypeVar_open, ← TypeScheme.TypeVar_open] at keBᵣ'
-          let keBᵣ'' := keBᵣ'.Monotype_open_preservation Γcw Γaₗaₜaₚaᵢaₙwe nofun (by
+              ← QualifiedType.TypeVar_open, ← TypeScheme.TypeVar_open] at keBₗ'
+          let keBₗ'' := keBₗ'.Monotype_open_preservation Γcw Γaₗaₜaₚaᵢaₙwe nofun (by
             simp [TypeScheme.TypeVar_open, QualifiedType.TypeVar_open, TypeVar_open,
                   TypeScheme.freeTypeVars, QualifiedType.freeTypeVars, freeTypeVars]
             exact ⟨aₙneaₚ, aₙneaₗ, aₙneaₜ, aₙneaᵢ⟩
           ) (Γ' := .empty) (Type.not_mem_freeTypeVars_TypeVar_open_intro
               (Type.not_mem_freeTypeVars_TypeVar_open_intro
                 (Type.not_mem_freeTypeVars_TypeVar_open_intro
-                  (Type.not_mem_freeTypeVars_TypeVar_open_intro aₙninBᵣ aₙneaₗ) aₙneaₜ) aₙneaₚ) aₙneaᵢ)
+                  (Type.not_mem_freeTypeVars_TypeVar_open_intro aₙninBₗ aₙneaₗ) aₙneaₜ) aₙneaₚ) aₙneaᵢ)
             <| rowᵢ₁ₙke.weakening Γaₗaₜaₚaᵢwe (Γ'' := .empty)
               (Γ' := .typeExt (.typeExt (.typeExt (.typeExt .empty ..) ..) ..) ..)
           rw [TypeScheme.TypeVar_open_Monotype_open_comm _ (by
@@ -3391,8 +3391,8 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
             rcases Range.mem_of_mem_map mem with ⟨j, mem', rfl⟩
             exact Aki j ⟨Nat.zero_le _, mem'.upper, Nat.mod_one _⟩
               |>.TypeVarLocallyClosed_of.weaken (n := 4)
-          ) nofun (m := 0) (n := 4)] at keBᵣ''
-          let keBᵣ''' := keBᵣ''.Monotype_open_preservation Γcw Γaₗaₜaₚaᵢwe nofun (by
+          ) nofun (m := 0) (n := 4)] at keBₗ''
+          let keBₗ''' := keBₗ''.Monotype_open_preservation Γcw Γaₗaₜaₚaᵢwe nofun (by
             simp [TypeScheme.Monotype_open, QualifiedType.Monotype_open, Monotype_open,
                   TypeScheme.TypeVar_open, QualifiedType.TypeVar_open, TypeVar_open,
                   TypeScheme.freeTypeVars, QualifiedType.freeTypeVars, freeTypeVars]
@@ -3400,7 +3400,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
           ) (Γ' := .empty) (Type.not_mem_freeTypeVars_TypeVar_open_intro
               (Type.not_mem_freeTypeVars_TypeVar_open_intro
                 (Type.not_mem_freeTypeVars_TypeVar_open_intro
-                  (Type.not_mem_freeTypeVars_Type_open_intro aᵢninBᵣ (by
+                  (Type.not_mem_freeTypeVars_Type_open_intro aᵢninBₗ (by
                     rw [Type.freeTypeVars, List.mapMem_eq_map, List.map_map, ← Range.map]
                     exact aᵢninA
                   )) aᵢneaₗ) aᵢneaₜ) aᵢneaₚ) <| row₀ᵢ₁ke.weakening Γaₗaₜaₚwe (Γ'' := .empty)
@@ -3473,8 +3473,8 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
             rcases Range.mem_of_mem_map mem with ⟨j, mem', rfl⟩
             exact Aki j ⟨Nat.zero_le _, Nat.lt_of_lt_of_le mem'.upper iltn, Nat.mod_one _⟩
               |>.TypeVarLocallyClosed_of.weaken (n := 4)
-          ) nofun (m := 1) (n := 4)] at keBᵣ'''
-          let keBᵣ'''' := keBᵣ'''.Monotype_open_preservation Γcw Γaₗaₜaₚwe nofun (by
+          ) nofun (m := 1) (n := 4)] at keBₗ'''
+          let keBₗ'''' := keBₗ'''.Monotype_open_preservation Γcw Γaₗaₜaₚwe nofun (by
             simp [TypeScheme.Monotype_open, QualifiedType.Monotype_open, Monotype_open,
                   TypeScheme.TypeVar_open, QualifiedType.TypeVar_open, TypeVar_open,
                   TypeScheme.freeTypeVars, QualifiedType.freeTypeVars, freeTypeVars]
@@ -3492,7 +3492,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
           ) (Γ' := .empty) (Type.not_mem_freeTypeVars_TypeVar_open_intro
               (Type.not_mem_freeTypeVars_TypeVar_open_intro
                 (Type.not_mem_freeTypeVars_Type_open_intro
-                  (Type.not_mem_freeTypeVars_Type_open_intro aₚninBᵣ (by
+                  (Type.not_mem_freeTypeVars_Type_open_intro aₚninBₗ (by
                     rw [Type.freeTypeVars, List.mapMem_eq_map, List.map_map, ← Range.map]
                     exact aₚninA'
                   )) (by
@@ -3539,8 +3539,8 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
             rcases Range.mem_of_mem_map mem with ⟨j, mem', rfl⟩
             exact Aki j ⟨Nat.zero_le _, mem'.upper.trans iltn, Nat.mod_one _⟩
               |>.TypeVarLocallyClosed_of.weaken (n := 4)
-          ) nofun (m := 2) (n := 4)] at keBᵣ''''
-          let keBᵣ''''' := keBᵣ''''.Monotype_open_preservation Γcw Γaₗaₜwe nofun (by
+          ) nofun (m := 2) (n := 4)] at keBₗ''''
+          let keBₗ''''' := keBₗ''''.Monotype_open_preservation Γcw Γaₗaₜwe nofun (by
             simp [TypeScheme.Monotype_open, QualifiedType.Monotype_open, Monotype_open,
                   TypeScheme.TypeVar_open, QualifiedType.TypeVar_open, TypeVar_open,
                   TypeScheme.freeTypeVars, QualifiedType.freeTypeVars, freeTypeVars]
@@ -3564,7 +3564,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
           ) (Γ' := .empty) (Type.not_mem_freeTypeVars_TypeVar_open_intro
               (Type.not_mem_freeTypeVars_Type_open_intro
                 (Type.not_mem_freeTypeVars_Type_open_intro
-                  (Type.not_mem_freeTypeVars_Type_open_intro aₜninBᵣ (by
+                  (Type.not_mem_freeTypeVars_Type_open_intro aₜninBₗ (by
                     rw [Type.freeTypeVars, List.mapMem_eq_map, List.map_map, ← Range.map]
                     exact aₜninA''
                   )) (by
@@ -3579,8 +3579,8 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
           rw [TypeScheme.TypeVar_open_Monotype_open_comm _ τlc nofun (m := 4) (n := 3),
               ← Type.TypeVarLocallyClosed.Type_open_TypeVar_open_comm (by
             exact Aki i imem |>.TypeVarLocallyClosed_of.weaken (n := 4)
-          ) nofun (m := 3) (n := 4)] at keBᵣ'''''
-          let keBᵣ'''''' := keBᵣ'''''.Monotype_open_preservation Γcw Γaₗwe nofun (by
+          ) nofun (m := 3) (n := 4)] at keBₗ'''''
+          let keBₗ'''''' := keBₗ'''''.Monotype_open_preservation Γcw Γaₗwe nofun (by
             simp [TypeScheme.Monotype_open, QualifiedType.Monotype_open, Monotype_open,
                   TypeScheme.TypeVar_open, QualifiedType.TypeVar_open, TypeVar_open,
                   TypeScheme.freeTypeVars, QualifiedType.freeTypeVars, freeTypeVars]
@@ -3605,7 +3605,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
           ) (Γ' := .empty) (Type.not_mem_freeTypeVars_Type_open_intro
               (Type.not_mem_freeTypeVars_Type_open_intro
                 (Type.not_mem_freeTypeVars_Type_open_intro
-                  (Type.not_mem_freeTypeVars_Type_open_intro aₗninBᵣ (by
+                  (Type.not_mem_freeTypeVars_Type_open_intro aₗninBₗ (by
                     rw [Type.freeTypeVars, List.mapMem_eq_map, List.map_map, ← Range.map]
                     exact aₗninA'''
                   )) (by
@@ -3720,28 +3720,28 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
               row₀ᵢlc.weakening (n := 4).Monotype_open_id, Monotype_open, Monotype_open,
               List.mapMem_eq_map, List.map_singleton, Monotype_open, if_pos rfl,
               τlc.weakening (n := 4).Monotype_open_id, row₀ᵢ₁lc.weakening (n := 4).Monotype_open_id,
-          ] at keBᵣ''''''
-          let Eᵣty := ihEᵣ i imem keBᵣ'''''' Γᵢw Γcw Γwe
-          let Eᵣlc := Eᵣty.TermVarLocallyClosed_of
-          rw [Eᵣty.TermTypeVarLocallyClosed_of.TypeVar_open_id, Eᵣlc.weaken (n := 1).TermVar_open_id,
-              Eᵣlc.TermVar_open_id]
-          exact Eᵣty.weakening Δaxₛᵢwf (Δ' := .termExt (.termExt (.typeExt .empty ..) ..) ..)
+          ] at keBₗ''''''
+          let Eₗty := ihEₗ i imem keBₗ'''''' Γᵢw Γcw Γwe
+          let Eₗlc := Eₗty.TermVarLocallyClosed_of
+          rw [Eₗty.TermTypeVarLocallyClosed_of.TypeVar_open_id, Eₗlc.weaken (n := 1).TermVar_open_id,
+              Eₗlc.TermVar_open_id]
+          exact Eₗty.weakening Δaxₛᵢwf (Δ' := .termExt (.termExt (.typeExt .empty ..) ..) ..)
             (Δ'' := .empty)
-      · let ⟨aᵢ, aᵢnin⟩ := I₁ ++ ([:n].map (freeTypeVars ∘ τ)).flatten ++ ↑Bₗ.freeTypeVars ++
+      · let ⟨aᵢ, aᵢnin⟩ := I₁ ++ ([:n].map (freeTypeVars ∘ τ)).flatten ++ ↑Bᵣ.freeTypeVars ++
           ↑([i+1:n].map (Type.freeTypeVars ∘ A)).flatten ++ Γ.typeVarDom |>.exists_fresh
-        let ⟨aᵢninIτBₗA, aᵢninΓ⟩ := List.not_mem_append'.mp aᵢnin
-        let ⟨aᵢninIτBₗ, aᵢninA⟩ := List.not_mem_append'.mp aᵢninIτBₗA
-        let ⟨aᵢninIτ, aᵢninBₗ⟩ := List.not_mem_append'.mp aᵢninIτBₗ
+        let ⟨aᵢninIτBᵣA, aᵢninΓ⟩ := List.not_mem_append'.mp aᵢnin
+        let ⟨aᵢninIτBᵣ, aᵢninA⟩ := List.not_mem_append'.mp aᵢninIτBᵣA
+        let ⟨aᵢninIτ, aᵢninBᵣ⟩ := List.not_mem_append'.mp aᵢninIτBᵣ
         let ⟨aᵢninI, aᵢninτ⟩ := List.not_mem_append'.mp aᵢninIτ
         let aᵢninτ' : ∀ i ∈ [:n], aᵢ ∉ (τ i).freeTypeVars := by
           intro i imem
           have := List.not_mem_flatten.mp aᵢninτ _ <| Range.mem_map_of_mem imem
           rw [Function.comp] at this
           exact this
-        let ⟨aₙ, aₙnin⟩ := aᵢ :: I₁ ++ ↑([:n].map (freeTypeVars ∘ τ)).flatten ++ ↑Bₗ.freeTypeVars ++
+        let ⟨aₙ, aₙnin⟩ := aᵢ :: I₁ ++ ↑([:n].map (freeTypeVars ∘ τ)).flatten ++ ↑Bᵣ.freeTypeVars ++
           aᵢ :: Γ.typeVarDom |>.exists_fresh
-        let ⟨aₙninIτBₗ, aₙninΓ⟩ := List.not_mem_append'.mp aₙnin
-        let ⟨aₙninIτ, aₙninBₗ⟩ := List.not_mem_append'.mp aₙninIτBₗ
+        let ⟨aₙninIτBᵣ, aₙninΓ⟩ := List.not_mem_append'.mp aₙnin
+        let ⟨aₙninIτ, aₙninBᵣ⟩ := List.not_mem_append'.mp aₙninIτBᵣ
         let ⟨aₙninI, aₙninτ⟩ := List.not_mem_append'.mp aₙninIτ
         let aₙninτ' : ∀ i ∈ [:n], aₙ ∉ (τ i).freeTypeVars := by
           intro i imem
@@ -3749,7 +3749,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
           rw [Function.comp] at this
           exact this
         let ane := List.ne_of_not_mem_cons aₙninI
-        let keBₗ' := keBₗ _ aᵢninI _ aₙninI
+        let keBᵣ' := keBᵣ _ aᵢninI _ aₙninI
         let Γaᵢwe := Γwe.typeExt aᵢninΓ κe.row
         let Γaᵢaₙwe := Γaᵢwe.typeExt aₙninΓ κe.row
         have : concat (.var (.free aᵢ)) (.comm .non) (.var (.free aₙ))
@@ -3762,8 +3762,8 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
           let .qual (.mono τlc) := τke j (Range.mem_of_mem_toList jmem) |>.TypeVarLocallyClosed_of
           rw [τlc.weakening (n := 1).TypeVar_open_id, τlc.TypeVar_open_id]
         rw [this, ← QualifiedType.TypeVar_open, ← TypeScheme.TypeVar_open,
-            ← QualifiedType.TypeVar_open, ← TypeScheme.TypeVar_open] at keBₗ'
-        let keBₗ'' := keBₗ'.Monotype_open_preservation Γcw Γaᵢaₙwe nofun (by
+            ← QualifiedType.TypeVar_open, ← TypeScheme.TypeVar_open] at keBᵣ'
+        let keBᵣ'' := keBᵣ'.Monotype_open_preservation Γcw Γaᵢaₙwe nofun (by
           simp [TypeScheme.TypeVar_open, QualifiedType.TypeVar_open, TypeVar_open,
                 TypeScheme.freeTypeVars, QualifiedType.freeTypeVars, freeTypeVars]
           apply And.intro <| List.ne_of_not_mem_cons aₙninI
@@ -3772,11 +3772,11 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
           let .qual (.mono τlc) := τke j (Range.mem_of_mem_toList jmem) |>.TypeVarLocallyClosed_of
           rw [τlc.weakening (n := 1).TypeVar_open_id]
           exact aₙninτ' _ jmem'
-        ) (Type.not_mem_freeTypeVars_TypeVar_open_intro aₙninBₗ ane) (Γ' := .empty) <|
+        ) (Type.not_mem_freeTypeVars_TypeVar_open_intro aₙninBᵣ ane) (Γ' := .empty) <|
           rowᵢ₁ₙke.weakening Γaᵢwe (Γ' := .typeExt .empty ..) (Γ'' := .empty)
         rw [TypeScheme.TypeVar_open_Monotype_open_comm _ _ Nat.one_ne_zero,
-            ← Type.TypeVarLocallyClosed.Type_open_TypeVar_open_comm _ Nat.zero_ne_one] at keBₗ''
-        let keBₗ''' := keBₗ''.Monotype_open_preservation Γcw Γaᵢwe nofun (by
+            ← Type.TypeVarLocallyClosed.Type_open_TypeVar_open_comm _ Nat.zero_ne_one] at keBᵣ''
+        let keBᵣ''' := keBᵣ''.Monotype_open_preservation Γcw Γaᵢwe nofun (by
           simp [TypeScheme.Monotype_open, QualifiedType.Monotype_open, Monotype_open,
                 TypeScheme.freeTypeVars, QualifiedType.freeTypeVars, freeTypeVars]
           constructor
@@ -3789,7 +3789,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
             rw [τlc.Monotype_open_id]
             exact aᵢninτ' _ jmem'
         ) (by
-          apply Type.not_mem_freeTypeVars_Type_open_intro aᵢninBₗ
+          apply Type.not_mem_freeTypeVars_Type_open_intro aᵢninBᵣ
           rw [Type.freeTypeVars, List.mapMem_eq_map, List.map_map, ← Range.map]
           exact aᵢninA
         ) row₀ᵢ₁ke (Γ' := .empty)
@@ -3800,15 +3800,15 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
             if_neg nofun, Monotype_open, Monotype_open, if_pos rfl, ρlc.Monotype_open_id,
             TypeScheme.Monotype_open, QualifiedType.Monotype_open, Monotype_open, Monotype_open,
             if_pos rfl, Monotype_open, rowᵢ₁ₙlc.weakening (n := 1).Monotype_open_id,
-            ρlc.weakening (n := 1).Monotype_open_id] at keBₗ'''
-        let Eₗty := ihEₗ i imem keBₗ''' Γᵢw Γcw Γwe
-        let Eₗlc := Eₗty.TermVarLocallyClosed_of
-        let Bₗlc := Eₗty.TypeVarLocallyClosed_of.weaken (n := 2).Type_open_drop Nat.le.refl.step
+            ρlc.weakening (n := 1).Monotype_open_id] at keBᵣ'''
+        let Eᵣty := ihEᵣ i imem keBᵣ''' Γᵢw Γcw Γwe
+        let Eᵣlc := Eᵣty.TermVarLocallyClosed_of
+        let Bᵣlc := Eᵣty.TypeVarLocallyClosed_of.weaken (n := 2).Type_open_drop Nat.le.refl.step
           |>.Type_open_drop Nat.le.refl
-        rw [Eₗty.TermTypeVarLocallyClosed_of.TypeVar_open_id, Eₗlc.weaken (n := 1).TermVar_open_id,
-            Eₗlc.TermVar_open_id, Bₗlc.weaken (n := 2).Type_open_id,
-            Bₗlc.weaken (n := 1).Type_open_id, Bₗlc.Type_open_id]
-        exact Eₗty.weakening Δaxₛᵢwf (Δ' := .termExt (.termExt (.typeExt .empty ..) ..) ..)
+        rw [Eᵣty.TermTypeVarLocallyClosed_of.TypeVar_open_id, Eᵣlc.weaken (n := 1).TermVar_open_id,
+            Eᵣlc.TermVar_open_id, Bᵣlc.weaken (n := 2).Type_open_id,
+            Bᵣlc.weaken (n := 1).Type_open_id, Bᵣlc.Type_open_id]
+        exact Eᵣty.weakening Δaxₛᵢwf (Δ' := .termExt (.termExt (.typeExt .empty ..) ..) ..)
           (Δ'' := .empty)
         · apply Type.TypeVarLocallyClosed.list
           intro A' mem

@@ -499,8 +499,8 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     let τopemptyke := τke'.Monotype_open_preservation Γcw Γawe nofun aninτ aninB .empty_row
       (Γ' := .empty)
     apply Typing.app _ <| Nih τopemptyke Γᵢw Γcw Γwe
-    let ⟨_, indke@(.ind I₀ I₁ ρke' κe' keBᵣ keBₗ)⟩ := indce.to_Kinding Γᵢw Γcw Γwe
-    rename_i Bᵣ Bₗ _ _ _
+    let ⟨_, indke@(.ind I₀ I₁ ρke' κe' keBₗ keBᵣ)⟩ := indce.to_Kinding Γᵢw Γcw Γwe
+    rename_i Bₗ Bᵣ _ _ _
     rcases ρke.deterministic ρke' with ⟨κeq, rfl⟩
     cases Kind.row.inj κeq
     cases κe.deterministic κe'
@@ -549,29 +549,29 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     apply Typing.equiv _ <| .arr .refl <| .arr .refl <| .arr .refl <| .arr .lamAppR .lamAppR
     apply Mih _ aₗninIₛ _ aₜninIₛ _ aₚninIₛ _ aᵢninIₛ _ aₙninIₛ _ Γᵢw Γcw Γaₗₜₚᵢₙwe
     open TypeScheme.KindingAndElaboration in
-    let keBᵣ' := keBᵣ _ aₗninI₀ _ aₜninI₀ _ aₚninI₀ _ aᵢninI₀ _ aₙninI₀
+    let keBₗ' := keBₗ _ aₗninI₀ _ aₜninI₀ _ aₚninI₀ _ aᵢninI₀ _ aₙninI₀
     let Γaₗₜₚwe := Γwe.typeExt aₗninΓ .label |>.typeExt aₜninΓ κe |>.typeExt aₚninΓ κe.row
     let Γaₗₜₚᵢwe := Γaₗₜₚwe.typeExt aᵢninΓ κe.row
     let Γaₗₜₚᵢₙwe := Γaₗₜₚᵢwe.typeExt aₙninΓ κe.row
-    let Bᵣlc := keBᵣ'.soundness Γcw Γaₗₜₚᵢₙwe .constr |>.TypeVarLocallyClosed_of.weaken (n := 5)
+    let Bₗlc := keBₗ'.soundness Γcw Γaₗₜₚᵢₙwe .constr |>.TypeVarLocallyClosed_of.weaken (n := 5)
       |>.TypeVar_open_drop Nat.le.refl.step.step.step.step
       |>.TypeVar_open_drop Nat.le.refl.step.step.step
       |>.TypeVar_open_drop Nat.le.refl.step.step
       |>.TypeVar_open_drop Nat.le.refl.step
       |>.TypeVar_open_drop Nat.le.refl
-    let keBₗ' := keBₗ _ aᵢninI₁ _ aₙninI₁
+    let keBᵣ' := keBᵣ _ aᵢninI₁ _ aₙninI₁
     let Γaᵢₙwe := Γwe.typeExt aᵢninΓ' κe.row |>.typeExt aₙninΓ' κe.row
-    let Bₗlc := keBₗ'.soundness Γcw Γaᵢₙwe .constr |>.TypeVarLocallyClosed_of.weaken (n := 2)
+    let Bᵣlc := keBᵣ'.soundness Γcw Γaᵢₙwe .constr |>.TypeVarLocallyClosed_of.weaken (n := 2)
       |>.TypeVar_open_drop Nat.le.refl.step
       |>.TypeVar_open_drop Nat.le.refl
-    rw [Bᵣlc.Type_open_id, Bₗlc.weaken (n := 3).Type_open_id] at this ⊢
-    rw [Bₗlc.weaken (n := 2).TypeVar_open_id, Bₗlc.weaken (n := 1).TypeVar_open_id,
-        Bₗlc.TypeVar_open_id]
-    apply qual keBᵣ' _ .star
-    let keBₗ'' := keBₗ'.weakening Γaₗₜₚᵢₙwe (Γ' := .typeExt (.typeExt (.typeExt .empty ..) ..) ..)
+    rw [Bₗlc.Type_open_id, Bᵣlc.weaken (n := 3).Type_open_id] at this ⊢
+    rw [Bᵣlc.weaken (n := 2).TypeVar_open_id, Bᵣlc.weaken (n := 1).TypeVar_open_id,
+        Bᵣlc.TypeVar_open_id]
+    apply qual keBₗ' _ .star
+    let keBᵣ'' := keBᵣ'.weakening Γaₗₜₚᵢₙwe (Γ' := .typeExt (.typeExt (.typeExt .empty ..) ..) ..)
       (Γ'' := .typeExt (.typeExt .empty ..) ..)
     let .qual (.mono ρlc) := ρke.TypeVarLocallyClosed_of
-    apply qual keBₗ'' _ .star
+    apply qual keBᵣ'' _ .star
     let aₗneaₙ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
       List.not_mem_of_not_mem_cons <| List.not_mem_of_not_mem_cons aₙninΓ
     let aₗneaᵢ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|

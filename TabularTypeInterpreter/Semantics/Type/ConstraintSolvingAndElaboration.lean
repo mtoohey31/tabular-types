@@ -214,14 +214,12 @@ i ∈ [:n]
 -- in the target and should become obsolete after future work figures out how to deal with
 -- constraint totality properly.
 
--- TODO: Swap ₗ/ᵣ names?
-
 </ Γc; Γ ⊢ τ@i : κ ⇝ A@i // i in [:n] />
 </ Γc; Γ ⊢ ℓ@i : L ⇝ B@i // i in [:n] />
 ⊢ κ ⇝ K
-∀ aₗ ∉ I₀, ∀ aₜ ∉ aₗ :: I₀, ∀ aₚ ∉ aₜ :: aₗ :: I₀, ∀ aᵢ ∉ aₚ :: aₜ :: aₗ :: I₀, ∀ aₙ ∉ aᵢ :: aₚ :: aₜ :: aₗ :: I₀, Γc; Γ, aₗ : L, aₜ : κ, aₚ : R κ, aᵢ : R κ, aₙ : R κ ⊢ aₚ ⊙(N) ⟨aₗ ▹ aₜ⟩ ~ aᵢ : C ⇝ Bᵣ^aₗ#4^aₜ#3^aₚ#2^aᵢ#1^aₙ
-∀ aᵢ ∉ I₁, ∀ aₙ ∉ aᵢ :: I₁, Γc; Γ, aᵢ : R κ, aₙ : R κ ⊢ aᵢ ⊙(N) aₙ ~ ⟨</ ℓ@i ▹ τ@i // i in [:n] /> </ : κ // b />⟩ : C ⇝ Bₗ^aᵢ#1^aₙ
-Aₛ := ∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bᵣ → Bₗ → (⊗ { }) → (aₘ$5 aₚ$2) → aₘ$5 aᵢ$1
+∀ aₗ ∉ I₀, ∀ aₜ ∉ aₗ :: I₀, ∀ aₚ ∉ aₜ :: aₗ :: I₀, ∀ aᵢ ∉ aₚ :: aₜ :: aₗ :: I₀, ∀ aₙ ∉ aᵢ :: aₚ :: aₜ :: aₗ :: I₀, Γc; Γ, aₗ : L, aₜ : κ, aₚ : R κ, aᵢ : R κ, aₙ : R κ ⊢ aₚ ⊙(N) ⟨aₗ ▹ aₜ⟩ ~ aᵢ : C ⇝ Bₗ^aₗ#4^aₜ#3^aₚ#2^aᵢ#1^aₙ
+∀ aᵢ ∉ I₁, ∀ aₙ ∉ aᵢ :: I₁, Γc; Γ, aᵢ : R κ, aₙ : R κ ⊢ aᵢ ⊙(N) aₙ ~ ⟨</ ℓ@i ▹ τ@i // i in [:n] /> </ : κ // b />⟩ : C ⇝ Bᵣ^aᵢ#1^aₙ
+Aₛ := ∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bₗ → Bᵣ → (⊗ { }) → (aₘ$5 aₚ$2) → aₘ$5 aᵢ$1
 </ Γᵢ; Γc; Γ ⊨ ⟨</ ℓ@j ▹ τ@j // j in [:i] /> : κ⟩ ⊙(N) ⟨ℓ@i ▹ τ@i⟩ ~ ⟨</ ℓ@k ▹ τ@k // k in [:i+1] />⟩ ⇝ Eᵣ@i // i in [:n] />
 </ Γᵢ; Γc; Γ ⊨ ⟨</ ℓ@j ▹ τ@j // j in [:i+1] />⟩ ⊙(N) ⟨</ ℓ@k ▹ τ@k // k in [i+1:n] /> : κ⟩ ~ ⟨</ ℓ@l ▹ τ@l // l in [:n] /> </ : κ // b />⟩ ⇝ Eₗ@i // i in [:n] />
 E' := ! </ ⦅⦅xₛ$1 [⊗ { }] [A@i] [{</ A@j // j in [:i] />}] [{</ A@k // k in [:i+1] />}] [{</ A@l // l in [i+1:n] />}] Eᵣ@i⦆ Eₗ@i⦆ () // i in [:n] /> xᵢ$0

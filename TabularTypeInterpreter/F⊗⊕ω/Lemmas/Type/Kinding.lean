@@ -492,16 +492,16 @@ theorem elim_evidence (Δwf : [[⊢ Δ]]) (A₀ki : [[Δ ⊢ A₀ : L K]]) (A₁
       · exact var .head
 
 theorem ind_step (Δwf : [[⊢ Δ]]) (aₘinΔ : [[aₘ : (L K) ↦ * ∈ Δ]])
-  (Bᵣki : ∀ aₗ ∉ I₀, ∀ aₜ ∉ aₗ :: I₀, ∀ aₚ ∉ aₜ :: aₗ :: I₀, ∀ aᵢ ∉ aₚ :: aₜ :: aₗ :: I₀, ∀ aₙ ∉ aᵢ :: aₚ :: aₜ :: aₗ :: I₀,
-    [[Δ, aₗ : *, aₜ : K, aₚ : L K, aᵢ : L K, aₙ : L K ⊢ Bᵣ^aₗ#4^aₜ#3^aₚ#2^aᵢ#1^aₙ : *]])
-  (Bₗki : ∀ aᵢ ∉ I₁, ∀ aₙ ∉ aᵢ :: I₁, [[Δ, aᵢ : L K, aₙ : L K ⊢ Bₗ^aᵢ#1^aₙ : *]])
-  : [[Δ ⊢ ∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bᵣ → Bₗ → (⊗ { }) → (aₘ aₚ$2) → aₘ aᵢ$1 : *]] := by
+  (Bₗki : ∀ aₗ ∉ I₀, ∀ aₜ ∉ aₗ :: I₀, ∀ aₚ ∉ aₜ :: aₗ :: I₀, ∀ aᵢ ∉ aₚ :: aₜ :: aₗ :: I₀, ∀ aₙ ∉ aᵢ :: aₚ :: aₜ :: aₗ :: I₀,
+    [[Δ, aₗ : *, aₜ : K, aₚ : L K, aᵢ : L K, aₙ : L K ⊢ Bₗ^aₗ#4^aₜ#3^aₚ#2^aᵢ#1^aₙ : *]])
+  (Bᵣki : ∀ aᵢ ∉ I₁, ∀ aₙ ∉ aᵢ :: I₁, [[Δ, aᵢ : L K, aₙ : L K ⊢ Bᵣ^aᵢ#1^aₙ : *]])
+  : [[Δ ⊢ ∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bₗ → Bᵣ → (⊗ { }) → (aₘ aₚ$2) → aₘ aᵢ$1 : *]] := by
   let ⟨aₗ, aₗnin⟩ := I₀.exists_fresh
   let ⟨aₜ, aₜnin⟩ := aₗ :: I₀ |>.exists_fresh
   let ⟨aₚ, aₚnin⟩ := aₜ :: aₗ :: I₀ |>.exists_fresh
   let ⟨aᵢ, aᵢnin⟩ := aₚ :: aₜ :: aₗ :: I₀ |>.exists_fresh
   let ⟨aₙ, aₙnin⟩ := aᵢ :: aₚ :: aₜ :: aₗ :: I₀ |>.exists_fresh
-  let Bᵣlc := Bᵣki _ aₗnin _ aₜnin _ aₚnin _ aᵢnin _ aₙnin
+  let Bₗlc := Bₗki _ aₗnin _ aₜnin _ aₚnin _ aᵢnin _ aₙnin
     |>.TypeVarLocallyClosed_of.weaken (n := 5)
     |>.TypeVar_open_drop (Nat.lt.step <| Nat.lt.step <| Nat.lt.step <| Nat.lt.step <| .base _)
     |>.TypeVar_open_drop (Nat.lt.step <| Nat.lt.step <| Nat.lt.step <| .base _)
@@ -510,7 +510,7 @@ theorem ind_step (Δwf : [[⊢ Δ]]) (aₘinΔ : [[aₘ : (L K) ↦ * ∈ Δ]])
     |>.TypeVar_open_drop (Nat.lt.base _)
   let ⟨aᵢ, aᵢnin⟩ := I₁ |>.exists_fresh
   let ⟨aₙ, aₙnin⟩ := aᵢ :: I₁ |>.exists_fresh
-  let Bₗlc := Bₗki _ aᵢnin _ aₙnin |>.TypeVarLocallyClosed_of.weaken (n := 2)
+  let Bᵣlc := Bᵣki _ aᵢnin _ aₙnin |>.TypeVarLocallyClosed_of.weaken (n := 2)
     |>.TypeVar_open_drop (Nat.lt.step <| .base _) |>.TypeVar_open_drop (Nat.lt.base _)
   apply scheme <| I₀ ++ Δ.typeVarDom
   intro aₗ aₗnin
@@ -518,7 +518,7 @@ theorem ind_step (Δwf : [[⊢ Δ]]) (aₘinΔ : [[aₘ : (L K) ↦ * ∈ Δ]])
   let Δaₗwf := Δwf.typeVarExt aₗninΔ (K := .star)
   let aₘneaₗ := ne_of_mem_of_not_mem aₘinΔ.TypeVarInDom_of aₗninΔ
   simp [Type.TypeVar_open]
-  rw [Bₗlc.weaken (n := 2).TypeVar_open_id]
+  rw [Bᵣlc.weaken (n := 2).TypeVar_open_id]
   apply scheme <| aₗ :: I₀ ++ aₗ :: Δ.typeVarDom
   intro aₜ aₜnin
   let ⟨aₜninI₀, aₜninΔ⟩ := List.not_mem_append'.mp aₜnin
@@ -526,7 +526,7 @@ theorem ind_step (Δwf : [[⊢ Δ]]) (aₘinΔ : [[aₘ : (L K) ↦ * ∈ Δ]])
   let aₗneaₜ := List.ne_of_not_mem_cons aₜninI₀
   let aₘneaₜ := ne_of_mem_of_not_mem aₘinΔ.TypeVarInDom_of <| List.not_mem_of_not_mem_cons aₜninΔ
   simp [Type.TypeVar_open]
-  rw [Bₗlc.weaken (n := 1).TypeVar_open_id]
+  rw [Bᵣlc.weaken (n := 1).TypeVar_open_id]
   apply scheme <| aₜ :: aₗ :: I₀ ++ aₜ :: aₗ :: Δ.typeVarDom
   intro aₚ aₚnin
   let ⟨aₚninI₀, aₚninΔ⟩ := List.not_mem_append'.mp aₚnin
@@ -536,7 +536,7 @@ theorem ind_step (Δwf : [[⊢ Δ]]) (aₘinΔ : [[aₘ : (L K) ↦ * ∈ Δ]])
     List.not_mem_of_not_mem_cons <| aₚninΔ
   symm at aₗneaₚ
   simp [Type.TypeVar_open]
-  rw [Bₗlc.TypeVar_open_id]
+  rw [Bᵣlc.TypeVar_open_id]
   apply scheme <| aₚ :: aₜ :: aₗ :: I₀ ++ I₁ ++ aₚ :: aₜ :: aₗ :: Δ.typeVarDom
   intro aᵢ aᵢnin
   let ⟨aᵢninI₀I₁, aᵢninΔ⟩ := List.not_mem_append'.mp aᵢnin
@@ -563,8 +563,8 @@ theorem ind_step (Δwf : [[⊢ Δ]]) (aₘinΔ : [[aₘ : (L K) ↦ * ∈ Δ]])
   let aᵢneaₙ := List.ne_of_not_mem_cons aₙninI₀
   symm at aᵢneaₙ aₚneaₙ aₗneaₙ
   simp [Type.TypeVar_open]
-  apply arr <| Bᵣki _ aₗninI₀ _ aₜninI₀ _ aₚninI₀ _ aᵢninI₀ _ aₙninI₀
-  apply arr <| Bₗki _ aᵢninI₁ _ aₙninI₁ |>.weakening Δaₗaₜaₚaᵢaₙwf
+  apply arr <| Bₗki _ aₗninI₀ _ aₜninI₀ _ aₚninI₀ _ aᵢninI₀ _ aₙninI₀
+  apply arr <| Bᵣki _ aᵢninI₁ _ aₙninI₁ |>.weakening Δaₗaₜaₚaᵢaₙwf
     (Δ := Δ)
     (Δ' := .typeExt (.typeExt (.typeExt .empty ..) ..) ..)
     (Δ'' := .typeExt (.typeExt .empty ..) ..)
@@ -583,10 +583,10 @@ local instance : Inhabited «Type» where
   default := .list []
 in
 theorem ind_evidence (Δwf : [[⊢ Δ]]) (Aki : [[Δ ⊢ A : L K]])
-  (Bᵣki : ∀ aₗ ∉ I₀, ∀ aₜ ∉ aₗ :: I₀, ∀ aₚ ∉ aₜ :: aₗ :: I₀, ∀ aᵢ ∉ aₚ :: aₜ :: aₗ :: I₀, ∀ aₙ ∉ aᵢ :: aₚ :: aₜ :: aₗ :: I₀,
-    [[Δ, aₗ : *, aₜ : K, aₚ : L K, aᵢ : L K, aₙ : L K ⊢ Bᵣ^aₗ#4^aₜ#3^aₚ#2^aᵢ#1^aₙ : *]])
-  (Bₗki : ∀ aᵢ ∉ I₁, ∀ aₙ ∉ aᵢ :: I₁, [[Δ, aᵢ : L K, aₙ : L K ⊢ Bₗ^aᵢ#1^aₙ : *]])
-  : [[Δ ⊢ ∀ aₘ : (L K) ↦ *. (∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bᵣ → Bₗ → (⊗ { }) → (aₘ$5 aₚ$2) → aₘ$5 aᵢ$1) → (aₘ$0 { }) → aₘ$0 A : *]] := by
+  (Bₗki : ∀ aₗ ∉ I₀, ∀ aₜ ∉ aₗ :: I₀, ∀ aₚ ∉ aₜ :: aₗ :: I₀, ∀ aᵢ ∉ aₚ :: aₜ :: aₗ :: I₀, ∀ aₙ ∉ aᵢ :: aₚ :: aₜ :: aₗ :: I₀,
+    [[Δ, aₗ : *, aₜ : K, aₚ : L K, aᵢ : L K, aₙ : L K ⊢ Bₗ^aₗ#4^aₜ#3^aₚ#2^aᵢ#1^aₙ : *]])
+  (Bᵣki : ∀ aᵢ ∉ I₁, ∀ aₙ ∉ aᵢ :: I₁, [[Δ, aᵢ : L K, aₙ : L K ⊢ Bᵣ^aᵢ#1^aₙ : *]])
+  : [[Δ ⊢ ∀ aₘ : (L K) ↦ *. (∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bₗ → Bᵣ → (⊗ { }) → (aₘ$5 aₚ$2) → aₘ$5 aᵢ$1) → (aₘ$0 { }) → aₘ$0 A : *]] := by
   apply scheme Δ.typeVarDom
   intro aₘ aₘnin
   let Δaₘwf := Δwf.typeVarExt aₘnin (K := K.list.arr .star)
@@ -596,7 +596,7 @@ theorem ind_evidence (Δwf : [[⊢ Δ]]) (Aki : [[Δ ⊢ A : L K]])
   let ⟨aₚ, aₚnin⟩ := aₜ :: aₗ :: I₀ |>.exists_fresh
   let ⟨aᵢ, aᵢnin⟩ := aₚ :: aₜ :: aₗ :: I₀ |>.exists_fresh
   let ⟨aₙ, aₙnin⟩ := aᵢ :: aₚ :: aₜ :: aₗ :: I₀ |>.exists_fresh
-  let Bᵣlc := Bᵣki _ aₗnin _ aₜnin _ aₚnin _ aᵢnin _ aₙnin
+  let Bₗlc := Bₗki _ aₗnin _ aₜnin _ aₚnin _ aᵢnin _ aₙnin
     |>.TypeVarLocallyClosed_of.weaken (n := 5)
     |>.TypeVar_open_drop (Nat.lt.step <| Nat.lt.step <| Nat.lt.step <| Nat.lt.step <| .base _)
     |>.TypeVar_open_drop (Nat.lt.step <| Nat.lt.step <| Nat.lt.step <| .base _)
@@ -605,10 +605,10 @@ theorem ind_evidence (Δwf : [[⊢ Δ]]) (Aki : [[Δ ⊢ A : L K]])
     |>.TypeVar_open_drop (Nat.lt.base _)
   let ⟨aᵢ, aᵢnin⟩ := I₁ |>.exists_fresh
   let ⟨aₙ, aₙnin⟩ := aᵢ :: I₁ |>.exists_fresh
-  let Bₗlc := Bₗki _ aᵢnin _ aₙnin |>.TypeVarLocallyClosed_of.weaken (n := 2)
+  let Bᵣlc := Bᵣki _ aᵢnin _ aₙnin |>.TypeVarLocallyClosed_of.weaken (n := 2)
     |>.TypeVar_open_drop (Nat.lt.step <| .base _) |>.TypeVar_open_drop (Nat.lt.base _)
-  rw [Aki.TypeVarLocallyClosed_of.TypeVar_open_id, Bᵣlc.TypeVar_open_id,
-      Bₗlc.weaken (n := 3).TypeVar_open_id]
+  rw [Aki.TypeVarLocallyClosed_of.TypeVar_open_id, Bₗlc.TypeVar_open_id,
+      Bᵣlc.weaken (n := 3).TypeVar_open_id]
   apply arr
   · apply ind_step Δaₘwf .head (I₀ := I₀ ++ aₘ :: Δ.typeVarDom) (I₁ := I₁ ++ aₘ :: Δ.typeVarDom)
     · intro aₗ aₗnin
@@ -652,7 +652,7 @@ theorem ind_evidence (Δwf : [[⊢ Δ]]) (Aki : [[Δ ⊢ A : L K]])
       let Δaₘaₗaₜaₚaᵢaₙwf := Δaₘwf.typeVarExt aₗninΔ (K := .star) |>.typeVarExt aₜninΔ (K := K)
         |>.typeVarExt aₚninΔ (K := K.list) |>.typeVarExt aᵢninΔ (K := K.list)
         |>.typeVarExt aₙninΔ (K := K.list)
-      exact Bᵣki _ aₗninI _ aₜninI _ aₚninI _ aᵢninI _ aₙninI |>.weakening Δaₘaₗaₜaₚaᵢaₙwf
+      exact Bₗki _ aₗninI _ aₜninI _ aₚninI _ aᵢninI _ aₙninI |>.weakening Δaₘaₗaₜaₚaᵢaₙwf
         (Δ' := .typeExt .empty ..)
         (Δ'' := .typeExt (.typeExt (.typeExt (.typeExt (.typeExt .empty ..) ..) ..) ..) ..)
     · intro aᵢ aᵢnin
@@ -663,7 +663,7 @@ theorem ind_evidence (Δwf : [[⊢ Δ]]) (Aki : [[Δ ⊢ A : L K]])
       let aₙninI := List.not_mem_cons.mpr ⟨aₙneaᵢ, aₙninI⟩
       let aₙninΔ := List.not_mem_cons.mpr ⟨aₙneaᵢ, aₙninΔ⟩
       let Δaₘaᵢaₙwf := Δaₘwf.typeVarExt aᵢninΔ (K := K.list) |>.typeVarExt aₙninΔ (K := K.list)
-      exact Bₗki _ aᵢninI _ aₙninI |>.weakening Δaₘaᵢaₙwf
+      exact Bᵣki _ aᵢninI _ aₙninI |>.weakening Δaₘaᵢaₙwf
         (Δ' := .typeExt .empty ..) (Δ'' := .typeExt (.typeExt .empty ..) ..)
   · apply arr
     · apply app

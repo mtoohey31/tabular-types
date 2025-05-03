@@ -517,11 +517,11 @@ theorem tc_evidence_eq_inversion (aninA : a ∉ A.freeTypeVars)
 
 private
 theorem ind_evidence_inversion
-  (eq : A.TypeVar_open a n = [[∀ aₘ : (L K) ↦ *. (∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bᵣ → Bₗ → (⊗ { }) → (aₘ$5 aₚ$2) → aₘ$5 aᵢ$1) → (aₘ$0 { }) → aₘ$0 A']])
-  : ∃ Bᵣ' Bₗ' A'',
-    Bᵣ = Bᵣ'.TypeVar_open a (n + 6) ∧ Bₗ = Bₗ'.TypeVar_open a (n + 6) ∧
+  (eq : A.TypeVar_open a n = [[∀ aₘ : (L K) ↦ *. (∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bₗ → Bᵣ → (⊗ { }) → (aₘ$5 aₚ$2) → aₘ$5 aᵢ$1) → (aₘ$0 { }) → aₘ$0 A']])
+  : ∃ Bₗ' Bᵣ' A'',
+    Bₗ = Bₗ'.TypeVar_open a (n + 6) ∧ Bᵣ = Bᵣ'.TypeVar_open a (n + 6) ∧
     A' = A''.TypeVar_open a (n + 1) ∧
-    A = [[∀ aₘ : (L K) ↦ *. (∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bᵣ' → Bₗ' → (⊗ { }) → (aₘ$5 aₚ$2) → aₘ$5 aᵢ$1) → (aₘ$0 { }) → aₘ$0 A'']] := by
+    A = [[∀ aₘ : (L K) ↦ *. (∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bₗ' → Bᵣ' → (⊗ { }) → (aₘ$5 aₚ$2) → aₘ$5 aᵢ$1) → (aₘ$0 { }) → aₘ$0 A'']] := by
   cases A <;> rw [TypeVar_open] at eq
   case «forall» A =>
     rcases forall.inj eq with ⟨rfl, eq'⟩
@@ -544,11 +544,11 @@ theorem ind_evidence_inversion
               case «forall» A₀ =>
                 rcases forall.inj eq₀'''' with ⟨rfl, eq₀'''''⟩
                 cases A₀ <;> rw [TypeVar_open] at eq₀'''''
-                case arr Bᵣ' A₀ =>
-                  let ⟨Bᵣeq, eq₀''''''⟩ := arr.inj eq₀'''''
+                case arr Bₗ' A₀ =>
+                  let ⟨Bₗeq, eq₀''''''⟩ := arr.inj eq₀'''''
                   cases A₀ <;> rw [TypeVar_open] at eq₀''''''
-                  case arr Bₗ' A₀ =>
-                    let ⟨Bₗeq, eq₀'''''''⟩ := arr.inj eq₀''''''
+                  case arr Bᵣ' A₀ =>
+                    let ⟨Bᵣeq, eq₀'''''''⟩ := arr.inj eq₀''''''
                     cases A₀ <;> rw [TypeVar_open] at eq₀'''''''
                     case arr A₀₀ A₀₁ =>
                       let ⟨eq₀₀, eq₀₁⟩ := arr.inj eq₀'''''''
@@ -631,7 +631,7 @@ theorem ind_evidence_inversion
                                                                           · case isTrue => nomatch eq₁₁₀
                                                                           · case isFalse =>
                                                                             cases eq₁₁₀
-                                                                            exact ⟨_, _, _, Bᵣeq.symm, Bₗeq.symm, A'eq.symm, rfl⟩
+                                                                            exact ⟨_, _, _, Bₗeq.symm, Bᵣeq.symm, A'eq.symm, rfl⟩
                                                                         | .free _ => split at eq₁₁₀ <;> nomatch eq₁₁₀
                                                                       all_goals nomatch eq₁₁₀
                                                                     all_goals nomatch eq₁₁
@@ -1224,14 +1224,14 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
       | .ind ρ =>
         rw [Monotype.TypeVar_open] at σke
         generalize A'eq : A.TypeVar_open a n = A' at σke
-        let .ind I₀ I₁ ρke κe keBᵣ keBₗ (κ := κ) := σke
-        rcases Type.ind_evidence_inversion A'eq with ⟨Bᵣ', Bₗ', A'', rfl, rfl, rfl, rfl⟩
+        let .ind I₀ I₁ ρke κe keBₗ keBᵣ (κ := κ) := σke
+        rcases Type.ind_evidence_inversion A'eq with ⟨Bₗ', Bᵣ', A'', rfl, rfl, rfl, rfl⟩
         rw [Monotype.Monotype_open]
         simp [Type.Type_open]
         rw [← QualifiedType.TypeVar_open, ← TypeVar_open] at ρke
         rw [Monotype.freeTypeVars] at aninσ
         simp [Type.freeTypeVars] at aninA
-        let ⟨aninBᵣ', aninBₗ', aninA''⟩ := aninA
+        let ⟨aninBₗ', aninBᵣ', aninA''⟩ := aninA
         let ρke' := ρke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ' aninσ aninA'' τke
         apply «ind» (I₀ ++ [[(Γ, a : κ₀, Γ')]].typeVarDom) (I₁ ++ [[(Γ, a : κ₀, Γ')]].typeVarDom)
           ρke' κe
@@ -1274,11 +1274,11 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
               ⟨aₙneaₚ, List.not_mem_cons.mpr ⟨aₙneaₜ, List.not_mem_cons.mpr ⟨aₙneaₗ, aₙninΓaΓ'⟩⟩⟩
           ⟩
 
-          let keBᵣ' : KindingAndElaboration Γc
+          let keBₗ' : KindingAndElaboration Γc
             [[(Γ, a : κ₀, Γ', aₗ : L, aₜ : κ, aₚ : R κ, aᵢ : R κ, aₙ : R κ)]]
             ((qual (.mono (.concat (.var aₚ) (.comm .non) (.row [(.var aₗ, .var aₜ)] none)
               (.var aᵢ)))).TypeVar_open a (n + 6)) .constr
-            ((((((Bᵣ'.TypeVar_open aₗ 4).TypeVar_open aₜ 3).TypeVar_open aₚ 2)
+            ((((((Bₗ'.TypeVar_open aₗ 4).TypeVar_open aₜ 3).TypeVar_open aₚ 2)
               |>.TypeVar_open aᵢ 1).TypeVar_open aₙ 0).TypeVar_open a (n + 6)) := by
             rw [TypeVar_open, QualifiedType.TypeVar_open, Monotype.TypeVar_open,
                 Monotype.TypeVar_open, if_neg nofun, Monotype.TypeVar_open, if_neg nofun,
@@ -1290,7 +1290,7 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
                 Type.TypeVar_open_comm (m := 2) (n := n + 6) _ (by simp_arith),
                 Type.TypeVar_open_comm (m := 3) (n := n + 6) _ (by simp_arith),
                 Type.TypeVar_open_comm (m := 4) (n := n + 6) _ (by simp_arith)]
-            exact keBᵣ _ aₗninI₀ _ aₜninI₀' _ aₚninI₀' _ aᵢninI₀' _ aₙninI₀'
+            exact keBₗ _ aₗninI₀ _ aₜninI₀' _ aₚninI₀' _ aᵢninI₀' _ aₙninI₀'
           let aneaₗ : a ≠ aₗ := by
             rw [TypeEnvironment.typeVarDom_append] at aₗninΓaΓ'
             let ⟨_, aninΓa⟩ := List.not_mem_append'.mp aₗninΓaΓ'
@@ -1324,7 +1324,7 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
                 ⟨aneaₚ, List.not_mem_cons.mpr ⟨aneaₜ, List.not_mem_cons.mpr ⟨aneaₗ, aninΓ'⟩⟩⟩
             ⟩
           ⟩
-          let keBᵣ'' := keBᵣ'.Monotype_open_preservation Γcw
+          let keBₗ'' := keBₗ'.Monotype_open_preservation Γcw
             (ΓaΓ'we.typeExt aₗninΓaΓ' .label |>.typeExt aₜninΓaΓ'' κe |>.typeExt aₚninΓaΓ'' κe.row
               |>.typeExt aᵢninΓaΓ'' κe.row |>.typeExt aₙninΓaΓ'' κe.row)
             aninΓ'aₗaₜaₚaᵢaₙ (by
@@ -1334,7 +1334,7 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
               (Type.not_mem_freeTypeVars_TypeVar_open_intro
                 (Type.not_mem_freeTypeVars_TypeVar_open_intro
                   (Type.not_mem_freeTypeVars_TypeVar_open_intro
-                    (Type.not_mem_freeTypeVars_TypeVar_open_intro aninBᵣ' aneaₗ) aneaₜ) aneaₚ) aneaᵢ)
+                    (Type.not_mem_freeTypeVars_TypeVar_open_intro aninBₗ' aneaₗ) aneaₜ) aneaₚ) aneaᵢ)
               aneaₙ)
             τke
           let ⟨_, .typeExt Γwe ..⟩ := ΓaΓ'we.append_left_elim
@@ -1351,23 +1351,23 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
               Monotype.Monotype_open, if_neg nofun, Monotype.Monotype_open, if_neg nofun,
               Monotype.Monotype_open, Monotype.Monotype_open, List.mapMem_eq_map,
               List.map_singleton, Monotype.Monotype_open, if_neg nofun, Monotype.Monotype_open,
-              if_neg nofun] at keBᵣ''
-          exact keBᵣ''
+              if_neg nofun] at keBₗ''
+          exact keBₗ''
         · intro aᵢ aᵢnin aₙ aₙnin
           let ⟨aᵢninI₁, aᵢninΓaΓ'⟩ := List.not_mem_append'.mp aᵢnin
           let ⟨aₙneaᵢ, aₙnin'⟩ := List.not_mem_cons.mp aₙnin
           let ⟨aₙninI₁, aₙninΓaΓ'⟩ := List.not_mem_append'.mp aₙnin'
           let aₙninI₁' := List.not_mem_cons.mpr ⟨aₙneaᵢ, aₙninI₁⟩
           let aₙninΓaΓ'' := List.not_mem_cons.mpr ⟨aₙneaᵢ, aₙninΓaΓ'⟩
-          let keBₗ' : KindingAndElaboration Γc [[(Γ, a : κ₀, Γ', aᵢ : R κ, aₙ : R κ)]]
+          let keBᵣ' : KindingAndElaboration Γc [[(Γ, a : κ₀, Γ', aᵢ : R κ, aₙ : R κ)]]
             ((qual (.mono (.concat (.var aᵢ) (.comm .non) (.var aₙ) ρ))).TypeVar_open a m) .constr
-            (((Bₗ'.TypeVar_open aᵢ 1).TypeVar_open aₙ).TypeVar_open a (n + 6)) := by
+            (((Bᵣ'.TypeVar_open aᵢ 1).TypeVar_open aₙ).TypeVar_open a (n + 6)) := by
             rw [TypeVar_open, QualifiedType.TypeVar_open, Monotype.TypeVar_open,
                 Monotype.TypeVar_open, if_neg nofun, Monotype.TypeVar_open, if_neg nofun,
                 Monotype.TypeVar_open,
                 Type.TypeVar_open_comm (m := 0) (n := n + 6) _ (Nat.zero_ne_add_one _),
                 Type.TypeVar_open_comm (m := 1) (n := n + 6) _ (by simp_arith)]
-            exact keBₗ _ aᵢninI₁ _ aₙninI₁'
+            exact keBᵣ _ aᵢninI₁ _ aₙninI₁'
           let aneaᵢ : a ≠ aᵢ := by
             rw [TypeEnvironment.typeVarDom_append] at aᵢninΓaΓ'
             let ⟨_, aninΓa⟩ := List.not_mem_append'.mp aᵢninΓaΓ'
@@ -1379,11 +1379,11 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
             symm
             exact List.ne_of_not_mem_cons aninΓa
           let aninΓ'aᵢaₙ := List.not_mem_cons.mpr ⟨aneaₙ, List.not_mem_cons.mpr ⟨aneaᵢ, aninΓ'⟩⟩
-          let keBₗ'' := keBₗ'.Monotype_open_preservation Γcw
+          let keBᵣ'' := keBᵣ'.Monotype_open_preservation Γcw
             (ΓaΓ'we.typeExt aᵢninΓaΓ' κe.row |>.typeExt aₙninΓaΓ'' κe.row) aninΓ'aᵢaₙ (by
               simp [freeTypeVars, QualifiedType.freeTypeVars, Monotype.freeTypeVars]
               exact ⟨aneaᵢ, aneaₙ, aninσ⟩) (Type.not_mem_freeTypeVars_TypeVar_open_intro
-              (Type.not_mem_freeTypeVars_TypeVar_open_intro aninBₗ' aneaᵢ) aneaₙ) τke
+              (Type.not_mem_freeTypeVars_TypeVar_open_intro aninBᵣ' aneaᵢ) aneaₙ) τke
           let ⟨_, .typeExt Γwe ..⟩ := ΓaΓ'we.append_left_elim
           let ⟨_, κ₀e⟩ := κ₀.Elaboration_total
           let Blc := τke.soundness Γcw Γwe κ₀e |>.TypeVarLocallyClosed_of
@@ -1391,8 +1391,8 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
               ← Blc.Type_open_TypeVar_open_comm (Nat.succ_ne_zero _),
               ← Blc.weaken (n := 1).Type_open_TypeVar_open_comm (by simp_arith), Monotype_open,
               QualifiedType.Monotype_open, Monotype.Monotype_open, Monotype.Monotype_open,
-              Monotype.Monotype_open, Monotype.Monotype_open] at keBₗ''
-          exact keBₗ''
+              Monotype.Monotype_open, Monotype.Monotype_open] at keBᵣ''
+          exact keBᵣ''
       | .split (.mk κ τ'') ρ₀ ρ₁ ρ₂ =>
         rw [Monotype.TypeVar_open, TypeLambda.TypeVar_open] at σke
         let .split concatke := σke

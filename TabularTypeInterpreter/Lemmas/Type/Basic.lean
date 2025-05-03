@@ -1048,7 +1048,7 @@ theorem weakening (σke : [[Γc; Γ, Γ'' ⊢ σ : κ ⇝ A]])
     let ⟨aninI, aninΓΓ'Γ''⟩ := List.not_mem_append'.mp anin
     rw [← TypeEnvironment.append, ← TypeEnvironment.append]
     exact ψke a aninI |>.weakening <| ΓΓ'Γ''we.typeExt aninΓΓ'Γ'' κe
-  | «ind» I₀ I₁ ρke κe keBᵣ keBₗ =>
+  | «ind» I₀ I₁ ρke κe keBₗ keBᵣ =>
     apply «ind» (I₀ ++ [[(Γ, Γ', Γ'')]].typeVarDom) (I₁ ++ [[(Γ, Γ', Γ'')]].typeVarDom)
       (ρke.weakening ΓΓ'Γ''we) κe
     · intro aₗ aₗnin aₜ aₜnin aₚ aₚnin aᵢ aᵢnin aₙ aₙnin
@@ -1096,7 +1096,7 @@ theorem weakening (σke : [[Γc; Γ, Γ'' ⊢ σ : κ ⇝ A]])
         ⟩
       ⟩
       repeat rw [← TypeEnvironment.append]
-      exact keBᵣ aₗ aₗninI₀ aₜ aₜninI₀ aₚ aₚninI₀ aᵢ aᵢninI₀ aₙ aₙninI₀ |>.weakening <|
+      exact keBₗ aₗ aₗninI₀ aₜ aₜninI₀ aₚ aₚninI₀ aᵢ aᵢninI₀ aₙ aₙninI₀ |>.weakening <|
         ΓΓ'Γ''we.typeExt aₗninΓΓ'Γ'' .label |>.typeExt aₜninΓΓ'Γ''aₗ κe
           |>.typeExt aₚninΓΓ'Γ''aₗaₜ κe.row |>.typeExt aᵢninΓΓ'Γ''aₗaₜaₚ κe.row
           |>.typeExt aₙninΓΓ'Γ''aₗaₜaₚᵢ κe.row
@@ -1106,7 +1106,7 @@ theorem weakening (σke : [[Γc; Γ, Γ'' ⊢ σ : κ ⇝ A]])
       let ⟨aₙninI₁, aₙninΓΓ'Γ''⟩ := List.not_mem_append'.mp aₙnin
       let aₙninΓΓ'Γ''aᵢ := List.not_mem_cons.mpr ⟨List.ne_of_not_mem_cons aₙninI₁, aₙninΓΓ'Γ''⟩
       repeat rw [← TypeEnvironment.append]
-      exact keBₗ aᵢ aᵢninI₁ aₙ aₙninI₁ |>.weakening <|
+      exact keBᵣ aᵢ aᵢninI₁ aₙ aₙninI₁ |>.weakening <|
         ΓΓ'Γ''we.typeExt aᵢninΓΓ'Γ'' κe.row |>.typeExt aₙninΓΓ'Γ''aᵢ κe.row
   | split concatke => exact split <| concatke.weakening ΓΓ'Γ''we
 termination_by σ.sizeOf'
@@ -1168,14 +1168,14 @@ theorem TermVar_drop (σke : [[Γc; Γ, x : σ₁, Γ' ⊢ σ₀ : κ ⇝ A]])
     intro a anin
     rw [← TypeEnvironment.append]
     exact ψke a anin |>.TermVar_drop
-  | «ind» I₀ I₁ ρke κe keBᵣ keBₗ => by
+  | «ind» I₀ I₁ ρke κe keBₗ keBᵣ => by
     apply «ind» I₀ I₁ ρke.TermVar_drop κe
     · intro _ aₗnin _ aₜnin _ aₚnin _ aᵢnin _ aₙnin
       repeat rw [← TypeEnvironment.append]
-      exact keBᵣ _ aₗnin _ aₜnin _ aₚnin _ aᵢnin _ aₙnin |>.TermVar_drop
+      exact keBₗ _ aₗnin _ aₜnin _ aₚnin _ aᵢnin _ aₙnin |>.TermVar_drop
     · intro _ aᵢnin _ aₙnin
       repeat rw [← TypeEnvironment.append]
-      exact keBₗ _ aᵢnin _ aₙnin |>.TermVar_drop
+      exact keBᵣ _ aᵢnin _ aₙnin |>.TermVar_drop
   | split concatke => split concatke.TermVar_drop
 termination_by σ₀.sizeOf'
 decreasing_by
@@ -1236,14 +1236,14 @@ theorem Constr_drop (σke : [[Γc; Γ, ψ ⇝ x, Γ' ⊢ σ : κ ⇝ A]])
     intro a anin
     rw [← TypeEnvironment.append]
     exact ψke a anin |>.Constr_drop
-  | «ind» I₀ I₁ ρke κe keBᵣ keBₗ => by
+  | «ind» I₀ I₁ ρke κe keBₗ keBᵣ => by
     apply «ind» I₀ I₁ ρke.Constr_drop κe
     · intro _ aₗnin _ aₜnin _ aₚnin _ aᵢnin _ aₙnin
       repeat rw [← TypeEnvironment.append]
-      exact keBᵣ _ aₗnin _ aₜnin _ aₚnin _ aᵢnin _ aₙnin |>.Constr_drop
+      exact keBₗ _ aₗnin _ aₜnin _ aₚnin _ aᵢnin _ aₙnin |>.Constr_drop
     · intro _ aᵢnin _ aₙnin
       repeat rw [← TypeEnvironment.append]
-      exact keBₗ _ aᵢnin _ aₙnin |>.Constr_drop
+      exact keBᵣ _ aᵢnin _ aₙnin |>.Constr_drop
   | split concatke => split concatke.Constr_drop
 termination_by σ.sizeOf'
 decreasing_by
