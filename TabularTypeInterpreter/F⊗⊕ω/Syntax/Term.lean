@@ -9,7 +9,7 @@ nonterminal (tex pre := "\\targetpre", post := "\\targetpost") Term, E, F :=
   | x                                 : var
   | "λ " x " : " A ". " E             : lam (bind x in E)
   | E F                               : app
-  | "! " Es:sepBy(E, ", ") F          : multiApp (expand := return .mkCApp `TabularTypeInterpreter.«F⊗⊕ω».Term.multi_app #[Es, F]) (tex := s!"{Es} \\, {F}")
+  | "! " Es:sepBy(E, ", ") F          : multiApp notex (expand := return .mkCApp `TabularTypeInterpreter.«F⊗⊕ω».Term.multi_app #[Es, F]) (tex := s!"{Es} \\, {F}")
   | "Λ " a " : " K ". " E             : typeLam (bind a in E)
   | E " [" A "]"                      : typeApp
   | "(" sepBy(E, ", ") ")"            : prodIntro
