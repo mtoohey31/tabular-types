@@ -5,6 +5,7 @@ open Lake DSL
 
 require lott from "vendor/lott"
 require mathlib from git "https://github.com/leanprover-community/mathlib4.git" @ "v4.17.0"
+require Parser from git "https://github.com/fgdorais/lean4-parser" @ "053703dce47f6cbe537635e5bf3e54c59bcccc78"
 
 package «tabular-type-interpreter» where
   moreGlobalServerArgs := #[s!"-Dweak.lott.tex.output.dir={__dir__}/tex"]
