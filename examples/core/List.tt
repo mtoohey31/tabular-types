@@ -1,0 +1,68 @@
+def append : ∀ t : *. List t → List t → List t = fold (\x acc. x :: acc)
+
+def contains : ∀ t : *. Eq t ⇒ List t → t → Bool =
+  \xs x. fold (\x' acc. or acc (eq x x')) false xs
+
+def filter : ∀ t : *. (t → Bool) → List t → List t =
+  \f. fold (\x acc. if f x then x :: acc else acc) nil
+
+def filterMap : ∀ t t' : *. (t → Option t') → List t → List t' =
+  \f. fold (\x acc. (\y. y/'some' :: acc) ▿ (\_. acc) (f x)) nil
+
+def foldIdx : ∀ t t' : *. (t → Int → t') → t' → List t = \f init xs.
+  (fold
+    (\x acc. {'i' ▹ (prj acc)/'i' + 1, 'v' ▹ f x (prj acc)/'i' (prj acc)/'v'})
+    {'i' ▹ 0, 'v' ▹ init} xs)/'v'
+
+def get : ∀ t : *. List t → Int → t =
+  \xs i.
+    if i < 0 then
+      throw "get of negative index"
+    else
+      let acc = fold (\x.
+        (\i. if i/'idx' == 0 then inj ['val' ▹ x] else ['idx' ▹ i/'idx' - 1]) ▿
+          (\y. y)) (inj ['idx' ▹ i]) xs
+      in
+      (\x. x/'val') ▿ (\_. throw "index out of range") acc
+
+def lcount : ∀ t : *. (t → Bool) → List t → Int =
+  \xs f. fold (\x acc. if f x then acc + 1 else acc) 0 xs
+
+def length : ∀ t : *. List t → Int = fold (\_ acc. acc + 1) 0
+
+def lflatten : ∀ t : *. List (List t) → List t = fold append nil
+
+def drop : ∀ t : *. Int → List t → List t = \i xs.
+  fold (\x acc. if (length xs - length acc) < i then x :: acc else acc) nil xs
+
+def map : ∀ t t' : *. (t → t') → List t → List t' =
+  \f. fold (\x acc. f x :: acc) nil
+
+def mapIdx : ∀ t t' : *. (t → Int → t') → List t → List t' =
+  \f. foldIdx (\x i acc. f x i :: acc) nil
+
+def max : List Int → Int = fold (\x acc. if x > acc then x else acc) minInt
+
+def min : List Int → Int = fold (\x acc. if x < acc then x else acc) maxInt
+
+def singleton : ∀ t : *. t → List t = \x. x :: nil
+
+def snoc : ∀ t : *. List t → t → List t = \xs x. append xs (singleton x)
+
+def sortBy : ∀ t : *. List t → (t → t → Bool) → List t =
+  \xs lt.
+    let merge : t → List t → List t =
+      -- TODO: Finish this
+      \new rest. fold (\other acc. (((\_. 5) : ⟨'ipr' ▹ List _⟩) ▿ (5)) ) rest
+        ['ipr' ▹ nil]
+    in
+    fold merge xs nil
+
+def take : ∀ t : *. Int → List t → List t =
+  \i. fold (\x acc. if length acc < i then x :: acc else acc) nil
+
+def unique : ∀ t : *. Eq t ⇒ List t → List t =
+  fold (\x acc. if contains acc x then acc else x :: acc) nil
+
+def zip : ∀ t t' t'' : *. (t' → t'' → t) → List t' → List t'' → List t =
+  \f ll lr. map (\i. f (get ll i) (get lr i)) range (length ll)

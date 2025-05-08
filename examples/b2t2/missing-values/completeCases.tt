@@ -1,0 +1,3 @@
+def completeCases : ∀ r : R *, l : L, t : *. ⟨l ▹ Option t⟩ ≲(C) r ⇒
+    List (Π(C) r) → ⌊l⌋ → List Bool =
+  \tb l. map (\r. isSome (prj r)/l) tb

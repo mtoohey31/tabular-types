@@ -1,0 +1,8 @@
+def selectMany : ∀ r r' r'' : R *, u u' u'' : U. List (Π(u) r) →
+    (Π(u) r → Int → List (Π(u') r')) → (Π(u) r → Π(u') r' → Π(u'') r'') →
+    List (Π(u'') r'') =
+  \tb pf rf.
+    let pairs : List (Π(N) ⟨'orig' ▹ Π(u) r, 'prj' ▹ Π(u') r'⟩) =
+      flatten (mapIdx (\r idx. map (\p. {'orig' ▹ r, 'prj' ▹ p}) (pf r idx)) tb)
+    in
+    map (\op. rf (prj op)/'orig' (prj op)/'prj') pairs

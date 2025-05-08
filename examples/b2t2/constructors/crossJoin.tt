@@ -1,0 +1,3 @@
+def crossJoin : ∀ rl rr r : R *. rl ⊙(N) rr ~ r ⇒
+    List (Π(N) rl) → List (Π(N) rr) → List (Π(N) r) =
+  \tbl tbr. map (\l. map (\r. l ++ r) tbr) tbl

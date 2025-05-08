@@ -1,0 +1,5 @@
+class LE a : * where
+  le : a → a → Bool
+
+instance LE Int where
+  le = \x y. x <= y

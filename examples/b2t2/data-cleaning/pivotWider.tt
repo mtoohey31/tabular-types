@@ -1,0 +1,29 @@
+def pivotWider : ∀ r rk rr r' : R *, lk lv : L, t : *, u : U. All Eq rr,
+    rr ⊙(u) ⟨lk ▹ Σ(u) (Lift (Const Unit) rk), lv ▹ t⟩ ~ r,
+    rr ⊙(u) Lift (Const (Option t)) rk ~ r' ⇒
+    List (Π(u) r) → ⌊lk⌋ → ⌊lv⌋ → List (Π(u) r') =
+  \tb lk lv.
+    let groups = fold (\r acc.
+      let res = fold (\group acc.
+        if and (not acc/'found') (rowEq group/'shared' (prj r)) then
+          {
+            'updated' ▹ {
+              'shared' ▹ group/'shared',
+              'kvs' ▹ prj r ++ group/'kvs'
+            } :: acc/'updated',
+            'found' ▹ true
+          }
+        else
+          {'updated' ▹ group :: acc/'updated', 'found' ▹ acc/'found'}
+      ) {'updated' ▹ nil, 'found' ▹ false} acc in
+      if res/'found' then
+        res/'updated'
+      else
+        {'shared' ▹ prj r, 'shared' ▹ singleton (prj r)} :: acc
+    ) tb in
+    map (\group.
+      group/'shared' ++ ind (\a : R *. Π(u) (Lift (Const (Option t)) a)) rk
+        (\l acc. acc ++ {l ▹ fold (\kv acc.
+          if and (isNone acc) (is l kv/lk) then some kv/lv else acc
+        ) none group/'kvs'}) {}
+    ) groups

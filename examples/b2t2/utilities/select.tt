@@ -1,0 +1,2 @@
+def select : ∀ r r' : R *, u u' : U.
+    List (Π(u) r) → (Π(u) r → Int → Π(u') r') → List (Π(u') r') = flip mapIdx
