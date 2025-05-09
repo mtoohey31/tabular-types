@@ -1,3 +1,4 @@
+import TabularTypeInterpreter.Theorems.Generic
 import TabularTypeInterpreter.Theorems.Kind
 import TabularTypeInterpreter.Theorems.Program
 import TabularTypeInterpreter.Theorems.Term
