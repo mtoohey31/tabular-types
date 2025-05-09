@@ -42,7 +42,10 @@ nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") Monotype, τ, ξ,
   | "All " «λτ» ρ                                      : all
   | "Ind " ρ                                           : ind
   | "Split " «λτ» ρ₀ " ⊙' " ρ₁ " ~ " ρ₂                : split (tex := s!"\\lottkw\{Split} \\, {«λτ»} \\, {ρ₀} \\, {ρ₁} \\, {ρ₂}")
+  | τ "^^^" a "#" n                                    : TypeVar_multi_open notex (id a) (expand := return .mkCApp `TabularTypeInterpreter.Monotype.TypeVar_multi_open #[τ, .mk <| Lean.mkNode ``coeFunNotation #[Lean.mkAtom "⇑", a], n]) (tex := τ)
+  | τ₀ "^^^^" τ₁ "@@" i "#" n "/" a                    : Monotype_multi_open notex (expand := return .mkCApp `TabularTypeInterpreter.Monotype.Monotype_multi_open #[τ₀, τ₁, n]) (tex := s!"{τ₀}\\lottsepbycomprehension\{\\left[\{{τ₁}}_\{{i}}/\{{a}}_\{{i}}\\right]}")
   | "(" τ ")"                                          : paren notex (expand := return τ)
+  | "⦅" τ "⦆"                                          : invisible_paren notex (expand := return τ) (tex := τ)
 
 end
 

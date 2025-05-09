@@ -477,6 +477,20 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γcw : [[⊢c �
     cases σ₀ke.deterministic σ₁ke |>.right
     rcases σ₀ke.deterministic σke with ⟨rfl, rfl⟩
     exact .id (Γwe.soundness Γcw) <| σke.soundness Γcw Γwe κe
+  | trans σ₀ke' σ₀₁se _ σ₀₁ih σ₁₂ih =>
+    rcases σ₀ke.deterministic σ₀ke' with ⟨rfl, rfl⟩
+    let ⟨_, _, _, σ₀ke'', σ₁'ke⟩ := σ₀₁se.to_Kinding Γcw Γwe
+    rcases σ₀ke.deterministic σ₀ke'' with ⟨rfl, rfl⟩
+    apply Typing.lam Δ.termVarDom
+    intro x xnin
+    simp only [Term.TermVar_open, if_pos]
+    let Δxwf := Γwe.soundness Γcw |>.termVarExt xnin <| σ₀ke.soundness Γcw Γwe κe
+    let Ety := σ₀₁ih Γcw Γwe σ₀ke σ₁'ke κe |>.weakening Δxwf (Δ' := .termExt .empty ..)
+      (Δ'' := .empty)
+    let Fty := σ₁₂ih Γcw Γwe σ₁'ke σ₁ke κe |>.weakening Δxwf (Δ' := .termExt .empty ..)
+      (Δ'' := .empty)
+    rw [Ety.TermVarLocallyClosed_of.TermVar_open_id, Fty.TermVarLocallyClosed_of.TermVar_open_id]
+    exact .app Fty <| .app Ety <| .var Δxwf .head
   | arr _ _ τ₀₁ke τ₂ke τ₂₀ih τ₁₃ih =>
     let .arr τ₂ke' τ₃ke := σ₁ke
     cases τ₂ke.deterministic τ₂ke' |>.right
@@ -681,7 +695,7 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γcw : [[⊢c �
     rw [ρ₀ke.soundness Γcw Γwe (.row .star) |>.TypeVarLocallyClosed_of.Type_open_id,
         ρ₁ke.soundness Γcw Γwe (.row .star) |>.TypeVarLocallyClosed_of.Type_open_id] at this
     exact .equiv (this .id) <| .arr (.sum .listAppIdL) (.sum .listAppIdL)
-  | decay σ₀ke' _ =>
+  | decay σ₀ke' _ _ =>
     rename ProdOrSum => Ξ
     rcases σ₀ke.deterministic σ₀ke' with ⟨rfl, rfl⟩
     apply Typing.lam Δ.termVarDom
@@ -700,7 +714,7 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γcw : [[⊢c �
       cases ρke.deterministic ρke' |>.right
       let Δxwf := Γwe.soundness Γcw |>.termVarExt xnin <| σ₀ke.soundness Γcw Γwe κe
       exact .var Δxwf .head
-  | never _ _ =>
+  | never _ =>
     let σ₀ke@(.sum _ ρke) := σ₀ke
     cases ρke.empty_row_inversion.right
     apply Typing.lam Δ.termVarDom
@@ -1140,7 +1154,7 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γcw : [[⊢c �
     let Δxwf := Γwe.soundness Γcw |>.termVarExt xnin <| TCτ₀ke.soundness Γcw Γwe .constr
     simp only [Term.TermVar_open]
     rw [List.mapMem_eq_map, List.map_cons]
-    let ⟨_, κ'e, σ'ke, _, TCₛke, Aₛki⟩ := Γcw.of_ClassEnvironment_in γcin
+    let ⟨_, κ'e, σ'ke, _, TCₛke, Aₛki⟩ := Γcw.In_inversion γcin
     apply Typing.prodIntro' Δxwf _ <| by
       rw [List.length_cons, List.length_cons, List.length_map, List.length_map, List.length_map,
           Range.length_toList]
@@ -1201,14 +1215,12 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γcw : [[⊢c �
       let ⟨aninAₛ, aninΓ⟩ := List.not_mem_append'.mp anin
       let Γawe := Γwe.typeExt aninΓ κ'e
       rw [← Γ.empty_append] at Γawe
-      let TCₛke' := by
-        have := TCₛke a i mem |>.weakening Γawe (Γ'' := .typeExt .empty ..)
-        show KindingAndElaboration Γc [[(ε, Γ, a : κ')]]
-          (.TypeVar_open (.qual (.mono (.typeClass (TCₛ i) (.var (.bound 0))))) a) .constr
-          [[(Aₛ@i^a)]]
+      let TCₛke' : KindingAndElaboration Γc [[(ε, Γ, a : κ')]]
+        (.TypeVar_open (.qual (.mono (.typeClass (TCₛ i) (.var (.bound 0))))) a) .constr
+        [[(Aₛ@i^a)]] := by
         rw [TypeVar_open, QualifiedType.TypeVar_open, Monotype.TypeVar_open,
             Monotype.TypeVar_open, if_pos rfl]
-        exact this
+        exact TCₛke a i mem |>.weakening Γawe (Γ'' := .typeExt .empty ..)
       rw [TypeEnvironment.empty_append] at TCₛke' Γawe
       apply TCₛih i mem Γcw Γwe _ _ .constr
       · have := TCₛke'.Monotype_open_preservation Γcw Γawe nofun (by
@@ -1249,7 +1261,7 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γcw : [[⊢c �
     let Δxwf := Γwe.soundness Γcw |>.termVarExt xnin <| TCτ₀ke.soundness Γcw Γwe .constr
     simp only [Term.TermVar_open]
     rw [List.mapMem_eq_map, List.map_cons]
-    let ⟨_, κ'e, σ'ke, _, TCₛke, Aₛki⟩ := Γcw.of_ClassEnvironment_in γcin
+    let ⟨_, κ'e, σ'ke, _, TCₛke, Aₛki⟩ := Γcw.In_inversion γcin
     apply Typing.prodIntro' Δxwf _ <| by
       rw [List.length_cons, List.length_cons, List.length_map, List.length_map, List.length_map,
           Range.length_toList]

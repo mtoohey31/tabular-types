@@ -375,10 +375,23 @@ theorem inv_list' (k: [[ Δ ⊢ { </ A@i // i in [:n] /> } : K ]]): ∃ K', K = 
       simp_all [List.length_map, Std.Range.length_toList]
     simp_all [Std.Range.mem_toList_of_mem]
 
-theorem unit : [[Δ ⊢ ⊗ { } : *]] := by
-  have := list (Δ := Δ) (A := fun _ => .list []) (K := .star) (n := 0) (fun _ => nomatch ·)
+theorem singleton_list (Aki : [[Δ ⊢ A : K]]) : [[Δ ⊢ {A} : L K]] := by
+  have := list (Δ := Δ) (A := fun _ => A) (K := K) (n := 1) <| by
+    intro i mem
+    cases Nat.eq_of_le_of_lt_succ mem.lower mem.upper
+    simp only
+    exact Aki
+  rw [Std.Range.map, Std.Range.toList, if_pos Nat.zero_lt_one, Std.Range.toList] at this
+  exact this
+
+theorem empty_list : [[Δ ⊢ { } : L K]] := by
+  have := list (Δ := Δ) (A := fun _ => .list []) (K := K) (n := 0) (fun _ => nomatch ·)
   rw [Std.Range.map, Std.Range.toList, if_neg (Nat.not_lt_of_le (Nat.le_refl _))] at this
-  exact prod this
+  exact this
+
+theorem unit : [[Δ ⊢ ⊗ { } : *]] := prod empty_list
+
+theorem never : [[Δ ⊢ ⊕ { } : *]] := sum empty_list
 
 theorem prj_evidence (Δwf : [[⊢ Δ]]) (A₀ki : [[Δ ⊢ A₀ : L K]]) (A₁ki : [[Δ ⊢ A₁ : L K]])
   : [[Δ ⊢ ∀ a : K ↦ *. (⊗ (a$0 ⟦A₁⟧)) → ⊗ (a$0 ⟦A₀⟧) : *]] := by
@@ -478,15 +491,102 @@ theorem elim_evidence (Δwf : [[⊢ Δ]]) (A₀ki : [[Δ ⊢ A₀ : L K]]) (A₁
             Δwf.typeVarExt anin |>.typeVarExt aₜnin
       · exact var .head
 
+theorem ind_step (Δwf : [[⊢ Δ]]) (aₘinΔ : [[aₘ : (L K) ↦ * ∈ Δ]])
+  (Bₗki : ∀ aₗ ∉ I₀, ∀ aₜ ∉ aₗ :: I₀, ∀ aₚ ∉ aₜ :: aₗ :: I₀, ∀ aᵢ ∉ aₚ :: aₜ :: aₗ :: I₀, ∀ aₙ ∉ aᵢ :: aₚ :: aₜ :: aₗ :: I₀,
+    [[Δ, aₗ : *, aₜ : K, aₚ : L K, aᵢ : L K, aₙ : L K ⊢ Bₗ^aₗ#4^aₜ#3^aₚ#2^aᵢ#1^aₙ : *]])
+  (Bᵣki : ∀ aᵢ ∉ I₁, ∀ aₙ ∉ aᵢ :: I₁, [[Δ, aᵢ : L K, aₙ : L K ⊢ Bᵣ^aᵢ#1^aₙ : *]])
+  : [[Δ ⊢ ∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bₗ → Bᵣ → (⊗ { }) → (aₘ aₚ$2) → aₘ aᵢ$1 : *]] := by
+  let ⟨aₗ, aₗnin⟩ := I₀.exists_fresh
+  let ⟨aₜ, aₜnin⟩ := aₗ :: I₀ |>.exists_fresh
+  let ⟨aₚ, aₚnin⟩ := aₜ :: aₗ :: I₀ |>.exists_fresh
+  let ⟨aᵢ, aᵢnin⟩ := aₚ :: aₜ :: aₗ :: I₀ |>.exists_fresh
+  let ⟨aₙ, aₙnin⟩ := aᵢ :: aₚ :: aₜ :: aₗ :: I₀ |>.exists_fresh
+  let Bₗlc := Bₗki _ aₗnin _ aₜnin _ aₚnin _ aᵢnin _ aₙnin
+    |>.TypeVarLocallyClosed_of.weaken (n := 5)
+    |>.TypeVar_open_drop (Nat.lt.step <| Nat.lt.step <| Nat.lt.step <| Nat.lt.step <| .base _)
+    |>.TypeVar_open_drop (Nat.lt.step <| Nat.lt.step <| Nat.lt.step <| .base _)
+    |>.TypeVar_open_drop (Nat.lt.step <| Nat.lt.step <| .base _)
+    |>.TypeVar_open_drop (Nat.lt.step <| .base _)
+    |>.TypeVar_open_drop (Nat.lt.base _)
+  let ⟨aᵢ, aᵢnin⟩ := I₁ |>.exists_fresh
+  let ⟨aₙ, aₙnin⟩ := aᵢ :: I₁ |>.exists_fresh
+  let Bᵣlc := Bᵣki _ aᵢnin _ aₙnin |>.TypeVarLocallyClosed_of.weaken (n := 2)
+    |>.TypeVar_open_drop (Nat.lt.step <| .base _) |>.TypeVar_open_drop (Nat.lt.base _)
+  apply scheme <| I₀ ++ Δ.typeVarDom
+  intro aₗ aₗnin
+  let ⟨aₗninI₀, aₗninΔ⟩ := List.not_mem_append'.mp aₗnin
+  let Δaₗwf := Δwf.typeVarExt aₗninΔ (K := .star)
+  let aₘneaₗ := ne_of_mem_of_not_mem aₘinΔ.TypeVarInDom_of aₗninΔ
+  simp [Type.TypeVar_open]
+  rw [Bᵣlc.weaken (n := 2).TypeVar_open_id]
+  apply scheme <| aₗ :: I₀ ++ aₗ :: Δ.typeVarDom
+  intro aₜ aₜnin
+  let ⟨aₜninI₀, aₜninΔ⟩ := List.not_mem_append'.mp aₜnin
+  let Δaₗaₜwf := Δaₗwf.typeVarExt aₜninΔ (K := K)
+  let aₗneaₜ := List.ne_of_not_mem_cons aₜninI₀
+  let aₘneaₜ := ne_of_mem_of_not_mem aₘinΔ.TypeVarInDom_of <| List.not_mem_of_not_mem_cons aₜninΔ
+  simp [Type.TypeVar_open]
+  rw [Bᵣlc.weaken (n := 1).TypeVar_open_id]
+  apply scheme <| aₜ :: aₗ :: I₀ ++ aₜ :: aₗ :: Δ.typeVarDom
+  intro aₚ aₚnin
+  let ⟨aₚninI₀, aₚninΔ⟩ := List.not_mem_append'.mp aₚnin
+  let Δaₗaₜaₚwf := Δaₗaₜwf.typeVarExt aₚninΔ (K := K.list)
+  let aₗneaₚ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <| aₚninI₀
+  let aₘneaₚ := ne_of_mem_of_not_mem aₘinΔ.TypeVarInDom_of <| List.not_mem_of_not_mem_cons <|
+    List.not_mem_of_not_mem_cons <| aₚninΔ
+  symm at aₗneaₚ
+  simp [Type.TypeVar_open]
+  rw [Bᵣlc.TypeVar_open_id]
+  apply scheme <| aₚ :: aₜ :: aₗ :: I₀ ++ I₁ ++ aₚ :: aₜ :: aₗ :: Δ.typeVarDom
+  intro aᵢ aᵢnin
+  let ⟨aᵢninI₀I₁, aᵢninΔ⟩ := List.not_mem_append'.mp aᵢnin
+  let ⟨aᵢninI₀, aᵢninI₁⟩ := List.not_mem_append'.mp aᵢninI₀I₁
+  let aₚneaᵢ := List.ne_of_not_mem_cons aᵢninI₀
+  let Δaₗaₜaₚaᵢwf := Δaₗaₜaₚwf.typeVarExt aᵢninΔ (K := K.list)
+  let aₗneaᵢ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
+    List.not_mem_of_not_mem_cons <| aᵢninI₀
+  let aₘneaᵢ := ne_of_mem_of_not_mem aₘinΔ.TypeVarInDom_of <| List.not_mem_of_not_mem_cons <|
+    List.not_mem_of_not_mem_cons <| List.not_mem_of_not_mem_cons <| aᵢninΔ
+  symm at aₚneaᵢ aₗneaᵢ
+  simp [Type.TypeVar_open]
+  apply scheme <| aᵢ :: aₚ :: aₜ :: aₗ :: I₀ ++ aᵢ :: I₁ ++ aᵢ :: aₚ :: aₜ :: aₗ :: Δ.typeVarDom
+  intro aₙ aₙnin
+  let ⟨aₙninI₀I₁, aₙninΔ⟩ := List.not_mem_append'.mp aₙnin
+  let ⟨aₙninI₀, aₙninI₁⟩ := List.not_mem_append'.mp aₙninI₀I₁
+  let Δaₗaₜaₚaᵢaₙwf := Δaₗaₜaₚaᵢwf.typeVarExt aₙninΔ (K := K.list)
+  let aₚneaₙ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons aₙninI₀
+  let aₗneaₙ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
+    List.not_mem_of_not_mem_cons <| List.not_mem_of_not_mem_cons <| aₙninI₀
+  let aₘneaₙ := ne_of_mem_of_not_mem aₘinΔ.TypeVarInDom_of <| List.not_mem_of_not_mem_cons <|
+    List.not_mem_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
+    List.not_mem_of_not_mem_cons <| aₙninΔ
+  let aᵢneaₙ := List.ne_of_not_mem_cons aₙninI₀
+  symm at aᵢneaₙ aₚneaₙ aₗneaₙ
+  simp [Type.TypeVar_open]
+  apply arr <| Bₗki _ aₗninI₀ _ aₜninI₀ _ aₚninI₀ _ aᵢninI₀ _ aₙninI₀
+  apply arr <| Bᵣki _ aᵢninI₁ _ aₙninI₁ |>.weakening Δaₗaₜaₚaᵢaₙwf
+    (Δ := Δ)
+    (Δ' := .typeExt (.typeExt (.typeExt .empty ..) ..) ..)
+    (Δ'' := .typeExt (.typeExt .empty ..) ..)
+  · apply arr .unit
+    apply arr
+    · apply app
+      · exact var <| aₘinΔ.typeVarExt aₘneaₗ |>.typeVarExt aₘneaₜ |>.typeVarExt aₘneaₚ
+          |>.typeVarExt aₘneaᵢ |>.typeVarExt aₘneaₙ
+      · exact var <| .typeVarExt (.typeVarExt .head aₚneaᵢ) aₚneaₙ
+    · apply app
+      · exact var <| aₘinΔ.typeVarExt aₘneaₗ |>.typeVarExt aₘneaₜ |>.typeVarExt aₘneaₚ
+          |>.typeVarExt aₘneaᵢ |>.typeVarExt aₘneaₙ
+      · exact var <| .typeVarExt .head aᵢneaₙ
+
 local instance : Inhabited «Type» where
   default := .list []
 in
-theorem ind_evidence (Δwf : [[⊢ Δ]])
-  (Aki : [[Δ ⊢ A : L K]])
-  (Bᵣki : ∀ aₗ ∉ I₀, ∀ aₜ ∉ aₗ :: I₀, ∀ aₚ ∉ aₜ :: aₗ :: I₀, ∀ aᵢ ∉ aₚ :: aₜ :: aₗ :: I₀, ∀ aₙ ∉ aᵢ :: aₚ :: aₜ :: aₗ :: I₀,
-    [[Δ, aₗ : *, aₜ : K, aₚ : L K, aᵢ : L K, aₙ : L K ⊢ Bᵣ^aₗ#4^aₜ#3^aₚ#2^aᵢ#1^aₙ : *]])
-  (Bₗki : ∀ aᵢ ∉ I₁, ∀ aₙ ∉ aᵢ :: I₁, [[Δ, aᵢ : L K, aₙ : L K ⊢ Bₗ^aᵢ#1^aₙ : *]])
-  : [[Δ ⊢ ∀ aₘ : (L K) ↦ *. (∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bᵣ → Bₗ → (⊗ { }) → (aₘ$5 aₚ$2) → aₘ$5 aᵢ$1) → (aₘ$0 { }) → aₘ$0 A : *]] := by
+theorem ind_evidence (Δwf : [[⊢ Δ]]) (Aki : [[Δ ⊢ A : L K]])
+  (Bₗki : ∀ aₗ ∉ I₀, ∀ aₜ ∉ aₗ :: I₀, ∀ aₚ ∉ aₜ :: aₗ :: I₀, ∀ aᵢ ∉ aₚ :: aₜ :: aₗ :: I₀, ∀ aₙ ∉ aᵢ :: aₚ :: aₜ :: aₗ :: I₀,
+    [[Δ, aₗ : *, aₜ : K, aₚ : L K, aᵢ : L K, aₙ : L K ⊢ Bₗ^aₗ#4^aₜ#3^aₚ#2^aᵢ#1^aₙ : *]])
+  (Bᵣki : ∀ aᵢ ∉ I₁, ∀ aₙ ∉ aᵢ :: I₁, [[Δ, aᵢ : L K, aₙ : L K ⊢ Bᵣ^aᵢ#1^aₙ : *]])
+  : [[Δ ⊢ ∀ aₘ : (L K) ↦ *. (∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bₗ → Bᵣ → (⊗ { }) → (aₘ$5 aₚ$2) → aₘ$5 aᵢ$1) → (aₘ$0 { }) → aₘ$0 A : *]] := by
   apply scheme Δ.typeVarDom
   intro aₘ aₘnin
   let Δaₘwf := Δwf.typeVarExt aₘnin (K := K.list.arr .star)
@@ -496,7 +596,7 @@ theorem ind_evidence (Δwf : [[⊢ Δ]])
   let ⟨aₚ, aₚnin⟩ := aₜ :: aₗ :: I₀ |>.exists_fresh
   let ⟨aᵢ, aᵢnin⟩ := aₚ :: aₜ :: aₗ :: I₀ |>.exists_fresh
   let ⟨aₙ, aₙnin⟩ := aᵢ :: aₚ :: aₜ :: aₗ :: I₀ |>.exists_fresh
-  let Bᵣlc := Bᵣki _ aₗnin _ aₜnin _ aₚnin _ aᵢnin _ aₙnin
+  let Bₗlc := Bₗki _ aₗnin _ aₜnin _ aₚnin _ aᵢnin _ aₙnin
     |>.TypeVarLocallyClosed_of.weaken (n := 5)
     |>.TypeVar_open_drop (Nat.lt.step <| Nat.lt.step <| Nat.lt.step <| Nat.lt.step <| .base _)
     |>.TypeVar_open_drop (Nat.lt.step <| Nat.lt.step <| Nat.lt.step <| .base _)
@@ -505,83 +605,66 @@ theorem ind_evidence (Δwf : [[⊢ Δ]])
     |>.TypeVar_open_drop (Nat.lt.base _)
   let ⟨aᵢ, aᵢnin⟩ := I₁ |>.exists_fresh
   let ⟨aₙ, aₙnin⟩ := aᵢ :: I₁ |>.exists_fresh
-  let Bₗlc := Bₗki _ aᵢnin _ aₙnin |>.TypeVarLocallyClosed_of.weaken (n := 2)
+  let Bᵣlc := Bᵣki _ aᵢnin _ aₙnin |>.TypeVarLocallyClosed_of.weaken (n := 2)
     |>.TypeVar_open_drop (Nat.lt.step <| .base _) |>.TypeVar_open_drop (Nat.lt.base _)
-  rw [Aki.TypeVarLocallyClosed_of.TypeVar_open_id, Bᵣlc.TypeVar_open_id,
-      Bₗlc.weaken (n := 3).TypeVar_open_id]
+  rw [Aki.TypeVarLocallyClosed_of.TypeVar_open_id, Bₗlc.TypeVar_open_id,
+      Bᵣlc.weaken (n := 3).TypeVar_open_id]
   apply arr
-  · apply scheme <| I₀ ++ aₘ :: Δ.typeVarDom
-    intro aₗ aₗnin
-    let ⟨aₗninI₀, aₗninΔ⟩ := List.not_mem_append'.mp aₗnin
-    let Δaₘaₗwf := Δaₘwf.typeVarExt aₗninΔ (K := .star)
-    let aₘneaₗ := List.ne_of_not_mem_cons aₗninΔ
-    symm at aₘneaₗ
-    simp [Type.TypeVar_open]
-    rw [Bₗlc.weaken (n := 2).TypeVar_open_id]
-    apply scheme <| aₗ :: I₀ ++ aₗ :: aₘ :: Δ.typeVarDom
-    intro aₜ aₜnin
-    let ⟨aₜninI₀, aₜninΔ⟩ := List.not_mem_append'.mp aₜnin
-    let Δaₘaₗaₜwf := Δaₘaₗwf.typeVarExt aₜninΔ (K := K)
-    let aₗneaₜ := List.ne_of_not_mem_cons aₜninI₀
-    let aₘneaₜ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <| aₜninΔ
-    symm at aₗneaₜ aₘneaₜ
-    simp [Type.TypeVar_open]
-    rw [Bₗlc.weaken (n := 1).TypeVar_open_id]
-    apply scheme <| aₜ :: aₗ :: I₀ ++ aₜ :: aₗ :: aₘ :: Δ.typeVarDom
-    intro aₚ aₚnin
-    let ⟨aₚninI₀, aₚninΔ⟩ := List.not_mem_append'.mp aₚnin
-    let Δaₘaₗaₜaₚwf := Δaₘaₗaₜwf.typeVarExt aₚninΔ (K := K.list)
-    let aₗneaₚ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <| aₚninI₀
-    let aₘneaₚ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
-      List.not_mem_of_not_mem_cons <| aₚninΔ
-    symm at aₗneaₚ aₘneaₚ
-    simp [Type.TypeVar_open]
-    rw [Bₗlc.TypeVar_open_id]
-    apply scheme <| aₚ :: aₜ :: aₗ :: I₀ ++ I₁ ++ aₚ :: aₜ :: aₗ :: aₘ :: Δ.typeVarDom
-    intro aᵢ aᵢnin
-    let ⟨aᵢninI₀I₁, aᵢninΔ⟩ := List.not_mem_append'.mp aᵢnin
-    let ⟨aᵢninI₀, aᵢninI₁⟩ := List.not_mem_append'.mp aᵢninI₀I₁
-    let aₚneaᵢ := List.ne_of_not_mem_cons aᵢninI₀
-    let Δaₘaₗaₜaₚaᵢwf := Δaₘaₗaₜaₚwf.typeVarExt aᵢninΔ (K := K.list)
-    let aₗneaᵢ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
-      List.not_mem_of_not_mem_cons <| aᵢninI₀
-    let aₘneaᵢ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
-      List.not_mem_of_not_mem_cons <| List.not_mem_of_not_mem_cons <| aᵢninΔ
-    symm at aₚneaᵢ aₗneaᵢ aₘneaᵢ
-    simp [Type.TypeVar_open]
-    apply scheme <|
-      aᵢ :: aₚ :: aₜ :: aₗ :: I₀ ++ aᵢ :: I₁ ++ aᵢ :: aₚ :: aₜ :: aₗ :: aₘ :: Δ.typeVarDom
-    intro aₙ aₙnin
-    let ⟨aₙninI₀I₁, aₙninΔ⟩ := List.not_mem_append'.mp aₙnin
-    let ⟨aₙninI₀, aₙninI₁⟩ := List.not_mem_append'.mp aₙninI₀I₁
-    let Δaₘaₗaₜaₚaᵢaₙwf := Δaₘaₗaₜaₚaᵢwf.typeVarExt aₙninΔ (K := K.list)
-    let aₚneaₙ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons aₙninI₀
-    let aₗneaₙ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
-      List.not_mem_of_not_mem_cons <| List.not_mem_of_not_mem_cons <| aₙninI₀
-    let aₘneaₙ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
-      List.not_mem_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
-      List.not_mem_of_not_mem_cons <| aₙninΔ
-    let aᵢneaₙ := List.ne_of_not_mem_cons aₙninI₀
-    symm at aᵢneaₙ aₚneaₙ aₗneaₙ aₘneaₙ
-    simp [Type.TypeVar_open]
-    apply arr <| Bᵣki _ aₗninI₀ _ aₜninI₀ _ aₚninI₀ _ aᵢninI₀ _ aₙninI₀ |>.weakening Δaₘaₗaₜaₚaᵢaₙwf
-      (Δ := Δ)
-      (Δ' := .typeExt .empty ..)
-      (Δ'' := .typeExt (.typeExt (.typeExt (.typeExt (.typeExt .empty ..) ..) ..) ..) ..)
-    apply arr <| Bₗki _ aᵢninI₁ _ aₙninI₁ |>.weakening Δaₘaₗaₜaₚaᵢaₙwf
-      (Δ := Δ)
-      (Δ' := .typeExt (.typeExt (.typeExt (.typeExt .empty ..) ..) ..) ..)
-      (Δ'' := .typeExt (.typeExt .empty ..) ..)
-    · apply arr .unit
-      apply arr
-      · apply app
-        · exact var <| .typeVarExt (.typeVarExt (.typeVarExt
-             (.typeVarExt (.typeVarExt .head aₘneaₗ) aₘneaₜ) aₘneaₚ) aₘneaᵢ) aₘneaₙ
-        · exact var <| .typeVarExt (.typeVarExt .head aₚneaᵢ) aₚneaₙ
-      · apply app
-        · exact var <| .typeVarExt (.typeVarExt (.typeVarExt
-             (.typeVarExt (.typeVarExt .head aₘneaₗ) aₘneaₜ) aₘneaₚ) aₘneaᵢ) aₘneaₙ
-        · exact var <| .typeVarExt .head aᵢneaₙ
+  · apply ind_step Δaₘwf .head (I₀ := I₀ ++ aₘ :: Δ.typeVarDom) (I₁ := I₁ ++ aₘ :: Δ.typeVarDom)
+    · intro aₗ aₗnin
+      let ⟨aₗninI, aₗninΔ⟩ := List.not_mem_append'.mp aₗnin
+      intro aₜ aₜnin
+      let ⟨aₜneaₗ, aₜnin'⟩ := List.not_mem_cons.mp aₜnin
+      let ⟨aₜninI, aₜninΔ⟩ := List.not_mem_append'.mp aₜnin'
+      let aₜninI := List.not_mem_cons.mpr ⟨aₜneaₗ, aₜninI⟩
+      let aₜninΔ := List.not_mem_cons.mpr ⟨aₜneaₗ, aₜninΔ⟩
+      intro aₚ aₚnin
+      let ⟨aₚneaₜ, aₚnin'⟩ := List.not_mem_cons.mp aₚnin
+      let ⟨aₚneaₗ, aₚnin''⟩ := List.not_mem_cons.mp aₚnin'
+      let ⟨aₚninI, aₚninΔ⟩ := List.not_mem_append'.mp aₚnin''
+      let aₚninI := List.not_mem_cons.mpr ⟨aₚneaₜ, List.not_mem_cons.mpr ⟨aₚneaₗ, aₚninI⟩⟩
+      let aₚninΔ := List.not_mem_cons.mpr ⟨aₚneaₜ, List.not_mem_cons.mpr ⟨aₚneaₗ, aₚninΔ⟩⟩
+      intro aᵢ aᵢnin
+      let ⟨aᵢneaₚ, aᵢnin'⟩ := List.not_mem_cons.mp aᵢnin
+      let ⟨aᵢneaₜ, aᵢnin''⟩ := List.not_mem_cons.mp aᵢnin'
+      let ⟨aᵢneaₗ, aᵢnin'''⟩ := List.not_mem_cons.mp aᵢnin''
+      let ⟨aᵢninI, aᵢninΔ⟩ := List.not_mem_append'.mp aᵢnin'''
+      let aᵢninI := List.not_mem_cons.mpr
+        ⟨aᵢneaₚ, List.not_mem_cons.mpr ⟨aᵢneaₜ, List.not_mem_cons.mpr ⟨aᵢneaₗ, aᵢninI⟩⟩⟩
+      let aᵢninΔ := List.not_mem_cons.mpr
+        ⟨aᵢneaₚ, List.not_mem_cons.mpr ⟨aᵢneaₜ, List.not_mem_cons.mpr ⟨aᵢneaₗ, aᵢninΔ⟩⟩⟩
+      intro aₙ aₙnin
+      let ⟨aₙneaᵢ, aₙnin'⟩ := List.not_mem_cons.mp aₙnin
+      let ⟨aₙneaₚ, aₙnin''⟩ := List.not_mem_cons.mp aₙnin'
+      let ⟨aₙneaₜ, aₙnin'''⟩ := List.not_mem_cons.mp aₙnin''
+      let ⟨aₙneaₗ, aₙnin''''⟩ := List.not_mem_cons.mp aₙnin'''
+      let ⟨aₙninI, aₙninΔ⟩ := List.not_mem_append'.mp aₙnin''''
+      let aₙninI := List.not_mem_cons.mpr ⟨
+        aₙneaᵢ,
+        List.not_mem_cons.mpr
+          ⟨aₙneaₚ, List.not_mem_cons.mpr ⟨aₙneaₜ, List.not_mem_cons.mpr ⟨aₙneaₗ, aₙninI⟩⟩⟩
+      ⟩
+      let aₙninΔ := List.not_mem_cons.mpr ⟨
+        aₙneaᵢ,
+        List.not_mem_cons.mpr
+          ⟨aₙneaₚ, List.not_mem_cons.mpr ⟨aₙneaₜ, List.not_mem_cons.mpr ⟨aₙneaₗ, aₙninΔ⟩⟩⟩
+      ⟩
+      let Δaₘaₗaₜaₚaᵢaₙwf := Δaₘwf.typeVarExt aₗninΔ (K := .star) |>.typeVarExt aₜninΔ (K := K)
+        |>.typeVarExt aₚninΔ (K := K.list) |>.typeVarExt aᵢninΔ (K := K.list)
+        |>.typeVarExt aₙninΔ (K := K.list)
+      exact Bₗki _ aₗninI _ aₜninI _ aₚninI _ aᵢninI _ aₙninI |>.weakening Δaₘaₗaₜaₚaᵢaₙwf
+        (Δ' := .typeExt .empty ..)
+        (Δ'' := .typeExt (.typeExt (.typeExt (.typeExt (.typeExt .empty ..) ..) ..) ..) ..)
+    · intro aᵢ aᵢnin
+      let ⟨aᵢninI, aᵢninΔ⟩ := List.not_mem_append'.mp aᵢnin
+      intro aₙ aₙnin
+      let ⟨aₙneaᵢ, aₙnin'⟩ := List.not_mem_cons.mp aₙnin
+      let ⟨aₙninI, aₙninΔ⟩ := List.not_mem_append'.mp aₙnin'
+      let aₙninI := List.not_mem_cons.mpr ⟨aₙneaᵢ, aₙninI⟩
+      let aₙninΔ := List.not_mem_cons.mpr ⟨aₙneaᵢ, aₙninΔ⟩
+      let Δaₘaᵢaₙwf := Δaₘwf.typeVarExt aᵢninΔ (K := K.list) |>.typeVarExt aₙninΔ (K := K.list)
+      exact Bᵣki _ aᵢninI _ aₙninI |>.weakening Δaₘaᵢaₙwf
+        (Δ' := .typeExt .empty ..) (Δ'' := .typeExt (.typeExt .empty ..) ..)
   · apply arr
     · apply app
       · exact var .head

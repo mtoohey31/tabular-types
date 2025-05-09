@@ -10,17 +10,19 @@ run_cmd Lott.addNatAlias `j
 locally_nameless
 metavar (tex pre := "\\targetpre", post := "\\targetpost") TypeVar, a
 
-nonterminal (tex pre := "\\targetpre", post := "\\targetpost") «Type», A, B, C, T :=
-  | a                      : var
-  | "λ " a " : " K ". " A  : lam (bind a in A)
-  | A B                    : app
-  | "∀ " a " : " K ". " A  : «forall» (bind a in A)
-  | A " → " B              : arr
-  | "{" sepBy(A, ", ") "}" : list
-  | A " ⟦" B "⟧"           : listApp
-  | "⊗ " A                 : prod
-  | "⊕ " A                 : sum
-  | "(" A ")"              : paren notex (expand := return A)
+nonterminal (tex pre := "\\targetpre", post := "\\targetpost") «Type», A, B, C notex, T notex :=
+  | a                             : var
+  | "λ " a " : " K ". " A         : lam (bind a in A)
+  | A B                           : app
+  | "∀ " a " : " K ". " A         : «forall» (bind a in A)
+  | A " → " B                     : arr
+  | "{" sepBy(A, ", ") "}"        : list
+  | A " ⟦" B "⟧"                  : listApp
+  | "⊗ " A                        : prod
+  | "⊕ " A                        : sum
+  | A "^^^" a "#" n               : TypeVar_multi_open notex (id a) (expand := return .mkCApp `TabularTypeInterpreter.«F⊗⊕ω».Type.TypeVar_multi_open #[A, a, n]) (tex := A)
+  | A "^^^^" B "@@" i "#" n "/" a : Type_multi_open notex (expand := return .mkCApp `TabularTypeInterpreter.«F⊗⊕ω».Type.Type_multi_open #[A, B, n]) (tex := s!"{A}\\lottsepbycomprehension\{\\left[\{{B}}_\{{i}}/\{{a}}_\{{i}}\\right]}")
+  | "(" A ")"                     : paren notex (expand := return A)
 
 termonly
 attribute [aesop norm (rule_sets := [topen])] Type.Type_open Type.TypeVar_open

@@ -6,6 +6,16 @@ namespace TabularTypeInterpreter.«F⊗⊕ω»
 namespace Environment
 
 termonly
+def multiTypeExt (Δ : Environment) : List (TypeVarId × Kind) → Environment
+  | [] => Δ
+  | (a, K) :: aKs => Δ.typeExt a K |>.multiTypeExt aKs
+
+termonly
+def multiTermExt (Δ : Environment) : List (TermVarId × «Type») → Environment
+  | [] => Δ
+  | (x, A) :: xAs => Δ.termExt x A |>.multiTermExt xAs
+
+termonly
 def append (Δ : Environment) : Environment → Environment
   | empty => Δ
   | typeExt Δ' a K => Δ.append Δ' |>.typeExt a K
@@ -16,6 +26,11 @@ def TypeVar_subst (Δ : Environment) (a : TypeVarId) (A : «Type») := match Δ 
   | empty => empty
   | typeExt Δ' a' K => Δ'.TypeVar_subst a A |>.typeExt a' K
   | termExt Δ' x A' => Δ'.TypeVar_subst a A |>.termExt x <| A'.TypeVar_subst a A
+
+termonly
+def TypeVar_multi_subst (Δ : Environment) : List («Type» × TypeVarId) → Environment
+  | [] => Δ
+  | (A, a) :: Aa => Δ.TypeVar_multi_subst Aa |>.TypeVar_subst a A
 
 termonly
 def typeVarDom : Environment → List TypeVarId

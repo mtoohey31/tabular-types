@@ -1,2 +1,5 @@
 import TabularTypeInterpreter.Semantics.Type.Basic
+import TabularTypeInterpreter.Semantics.Type.ConstraintSolvingAndElaboration
 import TabularTypeInterpreter.Semantics.Type.KindingAndElaboration
+import TabularTypeInterpreter.Semantics.Type.RowEquivalenceAndElaboration
+import TabularTypeInterpreter.Semantics.Type.SubtypingAndElaboration

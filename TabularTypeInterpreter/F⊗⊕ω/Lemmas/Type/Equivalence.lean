@@ -19,6 +19,8 @@ def symm : [[Δ ⊢ A ≡ B]] → [[Δ ⊢ B ≡ A]]
   | listAppR => listAppL
   | listAppIdL => listAppIdR
   | listAppIdR => listAppIdL
+  | listAppCompL => listAppCompR
+  | listAppCompR => listAppCompL
   | lam I h => lam I fun a mem => (h a mem).symm
   | app h₁ h₂ => app h₁.symm h₂.symm
   | scheme I h => scheme I fun a mem => (h a mem).symm
@@ -38,6 +40,101 @@ theorem subst' {A T T' : «Type»} (equiv : [[ Δ, a: K, Δ' ⊢ T ≡ T' ]]) (w
 
 -- TODO this is not dt so properties on typing apparently have nothing to do with terms in env
 theorem TermVar_drop (equiv: [[ Δ, x: T, Δ'' ⊢ A ≡ B ]]): [[ Δ, Δ'' ⊢ A ≡ B ]] := sorry
+
+local instance : Inhabited «Type» where
+  default := .list []
+
+theorem listAppEmptyL : [[Δ ⊢ A ⟦{ }⟧ ≡ { }]] := by
+  let B (i : Nat) := [[{ }]]
+  rw [← Std.Range.map_get!_eq (as := []), List.length_nil]
+  rw (occs := .pos [1]) [Std.Range.map_eq_of_eq_of_mem'' (by
+    intro i mem
+    show _ = B i
+    nomatch mem
+  )]
+  rw (occs := .pos [2]) [Std.Range.map_eq_of_eq_of_mem'' (by
+    intro i mem
+    show _ = [[A B@i]]
+    nomatch mem
+  )]
+  exact listAppL
+
+theorem listAppEmptyR : [[Δ ⊢ { } ≡ A ⟦{ }⟧]] := by
+  let B (i : Nat) := [[{ }]]
+  rw [← Std.Range.map_get!_eq (as := []), List.length_nil]
+  rw (occs := .pos [1]) [Std.Range.map_eq_of_eq_of_mem'' (by
+    intro i mem
+    show _ = [[A B@i]]
+    nomatch mem
+  )]
+  rw (occs := .pos [2]) [Std.Range.map_eq_of_eq_of_mem'' (by
+    intro i mem
+    show _ = B i
+    nomatch mem
+  )]
+  exact listAppR
+
+theorem listAppSingletonL : [[Δ ⊢ A ⟦{B}⟧ ≡ {A B}]] := by
+  let B' (i : Nat) := B
+  rw [← Std.Range.map_get!_eq (as := [_]), ← Std.Range.map_get!_eq (as := [ [[A B]]])]
+  rw (occs := .pos [1]) [Std.Range.map_eq_of_eq_of_mem'' (by
+    intro i mem
+    show _ = B' i
+    cases Nat.eq_of_le_of_lt_succ mem.lower mem.upper
+    dsimp [B']
+    rw [List.get!_cons_zero]
+  )]
+  rw (occs := .pos [2]) [Std.Range.map_eq_of_eq_of_mem'' (by
+    intro i mem
+    show _ = [[A B'@i]]
+    cases Nat.eq_of_le_of_lt_succ mem.lower mem.upper
+    dsimp [B']
+    rw [List.get!_cons_zero]
+  )]
+  exact listAppL
+
+theorem listAppSingletonR : [[Δ ⊢ {A B} ≡ A ⟦{B}⟧]] := by
+  let B' (i : Nat) := B
+  rw [← Std.Range.map_get!_eq (as := [_]), ← Std.Range.map_get!_eq (as := [B])]
+  rw (occs := .pos [1]) [Std.Range.map_eq_of_eq_of_mem'' (by
+    intro i mem
+    show _ = [[A B'@i]]
+    cases Nat.eq_of_le_of_lt_succ mem.lower mem.upper
+    dsimp [B']
+    rw [List.get!_cons_zero]
+  )]
+  rw (occs := .pos [2]) [Std.Range.map_eq_of_eq_of_mem'' (by
+    intro i mem
+    show _ = B' i
+    cases Nat.eq_of_le_of_lt_succ mem.lower mem.upper
+    dsimp [B']
+    rw [List.get!_cons_zero]
+  )]
+  exact listAppR
+
+theorem listSingleton (AequB : [[Δ ⊢ A ≡ B]]) : [[Δ ⊢ {A} ≡ {B}]] := by
+  let A' (i : Nat) := A
+  let B' (i : Nat) := B
+  rw [← Std.Range.map_get!_eq (as := [_]), List.length_singleton,
+      Std.Range.map_eq_of_eq_of_mem'' (by
+      intro i mem
+      show _ = A' i
+      cases Nat.eq_of_le_of_lt_succ mem.lower mem.upper
+      dsimp [A']
+      rw [List.get!_cons_zero]
+  ), ← Std.Range.map_get!_eq (as := [_]), List.length_singleton]
+  rw (occs := .pos [2]) [Std.Range.map_eq_of_eq_of_mem'' (by
+      intro i mem
+      show _ = B' i
+      cases Nat.eq_of_le_of_lt_succ mem.lower mem.upper
+      dsimp [B']
+      rw [List.get!_cons_zero]
+  )]
+  apply list
+  intro i mem
+  cases Nat.eq_of_le_of_lt_succ mem.lower mem.upper
+  dsimp [A', B']
+  exact AequB
 
 end TypeEquivalence
 namespace TypeInequivalence
