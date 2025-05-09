@@ -81,21 +81,21 @@ theorem to_Kinding (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (Γᵢw : [[Γc �
     exact ⟨_, σ₁ke.TermVar_drop (Γ' := .empty)⟩
   | annot _ ih => exact ih Γᵢw Γcw Γwe
   | label => exact ⟨_, .floor .label⟩
-  | prod _ uni _ μke h ξih τih =>
+  | prod _ uni _ h ξih τih =>
     rename Nat => n
     rename ClassEnvironment => Γc
     rename TypeEnvironment => Γ
-    rename_i ξ _ _ _ _ _ _ _ _ _
+    rename_i ξ _ _ _ _ _ _ _
     let ⟨_, ξke⟩ := Range.skolem (n := n) (p := fun i B => [[Γc; Γ ⊢ ξ@i : L ⇝ B]]) <| by
       intro i mem
       let ⟨_, .floor ξke⟩ := ξih i mem Γᵢw Γcw Γwe
       exact ⟨_, ξke⟩
     let ⟨_, τke⟩ := Range.skolem (τih · · Γᵢw Γcw Γwe)
-    exact ⟨_, .prod μke (.row ξke uni τke h)⟩
-  | sum _ _ μke ξih τih =>
+    exact ⟨_, .prod .comm (.row ξke uni τke h)⟩
+  | sum _ _ ξih τih =>
     let ⟨_, .floor ξke⟩ := ξih Γᵢw Γcw Γwe
     let ⟨_, τke⟩ := τih Γᵢw Γcw Γwe
-    exact ⟨_, .sum μke <| .singleton_row ξke τke⟩
+    exact ⟨_, .sum .comm <| .singleton_row ξke τke⟩
   | unlabelProd _ _ prodih _ =>
     let ⟨_, .prod μke rowke⟩ := prodih Γᵢw Γcw Γwe
     rcases rowke.singleton_row_inversion with ⟨_, _, κeq, _, rfl, τke⟩
@@ -326,14 +326,14 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
   | label =>
     let .floor _ := σke
     exact .prodIntro' (Γwe.soundness Γcw) nofun rfl
-  | prod _ _ _ _ _ _ ih =>
+  | prod _ _ _ _ _ ih =>
     let .prod _ rowke := σke
     rcases rowke.row_inversion with ⟨_, _, _, _, rfl, κeq, _, _, τke⟩
     cases Kind.row.inj κeq
     apply Typing.prodIntro (Γwe.soundness Γcw)
     intro i mem
     exact ih i mem (τke i mem) Γᵢw Γcw Γwe
-  | sum _ _ _ _ ih =>
+  | sum _ _ _ ih =>
     let .sum _ rowke := σke
     rcases rowke.singleton_row_inversion with ⟨_, _, κeq, _, rfl, τke⟩
     cases Kind.row.inj κeq
