@@ -4,6 +4,16 @@ namespace TabularTypeInterpreter
 
 open «F⊗⊕ω»
 
+judgement_syntax μ₀ " ≥ " μ₁ : Monotype.CommutativityPartialOrdering
+
+judgement Monotype.CommutativityPartialOrdering where
+
+───── «N»
+N ≥ μ
+
+───── «C»
+μ ≥ C
+
 judgement_syntax Γc "; " Γ " ⊢ " σ₀ " <: " σ₁ " ⇝ " F : TypeScheme.SubtypingAndElaboration
 
 judgement TypeScheme.SubtypingAndElaboration where
@@ -61,15 +71,15 @@ judgement TypeScheme.SubtypingAndElaboration where
 ────────────────────────────────────────────── sumRow
 Γc; Γ ⊢ Σ(μ) ρ₀ <: Σ(μ) ρ₁ ⇝ Fₛ [λ a : *. a$0]
 
-Γc; Γ ⊢ Ξ(N) ρ : * ⇝ A
-Γc; Γ ⊢ μ : U ⇝ B
+Γc; Γ ⊢ Ξ(μ₀) ρ : * ⇝ A
+Γc; Γ ⊢ μ₁ : U ⇝ B
+μ₀ ≥ μ₁
 ─────────────────────────────────────── decay
-Γc; Γ ⊢ Ξ(N) ρ <: Ξ(μ) ρ ⇝ λ x : A. x$0
+Γc; Γ ⊢ Ξ(μ₀) ρ <: Ξ(μ₁) ρ ⇝ λ x : A. x$0
 
-Γc; Γ ⊢ μ : U ⇝ A
-Γc; Γ ⊢ σ : * ⇝ B
+Γc; Γ ⊢ σ : * ⇝ A
 ───────────────────────────────────────────────────── never
-Γc; Γ ⊢ Σ(μ) ⟨ : * ⟩ <: σ ⇝ λ x : ⊕ { }. case x$0 { }
+Γc; Γ ⊢ Σ(C) ⟨ : * ⟩ <: σ ⇝ λ x : ⊕ { }. case x$0 { }
 
 Γc; Γ ⊢ ρ₀ ≡(μ) ρ₂ ⇝ F₀₂ₚ, F₀₂ₛ
 Γc; Γ ⊢ ρ₁ ≡(μ) ρ₃ ⇝ F₁₃ₚ, F₁₃ₛ

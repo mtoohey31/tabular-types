@@ -191,16 +191,16 @@ theorem TypeScheme.SubtypingAndElaboration.to_Kinding (σse : [[Γc; Γ ⊢ σ�
     let ⟨_, _, _, ρ₀ke', ρ₁ke⟩ := ρ₀₁se.to_Kinding Γcw Γwe
     cases ρ₀ke.deterministic ρ₀ke' |>.left
     exact ⟨_, _, _, sumke, .sum μke ρ₁ke⟩
-  | decay prodOrSumke μke =>
+  | decay prodOrSumke μ₁ke _ =>
     rename ProdOrSum => Ξ
     match Ξ with
     | .prod =>
       let .prod _ ρke := prodOrSumke
-      exact ⟨_, _, _, prodOrSumke, .prod μke ρke⟩
+      exact ⟨_, _, _, prodOrSumke, .prod μ₁ke ρke⟩
     | .sum =>
       let .sum _ ρke := prodOrSumke
-      exact ⟨_, _, _, prodOrSumke, .sum μke ρke⟩
-  | never μke σke => exact ⟨_, .sum (.list []), _, .sum μke .empty_row, σke⟩
+      exact ⟨_, _, _, prodOrSumke, .sum μ₁ke ρke⟩
+  | never σke => exact ⟨_, .sum (.list []), _, .sum .comm .empty_row, σke⟩
   | contain _ _ _ _ containke _ _ ρ₂ke ρ₃ke κe =>
     let .contain μke .. := containke
     exact ⟨_, _, _, containke, .contain μke ρ₂ke ρ₃ke κe⟩

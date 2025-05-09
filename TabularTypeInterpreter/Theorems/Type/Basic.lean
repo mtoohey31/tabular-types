@@ -695,7 +695,7 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γcw : [[⊢c �
     rw [ρ₀ke.soundness Γcw Γwe (.row .star) |>.TypeVarLocallyClosed_of.Type_open_id,
         ρ₁ke.soundness Γcw Γwe (.row .star) |>.TypeVarLocallyClosed_of.Type_open_id] at this
     exact .equiv (this .id) <| .arr (.sum .listAppIdL) (.sum .listAppIdL)
-  | decay σ₀ke' _ =>
+  | decay σ₀ke' _ _ =>
     rename ProdOrSum => Ξ
     rcases σ₀ke.deterministic σ₀ke' with ⟨rfl, rfl⟩
     apply Typing.lam Δ.termVarDom
@@ -714,7 +714,7 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γcw : [[⊢c �
       cases ρke.deterministic ρke' |>.right
       let Δxwf := Γwe.soundness Γcw |>.termVarExt xnin <| σ₀ke.soundness Γcw Γwe κe
       exact .var Δxwf .head
-  | never _ _ =>
+  | never _ =>
     let σ₀ke@(.sum _ ρke) := σ₀ke
     cases ρke.empty_row_inversion.right
     apply Typing.lam Δ.termVarDom

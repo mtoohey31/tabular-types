@@ -22,9 +22,9 @@ theorem to_Kinding (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]])
     rcases ρ₀ke.deterministic ρ₀ke' with ⟨κeq, rfl⟩
     cases κeq
     exact ⟨_, .contain μke ρ₀ke ρ₂ke κe⟩
-  | containDecay _ μke ih =>
+  | containDecay _ _ μ₁ke ih =>
     let ⟨_, .contain _ ρ₀ke ρ₁ke κe⟩ := ih Γᵢw Γcw Γwe
-    exact ⟨_, .contain μke ρ₀ke ρ₁ke κe⟩
+    exact ⟨_, .contain μ₁ke ρ₀ke ρ₁ke κe⟩
   | concatConcrete ξτ₀ke ξτ₁ke ξτ₀₁ke κe => exact ⟨
       _,
       .concat .comm ξτ₀ke ξτ₁ke ξτ₀₁ke κe (.contain .comm ξτ₀ke ξτ₀₁ke κe)
@@ -59,9 +59,12 @@ theorem to_Kinding (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]])
   | concatContainR _ ih =>
     let ⟨_, .concat μke _ ρ₁ke ρ₂ke κe ..⟩ := ih Γᵢw Γcw Γwe
     exact ⟨_, .contain μke ρ₁ke ρ₂ke κe⟩
-  | concatDecay _ μke ih =>
+  | concatDecay _ _ μ₁ke ih =>
     let ⟨_, .concat _ ρ₀ke ρ₁ke ρ₂ke κe ..⟩ := ih Γᵢw Γcw Γwe
-    exact ⟨_, .concat μke ρ₀ke ρ₁ke ρ₂ke κe (.contain μke ρ₀ke ρ₂ke κe) (.contain μke ρ₁ke ρ₂ke κe)⟩
+    exact ⟨
+      _,
+      .concat μ₁ke ρ₀ke ρ₁ke ρ₂ke κe (.contain μ₁ke ρ₀ke ρ₂ke κe) (.contain μ₁ke ρ₁ke ρ₂ke κe)
+    ⟩
   | liftContain I _ ρ₀ke τke κ₀e κ₁e ih =>
     rename Kind => κ₁
     let ⟨_, .contain μke ρ₀ke' ρ₁ke _⟩ := ih Γᵢw Γcw Γwe
@@ -382,9 +385,10 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
           exact this
         · rw [A₀lc.TypeVar_open_id]
           exact .var Δaxwf .head
-  | containDecay containce μke ih =>
+  | containDecay containce _ _ ih =>
+    let ⟨_, .contain μ₀ke ..⟩ := containce.to_Kinding Γᵢw Γcw Γwe
     let .contain _ ρ₀ke ρ₁ke κe := ψke
-    exact ih (.contain .comm ρ₀ke ρ₁ke κe) Γᵢw Γcw Γwe
+    exact ih (.contain μ₀ke ρ₀ke ρ₁ke κe) Γᵢw Γcw Γwe
   | concatConcrete ξτ₀ke ξτ₁ke ξτ₀₁ke κe τ₀ke τ₁ke =>
     rename_i m ξ₀ τ₀ _ _ A₀ n ξ₁ τ₁ _ A₁ A₂ K B₀ B₁ _
     let .concat _ ξτ₀ke' ξτ₁ke' ξτ₀₁ke' κe' contain₀ke contain₁ke := ψke
@@ -1999,7 +2003,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
           simp [Type.Type_open] at this
           rw [A₂lc.Type_open_id, A₅lc.Type_open_id] at this
           exact this
-  | concatDecay concatce _ ih =>
+  | concatDecay concatce _ _ ih =>
     let .concat _ ρ₀ke ρ₁ke ρ₂ke κe contain₀₂ke contain₁₂ke := ψke
     let ⟨A, concatke⟩ := concatce.to_Kinding Γᵢw Γcw Γwe
     let Ety := ih concatke Γᵢw Γcw Γwe
