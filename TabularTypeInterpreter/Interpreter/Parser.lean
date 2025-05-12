@@ -40,8 +40,8 @@ def ParseM.paren (p : ParseM α) : ParseM α :=
   char '(' **> p <** char ')'
 def ParseM.string (s : String) : ParseM Unit := Parser.Char.string s *> pure ()
 def ParseM.char (c : Char) : ParseM Unit := Parser.Char.char c *> pure ()
-def ParseM.sepBy (p : ParseM α) (sep : ParseM Unit): ParseM (List α) := do
-  sorry
+partial def ParseM.sepBy (pₐ : ParseM α) (sep : ParseM Unit): ParseM (List α) :=
+  Parser.optionD (List.cons <$> pₐ <**> (Parser.optionD (sep **> sepBy pₐ sep) [])) []
 
 -- terminals
 def ParseM.«Ind» : ParseM Unit := .string "Ind"
