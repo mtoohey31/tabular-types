@@ -80,6 +80,7 @@ lc_ A
 
 body A
 lc_ B
+Δ ⊢ B: K
 ───────────────────────── lamApp
 Δ ⊢ (λ a : K. A) B ≡ A^^B
 
@@ -161,6 +162,7 @@ lc_ A
 
 body A
 lc_ B
+Δ ⊢ B: K
 ───────────────────────── lamApp
 Δ ⊢ (λ a : K. A) B ≡ᵢ A^^B
 
