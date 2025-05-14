@@ -163,6 +163,12 @@ where
   of_eq {E m n} (Elc : TermVarLocallyClosed E m) (eq : m = n) : E.TermVarLocallyClosed n := by
     rwa [eq] at Elc
 
+theorem TermVar_open_TermVar_close_id
+  : TermVarLocallyClosed E n → (TermVar_close E x n).TermVar_open x n = E := by
+  induction E using rec_uniform generalizing n <;> aesop
+    (add simp [TermVar_open, TermVar_close], 40% cases TermVarLocallyClosed,
+      safe List.map_eq_id_of_eq_id_of_mem)
+
 end TermVarLocallyClosed
 
 theorem Term_open_TermVar_open_comm : TermVarLocallyClosed F m → m ≠ n →
