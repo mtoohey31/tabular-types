@@ -18,3 +18,6 @@ lean_lib TabularTypeInterpreter where
     ⟨`weak.lott.tex.output.sourceRelative, false⟩
   ] ++ if get_config? noterm |>.isSome then #[⟨`weak.lott.term, false⟩] else #[]
   weakLeanArgs := #[s!"-Dweak.lott.tex.output.dir={__dir__}/tex"]
+
+lean_exe tti where
+  root := `Main

@@ -1,0 +1,3 @@
+import TabularTypeInterpreter.Interpreter.Basic
+import TabularTypeInterpreter.Interpreter.«λπι»
+import TabularTypeInterpreter.Interpreter.Elaboration
