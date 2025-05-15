@@ -21,7 +21,7 @@ nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") Term, M, «N» :=
   | "order " ρ M                        : order
   | "ind " «λτ» ρ "; " M "; " «N»       : ind (tex := s!"\\lottkw\{ind} \\, {«λτ»} {ρ} \\, {M} \\, {«N»}")
   | "splitₚ " «λτ» M                    : splitₚ
-  | "splitₛ " «λτ» M "; " «N»           : splitₛ (tex := s!"\\lottkw\{splitₛ} \\, {«λτ»} {M} \\, {«N»}")
+  | "splitₛ " «λτ» M "; " «N»           : splitₛ (tex := s!"\\lottkw\{splitₛ} \\, {«λτ»} \\, {M} \\, {«N»}")
   | M "^^^" a "#" n                     : TypeVar_multi_open (id a) (expand := return .mkCApp `TabularTypeInterpreter.Term.TypeVar_multi_open #[M, a, n]) (tex := M)
   | M "^^^" x "#" n                     : TermVar_multi_open (id x) (expand := return .mkCApp `TabularTypeInterpreter.Term.TermVar_multi_open #[M, x, n]) (tex := M)
   | "(" M ")"                           : paren notex (expand := return M)
