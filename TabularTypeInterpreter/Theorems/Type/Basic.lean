@@ -1347,7 +1347,7 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γcw : [[⊢c �
             Monotype.Monotype_open, Monotype.Monotype_open, if_pos rfl] at this
         exact this
   | allRow I ρ₀₁ee allke ψke κe' =>
-    rename_i ψ _ B' K
+    rename_i ψ B' K
     rcases σ₀ke.deterministic allke with ⟨rfl, rfl⟩
     let .all I' ψke' κ'e ρ₀ke := allke
     let .all _ ψke'' κ'e' ρ₁ke := σ₁ke

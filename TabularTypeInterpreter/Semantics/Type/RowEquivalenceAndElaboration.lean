@@ -52,4 +52,22 @@ Fₛ := Λ a' : K ↦ *. λ x : ⊕ (a'$0 ⟦A⟧). x$0
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── liftR (μ)
 Γc; Γ ⊢ ⟨</ ξ@i ▹ τ₁^^τ₀@i/a // i in [:n] notex /> </ : κ₁ // b notex />⟩ ≡(μ) Lift (λ a : κ₀. τ₁) ⟨</ ξ@i ▹ τ₀@i // i in [:n] notex /> </ : κ₀ // b notex />⟩ ⇝ Fₚ, Fₛ
 
+syntax (name := rowEquivalence) Lott.Symbol.TabularTypeInterpreter.ClassEnvironment "; " Lott.Symbol.TabularTypeInterpreter.TypeEnvironment " ⊢ " Lott.Symbol.TabularTypeInterpreter.Monotype " ≡" "(" Lott.Symbol.TabularTypeInterpreter.Monotype ") " Lott.Symbol.TabularTypeInterpreter.Monotype : Lott.Judgement
+
+macro_rules
+  | `([[$Γc:Lott.Symbol.TabularTypeInterpreter.ClassEnvironment; $Γ:Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ⊢ $ρ₀:Lott.Symbol.TabularTypeInterpreter.Monotype ≡($μ:Lott.Symbol.TabularTypeInterpreter.Monotype) $ρ₁:Lott.Symbol.TabularTypeInterpreter.Monotype]]) =>
+    `(Monotype.RowEquivalenceAndElaboration [[$(.mk Γc):Lott.Symbol]] [[$(.mk Γ):Lott.Symbol]] [[$(.mk ρ₀):Lott.Symbol]] [[$(.mk μ):Lott.Symbol]] [[$(.mk ρ₁):Lott.Symbol]] _ _)
+
+@[lott_tex_elab rowEquivalence]
+private
+def rowEquivalenceTexElab : Lott.TexElab := fun ref stx => do
+  let `(rowEquivalence| $Γc:Lott.Symbol.TabularTypeInterpreter.ClassEnvironment; $Γ:Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ⊢ $ρ₀:Lott.Symbol.TabularTypeInterpreter.Monotype ≡($μ:Lott.Symbol.TabularTypeInterpreter.Monotype) $ρ₁:Lott.Symbol.TabularTypeInterpreter.Monotype) := stx
+    | Lean.Elab.throwUnsupportedSyntax
+  let Γc ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.ClassEnvironment ref Γc
+  let Γ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ref Γ
+  let ρ₀ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.Monotype ref ρ₀
+  let μ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.Monotype ref μ
+  let ρ₁ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeScheme ref ρ₁
+  return s!"{Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {ρ₀} \\, \\lottsym\{≡}_\{{μ}} \\, {ρ₁}"
+
 end TabularTypeInterpreter

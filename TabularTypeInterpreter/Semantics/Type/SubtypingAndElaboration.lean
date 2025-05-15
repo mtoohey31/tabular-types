@@ -14,7 +14,24 @@ N ≥ μ
 ───── «C»
 μ ≥ C
 
+syntax (name := subtyping) Lott.Symbol.TabularTypeInterpreter.ClassEnvironment "; " Lott.Symbol.TabularTypeInterpreter.TypeEnvironment " ⊢ " Lott.Symbol.TabularTypeInterpreter.TypeScheme " <: " Lott.Symbol.TabularTypeInterpreter.TypeScheme : Lott.Judgement
+
 judgement_syntax Γc "; " Γ " ⊢ " σ₀ " <: " σ₁ " ⇝ " F : TypeScheme.SubtypingAndElaboration
+
+macro_rules
+  | `([[$Γc:Lott.Symbol.TabularTypeInterpreter.ClassEnvironment; $Γ:Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ⊢ $σ₀:Lott.Symbol.TabularTypeInterpreter.TypeScheme <: $σ₁:Lott.Symbol.TabularTypeInterpreter.TypeScheme]]) =>
+    `($(Lean.mkIdent `SubtypingAndElaboration) [[$(.mk Γc):Lott.Symbol]] [[$(.mk Γ):Lott.Symbol]] [[$(.mk σ₀):Lott.Symbol]] [[$(.mk σ₁):Lott.Symbol]] _)
+
+@[lott_tex_elab subtyping]
+private
+def subtypingTexElab : Lott.TexElab := fun ref stx => do
+  let `(subtyping| $Γc:Lott.Symbol.TabularTypeInterpreter.ClassEnvironment; $Γ:Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ⊢ $σ₀:Lott.Symbol.TabularTypeInterpreter.TypeScheme <: $σ₁:Lott.Symbol.TabularTypeInterpreter.TypeScheme) := stx
+    | Lean.Elab.throwUnsupportedSyntax
+  let Γc ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.ClassEnvironment ref Γc
+  let Γ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ref Γ
+  let σ₀ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeScheme ref σ₀
+  let σ₁ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeScheme ref σ₁
+  return s!"{Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {σ₀} \\, \\lottsym\{<:} \\, {σ₁}"
 
 judgement TypeScheme.SubtypingAndElaboration where
 
@@ -62,17 +79,17 @@ judgement TypeScheme.SubtypingAndElaboration where
 Γc; Γ ⊢ Σ(μ) ⟨</ ξ@i ▹ τ₀@i // i in [:n] notex /> </ : * // b notex />⟩ <: Σ(μ) ⟨</ ξ@i ▹ τ₁@i // i in [:n] notex /> </ : * // b notex />⟩ ⇝ λ x : A. case x$0 {</ λ x' : B@i. ι i ⦅F@i x'$0⦆ // i in [:n] notex />}
 
 Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ
-Γc; Γ ⊢ Π(μ) ρ₀ : * ⇝ A
+Γc; Γ ⊢ Π(μ) ρ₀ : *
 ────────────────────────────────────────────── prodRow
 Γc; Γ ⊢ Π(μ) ρ₀ <: Π(μ) ρ₁ ⇝ Fₚ [λ a : *. a$0]
 
 Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ
-Γc; Γ ⊢ Σ(μ) ρ₀ : * ⇝ A
+Γc; Γ ⊢ Σ(μ) ρ₀ : *
 ────────────────────────────────────────────── sumRow
 Γc; Γ ⊢ Σ(μ) ρ₀ <: Σ(μ) ρ₁ ⇝ Fₛ [λ a : *. a$0]
 
 Γc; Γ ⊢ Ξ(μ₀) ρ : * ⇝ A
-Γc; Γ ⊢ μ₁ : U ⇝ B
+Γc; Γ ⊢ μ₁ : U
 μ₀ ≥ μ₁
 ─────────────────────────────────────── decay
 Γc; Γ ⊢ Ξ(μ₀) ρ <: Ξ(μ₁) ρ ⇝ λ x : A. x$0
@@ -122,7 +139,7 @@ Fₑ := Λ a : K ↦ *. Λ aₜ : *. λ xₗ : (⊕ (a$1 ⟦A₃⟧)) → aₜ$0
 NOTE: The evidence of this first hypothesis isn't actually used, it's just present to prevent
 unexpected behaviour.
 -/
-Γc; Γ ⊢ τ₀ <: τ₁ ⇝ E
+Γc; Γ ⊢ τ₀ <: τ₁
 Γc; Γ ⊢ σ^^τ₀/a <: σ^^τ₁/a ⇝ F
 (</ TCₛ@i a ⇝ Aₛ@i // i in [:n] notex /> ⇒ TC a : κ) ↦ m : σ ⇝ B ∈ Γc
 </ Γc; Γ ⊢ TCₛ@i τ₀ <: TCₛ@i τ₁ ⇝ Fₛ@i // i in [:n] notex />
@@ -135,7 +152,7 @@ NOTE: The evidence of this first hypothesis isn't actually used, it's just prese
 unexpected behaviour. We allow C commutativity since the second hypothesis will still block things
 if the method uses them non-commutatively.
 -/
-Γc; Γ ⊢ ρ₀ ≡(C) ρ₁ ⇝ Eₚ, Eₛ
+Γc; Γ ⊢ ρ₀ ≡(C) ρ₁
 Γc; Γ ⊢ σ^^ρ₀/a <: σ^^ρ₁/a ⇝ F
 (</ TCₛ@i a ⇝ Aₛ@i // i in [:n] notex /> ⇒ TC a : κ) ↦ m : σ ⇝ B ∈ Γc
 </ Γc; Γ ⊢ TCₛ@i ρ₀ <: TCₛ@i ρ₁ ⇝ Fₛ@i // i in [:n] notex />
@@ -144,7 +161,7 @@ if the method uses them non-commutatively.
 Γc; Γ ⊢ TC ρ₀ <: TC ρ₁ ⇝ λ x : A. (F π 0 x$0, </ Fₛ@i π (i + 1) x$0 // i in [:n] notex />)
 
 Γc; Γ ⊢ ρ₀ ≡(C) ρ₁ ⇝ Fₚ, Fₛ
-Γc; Γ ⊢ All (λ a : κ. ψ) ρ₀ : C ⇝ A
+Γc; Γ ⊢ All (λ a : κ. ψ) ρ₀ : C
 ∀ a ∉ I, Γc; Γ, a : κ ⊢ ψ^a : C ⇝ B^a
 ⊢ κ ⇝ K
 ──────────────────────────────────────────────────────────────────── allRow (I : List TypeVarId)
