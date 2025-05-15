@@ -26,8 +26,6 @@ jobs:
           ${{ runner.os }}-lean-lott-
         path: vendor/lott/.lake
     - uses: Julian/setup-lean@v1
-      with:
-        default-toolchain-file: lean-toolchain
     - if: ${{ steps.restore-lean.outputs.cache-hit != 'true' }}
       run: lake exe cache get
       continue-on-error: true
