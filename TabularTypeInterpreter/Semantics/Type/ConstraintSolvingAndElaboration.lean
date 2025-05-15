@@ -9,7 +9,26 @@ open «F⊗⊕ω»
 
 -- TODO: Consider simplifying tex by including versions of judgements with irrelevant components hidden.
 
+syntax (name := constraintSolving) Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment "; " Lott.Symbol.TabularTypeInterpreter.ClassEnvironment "; " Lott.Symbol.TabularTypeInterpreter.TypeEnvironment " ⊨ " Lott.Symbol.TabularTypeInterpreter.Monotype : Lott.Judgement
+
 judgement_syntax Γᵢ "; " Γc "; " Γ " ⊨ " ψ " ⇝ " E : Monotype.ConstraintSolvingAndElaboration
+
+macro_rules
+  | `([[$Γᵢ:Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment; $Γc:Lott.Symbol.TabularTypeInterpreter.ClassEnvironment; $Γ:Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ⊨ $ψ:Lott.Symbol.TabularTypeInterpreter.Monotype]]) =>
+    `($(Lean.mkIdent `ConstraintSolvingAndElaboration) [[$(.mk Γᵢ):Lott.Symbol]] [[$(.mk Γc):Lott.Symbol]] [[$(.mk Γ):Lott.Symbol]] [[$(.mk ψ):Lott.Symbol]] _)
+
+@[lott_tex_elab constraintSolving]
+private
+def constraintSolvingTexElab : Lott.TexElab := fun ref stx => do
+  let `(constraintSolving| $Γᵢ:Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment; $Γc:Lott.Symbol.TabularTypeInterpreter.ClassEnvironment; $Γ:Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ⊨ $ψ:Lott.Symbol.TabularTypeInterpreter.Monotype) := stx
+    | Lean.Elab.throwUnsupportedSyntax
+  let Γᵢ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment ref Γᵢ
+  let Γc ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.ClassEnvironment ref Γc
+  let Γ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ref Γ
+  let ψ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.Monotype ref ψ
+  return s!"{Γᵢ} \\lottsym\{;} \\, {Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊨} \\, {ψ}"
+
+open TypeScheme
 
 set_option maxHeartbeats 2000000 in
 judgement Monotype.ConstraintSolvingAndElaboration where
@@ -37,7 +56,7 @@ Eᵢ := Λ a : K ↦ *. λ x : ⊕ (a$0 ⟦A₀⟧). ⦅π 1 F⦆ [a$0] ⦅π 1 
 
 Γᵢ; Γc; Γ ⊨ ρ₀ ≲(μ₀) ρ₁ ⇝ E
 μ₀ ≥ μ₁
-Γc; Γ ⊢ μ₁ : U ⇝ A
+Γc; Γ ⊢ μ₁ : U
 ─────────────────────────── containDecay
 Γᵢ; Γc; Γ ⊨ ρ₀ ≲(μ₁) ρ₁ ⇝ E
 
@@ -136,7 +155,7 @@ Eᵣ := (Eᵣₚ, Eᵣᵢ)
 
 Γᵢ; Γc; Γ ⊨ ρ₀ ⊙(μ₀) ρ₁ ~ ρ₂ ⇝ E
 μ₀ ≥ μ₁
-Γc; Γ ⊢ μ₁ : U ⇝ A
+Γc; Γ ⊢ μ₁ : U
 ──────────────────────────────── concatDecay
 Γᵢ; Γc; Γ ⊨ ρ₀ ⊙(μ₁) ρ₁ ~ ρ₂ ⇝ E
 
@@ -149,7 +168,7 @@ Eᵣ := (Eᵣₚ, Eᵣᵢ)
 Γᵢ; Γc; Γ ⊨ ρ₁ ≲(μ) ρ₂ ⇝ π 3 E
 
 Γᵢ; Γc; Γ ⊨ ρ₀ ≲(μ) ρ₁ ⇝ E
-Γc; Γ ⊢ ρ₀ : R κ₀ ⇝ B
+Γc; Γ ⊢ ρ₀ : R κ₀
 ∀ a ∉ I, Γc; Γ, a : κ₀ ⊢ τ^a : κ₁ ⇝ A^a
 ⊢ κ₀ ⇝ K₀
 ⊢ κ₁ ⇝ K₁
@@ -159,7 +178,7 @@ Eᵢ := Λ a' : K₁ ↦ *. ⦅π 1 E⦆ [λ a : K₀. a'$1 A]
 Γᵢ; Γc; Γ ⊨ (Lift (λ a : κ₀. τ) ρ₀) ≲(μ) (Lift (λ a : κ₀. τ) ρ₁) ⇝ (Eₚ, Eᵢ)
 
 Γᵢ; Γc; Γ ⊨ ρ₀ ⊙(μ) ρ₁ ~ ρ₂ ⇝ E
-Γc; Γ ⊢ ρ₀ : R κ₀ ⇝ B
+Γc; Γ ⊢ ρ₀ : R κ₀
 ∀ a ∉ I, Γc; Γ, a : κ₀ ⊢ τ^a : κ₁ ⇝ A^a
 ⊢ κ₀ ⇝ K₀
 ⊢ κ₁ ⇝ K₁
@@ -188,8 +207,8 @@ i ∈ [:n]
 
 Γᵢ; Γc; Γ ⊨ ψ^^τ/a ⇝ E
 ∀ a ∉ I, Γc; Γ, a : κ ⊢ ψ^a : C ⇝ A^a
-Γc; Γ ⊢ ξ : L ⇝ B₀
-Γc; Γ ⊢ τ : κ ⇝ B₁
+Γc; Γ ⊢ ξ : L
+Γc; Γ ⊢ τ : κ
 ────────────────────────────────────────── allSingletonIntro (I : List TypeVarId)
 Γᵢ; Γc; Γ ⊨ All (λ a : κ. ψ) ⟨ξ ▹ τ⟩ ⇝ (E)
 
@@ -217,7 +236,6 @@ i ∈ [:n]
 -- constraint totality properly.
 
 </ Γc; Γ ⊢ τ@i : κ ⇝ A@i // i in [:n] />
-</ Γc; Γ ⊢ ℓ@i : L ⇝ B@i // i in [:n] />
 ⊢ κ ⇝ K
 ∀ aₗ ∉ I₀, ∀ aₜ ∉ aₗ :: I₀, ∀ aₚ ∉ aₜ :: aₗ :: I₀, ∀ aᵢ ∉ aₚ :: aₜ :: aₗ :: I₀, ∀ aₙ ∉ aᵢ :: aₚ :: aₜ :: aₗ :: I₀, Γc; Γ, aₗ : L, aₜ : κ, aₚ : R κ, aᵢ : R κ, aₙ : R κ ⊢ aₚ ⊙(N) ⟨aₗ ▹ aₜ⟩ ~ aᵢ : C ⇝ Bₗ^aₗ#4^aₜ#3^aₚ#2^aᵢ#1^aₙ
 ∀ aᵢ ∉ I₁, ∀ aₙ ∉ aᵢ :: I₁, Γc; Γ, aᵢ : R κ, aₙ : R κ ⊢ aᵢ ⊙(N) aₙ ~ ⟨</ ℓ@i ▹ τ@i // i in [:n] /> </ : κ // b />⟩ : C ⇝ Bᵣ^aᵢ#1^aₙ
@@ -240,7 +258,7 @@ Eₗᵣ := (Λ a' : * ↦ *. λ x : ⊗ { }. (), Λ a' : * ↦ *. λ x : ⊕ { }
 
 ∀ a ∉ I, Γc; Γ, a : κ ⊢ τ₀^a : * ⇝ A^a
 Γc; Γ ⊢ τ₁ : κ ⇝ B
-Γc; Γ ⊢ ξ : L ⇝ B'
+Γc; Γ ⊢ ξ : L
 Eₙ := Λ a' : * ↦ *. λ xₗ : ⊗ {a'$0 A^^B/a}. λ xᵣ : ⊗ { }. xₗ$1
 Eₑ := Λ a' : * ↦ *. Λ aₜ : *. λ xₗ : (⊕ {a'$1 A^^B/a}) → aₜ$0 . λ xᵣ : (⊕ { }) → aₜ$0 . xₗ$1
 Eₗ := (Λ a' : * ↦ *. λ x : ⊗ {a'$0 A^^B/a}. x$0, Λ a' : * ↦ *. λ x : ⊕ {a'$0 A^^B/a}. x$0)
@@ -251,7 +269,7 @@ Eᵣ := (Λ a' : * ↦ *. λ x : ⊗ {a'$0 A^^B/a}. (), Λ a' : * ↦ *. λ x : 
 ∄ τ₂ F, Γc; Γ ⊢ τ₁ <: τ₀^^τ₂/a ⇝ F
 ∀ a ∉ I, Γc; Γ, a : κ ⊢ τ₀^a : * ⇝ A^a
 Γc; Γ ⊢ τ₁ : * ⇝ B
-Γc; Γ ⊢ ξ : L ⇝ B'
+Γc; Γ ⊢ ξ : L
 Eₙ := Λ a' : * ↦ *. λ xₗ : ⊗ { }. λ xᵣ : ⊗ {a'$0 B}. xᵣ$0
 Eₑ := Λ a' : * ↦ *. Λ aₜ : *. λ xₗ : (⊕ { }) → aₜ$0 . λ xᵣ : (⊕ {a'$1 B}) → aₜ$0 . xᵣ$0
 Eₗ := (Λ a' : * ↦ *. λ x : ⊗ {a'$0 B}. (), Λ a' : * ↦ *. λ x : ⊕ { }. case x$0 { })
@@ -259,11 +277,11 @@ Eᵣ := (Λ a' : * ↦ *. λ x : ⊗ {a'$0 B}. x$0, Λ a' : * ↦ *. λ x : ⊕ 
 ─────────────────────────────────────────────────────────────────────────────────────── splitSingletonRest (I : List TypeVarId)
 Γᵢ; Γc; Γ ⊨ Split (λ a : κ. τ₀) ⟨ : κ ⟩ ⊙' ⟨ξ ▹ τ₁⟩ ~ ⟨ξ ▹ τ₁⟩ ⇝ (Eₙ, Eₑ, Eₗ, Eᵣ)
 
-Γᵢ; Γc; Γ ⊨ Split (λ a : κ. τ) ρ₀ ⊙' ρ₁ ~ ρ₂ ⇝ Eₗ
-Γᵢ; Γc; Γ ⊨ Split (λ a : κ. τ) ρ₃ ⊙' ρ₄ ~ ρ₅ ⇝ Eᵣ
-Γᵢ; Γc; Γ ⊨ (Lift (λ a : κ. τ) ρ₀) ⊙(C) (Lift (λ a : κ. τ) ρ₃) ~ (Lift (λ a : κ. τ) ρ₆) ⇝ E₆
-Γᵢ; Γc; Γ ⊨ ρ₁ ⊙(C) ρ₄ ~ ρ₇ ⇝ E₇
-Γᵢ; Γc; Γ ⊨ ρ₂ ⊙(C) ρ₅ ~ ρ₈ ⇝ E₈
+Γᵢ; Γc; Γ ⊨ Split (λ a : κ. τ) ρ₀ ⊙' ρ₁ ~ ρ₂
+Γᵢ; Γc; Γ ⊨ Split (λ a : κ. τ) ρ₃ ⊙' ρ₄ ~ ρ₅
+Γᵢ; Γc; Γ ⊨ (Lift (λ a : κ. τ) ρ₀) ⊙(C) (Lift (λ a : κ. τ) ρ₃) ~ (Lift (λ a : κ. τ) ρ₆)
+Γᵢ; Γc; Γ ⊨ ρ₁ ⊙(C) ρ₄ ~ ρ₇
+Γᵢ; Γc; Γ ⊨ ρ₂ ⊙(C) ρ₅ ~ ρ₈
 Γᵢ; Γc; Γ ⊨ (Lift (λ a : κ. τ) ρ₆) ⊙(C) ρ₇ ~ ρ₈ ⇝ E
 ──────────────────────────────────────────────────────────────────────────────────────────── splitPiecewise
 Γᵢ; Γc; Γ ⊨ Split (λ a : κ. τ) ρ₆ ⊙' ρ₇ ~ ρ₈ ⇝ E

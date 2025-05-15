@@ -185,13 +185,13 @@ theorem to_Kinding (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]])
     rcases ρ₀ke.deterministic ρ₀ke' with ⟨κeq, rfl⟩
     cases κeq
     exact ⟨_, .all I ψke κe ρ₂ke⟩
-  | ind I₀ I₁ τke ξke κe keBₗ keBᵣ =>
+  | ind I₀ I₁ τke κe keBₗ keBᵣ =>
     rename «Type» => Bᵣ
     let ⟨aᵢ, aᵢnin⟩ := I₁.exists_fresh
     let ⟨aₙ, aₙnin⟩ := aᵢ :: I₁ |>.exists_fresh
     let ⟨_, .concat _ _ _ ξτke ..⟩ := generalize <| keBᵣ _ aᵢnin _ aₙnin
     let ⟨_, uni, _, _, _, _, h, _⟩ := ξτke.row_inversion
-    exact ⟨_, .ind I₀ I₁ (.row ξke uni τke h) κe keBₗ keBᵣ⟩
+    exact ⟨_, .ind I₀ I₁ (.row (fun _ _ => .label) uni τke h) κe keBₗ keBᵣ⟩
   | splitEmpty I τke =>
     rename Kind => κ
     let ⟨_, κe⟩ := κ.Elaboration_total
@@ -203,7 +203,7 @@ theorem to_Kinding (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]])
         (.contain .comm .empty_row .empty_row .star)
     ⟩
   | splitSingletonMatch I τ₀opke τ₁ke ξke =>
-    rename_i Γ κ τ₀ A _ _ _ _ _
+    rename_i Γ κ τ₀ A _ _ _ _
     let ⟨_, κe⟩ := κ.Elaboration_total
     let liftke := TypeScheme.KindingAndElaboration.lift I τ₀opke κe <| ξke.singleton_row τ₁ke
     let ⟨a, anin⟩ := I ++ τ₀.freeTypeVars ++ ↑A.freeTypeVars ++ Γ.typeVarDom |>.exists_fresh
@@ -2056,7 +2056,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
     simp at πty
     exact πty
   | liftContain I containce ρ₀ke τke κ₀e κ₁e ih =>
-    rename_i Γ _ _ _ _ _ _ _ _ A' K₀ K₁
+    rename_i Γ _ _ _ _ _ _ _ A' K₀ K₁
     let .contain _ lift₀ke lift₁ke κ₁e' .. := ψke
     let .lift I' τke' κ₀e' ρ₀ke' (A := A'') := lift₀ke
     let .lift I'' τke'' κ₀e'' ρ₁ke (A := A''') := lift₁ke
@@ -2184,7 +2184,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
   | liftConcat I concatce ρ₀ke τke κ₀e κ₁e ih =>
     rename «Type» => A_
     rename Environment => Δ
-    rename_i Γ _ _ _ _ _ _ _ _ _ A K₀ K₁
+    rename_i Γ _ _ _ _ _ _ _ _ A K₀ K₁
     let .concat μke lift₀ke lift₁ke lift₂ke κ₁e' contain₀₂ke contain₁₂ke := ψke
     let .lift I' τke' κ₀e' ρ₀ke' (A := A') := lift₀ke
     let .lift I'' τke'' κ₀e'' ρ₁ke (A := A'') := lift₁ke
@@ -2815,7 +2815,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
     rcases emptyke.empty_row_inversion with ⟨_, rfl⟩
     exact .equiv (.unit (Γwe.soundness Γcw)) <| .prod .listAppEmptyR
   | allSingletonIntro I _ ψ'ke ξke τke ih =>
-    rename_i Γ ψ' _ _ _ A' _ _ _ _
+    rename_i Γ ψ' _ _ _ A' _ _
     rename TypeEnvironment => Γ
     let .all I' ψ'ke' κe ξτke (A := A'') := ψke
     rcases ξτke.singleton_row_inversion with ⟨_, _, κeq, _, rfl, τke'⟩
@@ -2932,11 +2932,11 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
       exact .refl
     )) .refl
     exact this
-  | ind I₀ I₁ τke ℓke κe keBₗ keBᵣ ceEᵣ ceEᵣ ihEₗ ihEᵣ =>
+  | ind I₀ I₁ τke κe keBₗ keBᵣ ceEᵣ ceEᵣ ihEₗ ihEᵣ =>
     rename «Type» => A_
-    rename_i n _ Γ τ κ A ℓ _ K Bₗ b Bᵣ _ _ _ _
+    rename_i n _ Γ τ κ A K Bₗ ℓ b Bᵣ _ _ _ _
     let .ind I₀' I₁' ρke κe' keBₗ' keBᵣ' (κ := κ') := ψke
-    rcases ρke.row_inversion with ⟨⟨_, ℓke'⟩, uni, _, _, rfl, κeq, h, κ'eq, τke'⟩
+    rcases ρke.row_inversion with ⟨⟨_, _⟩, uni, _, _, rfl, κeq, h, κ'eq, τke'⟩
     cases κeq
     let κeq : κ = κ' := by
       match h with
@@ -3133,22 +3133,19 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
     · intro i iltn ih
       let imem : i ∈ [:n] := ⟨Nat.zero_le _, iltn, Nat.mod_one _⟩
       let row₀ᵢke :=
-        TypeScheme.KindingAndElaboration.row (n := i)
-        (ℓke · ⟨Nat.zero_le _, ·.upper.trans iltn, Nat.mod_one _⟩)
+        TypeScheme.KindingAndElaboration.row (n := i) (fun _ _ => .label)
         (uni.of_les (Nat.zero_le _) Nat.le.refl iltn.le (Nat.zero_le _))
         (τke · ⟨Nat.zero_le _, ·.upper.trans iltn, Nat.mod_one _⟩) <| .inr rfl
       rw [Option.someIf, if_pos rfl] at row₀ᵢke
       let row₀ᵢ₁ke :=
-        TypeScheme.KindingAndElaboration.row (b := false) (n := i + 1)
-        (ℓke · ⟨Nat.zero_le _, Nat.lt_of_lt_of_le ·.upper iltn, Nat.mod_one _⟩)
+        TypeScheme.KindingAndElaboration.row (b := false) (n := i + 1) (fun _ _ => .label)
         (uni.of_les (Nat.zero_le _) Nat.le.refl iltn (Nat.zero_le _))
         (τke · ⟨Nat.zero_le _, Nat.lt_of_lt_of_le ·.upper iltn, Nat.mod_one _⟩) <| .inl nofun
       rw [Option.someIf, if_neg nofun] at row₀ᵢ₁ke
-      let singletonke := TypeScheme.KindingAndElaboration.singleton_row (ℓke i imem) (τke i imem)
+      let singletonke := TypeScheme.KindingAndElaboration.singleton_row .label (τke i imem)
+        (ξ := .label (ℓ i))
       let rowᵢ₁ₙke :=
-        TypeScheme.KindingAndElaboration.row (n := n - (i + 1))
-        (fun j jmem => ℓke (j + (i + 1))
-          ⟨Nat.zero_le _, Nat.add_lt_of_lt_sub jmem.upper, Nat.mod_one _⟩) (by
+        TypeScheme.KindingAndElaboration.row (n := n - (i + 1)) (fun _ _ => .label) (by
           rw [← Nat.sub_self (i + 1), Range.map_shift Nat.le.refl (f := fun j => Monotype.label (ℓ j))]
           exact uni.of_les (Nat.zero_le _) (Nat.zero_le _) Nat.le.refl iltn
         ) (fun j jmem => τke (j + (i + 1))
@@ -3619,7 +3616,6 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
                     rw [Type.freeTypeVars, List.mapMem_eq_map, List.map_map, ← Range.map]
                     exact aₗninA'
                   )) aₗninA) <| .label (ℓ := ℓ i)
-          let .qual (.mono ℓlc) := ℓke i imem |>.TypeVarLocallyClosed_of
           let .qual (.mono τlc) := τke i imem |>.TypeVarLocallyClosed_of
           let .qual (.mono row₀ᵢlc) := row₀ᵢke.TypeVarLocallyClosed_of
           let .qual (.mono row₀ᵢ₁lc) := row₀ᵢ₁ke.TypeVarLocallyClosed_of
@@ -3833,9 +3829,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
           · intro ℓ' mem
             rcases Range.mem_of_mem_map mem with ⟨j, mem', rfl⟩
             simp only
-            let .qual (.mono ℓlc) := ℓke j ⟨Nat.zero_le _, mem'.upper, Nat.mod_one _⟩
-              |>.TypeVarLocallyClosed_of.weakening (n := 1)
-            exact ℓlc
+            exact .label
           · intro τ' mem
             rcases Range.mem_of_mem_map mem with ⟨j, mem', rfl⟩
             simp only
@@ -3954,7 +3948,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
         exact .var Δaxwf .head
   | splitSingletonMatch I τ₀ke τ₁ke ξke =>
     rename «Type» => A_
-    rename_i Γ _ τ₀ A _ _ _ _ _
+    rename_i Γ _ τ₀ A _ _ _ _
     rename TypeEnvironment => Γ
     let .split concatke := ψke
     let .concat _ liftke emptyke ξτ₀opτ₁ke starke containemptyke containξτ₀opτ₁ke := concatke
