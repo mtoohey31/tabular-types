@@ -33,19 +33,19 @@ jobs:
     - run: git diff --exit-code tex
     - env:
         GH_TOKEN: ${{ github.token }}
-      if: always() && steps.restore-lean.outputs.cache-hit
+      if: "!cancelled() && steps.restore-lean.outputs.cache-hit == 'true'"
       run: gh cache delete --repo ${{ github.repository }} ${{ steps.restore-lean.outputs.cache-primary-key }}
     - uses: actions/cache/save@v4
-      if: always()
+      if: "!cancelled()"
       with:
         key: ${{ steps.restore-lean.outputs.cache-primary-key }}
         path: .lake
     - env:
         GH_TOKEN: ${{ github.token }}
-      if: always() && steps.restore-lean-lott.outputs.cache-hit
+      if: "!cancelled() && steps.restore-lean-lott.outputs.cache-hit == 'true'"
       run: gh cache delete --repo ${{ github.repository }} ${{ steps.restore-lean-lott.outputs.cache-primary-key }}
     - uses: actions/cache/save@v4
-      if: always()
+      if: "!cancelled()"
       with:
         key: ${{ steps.restore-lean-lott.outputs.cache-primary-key }}
         path: vendor/lott/.lake
