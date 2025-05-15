@@ -1,1 +1,19 @@
-\lottjudgement{Constr In}{\sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, \sourcepre Γ \sourcepost}{\lottinferencerule{head}{\\\\}{\sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, \sourcepre \sourcepre Γ \sourcepost \lottsym{,} \, \sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \sourcepost} \lottinferencerulesep \lottinferencerule{typeExt}{\lotthypothesis{\sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, \sourcepre Γ \sourcepost}}{\sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, \sourcepre \sourcepre Γ \sourcepost \lottsym{,} \, \sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \sourcepost} \lottinferencerulesep \lottinferencerule{termExt}{\lotthypothesis{\sourcepre x \sourcepost \, \lottsym{≠} \, \sourcepre x' \sourcepost} \\ \lotthypothesis{\sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, \sourcepre Γ \sourcepost}}{\sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, \sourcepre \sourcepre Γ \sourcepost \lottsym{,} \, \sourcepre x' \sourcepost \, \lottsym{:} \, \sourcepre σ \sourcepost \sourcepost} \lottinferencerulesep \lottinferencerule{constrExt}{\lotthypothesis{\sourcepre x \sourcepost \, \lottsym{≠} \, \sourcepre x' \sourcepost} \\ \lotthypothesis{\sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, \sourcepre Γ \sourcepost}}{\sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, \sourcepre \sourcepre Γ \sourcepost \lottsym{,} \, \sourcepre ψ' \sourcepost \, \lottsym{⇝} \, \targetpre x' \targetpost \sourcepost}}
+\lottjudgement{Constr In}{\sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, \sourcepre Γ \sourcepost}{
+\lottinferencerule{head}{
+\\\\
+}{\sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, \sourcepre \sourcepre Γ \sourcepost \lottsym{,} \, \sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \sourcepost}
+\lottinferencerulesep
+\lottinferencerule{typeExt}{
+\lotthypothesis{\sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, \sourcepre Γ \sourcepost}
+}{\sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, \sourcepre \sourcepre Γ \sourcepost \lottsym{,} \, \sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \sourcepost}
+\lottinferencerulesep
+\lottinferencerule{termExt}{
+\lotthypothesis{\sourcepre x \sourcepost \, \lottsym{≠} \, \sourcepre x' \sourcepost}\\
+\lotthypothesis{\sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, \sourcepre Γ \sourcepost}
+}{\sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, \sourcepre \sourcepre Γ \sourcepost \lottsym{,} \, \sourcepre x' \sourcepost \, \lottsym{:} \, \sourcepre σ \sourcepost \sourcepost}
+\lottinferencerulesep
+\lottinferencerule{constrExt}{
+\lotthypothesis{\sourcepre x \sourcepost \, \lottsym{≠} \, \sourcepre x' \sourcepost}\\
+\lotthypothesis{\sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, \sourcepre Γ \sourcepost}
+}{\sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, \sourcepre \sourcepre Γ \sourcepost \lottsym{,} \, \sourcepre ψ' \sourcepost \, \lottsym{⇝} \, \targetpre x' \targetpost \sourcepost}
+}

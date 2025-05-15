@@ -1,1 +1,26 @@
-\lottjudgement{Elaboration}{\lottsym{⊢} \, \sourcepre κ \sourcepost \, \lottsym{⇝} \, \targetpre K \targetpost}{\lottinferencerule{star}{\\\\}{\lottsym{⊢} \, \sourcepre \star \sourcepost \, \lottsym{⇝} \, \targetpre \star \targetpost} \lottinferencerulesep \lottinferencerule{arr}{\lotthypothesis{\lottsym{⊢} \, \sourcepre κ₀ \sourcepost \, \lottsym{⇝} \, \targetpre K₀ \targetpost} \\ \lotthypothesis{\lottsym{⊢} \, \sourcepre κ₁ \sourcepost \, \lottsym{⇝} \, \targetpre K₁ \targetpost}}{\lottsym{⊢} \, \sourcepre \sourcepre κ₀ \sourcepost \, \lottsym{↦} \, \sourcepre κ₁ \sourcepost \sourcepost \, \lottsym{⇝} \, \targetpre \targetpre K₀ \targetpost \, \lottsym{↦} \, \targetpre K₁ \targetpost \targetpost} \lottinferencerulesep \lottinferencerule{label}{\\\\}{\lottsym{⊢} \, \sourcepre \lottkw{L} \sourcepost \, \lottsym{⇝} \, \targetpre \star \targetpost} \lottinferencerulesep \lottinferencerule{comm}{\\\\}{\lottsym{⊢} \, \sourcepre \lottkw{U} \sourcepost \, \lottsym{⇝} \, \targetpre \star \targetpost} \lottinferencerulesep \lottinferencerule{row}{\lotthypothesis{\lottsym{⊢} \, \sourcepre κ \sourcepost \, \lottsym{⇝} \, \targetpre K \targetpost}}{\lottsym{⊢} \, \sourcepre \lottkw{R}^{\sourcepre κ \sourcepost} \sourcepost \, \lottsym{⇝} \, \targetpre \lottkw{L}^{\targetpre K \targetpost} \targetpost} \lottinferencerulesep \lottinferencerule{constr}{\\\\}{\lottsym{⊢} \, \sourcepre \lottkw{C} \sourcepost \, \lottsym{⇝} \, \targetpre \star \targetpost}}
+\lottjudgement{Elaboration}{\lottsym{⊢} \, \sourcepre κ \sourcepost \, \lottsym{⇝} \, \targetpre K \targetpost}{
+\lottinferencerule{star}{
+\\\\
+}{\lottsym{⊢} \, \sourcepre \star \sourcepost \, \lottsym{⇝} \, \targetpre \star \targetpost}
+\lottinferencerulesep
+\lottinferencerule{arr}{
+\lotthypothesis{\lottsym{⊢} \, \sourcepre κ₀ \sourcepost \, \lottsym{⇝} \, \targetpre K₀ \targetpost}\\
+\lotthypothesis{\lottsym{⊢} \, \sourcepre κ₁ \sourcepost \, \lottsym{⇝} \, \targetpre K₁ \targetpost}
+}{\lottsym{⊢} \, \sourcepre \sourcepre κ₀ \sourcepost \, \lottsym{↦} \, \sourcepre κ₁ \sourcepost \sourcepost \, \lottsym{⇝} \, \targetpre \targetpre K₀ \targetpost \, \lottsym{↦} \, \targetpre K₁ \targetpost \targetpost}
+\lottinferencerulesep
+\lottinferencerule{label}{
+\\\\
+}{\lottsym{⊢} \, \sourcepre \lottkw{L} \sourcepost \, \lottsym{⇝} \, \targetpre \star \targetpost}
+\lottinferencerulesep
+\lottinferencerule{comm}{
+\\\\
+}{\lottsym{⊢} \, \sourcepre \lottkw{U} \sourcepost \, \lottsym{⇝} \, \targetpre \star \targetpost}
+\lottinferencerulesep
+\lottinferencerule{row}{
+\lotthypothesis{\lottsym{⊢} \, \sourcepre κ \sourcepost \, \lottsym{⇝} \, \targetpre K \targetpost}
+}{\lottsym{⊢} \, \sourcepre \lottkw{R}^{\sourcepre κ \sourcepost} \sourcepost \, \lottsym{⇝} \, \targetpre \lottkw{L}^{\targetpre K \targetpost} \targetpost}
+\lottinferencerulesep
+\lottinferencerule{constr}{
+\\\\
+}{\lottsym{⊢} \, \sourcepre \lottkw{C} \sourcepost \, \lottsym{⇝} \, \targetpre \star \targetpost}
+}
