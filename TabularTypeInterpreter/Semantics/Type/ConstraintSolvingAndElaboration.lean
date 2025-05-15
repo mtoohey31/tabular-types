@@ -7,7 +7,9 @@ namespace TabularTypeInterpreter
 
 open «F⊗⊕ω»
 
--- TODO: Consider simplifying tex by including versions of judgements with irrelevant components hidden.
+-- TODO: Maybe try to simplify last remaining judgements which explicitly name irrelevant
+-- elaborations (the remaining few in constraint solving and program typing are currently necessary
+-- because we don't want the unnamed term to depend on the cofinitely quantified variables).
 
 syntax (name := constraintSolving) Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment "; " Lott.Symbol.TabularTypeInterpreter.ClassEnvironment "; " Lott.Symbol.TabularTypeInterpreter.TypeEnvironment " ⊨ " Lott.Symbol.TabularTypeInterpreter.Monotype : Lott.Judgement
 
