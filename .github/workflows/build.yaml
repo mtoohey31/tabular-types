@@ -33,7 +33,7 @@ jobs:
     - run: git diff --exit-code tex
     - env:
         GH_TOKEN: ${{ github.token }}
-      if: steps.restore-lean.outputs.cache-hit
+      if: always() && steps.restore-lean.outputs.cache-hit
       run: gh cache delete --repo ${{ github.repository }} ${{ steps.restore-lean.outputs.cache-primary-key }}
     - uses: actions/cache/save@v4
       if: always()
@@ -42,7 +42,7 @@ jobs:
         path: .lake
     - env:
         GH_TOKEN: ${{ github.token }}
-      if: steps.restore-lean-lott.outputs.cache-hit
+      if: always() && steps.restore-lean-lott.outputs.cache-hit
       run: gh cache delete --repo ${{ github.repository }} ${{ steps.restore-lean-lott.outputs.cache-primary-key }}
     - uses: actions/cache/save@v4
       if: always()
