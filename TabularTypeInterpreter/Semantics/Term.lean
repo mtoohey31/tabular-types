@@ -21,7 +21,27 @@ abbrev ℓₘ := 0
 
 abbrev ℓᵣ := 1
 
+syntax (name := typing) Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment "; " Lott.Symbol.TabularTypeInterpreter.ClassEnvironment "; " Lott.Symbol.TabularTypeInterpreter.TypeEnvironment " ⊢ " Lott.Symbol.TabularTypeInterpreter.Term " : " Lott.Symbol.TabularTypeInterpreter.TypeScheme : Lott.Judgement
+
 judgement_syntax Γᵢ "; " Γc "; " Γ " ⊢ " M " : " σ " ⇝ " E : Term.TypingAndElaboration
+
+macro_rules
+  | `([[$Γᵢ:Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment; $Γc:Lott.Symbol.TabularTypeInterpreter.ClassEnvironment; $Γ:Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ⊢ $M:Lott.Symbol.TabularTypeInterpreter.Term : $σ:Lott.Symbol.TabularTypeInterpreter.TypeScheme]]) =>
+    `($(Lean.mkIdent `TypingAndElaboration) [[$(.mk Γᵢ):Lott.Symbol]] [[$(.mk Γc):Lott.Symbol]] [[$(.mk Γ):Lott.Symbol]] [[$(.mk M):Lott.Symbol]] [[$(.mk σ):Lott.Symbol]] _)
+
+@[lott_tex_elab typing]
+private
+def typingTexElab : Lott.TexElab := fun ref stx => do
+  let `(typing| $Γᵢ:Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment; $Γc:Lott.Symbol.TabularTypeInterpreter.ClassEnvironment; $Γ:Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ⊢ $M:Lott.Symbol.TabularTypeInterpreter.Term : $σ:Lott.Symbol.TabularTypeInterpreter.TypeScheme) := stx
+    | Lean.Elab.throwUnsupportedSyntax
+  let Γᵢ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment ref Γᵢ
+  let Γc ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.ClassEnvironment ref Γc
+  let Γ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ref Γ
+  let M ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.Term ref M
+  let σ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeScheme ref σ
+  return s!"{Γᵢ} \\lottsym\{;} \\, {Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {M} \\, \\lottsym\{:} \\, {σ}"
+
+open TypeScheme
 
 judgement Term.TypingAndElaboration where
 
@@ -72,25 +92,25 @@ x : σ ∈ Γ
 ──────────────────────── label
 Γᵢ; Γc; Γ ⊢ ℓ : ⌊ℓ⌋ ⇝ ()
 
-</ Γᵢ; Γc; Γ ⊢ M@i : ⌊ξ@i⌋ ⇝ F@i // i in [:n] notex />
+</ Γᵢ; Γc; Γ ⊢ M@i : ⌊ξ@i⌋ // i in [:n] notex />
 unique(</ ξ@i // i in [:n] notex />)
 </ Γᵢ; Γc; Γ ⊢ «N»@i : τ@i ⇝ E@i // i in [:n] notex />
 notex n ≠ 0 ∨ b
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── prod
 Γᵢ; Γc; Γ ⊢ {</ M@i ▹ «N»@i // i in [:n] notex />} : Π(N) ⟨</ ξ@i ▹ τ@i // i in [:n] notex /> </ : * // b />⟩ ⇝ (</ E@i // i in [:n] notex />)
 
-Γᵢ; Γc; Γ ⊢ M : ⌊ξ⌋ ⇝ F
+Γᵢ; Γc; Γ ⊢ M : ⌊ξ⌋
 Γᵢ; Γc; Γ ⊢ «N» : τ ⇝ E
 ──────────────────────────────────────────── sum
 Γᵢ; Γc; Γ ⊢ [M ▹ «N»] : Σ(N) ⟨ξ ▹ τ⟩ ⇝ ι 0 E
 
 Γᵢ; Γc; Γ ⊢ M : Π(μ) ⟨ξ ▹ τ⟩ ⇝ E
-Γᵢ; Γc; Γ ⊢ «N» : ⌊ξ⌋ ⇝ F
+Γᵢ; Γc; Γ ⊢ «N» : ⌊ξ⌋
 ──────────────────────────────── unlabelProd
 Γᵢ; Γc; Γ ⊢ M/«N» : τ ⇝ π 0 E
 
 Γᵢ; Γc; Γ ⊢ M : Σ(μ) ⟨ξ ▹ τ⟩ ⇝ E
-Γᵢ; Γc; Γ ⊢ «N» : ⌊ξ⌋ ⇝ F
+Γᵢ; Γc; Γ ⊢ «N» : ⌊ξ⌋
 Γc; Γ ⊢ τ : * ⇝ A
 ───────────────────────────────────────────── unlabelSum
 Γᵢ; Γc; Γ ⊢ M/«N» : τ ⇝ case E {λ x : A. x$0}
@@ -132,13 +152,13 @@ notex n ≠ 0 ∨ b
 ────────────────────────────────── «order»
 Γᵢ; Γc; Γ ⊢ order ρ M : Ξ(N) ρ ⇝ E
 
-Γc; Γ ⊢ ρ : R κ ⇝ A
-∀ a ∉ Iₘ, Γc; Γ, a : R κ ⊢ τ^a : * ⇝ B^a
+Γc; Γ ⊢ ρ : R κ
+∀ a ∉ Iₘ, Γc; Γ, a : R κ ⊢ τ^a : * ⇝ A^a
 ⊢ κ ⇝ K
 ∀ aₗ ∉ Iₛ, ∀ aₜ ∉ aₗ :: Iₛ, ∀ aₚ ∉ aₜ :: aₗ :: Iₛ, ∀ aᵢ ∉ aₚ :: aₜ :: aₗ :: Iₛ, ∀ aₙ ∉ aᵢ :: aₚ :: aₜ :: aₗ :: Iₛ, Γᵢ; Γc; Γ, aₗ : L, aₜ : κ, aₚ : R κ, aᵢ : R κ, aₙ : R κ ⊢ M : aₚ ⊙(N) ⟨aₗ ▹ aₜ⟩ ~ aᵢ ⇒ aᵢ ⊙(N) aₙ ~ ρ ⇒ ⌊aₗ⌋ → τ^aₚ → τ^aᵢ ⇝ E₀^aₗ#4^aₜ#3^aₚ#2^aᵢ#1^aₙ
 Γᵢ; Γc; Γ ⊢ «N» : τ^^⟨ : κ ⟩/a ⇝ E₁
 Γᵢ; Γc; Γ ⊨ Ind ρ ⇝ F
-E := ⦅F [λ a : L K. B] ⦅Λ aₗ : *. Λ aₜ : K. Λ aₚ : L K. Λ aᵢ : L K. Λ aₙ : L K. E₀⦆⦆ E₁
+E := ⦅F [λ a : L K. A] ⦅Λ aₗ : *. Λ aₜ : K. Λ aₚ : L K. Λ aᵢ : L K. Λ aₙ : L K. E₀⦆⦆ E₁
 ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── «ind» (Iₘ Iₛ : List TypeVarId)
 Γᵢ; Γc; Γ ⊢ ind (λ a : R κ. τ) ρ; M; «N» : τ^^ρ/a ⇝ E
 

@@ -85,7 +85,7 @@ theorem to_Kinding (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (Γᵢw : [[Γc �
     rename Nat => n
     rename ClassEnvironment => Γc
     rename TypeEnvironment => Γ
-    rename_i ξ _ _ _ _ _ _ _
+    rename_i ξ _ _ _ _ _ _
     let ⟨_, ξke⟩ := Range.skolem (n := n) (p := fun i B => [[Γc; Γ ⊢ ξ@i : L ⇝ B]]) <| by
       intro i mem
       let ⟨_, .floor ξke⟩ := ξih i mem Γᵢw Γcw Γwe
@@ -487,7 +487,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
       let .sum _ ρke := σke
       exact ih (.sum .comm ρke) Γᵢw Γcw Γwe
   | «ind» Iₘ Iₛ ρke τke κe Mte Nte indce Mih Nih =>
-    rename_i Γc Γ ρ κ _ τ B K _ _ _ _ _ _
+    rename_i Γc Γ ρ κ τ B K _ _ _ _ _ _
     let ⟨a, anin⟩ := Γ.typeVarDom ++ τ.freeTypeVars ++ ↑B.freeTypeVars ++ Iₘ |>.exists_fresh
     let ⟨aninΓτB, aninI⟩ := List.not_mem_append'.mp anin
     let ⟨aninΓτ, aninB⟩ := List.not_mem_append'.mp aninΓτB
