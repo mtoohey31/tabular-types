@@ -173,7 +173,7 @@ theorem to_Kinding (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (Γᵢw : [[Γc �
     rw [← QualifiedType.TypeVar_open, ← TypeScheme.TypeVar_open] at τke'
     exact ⟨_, τke'.Monotype_open_preservation Γcw Γawe nofun aninτ aninB ρke (Γ' := .empty)⟩
   | splitP _ splitce prodih =>
-    let ⟨_, .prod μke ρ₂ke⟩ := prodih Γᵢw Γcw Γwe
+    let ⟨_, .prod _ ρ₂ke⟩ := prodih Γᵢw Γcw Γwe
     let ⟨_, .split concatke⟩ := splitce.to_Kinding Γᵢw Γcw Γwe
     let .concat _ ρ₀ke ρ₁ke ρ₂ke' _ _ _ (A₀ := A₀) (A₁ := A₁) := concatke
     let ⟨κeq, _⟩ := ρ₂ke.deterministic ρ₂ke'
@@ -215,17 +215,17 @@ theorem to_Kinding (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (Γᵢw : [[Γc �
       match i with
       | 0 =>
         rw [List.get!_cons_zero]
-        exact .prod μke ρ₀ke
+        exact .prod .comm ρ₀ke
       | 1 =>
         rw [List.get!_cons_succ, List.get!_cons_zero]
-        exact .prod μke ρ₁ke
+        exact .prod .comm ρ₁ke
   | splitS _ _ splitce _ _ arrρ₁ih =>
-    let ⟨_, .arr (.sum μke ρ₁ke) τ₁ke⟩ := arrρ₁ih Γᵢw Γcw Γwe
+    let ⟨_, .arr (.sum _ ρ₁ke) τ₁ke⟩ := arrρ₁ih Γᵢw Γcw Γwe
     let ⟨_, .split concatke⟩ := splitce.to_Kinding Γᵢw Γcw Γwe
     let .concat _ _ ρ₁ke' ρ₂ke .. := concatke
     let ⟨κeq, _⟩ := ρ₁ke.deterministic ρ₁ke'
     cases Kind.row.inj κeq
-    exact ⟨_, .arr (.sum μke ρ₂ke) τ₁ke⟩
+    exact ⟨_, .arr (.sum .comm ρ₂ke) τ₁ke⟩
 
 theorem _root_.TabularTypeInterpreter.«F⊗⊕ω».Type.eq_forall_of_TypeVar_open_eq_forall
   (eq : Type.TypeVar_open A a n = .forall K B)
@@ -608,7 +608,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
         Bopaᵢlc.weaken (n := 2).TypeVar_open_id, Bopaᵢlc.weaken (n := 1).TypeVar_open_id]
     exact arr τopaₚke τopaᵢke
   | splitP Mte splitce Mih =>
-    let ⟨_, .prod μke ρ₂ke⟩ := Mte.to_Kinding Γᵢw Γcw Γwe
+    let ⟨_, .prod _ ρ₂ke⟩ := Mte.to_Kinding Γᵢw Γcw Γwe
     let ⟨_, splitke@(.split concatke)⟩ := splitce.to_Kinding Γᵢw Γcw Γwe
     let .concat _ liftke ρ₁ke ρ₂ke' κe contain₀ke contain₁ke := concatke
     let .lift I τopke κ₀e ρ₀ke := liftke
@@ -634,7 +634,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     cases mem
     · case head =>
       simp only
-      apply Typing.app _ <| Mih (.prod μke ρ₂ke) Γᵢw Γcw Γwe
+      apply Typing.app _ <| Mih (.prod .comm ρ₂ke) Γᵢw Γcw Γwe
       let πty := Fty.prodElim ⟨Nat.le.refl.step.step, Nat.le.refl.step, Nat.mod_one _⟩
       rw [List.length_cons, List.length_cons, List.length_cons, List.length_singleton,
           List.get!_cons_succ, List.get!_cons_succ, List.get!_cons_zero] at πty
@@ -658,13 +658,13 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
       rw [← And.right <| Prod.mk.inj <| Range.eq_of_mem_of_map_eq ξτseq _ mem] at τ'ke'
       rw [List.get!_cons_zero] at τ'ke'
       simp only at τ'ke'
-      rw [And.right <| τ'ke'.deterministic <| .prod μke liftke]
+      rw [And.right <| τ'ke'.deterministic <| .prod .comm liftke]
       exact .equiv this <| .arr (.prod .listAppIdL) <| .prod .listAppIdL
     · case tail mem' =>
       cases mem'
       case tail mem'' => nomatch mem''
       simp only
-      apply Typing.app _ <| Mih (.prod μke ρ₂ke) Γᵢw Γcw Γwe
+      apply Typing.app _ <| Mih (.prod .comm ρ₂ke) Γᵢw Γcw Γwe
       let πty := Fty.prodElim ⟨Nat.le.refl.step.step.step, Nat.le.refl, Nat.mod_one _⟩
       rw [List.length_cons, List.length_cons, List.length_cons, List.length_singleton,
           List.get!_cons_succ, List.get!_cons_succ, List.get!_cons_succ, List.get!_cons_zero] at πty
@@ -688,7 +688,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
       rw [← And.right <| Prod.mk.inj <| Range.eq_of_mem_of_map_eq ξτseq _ mem] at τ'ke'
       rw [List.get!_cons_succ, List.get!_cons_zero] at τ'ke'
       simp only at τ'ke'
-      rw [And.right <| τ'ke'.deterministic <| .prod μke ρ₁ke]
+      rw [And.right <| τ'ke'.deterministic <| .prod .comm ρ₁ke]
       exact .equiv this <| .arr (.prod .listAppIdL) <| .prod .listAppIdL
   | splitS Mte Nte splitce τ₁ke Mih Nih =>
     let ⟨_, arr₁ke@(.arr sum₁ke τ₁ke')⟩ := Nte.to_Kinding Γᵢw Γcw Γwe
