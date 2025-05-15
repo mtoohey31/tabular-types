@@ -811,7 +811,8 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
         generalize ξτs'eq
           : (ξτs.map fun (ξ, τ) => (ξ.TypeVar_open a m, τ.TypeVar_open a m)) = ξτs' at σke
         generalize A'eq : A.TypeVar_open a n = A' at σke
-        let .row ξ'ke uni τ'ke h' (B := B') := σke
+        let .row ξ'ke uni τ'ke h' := σke
+        rename_i B' _ _ _ _ _ _
         cases A <;> rw [Type.TypeVar_open] at A'eq
         case list =>
           rename List _ => A
@@ -848,7 +849,8 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
             apply List.not_mem_flatten.mp aninσ
             apply List.mem_map.mpr
             exact ⟨_, List.get!_mem ilt, rfl⟩
-          apply row (B := fun i => ((B' i).TypeVar_close a m).Type_open B m) _ _ _ h'
+          apply row _ _ _ h'
+          · exact fun i => ((B' i).TypeVar_close a m).Type_open B m
           · intro i mem
             dsimp only [ξ']
             let ξike := ξ'ke i mem

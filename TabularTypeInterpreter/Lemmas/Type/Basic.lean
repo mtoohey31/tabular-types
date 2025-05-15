@@ -649,7 +649,7 @@ theorem empty_row : [[Γc; Γ ⊢ ⟨ : κ ⟩ : R κ ⇝ { }]] := by
       ), this]
   apply KindingAndElaboration.row (fun _ mem => by rw [List.length_nil] at mem; nomatch mem) _
     (fun _ mem => by rw [List.length_nil] at mem; nomatch mem) (.inr rfl)
-    (B := fun _ => default)
+  exact fun _ => default
   rw [Range.map_eq_of_eq_of_mem'' (by
     intro i mem
     show _ = Monotype.label ((fun i => .zero) i)
@@ -684,8 +684,9 @@ theorem singleton_row (ξke : [[Γc; Γ ⊢ ξ : L ⇝ B]]) (τke : [[Γc; Γ �
         rw [List.get!_cons_zero]
       ), this,
       List.length_singleton, List.length_singleton]
-  apply row (ξ := fun _ => ξ) (τ := fun _ => τ) (A := fun _ => A) (B := fun _ => B) _ _ _ <|
+  apply row (ξ := fun _ => ξ) (τ := fun _ => τ) (A := fun _ => A) _ _ _ <|
     .inl Nat.one_ne_zero
+  · exact fun _ => B
   · intros
     exact ξke
   · rw [Range.map, Range.toList, if_pos (Nat.succ_pos _), Range.toList, Nat.zero_add,
@@ -1112,7 +1113,7 @@ theorem weakening (σke : [[Γc; Γ, Γ'' ⊢ σ : κ ⇝ A]])
 termination_by σ.sizeOf'
 decreasing_by
   all_goals simp_arith
-  · case _ ξ _ τ _ _ _ _ i mem =>
+  · case _ ξ τ _ _ _ _ i mem =>
     apply Nat.le_of_add_right_le (k := (τ i).sizeOf')
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'
@@ -1122,7 +1123,7 @@ decreasing_by
       simp only [Function.comp]
     )]
     exact Range.mem_map_of_mem mem
-  · case _ ξ _ τ _ _ _ _ i mem =>
+  · case _ ξ τ _ _ _ _ i mem =>
     apply Nat.le_trans <| Nat.le_add_left (τ i).sizeOf' (ξ i).sizeOf'
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'
@@ -1180,7 +1181,7 @@ theorem TermVar_drop (σke : [[Γc; Γ, x : σ₁, Γ' ⊢ σ₀ : κ ⇝ A]])
 termination_by σ₀.sizeOf'
 decreasing_by
   all_goals simp_arith
-  · case _ ξ _ τ _ _ _ _ i mem =>
+  · case _ ξ τ _ _ _ _ i mem =>
     apply Nat.le_of_add_right_le (k := (τ i).sizeOf')
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'
@@ -1190,7 +1191,7 @@ decreasing_by
       simp only [Function.comp]
     )]
     exact Range.mem_map_of_mem mem
-  · case _ ξ _ τ _ _ _ _ i mem =>
+  · case _ ξ τ _ _ _ _ i mem =>
     apply Nat.le_trans <| Nat.le_add_left (τ i).sizeOf' (ξ i).sizeOf'
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'
@@ -1248,7 +1249,7 @@ theorem Constr_drop (σke : [[Γc; Γ, ψ ⇝ x, Γ' ⊢ σ : κ ⇝ A]])
 termination_by σ.sizeOf'
 decreasing_by
   all_goals simp_arith
-  · case _ ξ _ τ _ _ _ _ i mem =>
+  · case _ ξ τ _ _ _ _ i mem =>
     apply Nat.le_of_add_right_le (k := (τ i).sizeOf')
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'
@@ -1258,7 +1259,7 @@ decreasing_by
       simp only [Function.comp]
     )]
     exact Range.mem_map_of_mem mem
-  · case _ ξ _ τ _ _ _ _ i mem =>
+  · case _ ξ τ _ _ _ _ i mem =>
     apply Nat.le_trans <| Nat.le_add_left (τ i).sizeOf' (ξ i).sizeOf'
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'

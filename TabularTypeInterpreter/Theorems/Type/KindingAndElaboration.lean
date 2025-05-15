@@ -311,7 +311,7 @@ theorem TypeScheme.KindingAndElaboration.deterministic (σke₀ : [[Γc; Γ ⊢ 
 termination_by σ.sizeOf'
 decreasing_by
   all_goals simp_arith
-  · case _ ξ _ τ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ =>
+  · case _ ξ τ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ =>
     apply Nat.le_trans <| Nat.le_add_left (τ 0).sizeOf' (ξ 0).sizeOf'
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'
@@ -321,7 +321,7 @@ decreasing_by
       simp only [Function.comp]
     )]
     exact Range.mem_map_of_mem ⟨Nat.le_refl _, Nat.pos_of_ne_zero nnezero, Nat.mod_one _⟩
-  · case _ ξ _ τ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ =>
+  · case _ ξ τ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ =>
     apply Nat.le_trans <| Nat.le_add_left (τ i).sizeOf' (ξ i).sizeOf'
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'
@@ -509,7 +509,7 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
 termination_by Γ.sizeOf' + σ.sizeOf'
 decreasing_by
   all_goals simp_arith
-  · case _ ξ _ τ _ _ _ _ _ _ _ _ =>
+  · case _ ξ τ _ _ _ _ _ _ _ _ =>
     apply Nat.le_trans <| Nat.le_add_left (τ i).sizeOf' (ξ i).sizeOf'
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'

@@ -183,10 +183,11 @@ theorem to_Kinding (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (Γᵢw : [[Γc �
     have : none = Option.someIf Kind.star false := by rw [Option.someIf, if_neg nofun]
     rw [← Range.map_get!_eq (as := [_, _]), this]
     apply TypeScheme.KindingAndElaboration.row
-      (A := fun | 0 => A₀.prod | 1 => A₁.prod | _ => default) (B := fun _ => [[⊗ { }]]) _ _ _ <|
+      (A := fun | 0 => A₀.prod | 1 => A₁.prod | _ => default) _ _ _ <|
       .inl <| by
         rw [List.length_cons, List.length_singleton]
         exact Nat.succ_ne_zero _
+    · exact fun _ => [[⊗ { }]]
     · intro i mem
       match i with
       | 0 => exact .label

@@ -25,7 +25,24 @@ unique(ξ)
 
 open «F⊗⊕ω»
 
+syntax (name := kinding) Lott.Symbol.TabularTypeInterpreter.ClassEnvironment "; " Lott.Symbol.TabularTypeInterpreter.TypeEnvironment " ⊢ " Lott.Symbol.TabularTypeInterpreter.TypeScheme " : " Lott.Symbol.TabularTypeInterpreter.Kind : Lott.Judgement
+
 judgement_syntax Γc "; " Γ " ⊢ " σ " : " κ " ⇝ " A : TypeScheme.KindingAndElaboration
+
+macro_rules
+  | `([[$Γc:Lott.Symbol.TabularTypeInterpreter.ClassEnvironment; $Γ:Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ⊢ $σ:Lott.Symbol.TabularTypeInterpreter.TypeScheme : $κ:Lott.Symbol.TabularTypeInterpreter.Kind]]) =>
+    `($(Lean.mkIdent `KindingAndElaboration) [[$(.mk Γc):Lott.Symbol]] [[$(.mk Γ):Lott.Symbol]] [[$(.mk σ):Lott.Symbol]] [[$(.mk κ):Lott.Symbol]] _)
+
+@[lott_tex_elab kinding]
+private
+def kindingTexElab : Lott.TexElab := fun ref stx => do
+  let `(kinding| $Γc:Lott.Symbol.TabularTypeInterpreter.ClassEnvironment; $Γ:Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ⊢ $σ:Lott.Symbol.TabularTypeInterpreter.TypeScheme : $κ:Lott.Symbol.TabularTypeInterpreter.Kind) := stx
+    | Lean.Elab.throwUnsupportedSyntax
+  let Γc ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.ClassEnvironment ref Γc
+  let Γ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ref Γ
+  let σ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeScheme ref σ
+  let κ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.Kind ref κ
+  return s!"{Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {σ} \\, \\lottsym\{:} \\, {κ}"
 
 judgement TypeScheme.KindingAndElaboration where
 
@@ -57,26 +74,26 @@ a : κ ∈ Γ
 ───────────────────── label
 Γc; Γ ⊢ ℓ : L ⇝ ⊗ { }
 
-Γc; Γ ⊢ ξ : L ⇝ A
+Γc; Γ ⊢ ξ : L
 ─────────────────────── floor
 Γc; Γ ⊢ ⌊ξ⌋ : * ⇝ ⊗ { }
 
 ───────────────────── comm
 Γc; Γ ⊢ u : U ⇝ ⊗ { }
 
-</ Γc; Γ ⊢ ξ@i : L ⇝ B@i // i in [:n] notex />
+</ Γc; Γ ⊢ ξ@i : L // i in [:n] notex />
 unique(</ ξ@i // i in [:n] notex />)
 </ Γc; Γ ⊢ τ@i : κ ⇝ A@i // i in [:n] notex />
 notex n ≠ 0 ∨ b
 ────────────────────────────────────────────────────────────────────────────────────────────────── row
 Γc; Γ ⊢ ⟨</ ξ@i ▹ τ@i // i in [:n] notex /> </ : κ // b />⟩ : R κ ⇝ {</ A@i // i in [:n] notex />}
 
-Γc; Γ ⊢ μ : U ⇝ B
+Γc; Γ ⊢ μ : U
 Γc; Γ ⊢ ρ : R * ⇝ A
 ──────────────────────── prod
 Γc; Γ ⊢ Π(μ) ρ : * ⇝ ⊗ A
 
-Γc; Γ ⊢ μ : U ⇝ B
+Γc; Γ ⊢ μ : U
 Γc; Γ ⊢ ρ : R * ⇝ A
 ──────────────────────── sum
 Γc; Γ ⊢ Σ(μ) ρ : * ⇝ ⊕ A
@@ -87,14 +104,14 @@ notex n ≠ 0 ∨ b
 ─────────────────────────────────────────────────────── lift (I : List TypeVarId)
 Γc; Γ ⊢ Lift (λ a : κ₀. τ) ρ : R κ₁ ⇝ (λ a : K₀. A) ⟦B⟧
 
-Γc; Γ ⊢ μ : U ⇝ B
+Γc; Γ ⊢ μ : U
 Γc; Γ ⊢ ρ₀ : R κ ⇝ A₀
 Γc; Γ ⊢ ρ₁ : R κ ⇝ A₁
 ⊢ κ ⇝ K
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────── contain
 Γc; Γ ⊢ ρ₀ ≲(μ) ρ₁ : C ⇝ ⊗ {∀ a : K ↦ *. (⊗ (a$0 ⟦A₁⟧)) → ⊗ (a$0 ⟦A₀⟧), ∀ a : K ↦ *. (⊕ (a$0 ⟦A₀⟧)) → ⊕ (a$0 ⟦A₁⟧)}
 
-Γc; Γ ⊢ μ : U ⇝ B
+Γc; Γ ⊢ μ : U
 Γc; Γ ⊢ ρ₀ : R κ ⇝ A₀
 Γc; Γ ⊢ ρ₁ : R κ ⇝ A₁
 Γc; Γ ⊢ ρ₂ : R κ ⇝ A₂
