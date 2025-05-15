@@ -65,11 +65,11 @@ inductive Monotype where
   | comm : Comm → Monotype
   | row : List (Monotype × Monotype) → Option Kind → Monotype
   | prodOrSum : ProdOrSum → Monotype → Monotype
-  | lift : Monotype → Monotype
+  | lift
   | contain (ρ₀ μ ρ₁ : Monotype)
   | concat (ρ₀ μ ρ₁ ρ₂ : Monotype)
   | tc : String → Monotype
-  | all : Monotype → Monotype
+  | all
   | ind
   | split
   | list
@@ -94,11 +94,11 @@ def toString : Monotype → String
     let ξτsString := ξτs.mapMem fun (ξ, τ) _ => s!"{ξ.toString} ▹ {τ.toString}"
     s!"⟨{ξτsString}{κString}⟩"
   | prodOrSum Ξ μ => s!"{Ξ}({μ.toString})"
-  | lift ϕ => s!"Lift {ϕ.toString}"
+  | lift => "Lift"
   | contain ρ₀ μ ρ₁ => s!"{ρ₀.toString} ≲({μ.toString}) {ρ₁.toString}"
   | concat ρ₀ μ ρ₁ ρ₂ => s!"{ρ₀.toString} ⊙({μ.toString}) {ρ₁.toString} ~ {ρ₂.toString}"
   | tc s => s
-  | all ϕ => s!"All {ϕ.toString}"
+  | all => "All"
   | ind => "Ind"
   | split => "Split"
   | list => "List"

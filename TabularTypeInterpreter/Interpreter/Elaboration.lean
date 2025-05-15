@@ -17,12 +17,12 @@ def shift (τ : Monotype) (off := 1) (min := 0) : Monotype := match τ with
   | comm u => comm u
   | row ξτ's κ? => row (ξτ's.mapMem fun (ξ, τ') _ => (shift ξ off min, shift τ' off min)) κ?
   | prodOrSum Ξ μ => prodOrSum Ξ <| shift μ off min
-  | lift ϕ => lift <| shift ϕ off min
+  | lift => lift
   | contain ρ₀ μ ρ₁ => contain (shift ρ₀ off min) (shift μ off min) (shift ρ₁ off min)
   | concat ρ₀ μ ρ₁ ρ₂ =>
     concat (shift ρ₀ off min) (shift μ off min) (shift ρ₁ off min) (shift ρ₂ off min)
   | tc s => tc s
-  | all ϕ => all <| shift ϕ off min
+  | all => all
   | ind => ind
   | split => split
   | list => list
@@ -39,11 +39,11 @@ def «open» (τ : Monotype) (τ' : Monotype) (n : Nat := 0) : Monotype := match
   | comm u => comm u
   | row ξτ''s κ? => row (ξτ''s.mapMem fun (ξ, τ'') _ => (ξ.open τ' n, τ''.open τ' n)) κ?
   | prodOrSum Ξ μ => prodOrSum Ξ <| μ.open τ' n
-  | lift ϕ => lift <| ϕ.open τ' n
+  | lift => lift
   | contain ρ₀ μ ρ₁ => contain (ρ₀.open τ' n) (μ.open τ' n) (ρ₁.open τ' n)
   | concat ρ₀ μ ρ₁ ρ₂ => concat (ρ₀.open τ' n) (μ.open τ' n) (ρ₁.open τ' n) (ρ₂.open τ' n)
   | tc s => tc s
-  | all ϕ => all <| ϕ.open τ' n
+  | all => all
   | ind => ind
   | split => split
   | list => list
@@ -58,10 +58,10 @@ inductive RowEquivalence : Monotype → Monotype → Monotype → Type where
   | refl : RowEquivalence ρ μ ρ
   | trans : RowEquivalence ρ₀ μ ρ₁ → RowEquivalence ρ₁ μ ρ₂ → RowEquivalence ρ₀ μ ρ₂
   | comm : List.Perm ξτs₀ ξτs₁ → RowEquivalence (row ξτs₀ κ?) (comm .non) (row ξτs₁ κ?)
-  | liftL : RowEquivalence ((lift ϕ).app (row ξτs κ?)) μ
+  | liftL : RowEquivalence ((lift.app ϕ).app (row ξτs κ?)) μ
       (row (ξτs.map fun (ξ, τ) => (ξ, ϕ.app τ)) κ?)
   | liftR : RowEquivalence (row (ξτs.map fun (ξ, τ) => (ξ, ϕ.app τ)) κ?) μ
-      ((lift ϕ).app (row ξτs κ?))
+      ((lift.app ϕ).app (row ξτs κ?))
 
 namespace RowEquivalence
 
@@ -135,8 +135,8 @@ inductive Subtyping : TypeScheme → TypeScheme → Type where
     Subtyping (concat ρ₀ μ ρ₁ ρ₂) (concat ρ₃ μ ρ₄ ρ₅)
   | tc {supers : List String} : (∀ s ∈ supers, Subtyping ((tc s).app τ₀) ((tc s).app τ₁)) →
     Subtyping («open» σ τ₀) («open» σ τ₁) → Subtyping ((tc s).app τ₀) ((tc s).app τ₁)
-  | allRow : RowEquivalence ρ₀ (comm .comm) ρ₁ → Subtyping ((all ϕ).app ρ₀) ((all ϕ).app ρ₁)
-  | split : Subtyping (concat ((lift ϕ).app ρ₀) μ ρ₁ ρ₂) (concat ((lift ϕ).app ρ₃) μ ρ₄ ρ₅) →
+  | allRow : RowEquivalence ρ₀ (comm .comm) ρ₁ → Subtyping ((all.app ϕ).app ρ₀) ((all.app ϕ).app ρ₁)
+  | split : Subtyping (concat ((lift.app ϕ).app ρ₀) μ ρ₁ ρ₂) (concat ((lift.app ϕ).app ρ₃) μ ρ₄ ρ₅) →
     Subtyping ((((split.app ϕ).app ρ₀).app ρ₁).app ρ₂) ((((split.app ϕ).app ρ₃).app ρ₄).app ρ₅)
 
 def Subtyping.elab : Subtyping σ₀ σ₁ → «λπι».Term
@@ -223,10 +223,10 @@ inductive Typing : Term → TypeScheme → Type where
     ConstraintSolution ((((split.app ϕ).app ρ₀).app ρ₁).app ρ₂) →
     Typing (M.splitₚ ϕ) ((prodOrSum .prod (comm .non)).app
       (row [
-        (.label "match", (prodOrSum .prod (comm .comm)).app ((lift ϕ).app ρ₀)),
+        (.label "match", (prodOrSum .prod (comm .comm)).app ((lift.app ϕ).app ρ₀)),
         (.label "rest", (prodOrSum .prod (comm .comm)).app ρ₁)
       ] none))
-  | splitₛ : Typing M (((prodOrSum .sum (comm .comm)).app ((lift ϕ).app ρ₀)).arr τ) →
+  | splitₛ : Typing M (((prodOrSum .sum (comm .comm)).app ((lift.app ϕ).app ρ₀)).arr τ) →
     Typing N (((prodOrSum .sum (comm .comm)).app ρ₁).arr τ) →
     ConstraintSolution ((((split.app ϕ).app ρ₀).app ρ₁).app ρ₂) →
     Typing (M.splitₛ ϕ N) (((prodOrSum .sum (comm .comm)).app ρ₂).arr τ)
