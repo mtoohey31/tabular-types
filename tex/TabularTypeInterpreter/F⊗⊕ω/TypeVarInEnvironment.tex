@@ -1,1 +1,14 @@
-\lottjudgement{Type Var In Environment}{\targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \, \lottsym{∈} \, \targetpre Δ \targetpost}{\lottinferencerule{head}{\\\\}{\targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \, \lottsym{∈} \, \targetpre \targetpre Δ \targetpost \lottsym{,} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \targetpost} \lottinferencerulesep \lottinferencerule{typeVarExt}{\lotthypothesis{\targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \, \lottsym{∈} \, \targetpre Δ \targetpost} \\ \lotthypothesis{\targetpre a \targetpost \, \lottsym{≠} \, \targetpre a' \targetpost}}{\targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \, \lottsym{∈} \, \targetpre \targetpre Δ \targetpost \lottsym{,} \, \targetpre a' \targetpost \, \lottsym{:} \, \targetpre K' \targetpost \targetpost} \lottinferencerulesep \lottinferencerule{termVarExt}{\lotthypothesis{\targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \, \lottsym{∈} \, \targetpre Δ \targetpost}}{\targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \, \lottsym{∈} \, \targetpre \targetpre Δ \targetpost \lottsym{,} \, \targetpre x \targetpost \, \lottsym{:} \, \targetpre A \targetpost \targetpost}}
+\lottjudgement{Type Var In Environment}{\targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \, \lottsym{∈} \, \targetpre Δ \targetpost}{
+\lottinferencerule{head}{
+\\\\
+}{\targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \, \lottsym{∈} \, \targetpre \targetpre Δ \targetpost \lottsym{,} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \targetpost}
+\lottinferencerulesep
+\lottinferencerule{typeVarExt}{
+\lotthypothesis{\targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \, \lottsym{∈} \, \targetpre Δ \targetpost}\\
+\lotthypothesis{\targetpre a \targetpost \, \lottsym{≠} \, \targetpre a' \targetpost}
+}{\targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \, \lottsym{∈} \, \targetpre \targetpre Δ \targetpost \lottsym{,} \, \targetpre a' \targetpost \, \lottsym{:} \, \targetpre K' \targetpost \targetpost}
+\lottinferencerulesep
+\lottinferencerule{termVarExt}{
+\lotthypothesis{\targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \, \lottsym{∈} \, \targetpre Δ \targetpost}
+}{\targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \, \lottsym{∈} \, \targetpre \targetpre Δ \targetpost \lottsym{,} \, \targetpre x \targetpost \, \lottsym{:} \, \targetpre A \targetpost \targetpost}
+}

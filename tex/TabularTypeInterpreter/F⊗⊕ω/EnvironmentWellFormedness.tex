@@ -1,1 +1,16 @@
-\lottjudgement{Environment Well Formedness}{\lottsym{⊢} \, \targetpre Δ \targetpost}{\lottinferencerule{empty}{\\\\}{\lottsym{⊢} \, \targetpre \epsilon \targetpost} \lottinferencerulesep \lottinferencerule{typeVarExt}{\lotthypothesis{\lottsym{⊢} \, \targetpre Δ \targetpost} \\ \lotthypothesis{\targetpre a \targetpost \, \lottsym{∉} \, \lottkw{dom} \lottsym{(} \targetpre Δ \targetpost \lottsym{)}}}{\lottsym{⊢} \, \targetpre \targetpre Δ \targetpost \lottsym{,} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \targetpost} \lottinferencerulesep \lottinferencerule{termVarExt}{\lotthypothesis{\lottsym{⊢} \, \targetpre Δ \targetpost} \\ \lotthypothesis{\targetpre x \targetpost \, \lottsym{∉} \, \lottkw{dom} \lottsym{(} \targetpre Δ \targetpost \lottsym{)}} \\ \lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{:} \, \targetpre \star \targetpost}}{\lottsym{⊢} \, \targetpre \targetpre Δ \targetpost \lottsym{,} \, \targetpre x \targetpost \, \lottsym{:} \, \targetpre A \targetpost \targetpost}}
+\lottjudgement{Environment Well Formedness}{\lottsym{⊢} \, \targetpre Δ \targetpost}{
+\lottinferencerule{empty}{
+\\\\
+}{\lottsym{⊢} \, \targetpre \epsilon \targetpost}
+\lottinferencerulesep
+\lottinferencerule{typeVarExt}{
+\lotthypothesis{\lottsym{⊢} \, \targetpre Δ \targetpost}\\
+\lotthypothesis{\targetpre a \targetpost \, \lottsym{∉} \, \lottkw{dom} \lottsym{(} \targetpre Δ \targetpost \lottsym{)}}
+}{\lottsym{⊢} \, \targetpre \targetpre Δ \targetpost \lottsym{,} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \targetpost}
+\lottinferencerulesep
+\lottinferencerule{termVarExt}{
+\lotthypothesis{\lottsym{⊢} \, \targetpre Δ \targetpost}\\
+\lotthypothesis{\targetpre x \targetpost \, \lottsym{∉} \, \lottkw{dom} \lottsym{(} \targetpre Δ \targetpost \lottsym{)}}\\
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{:} \, \targetpre \star \targetpost}
+}{\lottsym{⊢} \, \targetpre \targetpre Δ \targetpost \lottsym{,} \, \targetpre x \targetpost \, \lottsym{:} \, \targetpre A \targetpost \targetpost}
+}
