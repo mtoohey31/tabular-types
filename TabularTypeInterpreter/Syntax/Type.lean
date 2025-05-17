@@ -5,8 +5,8 @@ import TabularTypeInterpreter.Syntax.Kind
 namespace TabularTypeInterpreter
 
 nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") Commutativity, u :=
-  | "C" : comm
-  | "N" : non
+  | "C" : comm (tex := "\\mathfrak{c}")
+  | "N" : non (tex := "\\mathfrak{n}")
 
 locally_nameless
 metavar (tex pre := "\\sourcepre", post := "\\sourcepost") TypeVar, a
