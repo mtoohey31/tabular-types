@@ -60,14 +60,14 @@ macro_rules
 
 @[lott_tex_elab rowEquivalence]
 private
-def rowEquivalenceTexElab : Lott.TexElab := fun ref stx => do
+def rowEquivalenceTexElab : Lott.TexElab := fun profile ref stx => do
   let `(rowEquivalence| $Γc:Lott.Symbol.TabularTypeInterpreter.ClassEnvironment; $Γ:Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ⊢ $ρ₀:Lott.Symbol.TabularTypeInterpreter.Monotype ≡($μ:Lott.Symbol.TabularTypeInterpreter.Monotype) $ρ₁:Lott.Symbol.TabularTypeInterpreter.Monotype) := stx
     | Lean.Elab.throwUnsupportedSyntax
-  let Γc ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.ClassEnvironment ref Γc
-  let Γ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ref Γ
-  let ρ₀ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.Monotype ref ρ₀
-  let μ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.Monotype ref μ
-  let ρ₁ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeScheme ref ρ₁
+  let Γc ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.ClassEnvironment profile ref Γc
+  let Γ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeEnvironment profile ref Γ
+  let ρ₀ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.Monotype profile ref ρ₀
+  let μ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.Monotype profile ref μ
+  let ρ₁ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeScheme profile ref ρ₁
   return s!"{Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {ρ₀} \\, \\lottsym\{≡}_\{{μ}} \\, {ρ₁}"
 
 end TabularTypeInterpreter

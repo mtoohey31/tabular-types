@@ -31,14 +31,14 @@ macro_rules
 
 @[lott_tex_elab typing]
 private
-def typingTexElab : Lott.TexElab := fun ref stx => do
+def typingTexElab : Lott.TexElab := fun profile ref stx => do
   let `(typing| $Γᵢ:Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment; $Γc:Lott.Symbol.TabularTypeInterpreter.ClassEnvironment; $Γ:Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ⊢ $M:Lott.Symbol.TabularTypeInterpreter.Term : $σ:Lott.Symbol.TabularTypeInterpreter.TypeScheme) := stx
     | Lean.Elab.throwUnsupportedSyntax
-  let Γᵢ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment ref Γᵢ
-  let Γc ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.ClassEnvironment ref Γc
-  let Γ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ref Γ
-  let M ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.Term ref M
-  let σ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeScheme ref σ
+  let Γᵢ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment profile ref Γᵢ
+  let Γc ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.ClassEnvironment profile ref Γc
+  let Γ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeEnvironment profile ref Γ
+  let M ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.Term profile ref M
+  let σ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeScheme profile ref σ
   return s!"{Γᵢ} \\lottsym\{;} \\, {Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {M} \\, \\lottsym\{:} \\, {σ}"
 
 open TypeScheme

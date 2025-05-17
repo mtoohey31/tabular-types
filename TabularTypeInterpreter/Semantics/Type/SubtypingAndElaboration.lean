@@ -24,13 +24,13 @@ macro_rules
 
 @[lott_tex_elab subtyping]
 private
-def subtypingTexElab : Lott.TexElab := fun ref stx => do
+def subtypingTexElab : Lott.TexElab := fun profile ref stx => do
   let `(subtyping| $Γc:Lott.Symbol.TabularTypeInterpreter.ClassEnvironment; $Γ:Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ⊢ $σ₀:Lott.Symbol.TabularTypeInterpreter.TypeScheme <: $σ₁:Lott.Symbol.TabularTypeInterpreter.TypeScheme) := stx
     | Lean.Elab.throwUnsupportedSyntax
-  let Γc ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.ClassEnvironment ref Γc
-  let Γ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ref Γ
-  let σ₀ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeScheme ref σ₀
-  let σ₁ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeScheme ref σ₁
+  let Γc ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.ClassEnvironment profile ref Γc
+  let Γ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeEnvironment profile ref Γ
+  let σ₀ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeScheme profile ref σ₀
+  let σ₁ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeScheme profile ref σ₁
   return s!"{Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {σ₀} \\, \\lottsym\{<:} \\, {σ₁}"
 
 judgement TypeScheme.SubtypingAndElaboration where

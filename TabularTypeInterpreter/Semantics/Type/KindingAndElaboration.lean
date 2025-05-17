@@ -27,7 +27,7 @@ open «F⊗⊕ω»
 
 syntax (name := kinding) Lott.Symbol.TabularTypeInterpreter.ClassEnvironment "; " Lott.Symbol.TabularTypeInterpreter.TypeEnvironment " ⊢ " Lott.Symbol.TabularTypeInterpreter.TypeScheme " : " Lott.Symbol.TabularTypeInterpreter.Kind : Lott.Judgement
 
-judgement_syntax Γc "; " Γ " ⊢ " σ " : " κ " ⇝ " A : TypeScheme.KindingAndElaboration
+judgement_syntax Γc "; " Γ " ⊢ " σ " : " κ " ⇝ " A : TypeScheme.KindingAndElaboration (tex noelab := s!"{Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {σ} \\, \\lottsym\{:} \\, {κ}")
 
 macro_rules
   | `([[$Γc:Lott.Symbol.TabularTypeInterpreter.ClassEnvironment; $Γ:Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ⊢ $σ:Lott.Symbol.TabularTypeInterpreter.TypeScheme : $κ:Lott.Symbol.TabularTypeInterpreter.Kind]]) =>
@@ -35,13 +35,13 @@ macro_rules
 
 @[lott_tex_elab kinding]
 private
-def kindingTexElab : Lott.TexElab := fun ref stx => do
+def kindingTexElab : Lott.TexElab := fun profile ref stx => do
   let `(kinding| $Γc:Lott.Symbol.TabularTypeInterpreter.ClassEnvironment; $Γ:Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ⊢ $σ:Lott.Symbol.TabularTypeInterpreter.TypeScheme : $κ:Lott.Symbol.TabularTypeInterpreter.Kind) := stx
     | Lean.Elab.throwUnsupportedSyntax
-  let Γc ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.ClassEnvironment ref Γc
-  let Γ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ref Γ
-  let σ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeScheme ref σ
-  let κ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.Kind ref κ
+  let Γc ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.ClassEnvironment profile ref Γc
+  let Γ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeEnvironment profile ref Γ
+  let σ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeScheme profile ref σ
+  let κ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.Kind profile ref κ
   return s!"{Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {σ} \\, \\lottsym\{:} \\, {κ}"
 
 judgement TypeScheme.KindingAndElaboration where
