@@ -267,6 +267,26 @@ theorem TypeVar_subst (wf: [[ ⊢ Δ, a: K, Δ' ]]) (BkiK: [[ Δ ⊢ B: K ]]) : 
     clear * - xnin
     induction Δ' <;> simp_all [TypeVar_subst, termVarDom]
 
+open Environment in
+theorem strengthen_type (wf: [[ ⊢ Δ, Δ' ]]) (fresh: a ∉ Δ.typeVarDom ++ Δ'.typeVarDom): [[ ⊢ Δ, a: K, Δ' ]] := by
+  induction Δ'
+  . case empty =>
+    simp_all [append]
+    exact wf.typeVarExt (by simp_all [TypeVarNotInDom, TypeVarInDom, typeVarDom])
+  . case typeExt Δ' a' K' ih =>
+    cases wf; case typeVarExt wf anin =>
+    refine .typeVarExt ?_ ?_
+    . simp_all [typeVarDom]
+    . aesop (add simp [TypeVarNotInDom, TypeVarInDom, typeVarDom_append, typeVarDom])
+  . case termExt Δ' x' T' ih =>
+    cases wf; case termVarExt T'kiStar =>
+    refine .termVarExt ?_ ?_ ?_
+    . simp_all [typeVarDom]
+    . aesop (add simp [TermVarNotInDom, TermVarInDom, termVarDom_append])
+    . rw [← append_type_assoc]
+      refine T'kiStar.weakening_r' ?_
+      simp_all [typeVarDom]
+
 end EnvironmentWellFormedness
 
 namespace Kinding
