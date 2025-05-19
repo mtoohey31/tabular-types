@@ -827,7 +827,7 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γcw : [[⊢c �
         exact .var <| .termVarExt .head
       · apply Typing.app
         · rw [← Range.map_get!_eq (as := [_, _])] at Δxₑaxwf
-          have := Typing.typeApp (B := .var a) <| .prodElim (i := 1)
+          have := Typing.typeApp (B := .var a) <| .prodElim (j := 1)
             (.var Δxₑaxwf <| .termVarExt (.typeVarExt .head) xₑnex)
             ⟨by simp_arith, by simp_arith, Nat.mod_one _⟩
           simp only [Type.Type_open, if_pos] at this
@@ -957,7 +957,7 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γcw : [[⊢c �
       · apply Typing.app
         · apply Typing.app
           · have := Typing.typeApp (B := .var a) <|
-              .prodElim (i := 0) xₑty ⟨by simp_arith, by simp_arith, Nat.mod_one _⟩
+              .prodElim (j := 0) xₑty ⟨by simp_arith, by simp_arith, Nat.mod_one _⟩
             rw [Range.map_get!_eq (as := [_, _, _, _])] at this
             simp [Term.Type_open, Type.Type_open] at this
             rw [A₀lc.Type_open_id, A₁lc.Type_open_id, A₂lc.Type_open_id] at this
@@ -1048,7 +1048,7 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γcw : [[⊢c �
         · apply Typing.app
           · apply Typing.app
             · have := Typing.typeApp (B := .var a) <|
-                .prodElim (i := 1) xₑty ⟨by simp_arith, by simp_arith, Nat.mod_one _⟩
+                .prodElim (j := 1) xₑty ⟨by simp_arith, by simp_arith, Nat.mod_one _⟩
               rw [Range.map_get!_eq (as := [_, _, _, _])] at this
               simp [Term.Type_open, Type.Type_open] at this
               have := (Typing.typeApp (B := .var aₜ) <| this ·)
@@ -1121,14 +1121,14 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γcw : [[⊢c �
           simp only
           apply Typing.app <| F₀₂₃₅ty.weakening Δxₑwf (Δ' := .termExt .empty ..) (Δ'' := .empty)
           rw [← Range.map_get!_eq (as := [_, _, _, _])] at Δxₑwf ⊢
-          exact .prodElim (i := 2) (.var Δxₑwf .head) ⟨by simp_arith, by simp_arith, Nat.mod_one _⟩
+          exact .prodElim (j := 2) (.var Δxₑwf .head) ⟨by simp_arith, by simp_arith, Nat.mod_one _⟩
         · case tail mem''' =>
           cases mem'''
           · case head =>
             simp only
             apply Typing.app <| F₁₂₄₅ty.weakening Δxₑwf (Δ' := .termExt .empty ..) (Δ'' := .empty)
             rw [← Range.map_get!_eq (as := [_, _, _, _])] at Δxₑwf ⊢
-            exact .prodElim (i := 3) (.var Δxₑwf .head)
+            exact .prodElim (j := 3) (.var Δxₑwf .head)
               ⟨by simp_arith, by simp_arith, Nat.mod_one _⟩
           · case tail mem'''' => nomatch mem''''
   | tc _ σ'op₀₁se γcin TCₛse TCτ₀ke τ₀₁ih σ'op₀₁ih TCₛih =>
@@ -1181,7 +1181,7 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γcw : [[⊢c �
       apply Typing.app <| Fty.weakening Δxwf (Δ' := .termExt .empty ..) (Δ'' := .empty)
       rw [← Range.map_get!_eq (as := _ :: _)] at Δxwf ⊢
       rw [Environment.append, Environment.append, Environment.append]
-      have := Typing.prodElim (i := 0) (.var Δxwf .head)
+      have := Typing.prodElim (j := 0) (.var Δxwf .head)
         ⟨by simp_arith, by simp_arith, Nat.mod_one _⟩
       rw [List.get!_cons_zero] at this
       exact this
@@ -1192,7 +1192,7 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γcw : [[⊢c �
       simp [Term.TermVar_open]
       let πty := by
         rw [← Range.map_get!_eq (as := _ :: _)] at Δxwf
-        exact Typing.prodElim (i := i + 1) (.var Δxwf .head) ⟨
+        exact Typing.prodElim (j := i + 1) (.var Δxwf .head) ⟨
           by simp_arith,
           by
             rw [List.length_cons, List.length_map, Range.length_toList]
@@ -1288,7 +1288,7 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γcw : [[⊢c �
       apply Typing.app <| Fty.weakening Δxwf (Δ' := .termExt .empty ..) (Δ'' := .empty)
       rw [← Range.map_get!_eq (as := _ :: _)] at Δxwf ⊢
       rw [Environment.append, Environment.append, Environment.append]
-      have := Typing.prodElim (i := 0) (.var Δxwf .head)
+      have := Typing.prodElim (j := 0) (.var Δxwf .head)
         ⟨by simp_arith, by simp_arith, Nat.mod_one _⟩
       rw [List.get!_cons_zero] at this
       exact this
@@ -1299,7 +1299,7 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γcw : [[⊢c �
       simp [Term.TermVar_open]
       let πty := by
         rw [← Range.map_get!_eq (as := _ :: _)] at Δxwf
-        exact Typing.prodElim (i := i + 1) (.var Δxwf .head) ⟨
+        exact Typing.prodElim (j := i + 1) (.var Δxwf .head) ⟨
           by simp_arith,
           by
             rw [List.length_cons, List.length_map, Range.length_toList]

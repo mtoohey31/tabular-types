@@ -2791,7 +2791,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
       ⟨rfl, _, rfl, rfl, rfl, rfl⟩
     let Ety := ih (.tc γcin τke) Γᵢw Γcw Γwe
     rw [← Range.map_get!_eq (as := _ :: _)] at Ety
-    let πty := Ety.prodElim (i := 1 + i) ⟨
+    let πty := Ety.prodElim (j := 1 + i) ⟨
       Nat.zero_le _,
       by
         rw [List.length_cons, List.length_map, Range.length_toList, Nat.sub_zero, Nat.add_comm]

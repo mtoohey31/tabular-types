@@ -66,9 +66,9 @@ x : A ∈ Δ
 Δ ⊢ (</ E@i // i in [:n] notex />) : ⊗ {</ A@i // i in [:n] notex />}
 
 Δ ⊢ E : ⊗ {</ A@i // i in [:n] />}
-i ∈ [:n]
+j ∈ [:n]
 ────────────────────────────────── prodElim
-Δ ⊢ π i E : A@i
+Δ ⊢ π j E : A@j
 
 j ∈ [:n]
 Δ ⊢ E : A@j
