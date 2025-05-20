@@ -36,7 +36,7 @@ def nat : ParseM Nat := do
 def string (s : String) : ParseM Unit := Parser.Char.string s *> pure ()
 def char (c : Char) : ParseM Unit := Parser.Char.char c *> pure ()
 def sepBy (pₐ : ParseM α) (sep : ParseM Unit): ParseM (List α) :=
-  Parser.sepBy1 sep pₐ <&> Array.toList
+  Parser.sepBy sep pₐ <&> Array.toList
 
 -- terminals
 def «Ind» : ParseM Unit := .string "Ind"
