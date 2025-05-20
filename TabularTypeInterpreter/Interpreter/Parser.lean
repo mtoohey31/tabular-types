@@ -10,8 +10,11 @@ open Parser.Char
 open Parser.Char.ASCII
 open Std
 
+abbrev VarTable := HashMap String Nat
+
 structure S where
-  next : Nat
+  termvars: VarTable
+  typevars: VarTable
 deriving Inhabited
 
 abbrev ParseM := SimpleParserT Substring Char (StateM S)
@@ -32,7 +35,7 @@ def nat : ParseM Nat := do
   return (String.mk x).toNat!
 def string (s : String) : ParseM Unit := Parser.Char.string s *> pure ()
 def char (c : Char) : ParseM Unit := Parser.Char.char c *> pure ()
-partial def sepBy (pₐ : ParseM α) (sep : ParseM Unit): ParseM (List α) :=
+def sepBy (pₐ : ParseM α) (sep : ParseM Unit): ParseM (List α) :=
   Parser.sepBy1 sep pₐ <&> Array.toList
 
 -- terminals
@@ -100,10 +103,26 @@ partial def kind : ParseM Kind := Parser.withErrorMessage "expected kind" do
   let tail: ParseM Kind := Kind.arr κ <$> (.ws *> ParseM.«↦» **> kind)
   Parser.optionD tail κ
 
-def typeClass : ParseM String := Parser.withErrorMessage "expected type class" ParseM.id
+-- TODO: implement proper typeclas parsing
+def typeclass : ParseM String := Parser.withErrorMessage "expected type class" ParseM.id
 
-def typevar : ParseM Nat := Parser.withErrorMessage "expected type variable" do
-  return (← ParseM.id).hash.toNat
+def var (get : ParseM VarTable) (set : VarTable -> ParseM Unit) (fresh? : Bool) : ParseM Nat := do
+  let vars ← get
+  let identifier ← ParseM.id
+  if fresh? then
+    if let .some n := vars.get? identifier then
+      return n
+    else
+      --TODO: throw a more specific error.
+      Parser.throwUnexpected
+  else
+    let n := vars.size
+    -- TODO: duplicate identifiers get overwritten.
+    -- I feel like this is fine as long as when we're done parsing a lambda, we discard the state of variables inside which I believe is what we do. Though I need confirmation.
+    set (vars.insert identifier n)
+    return n
+
+def typevar (fresh? : Bool) : ParseM Nat := Parser.withErrorMessage "expected type variable" <| var (get <&> S.typevars) (fun typevars => do set { ← get with typevars }) fresh?
 
 def comm : ParseM Comm := Parser.withErrorMessage "expected commutativity" do
   char 'C' *> pure .comm
@@ -125,12 +144,12 @@ partial def monotype : ParseM Monotype := Parser.withErrorMessage "expected mono
     <|> .«Str» *> pure .str
     <|> .comm <$> comm
     <|> .prodOrSum <$> prodOrSum <**> (.paren monotype)
-    <|> .tc <$> typeClass
-    <|> .var <$> typevar
+    <|> .tc <$> typeclass
+    <|> .var <$> typevar (fresh? := false)
     <|> .label <$> (.«'» *> .id <* .«'»)
     -- TODO: I think we can avoid putting quotes around labels if we parse literal .floor separately
     <|> .floor <$> (.«⌊» **> monotype <** .«⌋»)
-    <|> .lam <$> (.«λ» **> typevar **> .«:» **> kind) <**> (.«.» **> monotype)
+    <|> .lam <$> (.«λ» **> (typevar (fresh? := true)) **> .«:» **> kind) <**> (.«.» **> monotype)
     <|> .row
       <$> (.«⟨» **> (.sepBy (.mk <$> monotype <**> (.«▹» **> monotype)) (.string ",")))
       <**> ((Parser.option? <| .«:» **> kind) <** .«⟩»)
@@ -155,12 +174,12 @@ partial def qualifiedType : ParseM QualifiedType := Parser.withErrorMessage "exp
 partial def typescheme : ParseM TypeScheme := Parser.withErrorMessage  "expected type scheme" do
   TypeScheme.qual <$> qualifiedType
   <|> TypeScheme.quant
-    <$> (ParseM.«∀» **> typevar **> ParseM.«:» **> kind)
+    <$> (ParseM.«∀» **> (typevar (fresh? := true)) **> ParseM.«:» **> kind)
     <**> (ParseM.«.» **> typescheme)
 
-def termvar : ParseM Nat := Parser.withErrorMessage "expected term variable" do
-  return (← ParseM.id).hash.toNat
+def termvar (fresh? : Bool) : ParseM Nat := Parser.withErrorMessage "expected term variable" <| var (get <&> S.termvars) (fun termvars => do set { ← get with termvars }) fresh?
 
+-- TODO: implement proper member parsing.
 def member : ParseM String := Parser.withErrorMessage "expected member" do ParseM.id
 
 def op : ParseM «λπι».Op := Parser.withErrorMessage "expected binary operator" do
@@ -173,10 +192,10 @@ partial def term : ParseM Term := Parser.withErrorMessage "expected term" do
   let M : Term ←
     .paren term
     <|> .member <$> member
-    <|> .var <$> termvar
+    <|> .var <$> termvar (fresh? := false)
     <|> .label <$> (.«'» *> .id <* .«'»)
-    <|> .lam <$> (.«λ» **> termvar **> .«.» **> term)
-    <|> .let <$> (.«let» **> termvar **> .«:» **> typescheme) <**> (.«=» **> term) <**> (.«in» **> term)
+    <|> .lam <$> (.«λ» **> (termvar (fresh? := true)) **> .«.» **> term)
+    <|> .let <$> (.«let» **> (termvar (fresh? := true)) **> .«:» **> typescheme) <**> (.«=» **> term) <**> (.«in» **> term)
     <|> .prod <$> (ParseM.«{» **> (.sepBy (Prod.mk <$> term <**> (ParseM.«▹» **> term)) (.string ",")) <** ParseM.«}»)
     <|> .sum <$> (.«[» **> term) <**> (.«▹» **> term <** .«]»)
     <|> .prj <$> (.«prj» **> term)
