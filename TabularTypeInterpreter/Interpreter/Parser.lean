@@ -75,11 +75,13 @@ def «∀» : ParseM Unit := .string "forall" <|> .char '∀'
 def «⊙» : ParseM Unit := .char 'o' <|> .char '⊙'
 def «⊙'» : ParseM Unit := .«⊙» *> .char '\''
 def «λ» : ParseM Unit := .char '\\' <|> .char 'λ'
+def «Π» : ParseM Unit := .char 'P' <|> .char 'Π'
+def «Σ» : ParseM Unit := .char 'S' <|> .char 'Σ'
 def «≲» : ParseM Unit := .string "~<" <|> .char '≲'
 def «→» : ParseM Unit := .string "->" <|> .char '→'
 def «↦» : ParseM Unit := .string "|->" <|> .char '↦'
-def «⌊» : ParseM Unit := .string "[_" <|> .char '⌊'
-def «⌋» : ParseM Unit := .string "_]" <|> .char '⌋'
+def «⌊» : ParseM Unit := .string "|_" <|> .char '⌊'
+def «⌋» : ParseM Unit := .string "_|" <|> .char '⌋'
 def «⟨» : ParseM Unit := .char '<' <|> .char '⟨'
 def «⟩» : ParseM Unit := .char '>' <|> .char '⟩'
 def «[» : ParseM Unit := .char '['
@@ -129,8 +131,8 @@ def comm : ParseM Comm := Parser.withErrorMessage "expected commutativity" do
   <|> char 'N' *> pure .non
 
 def prodOrSum : ParseM ProdOrSum := Parser.withErrorMessage "expected prod or sum" do
-  char 'Π' *> pure .prod
-  <|> char 'Σ' *> pure .sum
+  ParseM.«Π» *> pure .prod
+  <|> ParseM.«Σ» *> pure .sum
 
 partial def monotype : ParseM Monotype := Parser.withErrorMessage "expected monotype" do
   let τ : Monotype ←
