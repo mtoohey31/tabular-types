@@ -2,7 +2,7 @@ import TabularTypeInterpreter.Interpreter.Basic
 import Parser
 import Parser.Char
 
-namespace TabularTypeInterpreter.Parser
+namespace TabularTypeInterpreter.Interpreter.Parser
 
 open TabularTypeInterpreter.Interpreter
 open Parser
@@ -222,3 +222,5 @@ partial def term : ParseM Term := Parser.withErrorMessage "expected term" do
     <|> (fun o t => .op o M t) <$> (.ws *> op) <**> term
 
   Parser.optionD tail M
+
+def parse (s : String) := Parser.term.run s ⟨∅, ∅⟩ |>.fst
