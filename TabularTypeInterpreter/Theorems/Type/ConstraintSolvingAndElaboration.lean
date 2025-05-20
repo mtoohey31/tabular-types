@@ -2752,7 +2752,8 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
           rw [Environment.empty_append, ← Environment.append_empty (.multiTermExt ..),
               Environment.multiTermExt_eq_append, ← Environment.multiTypeExt_eq_append,
               Environment.append_empty] at Eₛty'
-          rw [And.right <| Prod.mk.inj <| Range.eq_of_mem_of_map_eq TCₛAₛeq _ mem']
+          rw [And.right <| ClassEnvironmentEntrySuper.mk.inj <|
+                Range.eq_of_mem_of_map_eq TCₛAₛeq _ mem']
           exact Eₛty'
         · intro i
           apply «F⊗⊕ω».Term.not_mem_freeTypeVars_TermVar_multi_open_intro

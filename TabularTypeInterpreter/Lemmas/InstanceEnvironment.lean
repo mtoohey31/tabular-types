@@ -13,7 +13,7 @@ theorem weakening (Γᵢw : [[Γc ⊢ Γᵢ]]) (ΓcΓc'w : [[⊢c Γc, Γc']]) :
       (ψke · · · |>.class_weakening ΓcΓc'w) (τke · |>.class_weakening ΓcΓc'w) κ₁e Ety Eₛty
 
 theorem In_inversion {TC} (Γᵢw : [[Γc ⊢ Γᵢ]]) (Γcw : [[⊢c Γc]])
-  (γᵢin : [[(∀ </ a@k : κ₁@k // k in [:o] notex />. </ ψ@j ⇝ x@j // j in [:l] notex /> ⇒ TC τ) ↦ E; </ Eₛ@i // i in [:n] notex /> ∈ Γᵢ]])
+  (γᵢin : [[(∀ </ a@k : κ₁@k // k in [:o] notex />. </ ψ@j ⇝ x@j // j in [:l] notex /> ⇒ TC τ) ⇝ E; </ Eₛ@i // i in [:n] notex /> ∈ Γᵢ]])
   : ∃ TCₛ Aₛ κ₀ m σ A B B' K₁,
     [[(</ TCₛ@i a ⇝ Aₛ@i // i in [:n] /> ⇒ TC a : κ₀) ↦ m : σ ⇝ A ∈ Γc]] ∧
     (∀ j ∈ [:l], ∀ a : { a : Nat → TypeVarId // a.Injective' }, [[Γc; ε,, </ a@k : κ₁@k // k in [:o] notex /> ⊢ ψ@j^^^a#o : C ⇝ B@j^^^a#o]]) ∧
@@ -45,11 +45,12 @@ theorem In_inversion {TC} (Γᵢw : [[Γc ⊢ Γᵢ]]) (Γcw : [[⊢c Γc]])
       _, _, _, _, _, _, _, _, _, γcin,
       by
         intro j mem a
-        rw [Range.eq_of_mem_of_map_eq ψeq' j mem, Range.map_eq_of_eq_of_mem'' (by
-          intro k mem
-          show _ = (↑(a k), κ₁' k)
-          rw [Range.eq_of_mem_of_map_eq κ₁eq' k mem]
-        )]
+        rw [InstanceEnvironmentEntryConstr.mk.inj <| Range.eq_of_mem_of_map_eq ψeq' j mem,
+            Range.map_eq_of_eq_of_mem'' (by
+              intro k mem
+              show _ = (↑(a k), κ₁' k)
+              rw [Range.eq_of_mem_of_map_eq κ₁eq' k mem]
+            )]
         exact ψke j mem a,
       by
         intro a

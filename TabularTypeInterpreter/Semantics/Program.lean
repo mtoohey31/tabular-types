@@ -6,7 +6,7 @@ namespace TabularTypeInterpreter
 
 open «F⊗⊕ω»
 
-judgement_syntax Γᵢ "; " Γc " ⊢ " pgm " : " σ " ⇝ " E : Program.TypingAndElaboration
+judgement_syntax Γᵢ "; " Γc " ⊢ " pgm " : " σ " ⇝ " E : Program.TypingAndElaboration (tex noelab := s!"{Γᵢ} \\lottsym\{;} \\, {Γc} \\, \\lottsym\{⊢} \\, {pgm} \\, \\lottsym\{:} \\, {σ}")
 
 judgement Program.TypingAndElaboration where
 
@@ -23,7 +23,7 @@ m ∉ dom(Γc)
 </ ∀ a : { a : Nat → TypeVarId // a.Injective' }, ∀ x : { x : Nat → «F⊗⊕ω».TermVarId // x.Injective' }, Γᵢ; Γc; ε,, </ a@k : κ₁@k // k in [:o] notex />,,, </ ψ@j^^^a#o ⇝ x@j // j in [:l] notex /> ⊨ TCₛ@i τ^^^a#o ⇝ Eₛ@i^^^x#l^^^a#o // i in [:n] notex />
 ∀ a : { a : Nat → TypeVarId // a.Injective' }, Γc; ε,, </ a@k : κ₁@k // k in [:o] notex /> ⊢ τ^^^a#o : κ₀ ⇝ B'^^^a#o
 ∀ a : { a : Nat → TypeVarId // a.Injective' }, ∀ x : { x : Nat → «F⊗⊕ω».TermVarId // x.Injective' }, Γᵢ; Γc; ε,, </ a@k : κ₁@k // k in [:o] notex />,,, </ ψ@j^^^a#o ⇝ x@j // j in [:l] notex /> ⊢ M^^^x#l^^^a#o : σ₀^^⦅τ^^^a#o⦆/a' ⇝ E^^^x#l^^^a#o
-Γᵢ, (∀ </ a@k : κ₁@k // k in [:o] notex />. </ ψ@j ⇝ x@j // j in [:l] notex /> ⇒ TC τ) ↦ E; </ Eₛ@i // i in [:n] notex />; Γc ⊢ pgm : σ₁ ⇝ F
+Γᵢ, (∀ </ a@k : κ₁@k // k in [:o] notex />. </ ψ@j ⇝ x@j // j in [:l] notex /> ⇒ TC τ) ⇝ E; </ Eₛ@i // i in [:n] notex />; Γc ⊢ pgm : σ₁ ⇝ F
 ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── inst {TC}
 Γᵢ; Γc ⊢ instance </ ψ@j // j in [:l] notex /> ⇒ TC τ where {m = M}; pgm : σ₁ ⇝ F
 

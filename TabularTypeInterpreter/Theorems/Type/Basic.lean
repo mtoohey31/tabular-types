@@ -1203,8 +1203,10 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γcw : [[⊢c �
       rw [Range.map_get!_eq (as := _ :: _)] at πty
       apply Typing.app _ πty
       rw [List.get!_cons_succ, Range.get!_map mem.upper,
-          ← And.right <| Prod.mk.inj <| Range.eq_of_mem_of_map_eq TCₛeq₁ i mem, Nat.add_zero,
-          ← And.right <| Prod.mk.inj <| Range.eq_of_mem_of_map_eq TCₛeq₀ i mem]
+          ← And.right <| ClassEnvironmentEntrySuper.mk.inj <|
+            Range.eq_of_mem_of_map_eq TCₛeq₁ i mem, Nat.add_zero,
+          ← And.right <| ClassEnvironmentEntrySuper.mk.inj <|
+            Range.eq_of_mem_of_map_eq TCₛeq₀ i mem]
       apply Typing.weakening _ Δxwf (Δ' := .termExt .empty ..) (Δ'' := .empty)
       rw [Environment.append]
       rename Nat → Term => Fₛ
@@ -1310,8 +1312,10 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γcw : [[⊢c �
       rw [Range.map_get!_eq (as := _ :: _)] at πty
       apply Typing.app _ πty
       rw [List.get!_cons_succ, Range.get!_map mem.upper,
-          ← And.right <| Prod.mk.inj <| Range.eq_of_mem_of_map_eq TCₛeq₁ i mem, Nat.add_zero,
-          ← And.right <| Prod.mk.inj <| Range.eq_of_mem_of_map_eq TCₛeq₀ i mem]
+          ← And.right <| ClassEnvironmentEntrySuper.mk.inj <|
+            Range.eq_of_mem_of_map_eq TCₛeq₁ i mem, Nat.add_zero,
+          ← And.right <| ClassEnvironmentEntrySuper.mk.inj <|
+            Range.eq_of_mem_of_map_eq TCₛeq₀ i mem]
       apply Typing.weakening _ Δxwf (Δ' := .termExt .empty ..) (Δ'' := .empty)
       rw [Environment.append]
       rename Nat → Term => Fₛ

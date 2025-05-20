@@ -164,7 +164,8 @@ theorem TypeScheme.KindingAndElaboration.deterministic (σke₀ : [[Γc; Γ ⊢ 
       cases lengths_eq
       apply Range.map_eq_of_eq_of_mem
       intro i imem
-      rw [And.right <| Prod.mk.inj <| Range.eq_of_mem_of_map_eq TCₛAₛeq i imem]
+      rw [And.right <| ClassEnvironmentEntrySuper.mk.inj <|
+            Range.eq_of_mem_of_map_eq TCₛAₛeq i imem]
   | .all I₀ ψ₀ke κ₀e ρ₀ke (A := A₀), .all I₁ ψ₁ke κ₁e ρ₁ke (A := A₁) =>
     let ⟨a, anin⟩ := I₀ ++ I₁ ++ ↑A₀.freeTypeVars ++ ↑A₁.freeTypeVars |>.exists_fresh
     let ⟨aninI₀I₁A₀, aninA₁⟩ := List.not_mem_append'.mp anin

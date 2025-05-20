@@ -54,6 +54,9 @@ end In
 local instance : Inhabited TypeClass where
   default := .zero
 in
+local instance : Inhabited ClassEnvironmentEntrySuper where
+  default := .mk default <| .list []
+in
 local instance : Inhabited «F⊗⊕ω».Type where
   default := .list []
 in
@@ -119,11 +122,13 @@ theorem In_inversion {TC} (Γcw : [[⊢c Γc]])
         · exact Ake
         · constructor
           · intro a i mem
-            let ⟨TCₛeq, Aₛeq⟩ := Prod.mk.inj <| Range.eq_of_mem_of_map_eq TCₛAₛeq i mem
+            let ⟨TCₛeq, Aₛeq⟩ := ClassEnvironmentEntrySuper.mk.inj <|
+              Range.eq_of_mem_of_map_eq TCₛAₛeq i mem
             rw [TCₛeq, Aₛeq]
             exact TCₛke i mem a |>.class_weakening Γcw (Γc' := .ext .empty _)
           · intro a i mem
-            let ⟨TCₛeq, Aₛeq⟩ := Prod.mk.inj <| Range.eq_of_mem_of_map_eq TCₛAₛeq i mem
+            let ⟨TCₛeq, Aₛeq⟩ := ClassEnvironmentEntrySuper.mk.inj <|
+              Range.eq_of_mem_of_map_eq TCₛAₛeq i mem
             rw [Aₛeq]
             exact Aₛki i mem a
   | .ext TCin' TCneTC' mnem' (TC' := TC') =>
@@ -146,11 +151,13 @@ theorem In_inversion {TC} (Γcw : [[⊢c Γc]])
         · exact Aki
         · constructor
           · intro a i mem
-            let ⟨TCₛeq, Aₛeq⟩ := Prod.mk.inj <| Range.eq_of_mem_of_map_eq TCₛAₛeq i mem
+            let ⟨TCₛeq, Aₛeq⟩ := ClassEnvironmentEntrySuper.mk.inj <|
+              Range.eq_of_mem_of_map_eq TCₛAₛeq i mem
             rw [TCₛeq, Aₛeq]
             exact TCₛke a i mem |>.class_weakening Γcw (Γc' := .ext .empty _)
           · intro a i mem
-            let ⟨TCₛeq, Aₛeq⟩ := Prod.mk.inj <| Range.eq_of_mem_of_map_eq TCₛAₛeq i mem
+            let ⟨TCₛeq, Aₛeq⟩ := ClassEnvironmentEntrySuper.mk.inj <|
+              Range.eq_of_mem_of_map_eq TCₛAₛeq i mem
             rw [Aₛeq]
             exact Aₛki a i mem
 

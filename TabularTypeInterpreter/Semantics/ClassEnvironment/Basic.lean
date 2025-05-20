@@ -47,7 +47,7 @@ m ≠ m'
 ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── ext {TC}
 (</ TCₛ@i a ⇝ Aₛ@i // i in [:n] notex /> ⇒ TC a : κ) ↦ m : σ ⇝ A ∈ Γc, (</ TC'ₛ@i a' ⇝ Aₛ'@i // i in [:n'] notex /> ⇒ TC' a' : κ') ↦ m' : σ' ⇝ A'
 
-judgement_syntax TC " : " κ " ⇝ " A " ∈ " Γc : ClassEnvironment.TCIn
+judgement_syntax TC " : " κ " ⇝ " A " ∈ " Γc : ClassEnvironment.TCIn (tex noelab := s!"{TC} \\, \\lottsym\{:} \\, {κ} \\, \\lottsym\{∈} \\, {Γc}")
 
 judgement ClassEnvironment.TCIn := fun TC κ A Γc =>
   ∃ TCₛ Aₛ n m σ A', A = [[⊗ {A', </ Aₛ@i // i in [:n] />}]] ∧

@@ -1166,7 +1166,7 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
           (Aki a').not_mem_freeTypeVars_of <| List.not_mem_singleton.mpr a'nea.symm
         rw [Type.TypeVar_subst_id_of_not_mem_freeTypeVars aninA, Range.map_eq_of_eq_of_mem'' (by
           intro i mem
-          show _ = (TCₛ i, Aₛ i)
+          show _ = ClassEnvironmentEntrySuper.mk (TCₛ i) (Aₛ i)
           let aninAₛ := Type.not_mem_freeTypeVars_TypeVar_open_drop <|
             Aₛki a' i mem |>.not_mem_freeTypeVars_of <| List.not_mem_singleton.mpr a'nea.symm
           rw [Type.TypeVar_subst_id_of_not_mem_freeTypeVars aninAₛ]

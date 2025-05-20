@@ -23,7 +23,7 @@ abbrev ℓᵣ := 1
 
 syntax (name := typing) Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment "; " Lott.Symbol.TabularTypeInterpreter.ClassEnvironment "; " Lott.Symbol.TabularTypeInterpreter.TypeEnvironment " ⊢ " Lott.Symbol.TabularTypeInterpreter.Term " : " Lott.Symbol.TabularTypeInterpreter.TypeScheme : Lott.Judgement
 
-judgement_syntax Γᵢ "; " Γc "; " Γ " ⊢ " M " : " σ " ⇝ " E : Term.TypingAndElaboration
+judgement_syntax Γᵢ "; " Γc "; " Γ " ⊢ " M " : " σ " ⇝ " E : Term.TypingAndElaboration (tex noelab := s!"{Γᵢ} \\lottsym\{;} \\, {Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {M} \\, \\lottsym\{:} \\, {σ}")
 
 macro_rules
   | `([[$Γᵢ:Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment; $Γc:Lott.Symbol.TabularTypeInterpreter.ClassEnvironment; $Γ:Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ⊢ $M:Lott.Symbol.TabularTypeInterpreter.Term : $σ:Lott.Symbol.TabularTypeInterpreter.TypeScheme]]) =>
@@ -109,7 +109,7 @@ x : σ ∈ Γ
 
 Γᵢ; Γc; Γ ⊢ M : Σ(μ) ⟨ξ ▹ τ⟩ ⇝ E
 Γᵢ; Γc; Γ ⊢ «N» : ⌊ξ⌋
-Γc; Γ ⊢ τ : * ⇝ A
+elab_related Γc; Γ ⊢ τ : * ⇝ A
 ───────────────────────────────────────────── unlabelSum
 Γᵢ; Γc; Γ ⊢ M/«N» : τ ⇝ case E {λ x : A. x$0}
 
@@ -155,7 +155,7 @@ x : σ ∈ Γ
 ⊢ κ ⇝ K
 ∀ aₗ ∉ Iₛ, ∀ aₜ ∉ aₗ :: Iₛ, ∀ aₚ ∉ aₜ :: aₗ :: Iₛ, ∀ aᵢ ∉ aₚ :: aₜ :: aₗ :: Iₛ, ∀ aₙ ∉ aᵢ :: aₚ :: aₜ :: aₗ :: Iₛ, Γᵢ; Γc; Γ, aₗ : L, aₜ : κ, aₚ : R κ, aᵢ : R κ, aₙ : R κ ⊢ M : aₚ ⊙(N) ⟨aₗ ▹ aₜ⟩ ~ aᵢ ⇒ aᵢ ⊙(N) aₙ ~ ρ ⇒ ⌊aₗ⌋ → τ^aₚ → τ^aᵢ ⇝ E₀^aₗ#4^aₜ#3^aₚ#2^aᵢ#1^aₙ
 Γᵢ; Γc; Γ ⊢ «N» : τ^^⟨ : κ ⟩/a ⇝ E₁
-Γᵢ; Γc; Γ ⊨ Ind ρ ⇝ F
+elab_related Γᵢ; Γc; Γ ⊨ Ind ρ ⇝ F
 E := ⦅F [λ a : L K. A] ⦅Λ aₗ : *. Λ aₜ : K. Λ aₚ : L K. Λ aᵢ : L K. Λ aₙ : L K. E₀⦆⦆ E₁
 ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── «ind» (Iₘ Iₛ : List TypeVarId)
 Γᵢ; Γc; Γ ⊢ ind (λ a : R κ. τ) ρ; M; «N» : τ^^ρ/a ⇝ E

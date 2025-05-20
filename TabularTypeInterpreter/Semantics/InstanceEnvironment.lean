@@ -31,6 +31,6 @@ judgement InstanceEnvironment.WellFormedness where
 ∀ a : { a : Nat → «F⊗⊕ω».TypeVarId // a.Injective' }, ∀ x : { x : Nat → «F⊗⊕ω».TermVarId // x.Injective' }, ε,, </ a@k : K₁@k // k in [:o] notex />,,, </ x@j : B@j^^^a#o // j in [:l] notex /> ⊢ E^^^x#l^^^a#o : A^^(B'^^^a#o)/a
 </ ∀ a : { a : Nat → «F⊗⊕ω».TypeVarId // a.Injective' }, ∀ x : { x : Nat → «F⊗⊕ω».TermVarId // x.Injective' }, ε,, </ a@k : K₁@k // k in [:o] notex />,,, </ x@j : B@j^^^a#o // j in [:l] notex /> ⊢ Eₛ@i^^^x#l^^^a#o : Aₛ@i^^(B'^^^a#o)/a // i in [:n] notex />
 ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── ext {TC}
-Γc ⊢ Γᵢ, (∀ </ a@k : κ₁@k // k in [:o] />. </ ψ@j ⇝ x@j // j in [:l] /> ⇒ TC τ) ↦ E; </ Eₛ@i // i in [:n] notex />
+Γc ⊢ Γᵢ, (∀ </ a@k : κ₁@k // k in [:o] />. </ ψ@j ⇝ x@j // j in [:l] /> ⇒ TC τ) ⇝ E; </ Eₛ@i // i in [:n] notex />
 
 end TabularTypeInterpreter

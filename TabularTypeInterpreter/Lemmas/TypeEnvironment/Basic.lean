@@ -13,9 +13,10 @@ theorem multiTypeExt_snoc
   | (_, _) :: _ => rw [List.cons_append, multiTypeExt, multiTypeExt, multiTypeExt_snoc]
 
 theorem multiConstrExt_snoc
-  : multiConstrExt Γ (ψxs ++ [(ψ, x)]) = (multiConstrExt Γ ψxs).constrExt ψ x := by match ψxs with
+  : multiConstrExt Γ (ψxs ++ [ψx]) = (multiConstrExt Γ ψxs).constrExt ψx := by
+  match ψxs with
   | [] => rw [List.nil_append, multiConstrExt, multiConstrExt, multiConstrExt]
-  | (_, _) :: _ => rw [List.cons_append, multiConstrExt, multiConstrExt, multiConstrExt_snoc]
+  | _ :: _ => rw [List.cons_append, multiConstrExt, multiConstrExt, multiConstrExt_snoc]
 
 theorem append_empty (Γ : TypeEnvironment) : Γ.append empty = Γ := rfl
 
