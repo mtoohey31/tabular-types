@@ -15,76 +15,80 @@ structure S where
 deriving Inhabited
 
 abbrev ParseM := SimpleParserT Substring Char (StateM S)
--- helpers
+
+namespace ParseM
+
 def ws : ParseM Unit := Parser.dropMany <|
   Parser.tokenFilter [' ', '\n', '\r', '\t'].contains
-def ParseM.id : ParseM String :=
+def id : ParseM String :=
   (fun c cs => ⟨c::cs.toList⟩) <$> alpha <*> Parser.takeMany (alphanum <|> char '_')
 infixl:60 " **> " => fun l r => l *> ws *> r
 infixl:60 " <** " => fun l r => l <* ws <* r
 infixl:60 " <**> " => fun l r => l <*> (ws *> r)
-def ParseM.paren (p : ParseM α) : ParseM α :=
+def paren (p : ParseM α) : ParseM α :=
   char '(' **> p <** char ')'
-def ParseM.nat : ParseM Nat := do
+def nat : ParseM Nat := do
   let x ← Array.toList <$> Parser.takeMany1 numeric
   return (String.mk x).toNat!
-def ParseM.string (s : String) : ParseM Unit := Parser.Char.string s *> pure ()
-def ParseM.char (c : Char) : ParseM Unit := Parser.Char.char c *> pure ()
-partial def ParseM.sepBy (pₐ : ParseM α) (sep : ParseM Unit): ParseM (List α) :=
+def string (s : String) : ParseM Unit := Parser.Char.string s *> pure ()
+def char (c : Char) : ParseM Unit := Parser.Char.char c *> pure ()
+partial def sepBy (pₐ : ParseM α) (sep : ParseM Unit): ParseM (List α) :=
   Parser.sepBy1 sep pₐ <&> Array.toList
 
 -- terminals
-def ParseM.«Ind» : ParseM Unit := .string "Ind"
-def ParseM.«Lift» : ParseM Unit := .string "Lift"
-def ParseM.«All» : ParseM Unit := .string "All"
-def ParseM.«Split» : ParseM Unit := .string "Split"
-def ParseM.«List» : ParseM Unit := .string "List"
-def ParseM.«Nat» : ParseM Unit := .string "Nat"
-def ParseM.«Str» : ParseM Unit := .string "String"
-def ParseM.«let» : ParseM Unit := .string "let"
-def ParseM.«in» : ParseM Unit := .string "in"
-def ParseM.«prj» : ParseM Unit := .string "prj"
-def ParseM.«inj» : ParseM Unit := .string "inj"
-def ParseM.«order» : ParseM Unit := .string "order"
-def ParseM.«ind» : ParseM Unit := .string "ind"
-def ParseM.«splitₚ» : ParseM Unit := .string "splitₚ"
-def ParseM.«splitₛ» : ParseM Unit := .string "splitₛ"
-def ParseM.«nil» : ParseM Unit := .string "nil"
-def ParseM.«fold» : ParseM Unit := .string "fold"
-def ParseM.«range» : ParseM Unit := .string "range"
-def ParseM.«'» : ParseM Unit := .char '\''
-def ParseM.«"» : ParseM Unit := .char '"'
-def ParseM.«~» : ParseM Unit := .char '~'
-def ParseM.«.» : ParseM Unit := .char '.'
-def ParseM.«:» : ParseM Unit := .char ':'
-def ParseM.«=» : ParseM Unit := .char '='
-def ParseM.«/» : ParseM Unit := .char '/'
-def ParseM.«;» : ParseM Unit := .char ';'
-def ParseM.«++» : ParseM Unit := .string "++"
-def ParseM.«::» : ParseM Unit := .string "::"
-def ParseM.«⇒» : ParseM Unit := .string "=>" <|> .char '⇒'
-def ParseM.«▹» : ParseM Unit := .string "|>" <|> .char '▹'
+def «Ind» : ParseM Unit := .string "Ind"
+def «Lift» : ParseM Unit := .string "Lift"
+def «All» : ParseM Unit := .string "All"
+def «Split» : ParseM Unit := .string "Split"
+def «List» : ParseM Unit := .string "List"
+def «Nat» : ParseM Unit := .string "Nat"
+def «Str» : ParseM Unit := .string "String"
+def «let» : ParseM Unit := .string "let"
+def «in» : ParseM Unit := .string "in"
+def «prj» : ParseM Unit := .string "prj"
+def «inj» : ParseM Unit := .string "inj"
+def «order» : ParseM Unit := .string "order"
+def «ind» : ParseM Unit := .string "ind"
+def «splitₚ» : ParseM Unit := .string "splitₚ"
+def «splitₛ» : ParseM Unit := .string "splitₛ"
+def «nil» : ParseM Unit := .string "nil"
+def «fold» : ParseM Unit := .string "fold"
+def «range» : ParseM Unit := .string "range"
+def «'» : ParseM Unit := .char '\''
+def «"» : ParseM Unit := .char '"'
+def «~» : ParseM Unit := .char '~'
+def «.» : ParseM Unit := .char '.'
+def «:» : ParseM Unit := .char ':'
+def «=» : ParseM Unit := .char '='
+def «/» : ParseM Unit := .char '/'
+def «;» : ParseM Unit := .char ';'
+def «++» : ParseM Unit := .string "++"
+def «::» : ParseM Unit := .string "::"
+def «⇒» : ParseM Unit := .string "=>" <|> .char '⇒'
+def «▹» : ParseM Unit := .string "|>" <|> .char '▹'
 -- TODO: What's the best ascii version of `▿`?
-def ParseM.«▿» : ParseM Unit := .char 'v' <|> .char '▿'
-def ParseM.«∀» : ParseM Unit := .string "forall" <|> .char '∀'
-def ParseM.«⊙» : ParseM Unit := .char 'o' <|> .char '⊙'
-def ParseM.«⊙'» : ParseM Unit := .«⊙» *> .char '\''
-def ParseM.«λ» : ParseM Unit := .char '\\' <|> .char 'λ'
-def ParseM.«≲» : ParseM Unit := .string "~<" <|> .char '≲'
-def ParseM.«→» : ParseM Unit := .string "->" <|> .char '→'
-def ParseM.«↦» : ParseM Unit := .string "|->" <|> .char '↦'
-def ParseM.«⌊» : ParseM Unit := .string "[_" <|> .char '⌊'
-def ParseM.«⌋» : ParseM Unit := .string "_]" <|> .char '⌋'
-def ParseM.«⟨» : ParseM Unit := .char '<' <|> .char '⟨'
-def ParseM.«⟩» : ParseM Unit := .char '>' <|> .char '⟩'
-def ParseM.«[» : ParseM Unit := .char '['
-def ParseM.«]» : ParseM Unit := .char ']'
-def ParseM.«{» : ParseM Unit := .char '{'
-def ParseM.«}» : ParseM Unit := .char '}'
+def «▿» : ParseM Unit := .char 'v' <|> .char '▿'
+def «∀» : ParseM Unit := .string "forall" <|> .char '∀'
+def «⊙» : ParseM Unit := .char 'o' <|> .char '⊙'
+def «⊙'» : ParseM Unit := .«⊙» *> .char '\''
+def «λ» : ParseM Unit := .char '\\' <|> .char 'λ'
+def «≲» : ParseM Unit := .string "~<" <|> .char '≲'
+def «→» : ParseM Unit := .string "->" <|> .char '→'
+def «↦» : ParseM Unit := .string "|->" <|> .char '↦'
+def «⌊» : ParseM Unit := .string "[_" <|> .char '⌊'
+def «⌋» : ParseM Unit := .string "_]" <|> .char '⌋'
+def «⟨» : ParseM Unit := .char '<' <|> .char '⟨'
+def «⟩» : ParseM Unit := .char '>' <|> .char '⟩'
+def «[» : ParseM Unit := .char '['
+def «]» : ParseM Unit := .char ']'
+def «{» : ParseM Unit := .char '{'
+def «}» : ParseM Unit := .char '}'
 
-def ParseM.stringInner : ParseM String := do
+def stringInner : ParseM String := do
   let (tokens, _) ← Parser.takeUntil (char '\"') Parser.anyToken
   return ⟨tokens.toList⟩
+
+end ParseM
 
 partial def kind : ParseM Kind := Parser.withErrorMessage "expected kind" do
   let κ : Kind ←
@@ -93,7 +97,7 @@ partial def kind : ParseM Kind := Parser.withErrorMessage "expected kind" do
     <|> char 'U' *> pure Kind.comm
     <|> char 'R' **> Kind.row <$> kind
     <|> ParseM.paren kind
-  let tail: ParseM Kind := Kind.arr κ <$> (ws *> ParseM.«↦» **> kind)
+  let tail: ParseM Kind := Kind.arr κ <$> (.ws *> ParseM.«↦» **> kind)
   Parser.optionD tail κ
 
 def typeClass : ParseM String := Parser.withErrorMessage "expected type class" ParseM.id
@@ -132,13 +136,13 @@ partial def monotype : ParseM Monotype := Parser.withErrorMessage "expected mono
       <**> ((Parser.option? <| .«:» **> kind) <** .«⟩»)
 
   let tail : ParseM Monotype := 
-    .app τ <$> (ws *> monotype)
-    <|> .arr τ <$> (ws *> .«→» **> monotype)
+    .app τ <$> (.ws *> monotype)
+    <|> .arr τ <$> (.ws *> .«→» **> monotype)
     <|> .contain τ
-      <$> (ws *> .«≲» **> .paren monotype) 
+      <$> (.ws *> .«≲» **> .paren monotype) 
       <**> monotype
     <|> .concat τ
-      <$> (ws *> .«⊙» **> .paren monotype)
+      <$> (.ws *> .«⊙» **> .paren monotype)
       <**> monotype
       <**> (.«~» **> monotype)
 
@@ -146,7 +150,7 @@ partial def monotype : ParseM Monotype := Parser.withErrorMessage "expected mono
 
 partial def qualifiedType : ParseM QualifiedType := Parser.withErrorMessage "expected qualified type" do
   let τ ← monotype
-  Parser.optionD (QualifiedType.qual τ <$> (ws *> .«⇒» **> qualifiedType)) τ
+  Parser.optionD (QualifiedType.qual τ <$> (.ws *> .«⇒» **> qualifiedType)) τ
 
 partial def typescheme : ParseM TypeScheme := Parser.withErrorMessage  "expected type scheme" do
   TypeScheme.qual <$> qualifiedType
@@ -188,12 +192,12 @@ partial def term : ParseM Term := Parser.withErrorMessage "expected term" do
     <|> .«range» *> pure .range
 
   let tail : ParseM Term := 
-    .app M <$> (ws *> term)
-    <|> .annot M <$> (ws *> .«:» **> typescheme)
-    <|> .unlabel M <$> (ws *> .«/» **> term)
-    <|> .concat M <$> (ws *> .«++» **> term)
-    <|> .elim M <$> (ws *> .«▿» **> term)
-    <|> .cons M <$> (ws *> .«::» **> term)
-    <|> (fun o t => .op o M t) <$> (ws *> op) <**> term
+    .app M <$> (.ws *> term)
+    <|> .annot M <$> (.ws *> .«:» **> typescheme)
+    <|> .unlabel M <$> (.ws *> .«/» **> term)
+    <|> .concat M <$> (.ws *> .«++» **> term)
+    <|> .elim M <$> (.ws *> .«▿» **> term)
+    <|> .cons M <$> (.ws *> .«::» **> term)
+    <|> (fun o t => .op o M t) <$> (.ws *> op) <**> term
 
   Parser.optionD tail M
