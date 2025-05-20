@@ -11,7 +11,7 @@ nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") Term, M, «N» :=
   | "let " x " : " σ " = " M " in " «N» : «let» (bind x in «N»)
   | M " :' " σ                          : annot (tex := s!"{M} \\, \\lottsym\{:} \\, {σ}")
   | ℓ                                   : label nosubst
-  | "{" sepBy(M " ▹ " «N», ", ") "}"    : prod
+  | "{" M " ▹ " «N» "}"                 : prod
   | "[" M " ▹ " «N» "]"                 : sum
   | M "/" «N»                           : unlabel
   | "prj " M                            : prj
