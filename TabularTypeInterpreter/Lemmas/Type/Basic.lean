@@ -691,7 +691,7 @@ theorem singleton_row (ξke : [[Γc; Γ ⊢ ξ : L ⇝ B]]) (τke : [[Γc; Γ �
     exact ξke
   · rw [Range.map, Range.toList, if_pos (Nat.succ_pos _), Range.toList, Nat.zero_add,
         if_neg (Nat.not_lt_of_le Nat.le.refl), List.map_singleton]
-    exact .var
+    exact .singleton
   · intros
     exact τke
 
@@ -888,9 +888,9 @@ def Monotype_open_preservation (uni : Uniqueness (List.map (TypeVar_open · a n)
       all_goals nomatch this
     )]
     exact concrete ne
-  | var =>
+  | singleton =>
     let [_] := ξ
-    exact var
+    exact singleton
 
 def Perm_preservation {ξ' : Nat → Monotype} (uni : [[unique(</ ξ@i // i in [:n] />)]])
   (perm : List.Perm p [:n]) (eq : ∀ i, ξ' i = ξ (p.get! i))
@@ -931,19 +931,19 @@ def Perm_preservation {ξ' : Nat → Monotype} (uni : [[unique(</ ξ@i // i in [
       apply Ne.symm
       exact ne _ ⟨Nat.zero_le _, pjmem.right⟩ _
         ⟨Nat.succ_le_of_lt pjltpi, pimem.upper, Nat.mod_one _⟩
-  | var =>
+  | singleton =>
     let lengths_eq : List.length (Range.map ..) = List.length _ := by rw [ξseq]
     rw [List.length_map, Std.Range.length_toList, List.length_singleton, Nat.sub_zero] at lengths_eq
     cases lengths_eq
     rw [Range.map, Range.toList, if_pos Nat.one_pos, Range.toList, Nat.zero_add,
         if_neg (Nat.not_lt_of_le (Nat.le_refl _)), List.map_singleton]
-    exact var
+    exact singleton
 
 def of_les (uni : [[unique(</ ξ@i // i in [m₀:n₀] />)]]) (le₀ : m₀ ≤ n₀) (le₁ : m₀ ≤ m₁)
   (le₂ : n₁ ≤ n₀) (le₃ : m₁ ≤ n₁) : [[unique(</ ξ@i // i in [m₁:n₁] />)]] := by
   generalize ξseq : [m₀:n₀].map ξ = ξs at uni
   cases uni
-  case var =>
+  case singleton =>
     let lengths_eq : List.length (Range.map ..) = List.length _ := by rw [ξseq]
     rw [List.length_singleton, List.length_map, Range.length_toList] at lengths_eq
     cases Nat.eq_add_of_sub_eq le₀ lengths_eq
@@ -964,7 +964,7 @@ def of_les (uni : [[unique(</ ξ@i // i in [m₀:n₀] />)]]) (le₀ : m₀ ≤ 
     | 1 =>
       cases Nat.eq_add_of_sub_eq le₃ leq
       rw [Nat.add_comm, Range.map_eq_cons_of_lt Nat.le.refl, Range.map_same_eq_nil]
-      exact var
+      exact singleton
     | _ + 2 => nomatch this
   case _ n' ℓ h =>
   let lengths_eq : List.length (Range.map ..) = List.length _ := by rw [ξseq]

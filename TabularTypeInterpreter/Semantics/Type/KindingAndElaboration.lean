@@ -20,7 +20,7 @@ judgement Monotype.label.Uniqueness where
 ──────────────────────────────────────────────────── concrete
 unique(</ ℓ@i // i in [:n] />)
 
-───────── var
+───────── singleton
 unique(ξ)
 
 open «F⊗⊕ω»
