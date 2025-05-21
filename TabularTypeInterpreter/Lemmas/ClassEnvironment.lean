@@ -86,7 +86,7 @@ theorem TypeScheme.KindingAndElaboration.class_weakening (σke : [[Γc; Γ ⊢ �
   case tc γcin _ ih => exact tc (ΓcΓc'w.In_append_inl γcin) (ih ΓcΓc'w)
   case all I _ κ₀e _ ψih ρih => exact all I (ψih · · ΓcΓc'w) κ₀e (ρih ΓcΓc'w)
   case ind I₀ I₁ _ κe _ _ ρih Bₗih Bᵣih =>
-    exact ind I₀ I₁ (ρih ΓcΓc'w) κe (Bₗih · · · · · · · · · · ΓcΓc'w) (Bᵣih · · · · ΓcΓc'w)
+    exact ind I₀ I₁ (ρih ΓcΓc'w) κe (Bₗih · · · · · · · · ΓcΓc'w) (Bᵣih · · · · ΓcΓc'w)
   all_goals aesop (add safe constructors KindingAndElaboration)
 
 namespace ClassEnvironment

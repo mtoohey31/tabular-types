@@ -529,24 +529,23 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     let ⟨aᵢninΓ, aᵢninΓ'⟩ := List.not_mem_append'.mp aᵢninΓΓ'
     simp [«F⊗⊕ω».Term.TypeVar_open, Type.TypeVar_open]
     apply Typing.typeLam <| ↑aᵢ :: ↑aₚ :: ↑aₜ :: ↑aₗ :: Γ.typeVarDom ++ ↑aᵢ :: Γ.typeVarDom ++
-      ↑aᵢ :: ↑aₚ :: ↑aₜ :: ↑aₗ :: I₀ ++ ↑aᵢ :: I₁ ++ ↑aᵢ :: ↑aₚ :: ↑aₜ :: ↑aₗ :: Iₛ
+      ↑aᵢ :: I₁ ++ ↑aᵢ :: ↑aₚ :: ↑aₜ :: ↑aₗ :: Iₛ
     intro aₙ aₙnin
-    let ⟨aₙninΓΓ'I₀₁, aₙninIₛ⟩ := List.not_mem_append'.mp aₙnin
-    let ⟨aₙninΓΓ'I₀, aₙninI₁⟩ := List.not_mem_append'.mp aₙninΓΓ'I₀₁
-    let ⟨aₙninΓΓ', aₙninI₀⟩ := List.not_mem_append'.mp aₙninΓΓ'I₀
+    let ⟨aₙninΓΓ'I₁, aₙninIₛ⟩ := List.not_mem_append'.mp aₙnin
+    let ⟨aₙninΓΓ', aₙninI₁⟩ := List.not_mem_append'.mp aₙninΓΓ'I₁
     let ⟨aₙninΓ, aₙninΓ'⟩ := List.not_mem_append'.mp aₙninΓΓ'
     simp [«F⊗⊕ω».Term.TypeVar_open, Type.TypeVar_open]
-    let Γaₗₜₚᵢₙwe := Γwe.typeExt aₗninΓ .label |>.typeExt aₜninΓ κe |>.typeExt aₚninΓ κe.row
-      |>.typeExt aᵢninΓ κe.row |>.typeExt aₙninΓ κe.row
+    let Γaₗₜₚᵢwe := Γwe.typeExt aₗninΓ .label |>.typeExt aₜninΓ κe |>.typeExt aₚninΓ κe.row
+      |>.typeExt aᵢninΓ κe.row
+    let Γaₗₜₚᵢₙwe := Γaₗₜₚᵢwe.typeExt aₙninΓ κe.row
     apply Typing.equiv _ <| .arr .refl <| .arr .refl <| .arr .refl <| .arr .lamAppR .lamAppR
     apply Mih _ aₗninIₛ _ aₜninIₛ _ aₚninIₛ _ aᵢninIₛ _ aₙninIₛ _ Γᵢw Γcw Γaₗₜₚᵢₙwe
     open TypeScheme.KindingAndElaboration in
-    let keBₗ' := keBₗ _ aₗninI₀ _ aₜninI₀ _ aₚninI₀ _ aᵢninI₀ _ aₙninI₀
+    let keBₗ' := keBₗ _ aₗninI₀ _ aₜninI₀ _ aₚninI₀ _ aᵢninI₀
     let Γaₗₜₚwe := Γwe.typeExt aₗninΓ .label |>.typeExt aₜninΓ κe |>.typeExt aₚninΓ κe.row
     let Γaₗₜₚᵢwe := Γaₗₜₚwe.typeExt aᵢninΓ κe.row
     let Γaₗₜₚᵢₙwe := Γaₗₜₚᵢwe.typeExt aₙninΓ κe.row
-    let Bₗlc := keBₗ'.soundness Γcw Γaₗₜₚᵢₙwe .constr |>.TypeVarLocallyClosed_of.weaken (n := 5)
-      |>.TypeVar_open_drop Nat.le.refl.step.step.step.step
+    let Bₗlc := keBₗ'.soundness Γcw Γaₗₜₚᵢwe .constr |>.TypeVarLocallyClosed_of.weaken (n := 5)
       |>.TypeVar_open_drop Nat.le.refl.step.step.step
       |>.TypeVar_open_drop Nat.le.refl.step.step
       |>.TypeVar_open_drop Nat.le.refl.step
@@ -559,7 +558,9 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     rw [Bₗlc.Type_open_id, Bᵣlc.weaken (n := 3).Type_open_id] at this ⊢
     rw [Bᵣlc.weaken (n := 2).TypeVar_open_id, Bᵣlc.weaken (n := 1).TypeVar_open_id,
         Bᵣlc.TypeVar_open_id]
-    apply qual keBₗ' _ .star
+    let keBₗ'' := keBₗ'.weakening Γaₗₜₚᵢₙwe (Γ' := .typeExt .empty ..) (Γ'' := .empty)
+    rw [keBₗ''.soundness Γcw Γaₗₜₚᵢₙwe .constr |>.TypeVarLocallyClosed_of.TypeVar_open_id]
+    apply qual keBₗ'' _ .star
     let keBᵣ'' := keBᵣ'.weakening Γaₗₜₚᵢₙwe (Γ' := .typeExt (.typeExt (.typeExt .empty ..) ..) ..)
       (Γ'' := .typeExt (.typeExt .empty ..) ..)
     let .qual (.mono ρlc) := ρke.TypeVarLocallyClosed_of

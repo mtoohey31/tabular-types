@@ -25,7 +25,7 @@ def Monotype.sizeOf' : Monotype → Nat
   | .concat ρ₀ μ ρ₁ ρ₂ => 1 + ρ₀.sizeOf' + μ.sizeOf' + ρ₁.sizeOf' + ρ₂.sizeOf'
   | .typeClass _ τ => 1 + τ.sizeOf'
   | .all «λτ» ρ => 1 + «λτ».sizeOf' + ρ.sizeOf'
-  | .ind ρ => 14 + ρ.sizeOf'
+  | .ind ρ => 15 + ρ.sizeOf'
   | .split «λτ» ρ₀ ρ₁ ρ₂ => 5 + «λτ».sizeOf' + ρ₀.sizeOf' + ρ₁.sizeOf' + ρ₂.sizeOf'
 
 end

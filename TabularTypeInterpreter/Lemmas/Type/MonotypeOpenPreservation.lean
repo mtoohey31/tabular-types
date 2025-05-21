@@ -1237,7 +1237,7 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
         let ρke' := ρke.Monotype_open_preservation Γcw ΓaΓ'we aninΓ' aninσ aninA'' τke
         apply «ind» (I₀ ++ [[(Γ, a : κ₀, Γ')]].typeVarDom) (I₁ ++ [[(Γ, a : κ₀, Γ')]].typeVarDom)
           ρke' κe
-        · intro aₗ aₗnin aₜ aₜnin aₚ aₚnin aᵢ aᵢnin aₙ aₙnin
+        · intro aₗ aₗnin aₜ aₜnin aₚ aₚnin aᵢ aᵢnin
           let ⟨aₗninI₀, aₗninΓaΓ'⟩ := List.not_mem_append'.mp aₗnin
 
           let ⟨aₜneaₗ, aₜnin'⟩ := List.not_mem_cons.mp aₜnin
@@ -1260,39 +1260,22 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
           let aᵢninΓaΓ'' := List.not_mem_cons.mpr
             ⟨aᵢneaₚ, List.not_mem_cons.mpr ⟨aᵢneaₜ, List.not_mem_cons.mpr ⟨aᵢneaₗ, aᵢninΓaΓ'⟩⟩⟩
 
-          let ⟨aₙneaᵢ, aₙnin'⟩ := List.not_mem_cons.mp aₙnin
-          let ⟨aₙneaₚ, aₙnin''⟩ := List.not_mem_cons.mp aₙnin'
-          let ⟨aₙneaₜ, aₙnin'''⟩ := List.not_mem_cons.mp aₙnin''
-          let ⟨aₙneaₗ, aₙnin''''⟩ := List.not_mem_cons.mp aₙnin'''
-          let ⟨aₙninI₀, aₙninΓaΓ'⟩ := List.not_mem_append'.mp aₙnin''''
-          let aₙninI₀' := List.not_mem_cons.mpr ⟨
-            aₙneaᵢ,
-            List.not_mem_cons.mpr
-              ⟨aₙneaₚ, List.not_mem_cons.mpr ⟨aₙneaₜ, List.not_mem_cons.mpr ⟨aₙneaₗ, aₙninI₀⟩⟩⟩
-          ⟩
-          let aₙninΓaΓ'' := List.not_mem_cons.mpr ⟨
-            aₙneaᵢ,
-            List.not_mem_cons.mpr
-              ⟨aₙneaₚ, List.not_mem_cons.mpr ⟨aₙneaₜ, List.not_mem_cons.mpr ⟨aₙneaₗ, aₙninΓaΓ'⟩⟩⟩
-          ⟩
-
           let keBₗ' : KindingAndElaboration Γc
-            [[(Γ, a : κ₀, Γ', aₗ : L, aₜ : κ, aₚ : R κ, aᵢ : R κ, aₙ : R κ)]]
+            [[(Γ, a : κ₀, Γ', aₗ : L, aₜ : κ, aₚ : R κ, aᵢ : R κ)]]
             ((qual (.mono (.concat (.var aₚ) (.comm .non) (.row [(.var aₗ, .var aₜ)] none)
               (.var aᵢ)))).TypeVar_open a (n + 6)) .constr
-            ((((((Bₗ'.TypeVar_open aₗ 4).TypeVar_open aₜ 3).TypeVar_open aₚ 2)
-              |>.TypeVar_open aᵢ 1).TypeVar_open aₙ 0).TypeVar_open a (n + 6)) := by
+            (((((Bₗ'.TypeVar_open aₗ 4).TypeVar_open aₜ 3).TypeVar_open aₚ 2).TypeVar_open
+              aᵢ 1).TypeVar_open a (n + 6)) := by
             rw [TypeVar_open, QualifiedType.TypeVar_open, Monotype.TypeVar_open,
                 Monotype.TypeVar_open, if_neg nofun, Monotype.TypeVar_open, if_neg nofun,
                 Monotype.TypeVar_open, Monotype.TypeVar_open, List.mapMem_eq_map,
                 List.map_singleton, Monotype.TypeVar_open, if_neg nofun, Monotype.TypeVar_open,
                 if_neg nofun,
-                Type.TypeVar_open_comm (m := 0) (n := n + 6) _ (Nat.zero_ne_add_one _),
                 Type.TypeVar_open_comm (m := 1) (n := n + 6) _ (by simp_arith),
                 Type.TypeVar_open_comm (m := 2) (n := n + 6) _ (by simp_arith),
                 Type.TypeVar_open_comm (m := 3) (n := n + 6) _ (by simp_arith),
                 Type.TypeVar_open_comm (m := 4) (n := n + 6) _ (by simp_arith)]
-            exact keBₗ _ aₗninI₀ _ aₜninI₀' _ aₚninI₀' _ aᵢninI₀' _ aₙninI₀'
+            exact keBₗ _ aₗninI₀ _ aₜninI₀' _ aₚninI₀' _ aᵢninI₀'
           let aneaₗ : a ≠ aₗ := by
             rw [TypeEnvironment.typeVarDom_append] at aₗninΓaΓ'
             let ⟨_, aninΓa⟩ := List.not_mem_append'.mp aₗninΓaΓ'
@@ -1313,38 +1296,27 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
             let ⟨_, aninΓa⟩ := List.not_mem_append'.mp aᵢninΓaΓ'
             symm
             exact List.ne_of_not_mem_cons aninΓa
-          let aneaₙ : a ≠ aₙ := by
-            rw [TypeEnvironment.typeVarDom_append] at aₙninΓaΓ'
-            let ⟨_, aninΓa⟩ := List.not_mem_append'.mp aₙninΓaΓ'
-            symm
-            exact List.ne_of_not_mem_cons aninΓa
           let aninΓ'aₗaₜaₚaᵢaₙ := List.not_mem_cons.mpr ⟨
-            aneaₙ,
-            List.not_mem_cons.mpr ⟨
-              aneaᵢ,
-              List.not_mem_cons.mpr
-                ⟨aneaₚ, List.not_mem_cons.mpr ⟨aneaₜ, List.not_mem_cons.mpr ⟨aneaₗ, aninΓ'⟩⟩⟩
-            ⟩
+            aneaᵢ,
+            List.not_mem_cons.mpr
+              ⟨aneaₚ, List.not_mem_cons.mpr ⟨aneaₜ, List.not_mem_cons.mpr ⟨aneaₗ, aninΓ'⟩⟩⟩
           ⟩
           let keBₗ'' := keBₗ'.Monotype_open_preservation Γcw
             (ΓaΓ'we.typeExt aₗninΓaΓ' .label |>.typeExt aₜninΓaΓ'' κe |>.typeExt aₚninΓaΓ'' κe.row
-              |>.typeExt aᵢninΓaΓ'' κe.row |>.typeExt aₙninΓaΓ'' κe.row)
+              |>.typeExt aᵢninΓaΓ'' κe.row)
             aninΓ'aₗaₜaₚaᵢaₙ (by
               simp [freeTypeVars, QualifiedType.freeTypeVars, Monotype.freeTypeVars]
               exact ⟨aneaₚ, aneaₗ, aneaₜ, aneaᵢ⟩)
             (Type.not_mem_freeTypeVars_TypeVar_open_intro
               (Type.not_mem_freeTypeVars_TypeVar_open_intro
                 (Type.not_mem_freeTypeVars_TypeVar_open_intro
-                  (Type.not_mem_freeTypeVars_TypeVar_open_intro
-                    (Type.not_mem_freeTypeVars_TypeVar_open_intro aninBₗ' aneaₗ) aneaₜ) aneaₚ) aneaᵢ)
-              aneaₙ)
+                  (Type.not_mem_freeTypeVars_TypeVar_open_intro aninBₗ' aneaₗ) aneaₜ) aneaₚ) aneaᵢ)
             τke
           let ⟨_, .typeExt Γwe ..⟩ := ΓaΓ'we.append_left_elim
           let ⟨_, κ₀e⟩ := κ₀.Elaboration_total
           let Blc := τke.soundness Γcw Γwe κ₀e |>.TypeVarLocallyClosed_of
           rw [TypeEnvironment.TypeVar_subst, TypeEnvironment.TypeVar_subst,
               TypeEnvironment.TypeVar_subst, TypeEnvironment.TypeVar_subst,
-              TypeEnvironment.TypeVar_subst, ← Blc.Type_open_TypeVar_open_comm (Nat.succ_ne_zero _),
               ← Blc.weaken (n := 1).Type_open_TypeVar_open_comm (by simp_arith),
               ← Blc.weaken (n := 2).Type_open_TypeVar_open_comm (by simp_arith),
               ← Blc.weaken (n := 3).Type_open_TypeVar_open_comm (by simp_arith),
@@ -1477,7 +1449,6 @@ decreasing_by
     apply List.le_sum_of_mem'
     apply List.mem_map.mpr
     exact ⟨_, List.get!_mem ilt, rfl⟩
-  · exact Nat.succ_le_of_lt <| Monotype.sizeOf'_pos _
   · exact Nat.succ_le_of_lt <| Monotype.sizeOf'_pos _
   · exact Nat.succ_le_of_lt <| Monotype.sizeOf'_pos _
   · exact Nat.succ_le_of_lt <| QualifiedType.sizeOf'_pos _

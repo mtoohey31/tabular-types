@@ -209,15 +209,8 @@ theorem TypeScheme.KindingAndElaboration.deterministic (σke₀ : [[Γc; Γ ⊢ 
     let ⟨aᵢ₀nin₀₁Bₗ₀, aᵢ₀ninBₗ₁⟩ := List.not_mem_append'.mp aᵢ₀nin
     let ⟨aᵢ₀nin₀₁, aᵢ₀ninBₗ₀⟩ := List.not_mem_append'.mp aᵢ₀nin₀₁Bₗ₀
     let ⟨aᵢ₀nin₀, aᵢ₀nin₁⟩ := List.not_mem_append'.mp aᵢ₀nin₀₁
-    let I₀₀ₗₜₚᵢ := aᵢ₀ :: I₀₀ₗₜₚ
-    let I₀₁ₗₜₚᵢ := aᵢ₀ :: I₀₁ₗₜₚ
-    let ⟨aₙ₀, aₙ₀nin⟩ := I₀₀ₗₜₚᵢ ++ I₀₁ₗₜₚᵢ ++ ↑Bₗ₀.freeTypeVars ++ ↑Bₗ₁.freeTypeVars |>.exists_fresh
-    let ⟨aₙ₀nin₀₁Bₗ₀, aₙ₀ninBₗ₁⟩ := List.not_mem_append'.mp aₙ₀nin
-    let ⟨aₙ₀nin₀₁, aₙ₀ninBₗ₀⟩ := List.not_mem_append'.mp aₙ₀nin₀₁Bₗ₀
-    let ⟨aₙ₀nin₀, aₙ₀nin₁⟩ := List.not_mem_append'.mp aₙ₀nin₀₁
-    let ⟨_, Bₗopeq⟩ :=
-      keBₗ₀ aₗ₀ aₗ₀nin₀ aₜ₀ aₜ₀nin₀ aₚ₀ aₚ₀nin₀ aᵢ₀ aᵢ₀nin₀ aₙ₀ aₙ₀nin₀ |>.deterministic <|
-        keBₗ₁ aₗ₀ aₗ₀nin₁ aₜ₀ aₜ₀nin₁ aₚ₀ aₚ₀nin₁ aᵢ₀ aᵢ₀nin₁ aₙ₀ aₙ₀nin₁
+    let ⟨_, Bₗopeq⟩ := keBₗ₀ aₗ₀ aₗ₀nin₀ aₜ₀ aₜ₀nin₀ aₚ₀ aₚ₀nin₀ aᵢ₀ aᵢ₀nin₀ |>.deterministic <|
+      keBₗ₁ aₗ₀ aₗ₀nin₁ aₜ₀ aₜ₀nin₁ aₚ₀ aₚ₀nin₁ aᵢ₀ aᵢ₀nin₁
     let aₜ₀neaₗ₀ := List.ne_of_not_mem_cons aₜ₀nin₀
     let aₜ₀ninBₗ₀op :=
       TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₜ₀neaₗ₀ aₜ₀ninBₗ₀ (n := 4)
@@ -239,25 +232,10 @@ theorem TypeScheme.KindingAndElaboration.deterministic (σke₀ : [[Γc; Γ ⊢ 
     let aᵢ₀ninBₗ₁op := TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aᵢ₀neaₚ₀ (n := 2) <|
       TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aᵢ₀neaₜ₀ (n := 3) <|
       TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aᵢ₀neaₗ₀ aᵢ₀ninBₗ₁ (n := 4)
-    let aₙ₀neaᵢ₀ := List.ne_of_not_mem_cons aₙ₀nin₀
-    let aₙ₀neaₚ₀ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons aₙ₀nin₀
-    let aₙ₀neaₜ₀ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
-      List.not_mem_of_not_mem_cons aₙ₀nin₀
-    let aₙ₀neaₗ₀ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
-      List.not_mem_of_not_mem_cons <| List.not_mem_of_not_mem_cons aₙ₀nin₀
-    let aₙ₀ninBₗ₀op := TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₀neaᵢ₀ (n := 1) <|
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₀neaₚ₀ (n := 2) <|
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₀neaₜ₀ (n := 3) <|
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₀neaₗ₀ aₙ₀ninBₗ₀ (n := 4)
-    let aₙ₀ninBₗ₁op := TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₀neaᵢ₀ (n := 1) <|
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₀neaₚ₀ (n := 2) <|
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₀neaₜ₀ (n := 3) <|
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₀neaₗ₀ aₙ₀ninBₗ₁ (n := 4)
     let Bₗeq := TypeVar_open_inj_of_not_mem_freeTypeVars aₗ₀ninBₗ₀ aₗ₀ninBₗ₁ <|
       TypeVar_open_inj_of_not_mem_freeTypeVars aₜ₀ninBₗ₀op aₜ₀ninBₗ₁op <|
       TypeVar_open_inj_of_not_mem_freeTypeVars aₚ₀ninBₗ₀op aₚ₀ninBₗ₁op <|
-      TypeVar_open_inj_of_not_mem_freeTypeVars aᵢ₀ninBₗ₀op aᵢ₀ninBₗ₁op <|
-      TypeVar_open_inj_of_not_mem_freeTypeVars aₙ₀ninBₗ₀op aₙ₀ninBₗ₁op Bₗopeq
+      TypeVar_open_inj_of_not_mem_freeTypeVars aᵢ₀ninBₗ₀op aᵢ₀ninBₗ₁op Bₗopeq
 
     let ⟨aᵢ₁, aᵢ₁nin⟩ := I₁₀ ++ I₁₁ ++ ↑Bᵣ₀.freeTypeVars ++ ↑Bᵣ₁.freeTypeVars |>.exists_fresh
     let ⟨aᵢ₁nin₀₁Bᵣ₀, aᵢ₁ninBᵣ₁⟩ := List.not_mem_append'.mp aᵢ₁nin
@@ -493,9 +471,13 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
           ⟨aₙneaₚ, List.not_mem_cons.mpr ⟨aₙneaₜ, List.not_mem_cons.mpr ⟨aₙneaₗ, aₙninΓ⟩⟩⟩
       ⟩
 
-      exact keBₗ aₗ aₗninI₀ aₜ aₜninI₀' aₚ aₚninI₀' aᵢ aᵢninI₀' aₙ aₙninI₀' |>.soundness Γcw
-        (Γwe.typeExt aₗninΓ .label |>.typeExt aₜninΓ' κ'e |>.typeExt aₚninΓ' κ'e.row
-           |>.typeExt aᵢninΓ' κ'e.row |>.typeExt aₙninΓ' κ'e.row) .constr
+      specialize keBₗ aₗ aₗninI₀ aₜ aₜninI₀' aₚ aₚninI₀' aᵢ aᵢninI₀'
+      let Γawe := Γwe.typeExt aₗninΓ .label |>.typeExt aₜninΓ' κ'e |>.typeExt aₚninΓ' κ'e.row
+        |>.typeExt aᵢninΓ' κ'e.row |>.typeExt aₙninΓ' κ'e.row
+      let Bₗki := keBₗ.weakening Γawe (Γ' := .typeExt .empty ..) (Γ'' := .empty)
+        |>.soundness Γcw Γawe .constr
+      rw [Bₗki.TypeVarLocallyClosed_of.TypeVar_open_id]
+      exact Bₗki
     · intro aᵢ aᵢnin aₙ aₙnin
       let ⟨aᵢninI₁, aᵢninΓ⟩ := List.not_mem_append'.mp aᵢnin
       let ⟨aₙneaᵢ, aₙnin'⟩ := List.not_mem_cons.mp aₙnin
@@ -521,7 +503,10 @@ decreasing_by
     )]
     exact Range.mem_map_of_mem imem
   · exact Nat.succ_le_of_lt <| Monotype.sizeOf'_pos _
-  · exact Nat.succ_le_of_lt <| Monotype.sizeOf'_pos _
+  · rw [TypeEnvironment.append, TypeEnvironment.append, TypeEnvironment.append,
+        TypeEnvironment.sizeOf', TypeEnvironment.sizeOf', TypeEnvironment.sizeOf',
+        TypeEnvironment.sizeOf', TypeEnvironment.sizeOf']
+    simp_arith
 
 theorem TypeEnvironment.WellFormednessAndElaboration.soundness (Γwe : [[Γc ⊢ Γ ⇝ Δ]])
   (Γcw : [[⊢c Γc]]) : [[⊢ Δ]] := match Γwe with

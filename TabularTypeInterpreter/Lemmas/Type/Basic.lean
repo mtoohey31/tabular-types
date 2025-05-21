@@ -1052,7 +1052,7 @@ theorem weakening (σke : [[Γc; Γ, Γ'' ⊢ σ : κ ⇝ A]])
   | «ind» I₀ I₁ ρke κe keBₗ keBᵣ =>
     apply «ind» (I₀ ++ [[(Γ, Γ', Γ'')]].typeVarDom) (I₁ ++ [[(Γ, Γ', Γ'')]].typeVarDom)
       (ρke.weakening ΓΓ'Γ''we) κe
-    · intro aₗ aₗnin aₜ aₜnin aₚ aₚnin aᵢ aᵢnin aₙ aₙnin
+    · intro aₗ aₗnin aₜ aₜnin aₚ aₚnin aᵢ aᵢnin
       let ⟨aₗninI₀, aₗninΓΓ'Γ''⟩ := List.not_mem_append'.mp aₗnin
       rw [← List.cons_append] at aₜnin
       let ⟨aₜninI₀, aₜninΓΓ'Γ''⟩ := List.not_mem_append'.mp aₜnin
@@ -1079,28 +1079,10 @@ theorem weakening (σke : [[Γc; Γ, Γ'' ⊢ σ : κ ⇝ A]])
           ⟩
         ⟩
       ⟩
-      rw [← List.cons_append, ← List.cons_append, ← List.cons_append, ← List.cons_append] at aₙnin
-      let ⟨aₙninI₀, aₙninΓΓ'Γ''⟩ := List.not_mem_append'.mp aₙnin
-      let aₙninΓΓ'Γ''aₗaₜaₚᵢ := List.not_mem_cons.mpr ⟨
-        List.ne_of_not_mem_cons aₙninI₀,
-        List.not_mem_cons.mpr ⟨
-          List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons aₙninI₀,
-          List.not_mem_cons.mpr ⟨
-            List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
-              List.not_mem_of_not_mem_cons aₙninI₀,
-            List.not_mem_cons.mpr ⟨
-              List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
-                List.not_mem_of_not_mem_cons <| List.not_mem_of_not_mem_cons aₙninI₀,
-              aₙninΓΓ'Γ''
-            ⟩
-          ⟩
-        ⟩
-      ⟩
       repeat rw [← TypeEnvironment.append]
-      exact keBₗ aₗ aₗninI₀ aₜ aₜninI₀ aₚ aₚninI₀ aᵢ aᵢninI₀ aₙ aₙninI₀ |>.weakening <|
+      exact keBₗ aₗ aₗninI₀ aₜ aₜninI₀ aₚ aₚninI₀ aᵢ aᵢninI₀ |>.weakening <|
         ΓΓ'Γ''we.typeExt aₗninΓΓ'Γ'' .label |>.typeExt aₜninΓΓ'Γ''aₗ κe
           |>.typeExt aₚninΓΓ'Γ''aₗaₜ κe.row |>.typeExt aᵢninΓΓ'Γ''aₗaₜaₚ κe.row
-          |>.typeExt aₙninΓΓ'Γ''aₗaₜaₚᵢ κe.row
     · intro aᵢ aᵢnin aₙ aₙnin
       let ⟨aᵢninI₁, aᵢninΓΓ'Γ''⟩ := List.not_mem_append'.mp aᵢnin
       rw [← List.cons_append] at aₙnin
@@ -1171,9 +1153,9 @@ theorem TermVar_drop (σke : [[Γc; Γ, x : σ₁, Γ' ⊢ σ₀ : κ ⇝ A]])
     exact ψke a anin |>.TermVar_drop
   | «ind» I₀ I₁ ρke κe keBₗ keBᵣ => by
     apply «ind» I₀ I₁ ρke.TermVar_drop κe
-    · intro _ aₗnin _ aₜnin _ aₚnin _ aᵢnin _ aₙnin
+    · intro _ aₗnin _ aₜnin _ aₚnin _ aᵢnin
       repeat rw [← TypeEnvironment.append]
-      exact keBₗ _ aₗnin _ aₜnin _ aₚnin _ aᵢnin _ aₙnin |>.TermVar_drop
+      exact keBₗ _ aₗnin _ aₜnin _ aₚnin _ aᵢnin |>.TermVar_drop
     · intro _ aᵢnin _ aₙnin
       repeat rw [← TypeEnvironment.append]
       exact keBᵣ _ aᵢnin _ aₙnin |>.TermVar_drop
@@ -1239,9 +1221,9 @@ theorem Constr_drop (σke : [[Γc; Γ, ψ ⇝ x, Γ' ⊢ σ : κ ⇝ A]])
     exact ψke a anin |>.Constr_drop
   | «ind» I₀ I₁ ρke κe keBₗ keBᵣ => by
     apply «ind» I₀ I₁ ρke.Constr_drop κe
-    · intro _ aₗnin _ aₜnin _ aₚnin _ aᵢnin _ aₙnin
+    · intro _ aₗnin _ aₜnin _ aₚnin _ aᵢnin
       repeat rw [← TypeEnvironment.append]
-      exact keBₗ _ aₗnin _ aₜnin _ aₚnin _ aᵢnin _ aₙnin |>.Constr_drop
+      exact keBₗ _ aₗnin _ aₜnin _ aₚnin _ aᵢnin |>.Constr_drop
     · intro _ aᵢnin _ aₙnin
       repeat rw [← TypeEnvironment.append]
       exact keBᵣ _ aᵢnin _ aₙnin |>.Constr_drop

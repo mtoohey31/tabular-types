@@ -239,14 +239,14 @@ notex for noelab ⊢ κ ⇝ K
 
 </ Γc; Γ ⊢ τ@i : κ ⇝ A@i // i in [:n] />
 notex for noelab ⊢ κ ⇝ K
-notex for noelab ∀ aₗ ∉ I₀, ∀ aₜ ∉ aₗ :: I₀, ∀ aₚ ∉ aₜ :: aₗ :: I₀, ∀ aᵢ ∉ aₚ :: aₜ :: aₗ :: I₀, ∀ aₙ ∉ aᵢ :: aₚ :: aₜ :: aₗ :: I₀, Γc; Γ, aₗ : L, aₜ : κ, aₚ : R κ, aᵢ : R κ, aₙ : R κ ⊢ aₚ ⊙(N) ⟨aₗ ▹ aₜ⟩ ~ aᵢ : C ⇝ Bₗ^aₗ#4^aₜ#3^aₚ#2^aᵢ#1^aₙ
+notex for noelab ∀ aₗ ∉ I₀, ∀ aₜ ∉ aₗ :: I₀, ∀ aₚ ∉ aₜ :: aₗ :: I₀, ∀ aᵢ ∉ aₚ :: aₜ :: aₗ :: I₀, Γc; Γ, aₗ : L, aₜ : κ, aₚ : R κ, aᵢ : R κ ⊢ aₚ ⊙(N) ⟨aₗ ▹ aₜ⟩ ~ aᵢ : C ⇝ Bₗ^aₗ#4^aₜ#3^aₚ#2^aᵢ#1
 notex for noelab ∀ aᵢ ∉ I₁, ∀ aₙ ∉ aᵢ :: I₁, Γc; Γ, aᵢ : R κ, aₙ : R κ ⊢ aᵢ ⊙(N) aₙ ~ ⟨</ ℓ@i ▹ τ@i // i in [:n] /> </ : κ // b />⟩ : C ⇝ Bᵣ^aᵢ#1^aₙ
 notex for noelab Aₛ := ∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bₗ → Bᵣ → (⊗ { }) → (aₘ$5 aₚ$2) → aₘ$5 aᵢ$1
 </ Γᵢ; Γc; Γ ⊨ ⟨</ ℓ@j ▹ τ@j // j in [:i] /> : κ⟩ ⊙(N) ⟨ℓ@i ▹ τ@i⟩ ~ ⟨</ ℓ@k ▹ τ@k // k in [:i+1] />⟩ ⇝ Eₗ@i // i in [:n] />
 </ Γᵢ; Γc; Γ ⊨ ⟨</ ℓ@j ▹ τ@j // j in [:i+1] />⟩ ⊙(N) ⟨</ ℓ@k ▹ τ@k // k in [i+1:n] /> : κ⟩ ~ ⟨</ ℓ@l ▹ τ@l // l in [:n] /> </ : κ // b />⟩ ⇝ Eᵣ@i // i in [:n] />
 notex for noelab E' := ! </ ⦅⦅xₛ$1 [⊗ { }] [A@i] [{</ A@j // j in [:i] />}] [{</ A@k // k in [:i+1] />}] [{</ A@l // l in [i+1:n] />}] Eₗ@i⦆ Eᵣ@i⦆ () // i in [:n] /> xᵢ$0
 notex for noelab E := Λ aₘ : (L K) ↦ *. λ xₛ : Aₛ. λ xᵢ : aₘ$0 { }. E'
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── ind (comment := "where the comprehension in $\\targetpre E' \\targetpost$ is repeated application") (comment noelab) (I₀ I₁ : List TypeVarId)
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── ind (comment := "where the comprehension in $\\targetpre E' \\targetpost$ is repeated application") (comment noelab) (I₀ I₁ : List TypeVarId)
 Γᵢ; Γc; Γ ⊨ Ind ⟨</ ℓ@i ▹ τ@i // i in [:n] /> </ : κ // b />⟩ ⇝ E
 
 ∀ a ∉ I, Γc; Γ, a : κ ⊢ τ^a : * ⇝ A^a
