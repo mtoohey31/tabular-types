@@ -267,12 +267,12 @@ judgement ParallelReduction :=
 Δ ⊢ A ≡> A'
 </ Δ ⊢ B@i ≡> B'@i // i in [:n] />
 lc_ A
-</ lc_ B@i // i in [:n] />
+-- </ lc_ B@i // i in [:n] />
 ──────────────────────────────────────────────────────────────────────────────── lamListApp
 Δ ⊢ A ⟦{ </ B@i // i in [:n] /> }⟧ ≡> { </ A' B'@i // i in [:n] /> }
 
 Δ ⊢ A ≡> A'
-lc_ A -- FIXME remove?
+-- lc_ A -- FIXME remove?
 ──────────────────────────── listAppId
 Δ ⊢ (λ a : K. a$0) ⟦A⟧ ≡> A'
 
@@ -305,8 +305,8 @@ lc_ A -- FIXME remove?
 
 -- FIXME check lc?
 lc_ A₀
-body A₁
-lc_ B
+-- body A₁
+-- lc_ B
 Δ ⊢ A₀ ≡> A₀'
 ∀ a ∉ (I: List _), Δ, a : K ⊢ A₁^a ≡> A₁'^a
 Δ ⊢ B ≡> B'
