@@ -35,10 +35,15 @@ def Args.parse : List String → IO Args
     Process.exit cliError
 
 def main (args : List String) : IO UInt32 := do
+  let stdin ← getStdin
   let stdout ← getStdout
   let stderr ← getStderr
   let args ← Args.parse args
-  let M : Term := sorry
+  match Parser.parse (← stdin.getLine) with
+  | .error _ e =>
+    stderr.putStrLn (toString e)
+    return internalError
+  | .ok _ M =>
   let σ : TypeScheme := sorry
   let ty : Typing M σ := sorry
   match ty.elab.eval with

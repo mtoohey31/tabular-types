@@ -16,7 +16,7 @@ inductive Kind where
   | comm
   | row : Kind → Kind
   | constr
-deriving BEq
+deriving Inhabited, BEq
 
 namespace Kind
 
@@ -38,7 +38,7 @@ open Kind
 inductive Comm where
   | comm
   | non
-deriving BEq
+deriving Inhabited, BEq
 
 instance : ToString Comm where
   toString
@@ -48,7 +48,7 @@ instance : ToString Comm where
 inductive ProdOrSum where
   | prod
   | sum
-deriving BEq
+deriving Inhabited, BEq
 
 instance : ToString ProdOrSum where
   toString
@@ -75,7 +75,7 @@ inductive Monotype where
   | list
   | nat
   | str
-deriving BEq
+deriving Inhabited, BEq
 
 namespace Monotype
 
@@ -114,6 +114,7 @@ end Monotype
 inductive QualifiedType where
   | mono : Monotype → QualifiedType
   | qual : Monotype → QualifiedType → QualifiedType
+deriving Inhabited
 
 namespace QualifiedType
 
@@ -134,6 +135,7 @@ open QualifiedType
 inductive TypeScheme where
   | qual : QualifiedType → TypeScheme
   | quant : Kind → TypeScheme → TypeScheme
+deriving Inhabited
 
 namespace TypeScheme
 
@@ -177,6 +179,7 @@ inductive Term where
   | op : Op → Term → Term → Term
   | range
   | str : String → Term
+deriving Inhabited
 
 namespace Term
 
