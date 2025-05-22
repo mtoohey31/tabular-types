@@ -27,6 +27,8 @@ theorem ParallelReduction.TypeEquivalence_of (h: [[ Δ ⊢ A ≡> B ]]) (wf: [[ 
       have B'lc := λi iltn => BB' i iltn |>.preserve_lc (Blc i (Std.Range.mem_toList_of_mem iltn))
       refine .trans (.listApp ih1 (.list ih2))
                 (.trans (.lamListApp A'lc B'lc) (.list λi iltn => .refl <| A'lc.app (B'lc i iltn)))
+  . case listAppId ih =>
+    match Alc with | .listApp _ Alc => simp_all; exact .trans (.listAppId Alc) ih
   . case lam I Δ _ _ _ _ ih =>
     match Alc with
     | .lam Alc =>
@@ -45,6 +47,13 @@ theorem ParallelReduction.TypeEquivalence_of (h: [[ Δ ⊢ A ≡> B ]]) (wf: [[ 
     match Alc with | .list Alc => simp_all [Std.Range.mem_toList_of_mem]; exact .list ih
   . case listApp _ _ ih1 ih2 =>
     match Alc with | .listApp Alc Blc => simp_all; exact .listApp ih1 ih2
+  . case listAppComp Δ _ I _ _ _ A₀lc A₁body Blc A₀A₀' A₁A₁' BB' ih1 ih2 ih3 =>
+    simp_all
+    have A₀'lc := A₀A₀'.preserve_lc A₀lc
+    have A₁'body := A₁body.modus_ponens_open (λ a nin => A₁A₁' a nin |>.preserve_lc)
+    have B'lc := BB'.preserve_lc Blc
+    refine .trans (.listApp ih1 (.listApp (.lam (I ++ Δ.typeVarDom) ?_) ih3)) (.listAppComp A₀'lc A₁'body B'lc)
+    exact λa nin => ih2 a (by simp_all) (wf.typeVarExt (by simp_all [TypeVarNotInDom, TypeVarInDom])) A₁body.strengthen
   . case prod _ ih => match Alc with | .prod Alc => simp_all; exact .prod ih
   . case sum _ ih => match Alc with | .sum Alc => simp_all; exact .sum ih
 
@@ -58,12 +67,12 @@ theorem EqParallelReduction.TypeEquivalence_of (h: [[ Δ ⊢ A <≡>* B ]]) (wf:
 namespace TypeEquivalenceI
 
 theorem ParallelReduction_of (h: [[ Δ ⊢ A ≡ᵢ B ]]) : [[ Δ ⊢ A ≡> B ]] := by
-  induction h <;> try aesop (add safe constructors ParallelReduction); done
+  induction h
   case lamApp Abody Blc kinding => exact .lamApp (I := []) kinding (λ _ _ => .refl) .refl
-  case listAppId => sorry -- TODO this requires fix in the definition of PRed
   case lam I _ ih => exact .lam (I := I) ih
   case scheme I _ ih => exact .scheme (I := I) ih
-  case listAppComp => sorry -- TODO ditto
+  case listAppComp A₀lc A₁body Blc => exact .listAppComp (I := []) A₀lc A₁body Blc .refl (λa nin => .refl) .refl
+  all_goals aesop (add safe constructors ParallelReduction)
 
 local instance : Inhabited «Type» where
   default := .list []
