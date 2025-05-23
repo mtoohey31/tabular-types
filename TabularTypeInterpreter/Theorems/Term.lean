@@ -144,15 +144,6 @@ theorem to_Kinding (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (Γᵢw : [[Γc �
     let σ'ke' := σ'ke a |>.weakening Γawe (Γ' := Γ) (Γ'' := .typeExt .empty ..)
     rw [TypeEnvironment.empty_append] at Γawe σ'ke'
     exact ⟨_, σ'ke'.Monotype_open_preservation Γcw Γawe nofun aninσ' aninA τke (Γ' := .empty)⟩
-  | «order» _ ih =>
-    rename ProdOrSum => Ξ
-    match Ξ with
-    | .prod =>
-      let ⟨_, .prod _ ρke⟩ := ih Γᵢw Γcw Γwe
-      exact ⟨_, .prod .comm ρke⟩
-    | .sum =>
-      let ⟨_, .sum _ ρke⟩ := ih Γᵢw Γcw Γwe
-      exact ⟨_, .sum .comm ρke⟩
   | «ind» Iₘ Iₛ ρke τke κe =>
     rename TypeEnvironment => Γ
     rename Monotype => τ
@@ -468,15 +459,6 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
         List.get!_cons_zero] at πty
     simp only at πty
     exact πty
-  | «order» M'te ih =>
-    rename ProdOrSum => Ξ
-    match Ξ with
-    | .prod =>
-      let .prod _ ρke := σke
-      exact ih (.prod .comm ρke) Γᵢw Γcw Γwe
-    | .sum =>
-      let .sum _ ρke := σke
-      exact ih (.sum .comm ρke) Γᵢw Γcw Γwe
   | «ind» Iₘ Iₛ ρke τke κe Mte Nte indce Mih Nih =>
     rename_i Γc Γ ρ κ τ B K _ _ _ _ _ _
     let ⟨a, anin⟩ := Γ.typeVarDom ++ τ.freeTypeVars ++ ↑B.freeTypeVars ++ Iₘ |>.exists_fresh

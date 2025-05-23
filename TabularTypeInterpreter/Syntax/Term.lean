@@ -18,7 +18,6 @@ nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") Term, M, «N» :=
   | M " ++ " «N»                        : concat (tex := s!"{M} \\doubleplus {«N»}")
   | "inj " M                            : inj
   | M " ▿ " «N»                         : elim
-  | "order " ρ M                        : order
   | "ind " «λτ» ρ "; " M "; " «N»       : ind (tex := s!"\\lottkw\{ind} \\, {«λτ»} \\, {ρ} \\, {M} \\, {«N»}")
   | "splitₚ " «λτ» M                    : splitₚ
   | "splitₛ " «λτ» M "; " «N»           : splitₛ (tex := s!"\\lottkw\{splitₛ} \\, {«λτ»} \\, {M} \\, {«N»}")
