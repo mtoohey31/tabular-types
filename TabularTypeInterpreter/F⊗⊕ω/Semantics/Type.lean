@@ -74,22 +74,18 @@ judgement_syntax Δ " ⊢ " A " ≡ " B : TypeEquivalence
 
 judgement TypeEquivalence :=
 
-lc_ A
 ───────── refl
 Δ ⊢ A ≡ A
 
-body A
-lc_ B
 Δ ⊢ B: K
 ───────────────────────── lamApp
 Δ ⊢ (λ a : K. A) B ≡ A^^B
 
-lc_ A
-</ lc_ B@i // i in [:n] />
+lc_ A   -- NOTE this is for preserve_lc when n = 0
 ───────────────────────────────────────────────────────────────── lamListApp
 Δ ⊢ A ⟦{ </ B@i // i in [:n] /> }⟧ ≡ { </ A B@i // i in [:n] /> }
 
-lc_ A
+lc_ A -- FIXME replace with kinding (kinding implies lc)
 ────────────────────────── listAppId
 Δ ⊢ (λ a : K. a$0) ⟦A⟧ ≡ A
 
@@ -121,8 +117,6 @@ lc_ A
 Δ ⊢ A₁ ⟦B₁⟧ ≡ A₂ ⟦B₂⟧
 
 lc_ A₀
-body A₁
-lc_ B
 ───────────────────────────────────────────────── listAppComp
 Δ ⊢ A₀ ⟦(λ a : K. A₁) ⟦B⟧⟧ ≡ (λ a : K. A₀ A₁) ⟦B⟧
 
@@ -156,22 +150,18 @@ judgement_syntax Δ " ⊢ " A " ≡ᵢ " B : TypeEquivalenceI
 
 judgement TypeEquivalenceI :=
 
-lc_ A
 ────────── refl
 Δ ⊢ A ≡ᵢ A
 
-body A
-lc_ B
 Δ ⊢ B: K
 ───────────────────────── lamApp
 Δ ⊢ (λ a : K. A) B ≡ᵢ A^^B
 
-lc_ A
-</ lc_ B@i // i in [:n] />
+lc_ A   -- NOTE this is for preserve_lc when n = 0
 ───────────────────────────────────────────────────────────────── lamListApp
 Δ ⊢ A ⟦{ </ B@i // i in [:n] /> }⟧ ≡ᵢ { </ A B@i // i in [:n] /> }
 
-lc_ A
+lc_ A -- FIXME replace with kinding (kinding implies lc)
 ────────────────────────── listAppId
 Δ ⊢ (λ a : K. a$0) ⟦A⟧ ≡ᵢ A
 
@@ -203,8 +193,6 @@ lc_ A
 Δ ⊢ A₁ ⟦B₁⟧ ≡ᵢ A₂ ⟦B₂⟧
 
 lc_ A₀
-body A₁
-lc_ B
 ───────────────────────────────────────────────── listAppComp
 Δ ⊢ A₀ ⟦(λ a : K. A₁) ⟦B⟧⟧ ≡ᵢ (λ a : K. A₀ A₁) ⟦B⟧
 
@@ -266,13 +254,11 @@ judgement ParallelReduction :=
 
 Δ ⊢ A ≡> A'
 </ Δ ⊢ B@i ≡> B'@i // i in [:n] />
-lc_ A
--- </ lc_ B@i // i in [:n] />
+lc_ A   -- NOTE this is for preserve_lc when n = 0
 ──────────────────────────────────────────────────────────────────────────────── lamListApp
 Δ ⊢ A ⟦{ </ B@i // i in [:n] /> }⟧ ≡> { </ A' B'@i // i in [:n] /> }
 
 Δ ⊢ A ≡> A'
--- lc_ A -- FIXME remove?
 ──────────────────────────── listAppId
 Δ ⊢ (λ a : K. a$0) ⟦A⟧ ≡> A'
 
@@ -303,10 +289,7 @@ lc_ A
 ───────────────────── listApp
 Δ ⊢ A₁ ⟦B₁⟧ ≡> A₂ ⟦B₂⟧
 
--- FIXME check lc?
 lc_ A₀
--- body A₁
--- lc_ B
 Δ ⊢ A₀ ≡> A₀'
 ∀ a ∉ (I: List _), Δ, a : K ⊢ A₁^a ≡> A₁'^a
 Δ ⊢ B ≡> B'

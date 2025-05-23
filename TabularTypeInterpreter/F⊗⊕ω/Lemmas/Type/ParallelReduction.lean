@@ -519,7 +519,7 @@ theorem forall_intro_ex a (fresh: a ∉ A.freeTypeVars ++ B.freeTypeVars ++ Δ.t
 
 -- NOTE must have for conf_lamApp: needed when using pred_subst
 
-theorem preservation (red: [[ Δ ⊢ A ≡> B ]]) (wf: [[ ⊢ Δ ]]) (lc: A.TypeVarLocallyClosed) (k: [[ Δ ⊢ A: K ]]): [[ Δ ⊢ B: K ]] := by
+theorem preservation (red: [[ Δ ⊢ A ≡> B ]]) (wf: [[ ⊢ Δ ]]) (k: [[ Δ ⊢ A: K ]]): [[ Δ ⊢ B: K ]] := by
   induction red generalizing K
   case refl => simp_all
   case lamApp Δ B KB I A A' B' kindB redA redB ihA ihB =>
@@ -530,14 +530,9 @@ theorem preservation (red: [[ Δ ⊢ A ≡> B ]]) (wf: [[ ⊢ Δ ]]) (lc: A.Type
       constructor
       . assumption
       . simp [Environment.TypeVarNotInDom, Environment.TypeVarInDom]; aesop
-    cases lc
-    case app lcA lcB =>
-    cases lcA
-    case lam lcA =>
-    have kindA' := ihA a (by simp_all) wf' (Type.TypeVarLocallyClosed.strengthen lcA) (kindA a (by aesop))
-    have kindB' := ihB wf lcB kindB
+    have kindA' := ihA a (by simp_all) wf' (kindA a (by aesop))
+    have kindB' := ihB wf kindB
     rw [<- Type.TypeVar_subst_intro_of_not_mem_freeTypeVars (a:=a) (by aesop)]
-    have lcB' := redB.preserve_lc lcB
     apply Kinding.subst <;> assumption
   case lamListApp Δ A A' n B B' redA redB Alc ihA ihB =>
     cases k; case listApp K KB kA kB =>
@@ -548,27 +543,20 @@ theorem preservation (red: [[ Δ ⊢ A ≡> B ]]) (wf: [[ ⊢ Δ ]]) (lc: A.Type
     cases n
     . case zero => simp_all [Membership.mem]
     . case succ n =>
-      match lc with
-      | .listApp _ (.list lcB) =>
-        have kB' := ihB i mem (by simp_all [Std.Range.mem_map_of_mem, Std.Range.mem_toList_of_mem]) (kB i mem)
-        exact kA'.app kB'
+      have kB' := ihB i mem (kB i mem)
+      exact kA'.app kB'
   case listAppComp Δ A₀' I K _ _ _ _ lcA₀ A₀A₀' A₁A₁' BB' ihA₀ ihA₁ ihB =>
     cases k; case listApp K1 K2 kA₀ kA₁B =>
     cases kA₁B; case listApp K3 kB kA₁ =>
     cases kA₁; case lam I' kA₁ =>
 
-    match lc with
-    | .listApp _ (.listApp (.lam bodyA₁) lcB) =>
-
-    cases lc; case listApp lcA₀ lc =>
-
-    specialize ihA₀ wf lcA₀ kA₀
-    specialize ihB wf lcB kB
+    specialize ihA₀ wf kA₀
+    specialize ihB wf kB
 
     have ⟨a, nin⟩ := (I ++ I' ++ Δ.typeVarDom ++ A₀'.freeTypeVars).exists_fresh
     refine .listApp (.lam (I ++ I' ++ Δ.typeVarDom ++ A₀'.freeTypeVars) λa nin => ?_) ihB
 
-    specialize ihA₁ a (by simp_all) (wf.typeVarExt (by simp_all [Environment.TypeVarNotInDom, Environment.TypeVarInDom])) bodyA₁.strengthen (kA₁ a (by simp_all))
+    specialize ihA₁ a (by simp_all) (wf.typeVarExt (by simp_all [Environment.TypeVarNotInDom, Environment.TypeVarInDom])) (kA₁ a (by simp_all))
 
     have ihA₀ := ihA₀.weakening_r (Δ' := [[ ε, a: K ]]) (by simp_all [Environment.typeVarDom])
     simp [Environment.append] at ihA₀
@@ -583,9 +571,6 @@ theorem preservation (red: [[ Δ ⊢ A ≡> B ]]) (wf: [[ ⊢ Δ ]]) (lc: A.Type
       constructor
       . assumption
       . simp [Environment.TypeVarNotInDom, Environment.TypeVarInDom]; aesop
-    cases lc
-    case lam lc =>
-    obtain lc := lc.strengthen (a := a)
     simp_all
   case scheme I Δ K1 A B red ih =>
     cases k; case scheme I' kindA =>
@@ -595,9 +580,6 @@ theorem preservation (red: [[ Δ ⊢ A ≡> B ]]) (wf: [[ ⊢ Δ ]]) (lc: A.Type
       constructor
       . assumption
       . simp [Environment.TypeVarNotInDom, Environment.TypeVarInDom]; aesop
-    cases lc
-    case «forall» lc =>
-    obtain lc := lc.strengthen (a := a)
     simp_all
   case list n Δ_ A B red ih =>
     have ⟨K_, eqK_, k'⟩ := k.inv_list'; subst K
@@ -611,7 +593,6 @@ theorem preservation (red: [[ Δ ⊢ A ≡> B ]]) (wf: [[ ⊢ Δ ]]) (lc: A.Type
     specialize ka a (by simp_all)
     simp [Type.TypeVar_open] at ka
     cases ka; case var ain =>
-    cases lc
     cases ain <;> simp_all [TypeVarNe]
   all_goals cases k; constructor <;> aesop (add safe Type.TypeVarLocallyClosed, unsafe cases Type.TypeVarLocallyClosed) (config := { enableSimp := false })
 
@@ -824,13 +805,13 @@ theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ �
       have ⟨T1, T1eq, I', A''T1⟩ := A''T1.inv_lam; injection T1eq with _ eq; rw [eq] at A'T1 T1lc; clear eq
       exists [[ (T1^^T2) ]]
       have T1T2lc := match T1lc with |.lam T1lc => T1lc.Type_open_dec T2lc
-      have B'kiK := BB'.preservation wf Blc BkiK
+      have B'kiK := BB'.preservation wf BkiK
       refine ⟨.lamApp B'kiK A'T1 B'T2, ?_, T1T2lc⟩
       have ⟨a, nin⟩ := I ++ I' ++ Δ.typeVarDom ++ A''.freeTypeVars ++ T1.freeTypeVars |>.exists_fresh
       repeat1' rw [<- TypeVar_subst_intro_of_not_mem_freeTypeVars (a := a) (by simp_all)]
       have wf' : [[ ⊢ Δ, a: K ]] := .typeVarExt wf (by simp_all [TypeVarNotInDom, TypeVarInDom])
       have A''open_lc := match Alc with | .lam Alc => AA'' a (by simp_all) |>.preserve_lc <| Alc.strengthen
-      have B''kiK := BB''.preservation wf Blc BkiK
+      have B''kiK := BB''.preservation wf BkiK
       exact subst_all wf' B''T2 (A''T1 a (by simp_all)) B''kiK A''open_lc
     . case app A'' B''  AA'' BB'' =>
       have ⟨T1, A'T1, A''T1, T1lc⟩ := ih1 wf AA'' Alc
