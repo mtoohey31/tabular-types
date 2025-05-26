@@ -19,9 +19,8 @@ theorem ParallelReduction.TypeEquivalence_of (h: [[ Δ ⊢ A ≡> B ]]) (wf: [[ 
     have A'lc := AA'.preserve_lc Alc
     refine .trans (.listApp ih1 (.list ih2))
               (.trans (.lamListApp A'lc) (.list λi iltn => .refl))
-  . case listAppId ih =>
-    sorry -- TODO fix after adding kinding to typeeq and pred
-    -- simp_all; exact .trans (.listAppId Alc) ih
+  . case listAppId AkiLK _ ih =>
+    simp_all; exact .trans (.listAppId AkiLK) ih
   . case lam I Δ _ _ _ _ ih =>
     refine .lam (I ++ Δ.typeVarDom) ?_
     exact λa nin => ih a (by simp_all) (wf.typeVarExt (by simp_all [TypeVarNotInDom, TypeVarInDom]))
@@ -40,7 +39,7 @@ theorem ParallelReduction.TypeEquivalence_of (h: [[ Δ ⊢ A ≡> B ]]) (wf: [[ 
   . case prod _ ih => exact ih wf |>.prod
   . case sum _ ih => exact ih wf |>.sum
 
-theorem EqParallelReduction.TypeEquivalence_of (h: [[ Δ ⊢ A <≡>* B ]]) (wf: [[ ⊢ Δ ]]) : [[ Δ ⊢ A ≡ B ]] := by -- TODO ditto
+theorem EqParallelReduction.TypeEquivalence_of (h: [[ Δ ⊢ A <≡>* B ]]) (wf: [[ ⊢ Δ ]]) : [[ Δ ⊢ A ≡ B ]] := by
   induction h with
   | refl => exact .refl
   | step h => exact h.TypeEquivalence_of wf
@@ -57,7 +56,6 @@ theorem ParallelReduction_of (h: [[ Δ ⊢ A ≡ᵢ B ]]) : [[ Δ ⊢ A ≡> B ]
   case lamListApp Alc => exact .lamListApp .refl (λ i iltn => .refl) Alc
   case listAppComp A₀lc => exact .listAppComp (I := []) A₀lc .refl (λa nin => .refl) .refl
   all_goals aesop (add safe constructors ParallelReduction)
-
 
 local instance : Inhabited «Type» where
   default := .list []
@@ -99,7 +97,17 @@ theorem subst_rename' {a': TypeVarId}
     unfold Function.comp
     simp_all [Type.TypeVar_subst]
     exact .lamListApp (Alc.TypeVar_subst a'lc)
-  . case listAppId A K' Alc => exact .listAppId (Alc.TypeVar_subst a'lc)
+  . case listAppId A K' AkiLK =>
+    refine .listAppId ?_
+    have AkiLK': [[((Δ, a': K , a : K) , Δ') ⊢ A : L K']] := by
+      rw [← Environment.append_type_assoc] at AkiLK
+      have := AkiLK.weakening_r' (Δ' := [[ ε, a': K ]]) (by simp_all [typeVarDom_append, typeVarDom])
+      repeat1' rw [Environment.append_type_assoc] at this
+      exact this
+    have wf' : [[ ⊢ ((Δ, a': K , a : K) , Δ') ]] := by
+      rw [← append_type_assoc] at wf ⊢
+      refine wf.strengthen_type (by simp_all [typeVarDom, typeVarDom_append])
+    exact AkiLK'.subst' wf' (.var .head)
   . case lam K' A B I AB ih =>
     apply TypeEquivalenceI.lam (I := a :: a' :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom)
     intro a'' nin
@@ -134,6 +142,9 @@ theorem weakening_type' (h: [[ Δ, Δ' ⊢ A ≡ᵢ B ]]) (fresh: a ∉ Δ.typeV
     refine .lamApp ?_
     rw [← Environment.append_type_assoc]
     exact BkiK'.weakening_r' (by simp_all [Environment.typeVarDom])
+  . case listAppId AkiLK =>
+    refine .listAppId ?_
+    . rw [<- Environment.append_type_assoc]; exact Kinding.weakening_r' (fresh := by simp_all [Environment.typeVarDom]) AkiLK
   . case lam K' A B I AB ih =>
     apply TypeEquivalenceI.lam (I := a :: I ++ Δ.typeVarDom)
     intro a' nin
@@ -395,7 +406,7 @@ theorem TypeEquivalence.preserve_lc (h: [[ Δ ⊢ A ≡ B ]]): (A.TypeVarLocally
     aesop (add safe forward modus_ponens_open, safe forward Std.Range.mem_of_mem_toList, safe TypeVarLocallyClosed, unsafe cases TypeVarLocallyClosed)
 
 open Environment in
-theorem TypeEquivalence.TypeEquivalenceS_of (h: [[Δ ⊢ A ≡ B]]) (Alc: A.TypeVarLocallyClosed) (Blc: B.TypeVarLocallyClosed) (wf: [[ ⊢ Δ ]]) : [[Δ ⊢ A ≡ₛ B]] := by
+theorem TypeEquivalence.TypeEquivalenceS_of (h: [[Δ ⊢ A ≡ B]]) (Alc: A.TypeVarLocallyClosed) (wf: [[ ⊢ Δ ]]) : [[Δ ⊢ A ≡ₛ B]] := by
   induction h
   . case refl => exact .base .refl
   . case lamApp BkiK => exact .base (.lamApp BkiK)
@@ -405,24 +416,18 @@ theorem TypeEquivalence.TypeEquivalenceS_of (h: [[Δ ⊢ A ≡ B]]) (Alc: A.Type
     have ⟨a, nin⟩ := I ++ Δ.typeVarDom ++ A.freeTypeVars ++ B.freeTypeVars |>.exists_fresh
     have wf' : [[ ⊢ Δ, a:K ]] := wf.typeVarExt (by simp_all [TypeVarNotInDom, TypeVarInDom])
     have Abody := match Alc with | .lam Abody => Abody
-    have Bbody := match Blc with | .lam Bbody => Bbody
-    specialize ih a (by simp_all) Abody.strengthen Bbody.strengthen wf'
+    specialize ih a (by simp_all) Abody.strengthen wf'
     exact .lam_intro_ex a (by simp_all) ih wf' Abody
   . case app A1 A2 B1 B2 h1 h2 ih1 ih2 =>
-    match Alc, Blc with
-    | .app A1lc B1lc, .app A2lc B2lc =>
-      exact ih1 A1lc A2lc wf |>.app <| ih2 B1lc B2lc wf
+    match Alc with | .app A1lc B1lc => exact ih1 A1lc wf |>.app <| ih2 B1lc wf
   . case scheme Δ K A B I h ih =>
     have ⟨a, nin⟩ := I ++ Δ.typeVarDom ++ A.freeTypeVars ++ B.freeTypeVars |>.exists_fresh
     have wf' : [[ ⊢ Δ, a:K ]] := wf.typeVarExt (by simp_all [TypeVarNotInDom, TypeVarInDom])
     have Abody := match Alc with | .forall Abody => Abody
-    have Bbody := match Blc with | .forall Bbody => Bbody
-    specialize ih a (by simp_all) Abody.strengthen Bbody.strengthen wf'
+    specialize ih a (by simp_all) Abody.strengthen wf'
     exact .scheme_intro_ex a (by simp_all) ih wf' Abody
   . case arr ih1 ih2 =>
-    match Alc, Blc with
-    | .arr A1lc B1lc, .arr A2lc B2lc =>
-      exact ih1 A1lc A2lc wf |>.arr <| ih2 B1lc B2lc wf
+    match Alc with | .arr A1lc B1lc => exact ih1 A1lc wf |>.arr <| ih2 B1lc wf
   . case list n Δ A B h ih =>
     clear h
     have : ([:n].map fun i => B i) = ([:n - n].map fun i => A i) ++ [n - n:n].map fun i => B i := by
@@ -433,9 +438,8 @@ theorem TypeEquivalence.TypeEquivalenceS_of (h: [[Δ ⊢ A ≡ B]]) (Alc: A.Type
     generalize neqm : n = m
     let nlem := Nat.le_refl n
     rw (occs := .pos [3, 5]) [← neqm]
-    rw [neqm] at ih Alc Blc
+    rw [neqm] at ih Alc
     cases Alc; case list Alc =>
-    cases Blc; case list Blc =>
     rw (occs := .pos [2]) [neqm] at nlem
     clear neqm this
     induction n with
@@ -448,7 +452,6 @@ theorem TypeEquivalence.TypeEquivalenceS_of (h: [[Δ ⊢ A ≡ B]]) (Alc: A.Type
       generalize A'eq : A (m - (i + 1)) = A', B'eq : B (m - (i + 1)) = B' at *
       let ih'' := ih (m - (i + 1)) (by simp_all [Membership.mem]; omega)
         (Alc _ (Std.Range.mem_map_of_mem (i := m - (i + 1)) (by simp_all [Membership.mem]; omega)))
-        (Blc _ (Std.Range.mem_map_of_mem (i := m - (i + 1)) (by simp_all [Membership.mem]; omega)))
         wf
       specialize ih' <| Nat.le_of_add_right_le nlem
       rw [A'eq, B'eq] at ih''
@@ -491,36 +494,30 @@ theorem TypeEquivalence.TypeEquivalenceS_of (h: [[Δ ⊢ A ≡ B]]) (Alc: A.Type
       | trans h h' ih'' ih''' =>
         exact .trans ih'' ih'''
   . case listApp ih1 ih2 =>
-    match Alc, Blc with
-    | .listApp A1lc B1lc, .listApp A2lc B2lc =>
-      exact ih1 A1lc A2lc wf |>.listApp <| ih2 B1lc B2lc wf
+    match Alc with | .listApp A1lc B1lc => exact ih1 A1lc wf |>.listApp <| ih2 B1lc wf
   . case listAppComp A₀lc => exact .base (.listAppComp A₀lc)
-  . case prod Δ A B h ih => match Alc, Blc with | .prod Alc, .prod Blc => exact ih Alc Blc wf |>.prod
-  . case sum ih => match Alc, Blc with | .sum Alc, .sum Blc => exact ih Alc Blc wf |>.sum
-  . case symm _ _ _ _ ih => exact ih Blc Alc wf |>.sym
+  . case prod Δ A B h ih => match Alc with | .prod Alc => exact ih Alc wf |>.prod
+  . case sum ih => match Alc with | .sum Alc => exact ih Alc wf |>.sum
+  . case symm _ _ _ h ih => exact ih (h.preserve_lc.2 Alc) wf |>.sym
   . case trans _ _ _ _ AB BC ih1 ih2 =>
-    rename' Blc => Clc
-    have Blc := AB.preserve_lc.1 Alc
-    exact ih1 Alc Blc wf |>.trans <| ih2 Blc Clc wf
+    exact ih1 Alc wf |>.trans <| ih2 (AB.preserve_lc.1 Alc) wf
 
-theorem TypeEquivalenceS.ParallelReduction_of (h: [[ Δ ⊢ A ≡ₛ B ]]) : [[ Δ ⊢ A <≡>* B ]] := by sorry
-  -- induction h with
-  -- | base h =>
-  -- | symm h => exact .symm h.ParallelReduction
+theorem TypeEquivalenceS.ParallelReduction_of (h: [[ Δ ⊢ A ≡ₛ B ]]) : [[ Δ ⊢ A <≡>* B ]] := by
+  induction h with
+  | base h => exact .step h.ParallelReduction_of
+  | symm h => exact .sym h.ParallelReduction_of.Equiv_of
+  | trans _ _ ih1 ih2 => exact ih1.trans ih2
 
 namespace TypeEquivalence
 
-theorem EqParallelReduction_of (eq: [[Δ ⊢ A ≡ B]]) : [[Δ ⊢ A <≡>* B]] := sorry
+theorem EqParallelReduction_of (eq: [[Δ ⊢ A ≡ B]]) (Alc: A.TypeVarLocallyClosed) (wf: [[ ⊢ Δ ]]) : [[Δ ⊢ A <≡>* B]] :=
+  eq.TypeEquivalenceS_of Alc wf |>.ParallelReduction_of
 
-theorem weakening (equiv: [[ Δ, Δ'' ⊢ A ≡ B ]]) (wfτ: [[ ⊢τ Δ, Δ', Δ'' ]]) : [[ Δ, Δ', Δ'' ⊢ A ≡ B ]] :=
-  -- equiv.EqParallelReduction_of |>.weakening wfτ |>.TypeEquivalence_of
-  -- TODO add lc precondition
-  sorry
+theorem weakening (equiv: [[ Δ, Δ'' ⊢ A ≡ B ]]) (Alc: A.TypeVarLocallyClosed) (wf: [[ ⊢ Δ, Δ'' ]]) (wf': [[ ⊢ Δ, Δ', Δ'' ]]) : [[ Δ, Δ', Δ'' ⊢ A ≡ B ]] :=
+  equiv.EqParallelReduction_of Alc wf |>.weakening wf'.EnvironmentTypeWellFormedness_of |>.TypeEquivalence_of wf'
 
-theorem subst' {A T T' : «Type»} (equiv : [[ Δ, a: K, Δ' ⊢ T ≡ T' ]]) (wf: [[ ⊢ Δ, a: K, Δ' ]]) (kindA: [[ Δ ⊢ A: K ]]) : [[ Δ, Δ'[A/a] ⊢ T[A/a] ≡ T'[A/a] ]] :=
-  -- equiv.EqParallelReduction_of |>.subst_out' wf kindA |>.TypeEquivalence_of
-  -- TODO add lc precondition
-  sorry
+theorem subst' {A T T' : «Type»} (equiv : [[ Δ, a: K, Δ' ⊢ T ≡ T' ]]) (Tlc: T.TypeVarLocallyClosed) (wf: [[ ⊢ Δ, a: K, Δ' ]]) (kindA: [[ Δ ⊢ A: K ]]) : [[ Δ, Δ'[A/a] ⊢ T[A/a] ≡ T'[A/a] ]] :=
+  equiv.EqParallelReduction_of Tlc wf |>.subst_out' wf kindA |>.TypeEquivalence_of <| wf.TypeVar_subst kindA
 
 -- TODO this is not dt so properties on typing apparently have nothing to do with terms in env
 theorem TermVar_drop (equiv: [[ Δ, x: T, Δ'' ⊢ A ≡ B ]]): [[ Δ, Δ'' ⊢ A ≡ B ]] := sorry

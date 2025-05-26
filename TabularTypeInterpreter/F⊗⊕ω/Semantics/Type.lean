@@ -85,7 +85,7 @@ lc_ A   -- NOTE this is for preserve_lc when n = 0
 ───────────────────────────────────────────────────────────────── lamListApp
 Δ ⊢ A ⟦{ </ B@i // i in [:n] /> }⟧ ≡ { </ A B@i // i in [:n] /> }
 
-lc_ A -- FIXME replace with kinding (kinding implies lc)
+Δ ⊢ A: L K
 ────────────────────────── listAppId
 Δ ⊢ (λ a : K. a$0) ⟦A⟧ ≡ A
 
@@ -161,7 +161,7 @@ lc_ A   -- NOTE this is for preserve_lc when n = 0
 ───────────────────────────────────────────────────────────────── lamListApp
 Δ ⊢ A ⟦{ </ B@i // i in [:n] /> }⟧ ≡ᵢ { </ A B@i // i in [:n] /> }
 
-lc_ A -- FIXME replace with kinding (kinding implies lc)
+Δ ⊢ A: L K
 ────────────────────────── listAppId
 Δ ⊢ (λ a : K. a$0) ⟦A⟧ ≡ᵢ A
 
@@ -258,6 +258,7 @@ lc_ A   -- NOTE this is for preserve_lc when n = 0
 ──────────────────────────────────────────────────────────────────────────────── lamListApp
 Δ ⊢ A ⟦{ </ B@i // i in [:n] /> }⟧ ≡> { </ A' B'@i // i in [:n] /> }
 
+Δ ⊢ A: L K
 Δ ⊢ A ≡> A'
 ──────────────────────────── listAppId
 Δ ⊢ (λ a : K. a$0) ⟦A⟧ ≡> A'

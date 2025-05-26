@@ -222,7 +222,8 @@ theorem weakening_r' (EtyT: [[ Δ, Δ'' ⊢ E: T ]]) (wf: [[ ⊢ Δ, Δ', Δ'' ]
     exact wf.append_typeVar_fresh_l a (by simp_all [typeVarDom_append])
   case equiv Δ_ E T T' EtyT equiv ih =>
     subst Δ_
-    exact .equiv (ih wf rfl) (equiv.weakening wf.EnvironmentTypeWellFormedness_of)
+    refine .equiv (ih wf rfl) (equiv.weakening EtyT.Type_TypeVarLocallyClosed_of EtyT.WellFormedness_of wf)
+
   all_goals aesop (add unsafe constructors Typing) (config := { enableSimp := false })
 
 theorem weakening_r (EtyT: [[ Δ ⊢ E: T ]]) (wf: [[ ⊢ Δ, Δ' ]]): [[ Δ, Δ' ⊢ E: T ]] := by
@@ -365,7 +366,7 @@ theorem type_subst' (EtyA: [[ Δ, a: K, Δ' ⊢ E: A ]]) (BkiK : [[ Δ ⊢ B: K 
     exact .sumElim (n := n) (by unfold Function.comp at ih1; simp_all) (λ x xin => ih2 x xin rfl) (B'kiStar.subst' EtyA.WellFormedness_of BkiK)
   . case equiv Δ_ E A A' EtyA equiv ih =>
     subst Δ_
-    refine .equiv (ih rfl) (equiv.subst' EtyA.WellFormedness_of BkiK)
+    refine .equiv (ih rfl) (equiv.subst' EtyA.Type_TypeVarLocallyClosed_of EtyA.WellFormedness_of BkiK)
 
 theorem type_subst (EtyA: [[ Δ, a: K ⊢ E: A ]]) (BkiK : [[ Δ ⊢ B: K ]]): [[ Δ ⊢ E[B/a] : A[B/a] ]] :=
   Typing.type_subst' (Δ' := [[ ε ]]) EtyA BkiK

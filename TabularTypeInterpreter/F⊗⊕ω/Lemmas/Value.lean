@@ -8,7 +8,7 @@ import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Term
 namespace TabularTypeInterpreter.«F⊗⊕ω»
 
 theorem TypeEquivalence.common_reduct_of (eq: [[Δ ⊢ A ≡ B]]) (wf: [[ ⊢ Δ ]]) (Alc: A.TypeVarLocallyClosed) : ∃C, [[Δ ⊢ A ≡>* C]] ∧ [[Δ ⊢ B ≡>* C]] :=
-  have ered := eq.EqParallelReduction_of
+  have ered := eq.EqParallelReduction_of Alc wf
   have Blc := ered.preserve_lc.1 Alc
   ered.common_reduct wf Alc Blc
 namespace Value
