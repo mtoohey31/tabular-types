@@ -142,7 +142,7 @@ theorem weakening_r (kT: [[ Δ ⊢ T: K ]]) (fresh: ∀ a ∈ Δ'.typeVarDom, a 
 theorem weakening : [[Δ, Δ'' ⊢ A : K]] → [[⊢ Δ, Δ', Δ'']] → [[Δ, Δ', Δ'' ⊢ A : K]] := sorry
 
 open Environment TypeVarInEnvironment in
-theorem TypeVar_drop (kT: [[ Δ, x: T', Δ'' ⊢ T: K ]]): [[ Δ, Δ'' ⊢ T: K ]] := by
+theorem TermVar_drop (kT: [[ Δ, x: T', Δ'' ⊢ T: K ]]): [[ Δ, Δ'' ⊢ T: K ]] := by
   generalize Δ_eq: [[ (Δ, x: T', Δ'') ]] = Δ_ at kT
   induction kT generalizing Δ Δ'' x T'
   case var a K Δ_ hIn =>
@@ -246,7 +246,7 @@ theorem TermVar_drop (wf: [[ ⊢ Δ, x: T, Δ' ]]) : [[ ⊢ Δ, Δ' ]] := by
     exact .termVarExt
       (ih wf)
       (by simp_all [TermVarNotInDom, TermVarInDom, termVarDom_append, termVarDom])
-      T'kiStar.TypeVar_drop
+      T'kiStar.TermVar_drop
 
 open Environment in
 theorem TypeVar_subst (wf: [[ ⊢ Δ, a: K, Δ' ]]) (BkiK: [[ Δ ⊢ B: K ]]) : [[ ⊢ Δ, Δ'[B/a] ]] := by

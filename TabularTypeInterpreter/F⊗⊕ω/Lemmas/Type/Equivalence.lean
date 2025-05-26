@@ -520,7 +520,16 @@ theorem subst' {A T T' : «Type»} (equiv : [[ Δ, a: K, Δ' ⊢ T ≡ T' ]]) (T
   equiv.EqParallelReduction_of Tlc wf |>.subst_out' wf kindA |>.TypeEquivalence_of <| wf.TypeVar_subst kindA
 
 -- TODO this is not dt so properties on typing apparently have nothing to do with terms in env
-theorem TermVar_drop (equiv: [[ Δ, x: T, Δ'' ⊢ A ≡ B ]]): [[ Δ, Δ'' ⊢ A ≡ B ]] := sorry
+theorem TermVar_drop (equiv: [[ Δ, x: T, Δ'' ⊢ A ≡ B ]]): [[ Δ, Δ'' ⊢ A ≡ B ]] := by
+  generalize Δ_eq : [[ (Δ, x: T, Δ'') ]] = Δ' at equiv
+  induction equiv generalizing Δ'' <;> subst Δ_eq
+  case lam K A B I AB ih =>
+    refine .lam I (λ a nin => ?_)
+    exact @ih a nin [[ Δ'', a: K ]] rfl
+  case scheme K A B I AB ih =>
+    refine .scheme I (λ a nin => ?_)
+    exact @ih a nin [[ Δ'', a: K ]] rfl
+  all_goals aesop (add unsafe constructors TypeEquivalence, safe forward Kinding.TermVar_drop)
 
 end TypeEquivalence
 

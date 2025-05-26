@@ -278,7 +278,7 @@ theorem term_subst' (EtyA: [[ Δ, x: T, Δ' ⊢ E: A ]]) (FtyT : [[ Δ ⊢ F: T 
     exact ih a' (by simp_all) (by rw [Environment.append_typeExt_assoc])
   . case typeApp Δ_ E K A B EtyA BkiK ih =>
     subst Δ_
-    exact .typeApp (ih rfl) BkiK.TypeVar_drop
+    exact .typeApp (ih rfl) BkiK.TermVar_drop
   . case prodIntro Δ_ _ _ _ wf _ _ =>
     subst Δ_
     exact .prodIntro wf.TermVar_drop (by simp_all)
@@ -287,10 +287,10 @@ theorem term_subst' (EtyA: [[ Δ, x: T, Δ' ⊢ E: A ]]) (FtyT : [[ Δ ⊢ F: T 
     exact .prodElim (n' := n) (by simp_all) (by simp_all)
   . case sumIntro _ n Δ_ _ _ _ EtyA AkiStar _ =>
     subst Δ_
-    refine .sumIntro (n' := n) (by simp_all) (by simp_all) (λ x xin => AkiStar x xin |>.TypeVar_drop)
+    refine .sumIntro (n' := n) (by simp_all) (by simp_all) (λ x xin => AkiStar x xin |>.TermVar_drop)
   . case sumElim Δ_ _ n _ _ _ _ _ BkiStar _ ih2 =>
     subst Δ_
-    exact .sumElim (n := n) (by simp_all) (λ x xin => ih2 x xin rfl) BkiStar.TypeVar_drop
+    exact .sumElim (n := n) (by simp_all) (λ x xin => ih2 x xin rfl) BkiStar.TermVar_drop
   . case equiv Δ_ E A B EtyA equiv ih =>
     subst Δ_
     refine .equiv (ih rfl) equiv.TermVar_drop
