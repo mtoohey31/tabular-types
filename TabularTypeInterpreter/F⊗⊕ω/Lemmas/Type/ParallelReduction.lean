@@ -190,11 +190,15 @@ theorem weakening_type' (red: [[ Δ, Δ' ⊢ A ≡> B ]]) (freshΔ: a ∉ Δ.typ
   . case lamApp Δ_ B K' I A A' B' kindB redA redB ihA ihB =>
     subst Δ_
     apply ParallelReduction.lamApp (I := a :: I ++ A.freeTypeVars)
-    . rw [<- Environment.append_type_assoc]; apply Kinding.weakening_r' (fresh := by simp_all [Environment.typeVarDom]) kindB
+    . rw [<- Environment.append_type_assoc]; exact Kinding.weakening_r' (fresh := by simp_all [Environment.typeVarDom]) kindB
     . intro a' notIn
       specialize @ihA a' (by simp_all) Δ (Δ'.typeExt a' K')
       simp_all [Environment.append]
     . specialize @ihB Δ Δ'; simp_all
+  . case listAppId Δ_ A K' A' AkiLK AA' ih =>
+    subst Δ_
+    refine .listAppId ?_ (by simp_all)
+    . rw [<- Environment.append_type_assoc]; exact Kinding.weakening_r' (fresh := by simp_all [Environment.typeVarDom]) AkiLK
   . case lam I Δ_ K' A B red ih =>
     subst Δ_
     apply ParallelReduction.lam (I := a :: I ++ A.freeTypeVars)
@@ -229,6 +233,10 @@ theorem weakening_term' (red: [[ Δ, Δ' ⊢ A ≡> B ]]) : [[ Δ, x: T, Δ' ⊢
       specialize @ihA x' (by simp_all) Δ (Δ'.typeExt x' K') (by aesop)
       simp_all [Environment.append]
     . specialize @ihB Δ Δ'; simp_all
+  . case listAppId Δ_ A K' A' AkiLK AA' ih =>
+    subst Δ_
+    refine .listAppId ?_ (by simp_all)
+    . rw [<- Environment.append_term_assoc]; exact Kinding.weakening_r' (fresh := by simp_all [Environment.typeVarDom]) AkiLK
   . case lam I Δ_ K' A B red ih =>
     subst Δ_
     apply ParallelReduction.lam (I := x :: I)
@@ -341,6 +349,10 @@ theorem subst_out' {A T T' : «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red : [[ �
     . simp_all
     . have Alc := kindA.TypeVarLocallyClosed_of
       exact T1lc.TypeVar_subst Alc
+  . case listAppId Δ_ A K' A' AkiLK AA' ih =>
+    subst Δ_
+    refine .listAppId ?_ (by simp_all)
+    . apply Kinding.subst' (K := K) <;> simp_all
   . case lam I Δ_ K' T T' red ih =>
     subst Δ_
     apply ParallelReduction.lam (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom)
@@ -414,10 +426,11 @@ theorem subst_all' {A B T: «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red1: [[ Δ 
         simp_all [Std.Range.mem_map_of_mem, Std.Range.mem_of_mem_toList]
     . have Alc := kindA.TypeVarLocallyClosed_of
       exact T1lc.TypeVar_subst Alc
-  . case listAppId Δ_ _ _ _ _ ih =>
+  . case listAppId Δ_ _ _ _ _ _ ih =>
     subst Δ_
     simp [«Type».TypeVar_subst]
     apply ParallelReduction.listAppId
+    . apply Kinding.subst' (K := K) <;> simp_all
     . match lcT with
       | .listApp _ _ =>
         apply ih <;> try simp_all [Environment.append]
@@ -585,7 +598,7 @@ theorem preservation (red: [[ Δ ⊢ A ≡> B ]]) (wf: [[ ⊢ Δ ]]) (k: [[ Δ �
     have ⟨K_, eqK_, k'⟩ := k.inv_list'; subst K
     set_option aesop.dev.statefulForward false in
     constructor; aesop (add safe forward Std.Range.mem_toList_of_mem, safe Type.TypeVarLocallyClosed, unsafe cases Type.TypeVarLocallyClosed)
-  case listAppId Δ _ _ K_ _ _ =>
+  case listAppId Δ _ _ K_ _ _ _ =>
     -- NOTE wts. K2 = K_
     cases k; case listApp K1 K2 ka kA =>
     cases ka; case lam I ka =>
@@ -716,7 +729,7 @@ theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ �
       . have ⟨i, iltn, Teq⟩ := Std.Range.mem_of_mem_map Tin; subst Teq
         have ⟨B'T2, B''T2, T2ilc⟩ := ih2 i iltn
         exact T1lc.app T2ilc
-    . case listAppId K _ _ BB2 =>
+    . case listAppId K _ _ BkiLK BB2 =>
       subst B_eq
       rename' C => B2
       rw [AA'.inv_id]
@@ -725,7 +738,8 @@ theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ �
       refine ⟨[[ { </ T@i // i in [:n] /> } ]], .list λi iltn => ?_, .list λi iltn => ?_, .list λT Tin => ?_⟩
       . have ⟨B'T, B2T, T2ilc⟩ := ih2 i iltn
         simp; rw [ [[ T@i ]].expand_app_id ]
-        exact .lamApp (I := []) sorry (λa nin => .refl) B'T -- TODO fix after we add kinding judgment to listAppId
+        have B'kiK := BB' i iltn |>.preservation wf (BkiLK.inv_list i iltn)
+        exact .lamApp (I := []) B'kiK (λa nin => .refl) B'T
       . have ⟨B'T, B2T, T2ilc⟩ := ih2 i iltn
         exact B2T
       . have ⟨i, iltn, Teq⟩ := Std.Range.mem_of_mem_map Tin; subst Teq
@@ -746,28 +760,30 @@ theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ �
       . have ⟨i, iltn, Teq⟩ := Std.Range.mem_of_mem_map Tin; subst Teq
         have ⟨B'T2, B2T2, T2ilc⟩ := ih2 i iltn
         exact T1lc.app T2ilc
-    . case listAppComp => sorry
-  . case listAppId Δ B B' K BB' ih =>
+    . case listAppComp => cases B_eq
+  . case listAppId Δ B K B' BkiLK BB' ih =>
     rename' C => B2
     match lc with
     | .listApp _ Blc =>
     cases red2
     . case refl =>
       have ⟨T, B'T, BT, Tlc⟩ := ih wf .refl Blc
-      exact ⟨T, B'T, BT.listAppId, Tlc⟩
+      exact ⟨T, B'T, BT.listAppId BkiLK, Tlc⟩
     . case lamListApp n B B2 BB2 _ aA' =>
       rw [aA'.inv_id]
       have ⟨T, B'T, B2T, Tlc⟩ := ih wf (.list BB2) Blc
       have ⟨T, Teq, B2T⟩ := B2T.inv_list; rw [Teq] at B'T Tlc; clear Teq
       refine ⟨[[ { </ T@i // i in [:n] /> } ]], B'T, .list λ i iltn => ?_, Tlc⟩
       . simp; rw [ [[ T@i ]].expand_app_id ]
-        exact .lamApp (I := []) sorry (λa nin => .refl) (B2T i iltn) -- TODO fix after we add kinding judgment to listAppId
+        have B2kiK := BB2 i iltn |>.preservation wf (BkiLK.inv_list i iltn)
+        exact .lamApp (I := []) B2kiK (λa nin => .refl) (B2T i iltn)
     . case listAppId _ BB2 => exact ih wf BB2 Blc
     . case listApp A2 B2 aA2 BB2 =>
       rw [aA2.inv_id]
       have ⟨T, B'T, B2T, Tlc⟩ := ih wf BB2 Blc
       refine ⟨T, B'T, ?_, Tlc⟩
-      exact B2T.listAppId
+      have B2kiK := BB2.preservation wf BkiLK
+      exact B2T.listAppId B2kiK
     . case listAppComp => sorry
   . case lam I Δ K A B red1 ih =>
     -- We know A is of shape (λ _: K. A)
@@ -875,16 +891,36 @@ theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ �
           exact T1lc.app <| T2lc i iltn
         ))
       ⟩
-    . case listAppId K _ BB'' =>
+    . case listAppId K BkiLK BB'' =>
       rename' C => B''
       rw [AA'.inv_id]
       have ⟨T, B'T, B''T, Tlc⟩ := ih2 wf BB'' Blc
-      refine ⟨T, .listAppId B'T, B''T, Tlc⟩
+      have B'kiLK := BB'.preservation wf BkiLK
+      exact ⟨T, .listAppId B'kiLK B'T, B''T, Tlc⟩
     . case listApp A'' B''  AA'' BB'' =>
       have ⟨T1, A'T1, A''T1, T1lc⟩ := ih1 wf AA'' Alc
       have ⟨T2, B'T2, B''T2, T2lc⟩ := ih2 wf BB'' Blc
       exact ⟨[[ (T1 ⟦T2⟧) ]], .listApp A'T1 B'T2, .listApp A''T1 B''T2, .listApp T1lc T2lc⟩
-    . case listAppComp => sorry
+    . case listAppComp A₀'' I K A₁ A₁'' B B'' A₁A₁' BB' Alc AA₀' =>
+      rename' A' => A₀'
+      rename' BB' => A₁BA₁B'
+      rename' A₁A₁' => A₁A₁''
+      rename' BB' => BB''
+      rename' B' => A₁'B'
+      have ⟨T1, A₀'T1, A₀''T1, T1lc⟩ := ih1 wf AA₀' Alc
+      have ⟨T2, A₁'B'T2, A₁''B''T2, T2lc⟩ := ih2 wf (.listApp (.lam A₁A₁'') BB'') Blc
+      clear ih1 ih2
+      cases A₁BA₁B'
+      . case refl => sorry
+      . case lamListApp => sorry
+      . case listAppId => sorry
+      . case listApp A₁' B' A₁A₁' BB' =>
+        cases A₁A₁'
+        . case refl => sorry
+        . case lam I A₁' A₁A₁' => sorry
+          -- cases A₁''B''T2
+      . case listAppComp =>
+      sorry
   . case listAppComp => sorry
   . case prod Δ A B AB ih =>
     cases lc; case prod Alc =>
