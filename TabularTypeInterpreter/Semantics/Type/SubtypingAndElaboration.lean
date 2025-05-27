@@ -4,15 +4,15 @@ namespace TabularTypeInterpreter
 
 open «F⊗⊕ω»
 
-judgement_syntax μ₀ " ≥ " μ₁ : Monotype.CommutativityPartialOrdering
+judgement_syntax μ₀ " ≤ " μ₁ : Monotype.CommutativityPartialOrdering
 
 judgement Monotype.CommutativityPartialOrdering where
 
 ───── «N»
-N ≥ μ
+N ≤ μ
 
 ───── «C»
-μ ≥ C
+μ ≤ C
 
 syntax (name := subtyping) Lott.Symbol.TabularTypeInterpreter.ClassEnvironment "; " Lott.Symbol.TabularTypeInterpreter.TypeEnvironment " ⊢ " Lott.Symbol.TabularTypeInterpreter.TypeScheme " <: " Lott.Symbol.TabularTypeInterpreter.TypeScheme : Lott.Judgement
 
@@ -90,7 +90,7 @@ notex for noelab </ Γc; Γ ⊢ τ₀@i : * ⇝ B@i // i in [:n] notex />
 
 Γc; Γ ⊢ Ξ(μ₀) ρ : * ⇝ A
 Γc; Γ ⊢ μ₁ : U
-μ₀ ≥ μ₁
+μ₀ ≤ μ₁
 ─────────────────────────────────────── decay
 Γc; Γ ⊢ Ξ(μ₀) ρ <: Ξ(μ₁) ρ ⇝ λ x : A. x$0
 
