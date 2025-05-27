@@ -16,7 +16,6 @@ theorem to_Kinding (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]])
   (Γᵢw : [[Γc ⊢ Γᵢ]]) (Γcw : [[⊢c Γc]]) (Γwe : [[Γc ⊢ Γ ⇝ Δ]]) : ∃ A, [[Γc; Γ ⊢ ψ : C ⇝ A]] := by
   induction ψce generalizing Δ with
   | «local» ψinΓ => exact Γwe.KindingAndElaboration_of_ConstrIn ψinΓ
-  | containRefl ρke κe => exact ⟨_, .contain .comm ρke ρke κe⟩
   | containTrans _ _ ρ₀ke ρ₂ke _ ρ₀₁ih _ =>
     let ⟨_, .contain μke ρ₀ke' ρ₁ke κe⟩ := ρ₀₁ih Γᵢw Γcw Γwe
     rcases ρ₀ke.deterministic ρ₀ke' with ⟨κeq, rfl⟩
@@ -242,39 +241,6 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
   (Γᵢw : [[Γc ⊢ Γᵢ]]) (Γcw : [[⊢c Γc]]) (Γwe : [[Γc ⊢ Γ ⇝ Δ]]) : [[Δ ⊢ E : A]] := by
   induction ψce generalizing Δ A with
   | «local» ψinΓ => exact .var (Γwe.soundness Γcw) <| Γwe.ConstrIn_preservation ψinΓ ψke
-  | containRefl ρke κe =>
-    rename «F⊗⊕ω».Kind => K
-    rename Environment => Δ
-    let .contain _ ρke' ρke'' κe' := ψke
-    rcases ρke.deterministic ρke' with ⟨κeq, rfl⟩
-    rcases ρke.deterministic ρke'' with ⟨_, rfl⟩
-    cases κeq
-    cases κe.deterministic κe'
-    apply Typing.pair
-    · apply Typing.typeLam Δ.typeVarDom
-      intro a anin
-      simp only [«F⊗⊕ω».Term.TypeVar_open, Type.TypeVar_open, if_pos]
-      apply Typing.lam Δ.termVarDom
-      intro x xnin
-      simp only [«F⊗⊕ω».Term.TermVar_open, if_pos]
-      apply Typing.var _ .head
-      let Δawf : [[⊢ Δ, a : K ↦ *]] := Γwe.soundness Γcw |>.typeVarExt anin
-      apply Δawf.termVarExt xnin <| .prod <| .listApp (.var .head) _
-      let Aki := ρke.soundness Γcw Γwe κe.row
-      rw [Aki.TypeVarLocallyClosed_of.TypeVar_open_id]
-      exact Aki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)
-    · apply Typing.typeLam Δ.typeVarDom
-      intro a anin
-      simp only [«F⊗⊕ω».Term.TypeVar_open, Type.TypeVar_open, if_pos]
-      apply Typing.lam Δ.termVarDom
-      intro x xnin
-      simp only [«F⊗⊕ω».Term.TermVar_open, if_pos]
-      apply Typing.var _ .head
-      let Δawf : [[⊢ Δ, a : K ↦ *]] := Γwe.soundness Γcw |>.typeVarExt anin
-      apply Δawf.termVarExt xnin <| .sum <| .listApp (.var .head) _
-      let Aki := ρke.soundness Γcw Γwe κe.row
-      rw [Aki.TypeVarLocallyClosed_of.TypeVar_open_id]
-      exact Aki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)
   | containTrans contain₀₁ce contain₁₂ce ρ₀ke ρ₂ke κe contain₀₁ih contain₁₂ih =>
     rename_i A₀ A₂ K
     let .contain μke ρ₀ke' ρ₂ke' κe' := ψke

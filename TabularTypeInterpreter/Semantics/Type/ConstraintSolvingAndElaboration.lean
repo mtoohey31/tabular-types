@@ -39,13 +39,6 @@ judgement Monotype.ConstraintSolvingAndElaboration where
 ───────────────── «local»
 Γᵢ; Γc; Γ ⊨ ψ ⇝ x
 
-Γc; Γ ⊢ ρ : R κ ⇝ A
-notex for noelab ⊢ κ ⇝ K
-notex for noelab Eₚ := Λ a : K ↦ *. λ x : ⊗ (a$0 ⟦A⟧). x$0
-notex for noelab Eᵢ := Λ a : K ↦ *. λ x : ⊕ (a$0 ⟦A⟧). x$0
-────────────────────────────────────────────────────────── containRefl
-Γᵢ; Γc; Γ ⊨ ρ ≲(N) ρ ⇝ (Eₚ, Eᵢ)
-
 Γᵢ; Γc; Γ ⊨ ρ₀ ≲(μ) ρ₁ ⇝ E
 Γᵢ; Γc; Γ ⊨ ρ₁ ≲(μ) ρ₂ ⇝ F
 notex for noelab Γc; Γ ⊢ ρ₀ : R κ ⇝ A₀
