@@ -2831,7 +2831,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
     simp at πty
     exact .equiv πty .lamAppL
   | allContain I containce _ ψ'ke κe containih allih =>
-    rename_i Γ _ _ _ _ _ _ _ A' K _
+    rename_i Γ _ _ _ _ _ _ A' K _
     let .all I' ψ'ke' κe' ρ₀ke (A := A'') := ψke
     cases κe.deterministic κe'
     let ⟨_, containke@(.contain μke ρ₀ke' ρ₁ke κe'')⟩ := containce.to_Kinding Γᵢw Γcw Γwe
@@ -2864,7 +2864,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
     )) .refl
     exact this
   | allConcat I concatce _ _ ψ'ke κe concatih all₀ih all₁ih =>
-    rename_i Γ _ _ _ _ _ _ _ _ _ A' K _ _
+    rename_i Γ _ _ _ _ _ _ _ _ A' K _ _
     let .all I' ψ'ke' κe' ρ₂ke (A := A'') := ψke
     cases κe.deterministic κe'
     let ⟨_, concatke@(.concat μke ρ₀ke ρ₁ke ρ₂ke' κe'' contain₀₂ke contain₁₂ke)⟩ :=

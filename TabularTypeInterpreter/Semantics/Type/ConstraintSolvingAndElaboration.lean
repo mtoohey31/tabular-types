@@ -211,14 +211,14 @@ i ∈ [:n]
 ──────────────────────────────────────── allSingletonElim
 Γᵢ; Γc; Γ ⊨ ψ^^τ/a ⇝ π 0 E
 
-Γᵢ; Γc; Γ ⊨ ρ₀ ≲(μ) ρ₁ ⇝ F
+Γᵢ; Γc; Γ ⊨ ρ₀ ≲(C) ρ₁ ⇝ F
 Γᵢ; Γc; Γ ⊨ All (λ a : κ. ψ) ρ₁ ⇝ E
 notex for noelab ∀ a ∉ I, Γc; Γ, a : κ ⊢ ψ^a : C ⇝ A^a
 notex for noelab ⊢ κ ⇝ K
 ──────────────────────────────────────────────────────── allContain (I : List TypeVarId)
 Γᵢ; Γc; Γ ⊨ All (λ a : κ. ψ) ρ₀ ⇝ ⦅π 0 F⦆ [λ a : K. A] E
 
-Γᵢ; Γc; Γ ⊨ ρ₀ ⊙(μ) ρ₁ ~ ρ₂ ⇝ F
+Γᵢ; Γc; Γ ⊨ ρ₀ ⊙(C) ρ₁ ~ ρ₂ ⇝ F
 Γᵢ; Γc; Γ ⊨ All (λ a : κ. ψ) ρ₀ ⇝ E₀
 Γᵢ; Γc; Γ ⊨ All (λ a : κ. ψ) ρ₁ ⇝ E₁
 notex for noelab ∀ a ∉ I, Γc; Γ, a : κ ⊢ ψ^a : C ⇝ A^a
