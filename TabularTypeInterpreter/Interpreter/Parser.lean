@@ -15,12 +15,16 @@ private
 def ws : KindParseM Unit :=
   dropMany <| tokenFilter [' ', '\n', '\r', '\t'].contains
 
+local
 infixl:60 " **> " => fun l r => l *> liftM ws *> r
 
+local
 infixl:60 " <** " => fun l r => l <* liftM ws <* r
 
+local
 infixl:60 " <**> " => fun l r => l <*> (liftM ws *> r)
 
+local
 prefix:60 "~*> " => fun r => liftM ws *> r
 
 private
@@ -29,14 +33,39 @@ def paren [Monad m] [inst : MonadLiftT KindParseM m] (p : m α) : m α :=
 
 open Kind in
 private partial
-def kind : KindParseM Kind := withErrorMessage "expected kind" do
+def kind (greedy := true) : KindParseM Kind := withErrorMessage "expected kind" do
   let κ ← char '*' *> pure star
     <|> char 'L' *> pure label
     <|> char 'U' *> pure comm
-    <|> char 'R' **> row <$> kind
+    <|> char 'R' **> row <$> kind (greedy := false)
+    <|> char 'C' *> pure constr
     <|> paren kind
 
+  if !greedy then
+    return κ
+
   optionD (default := κ) <| arr κ <$> (~*> (string "|->" <|> string "↦") **> kind)
+
+private
+def assertResultEq [BEq α] [ToString α] (expected : α)
+  (result : Parser.Result (Parser.Error.Simple Substring Char) Substring α)
+  : Lean.Elab.TermElabM Unit :=
+  match result with
+  | .ok _ actual => do
+    if expected != actual then
+      throwError "× -- expected: {expected}, actual: {actual}"
+  | .error _ e => throwError "× -- {e}"
+
+local
+macro "#parse_kind " input:str " to " expected:term : command =>
+  `(#eval assertResultEq (open Kind in $expected) ((kind <* endOfInput).run $input))
+
+#parse_kind "*" to star
+#parse_kind "* |-> L" to star.arr label
+#parse_kind "U↦R * ↦ C" to comm.arr <| row star |>.arr constr
+#parse_kind "R ( * ↦ * )" to row <| star.arr star
+#parse_kind "R * ↦ *" to row star |>.arr star
+#parse_kind "R R C" to row <| row constr
 
 abbrev VarTable := HashMap String Nat
 
