@@ -35,56 +35,6 @@ def char (c : Char) : ParseM Unit := Char.char c *> pure ()
 def sepBy (pₐ : ParseM α) (sep : ParseM Unit): ParseM (List α) :=
   Parser.sepBy sep pₐ <&> Array.toList
 
--- terminals
-def «Ind» : ParseM Unit := .string "Ind"
-def «Lift» : ParseM Unit := .string "Lift"
-def «All» : ParseM Unit := .string "All"
-def «Split» : ParseM Unit := .string "Split"
-def «List» : ParseM Unit := .string "List"
-def «Nat» : ParseM Unit := .string "Nat"
-def «Str» : ParseM Unit := .string "String"
-def «let» : ParseM Unit := .string "let"
-def «in» : ParseM Unit := .string "in"
-def «prj» : ParseM Unit := .string "prj"
-def «inj» : ParseM Unit := .string "inj"
-def «ind» : ParseM Unit := .string "ind"
-def «splitₚ» : ParseM Unit := .string "splitₚ"
-def «splitₛ» : ParseM Unit := .string "splitₛ"
-def «nil» : ParseM Unit := .string "nil"
-def «fold» : ParseM Unit := .string "fold"
-def «range» : ParseM Unit := .string "range"
-def «'» : ParseM Unit := .char '\''
-def «"» : ParseM Unit := .char '"'
-def «~» : ParseM Unit := .char '~'
-def «.» : ParseM Unit := .char '.'
-def «:» : ParseM Unit := .char ':'
-def «=» : ParseM Unit := .char '='
-def «/» : ParseM Unit := .char '/'
-def «;» : ParseM Unit := .char ';'
-def «++» : ParseM Unit := .string "++"
-def «::» : ParseM Unit := .string "::"
-def «⇒» : ParseM Unit := .string "=>" <|> .char '⇒'
-def «▹» : ParseM Unit := .string "|>" <|> .char '▹'
--- TODO: What's the best ascii version of `▿`?
-def «▿» : ParseM Unit := .char 'v' <|> .char '▿'
-def «∀» : ParseM Unit := .string "forall" <|> .char '∀'
-def «⊙» : ParseM Unit := .char 'o' <|> .char '⊙'
-def «⊙'» : ParseM Unit := .«⊙» *> .char '\''
-def «λ» : ParseM Unit := .char '\\' <|> .char 'λ'
-def «Π» : ParseM Unit := .char 'P' <|> .char 'Π'
-def «Σ» : ParseM Unit := .char 'S' <|> .char 'Σ'
-def «≲» : ParseM Unit := .string "~<" <|> .char '≲'
-def «→» : ParseM Unit := .string "->" <|> .char '→'
-def «↦» : ParseM Unit := .string "|->" <|> .char '↦'
-def «⌊» : ParseM Unit := .string "|_" <|> .char '⌊'
-def «⌋» : ParseM Unit := .string "_|" <|> .char '⌋'
-def «⟨» : ParseM Unit := .char '<' <|> .char '⟨'
-def «⟩» : ParseM Unit := .char '>' <|> .char '⟩'
-def «[» : ParseM Unit := .char '['
-def «]» : ParseM Unit := .char ']'
-def «{» : ParseM Unit := .char '{'
-def «}» : ParseM Unit := .char '}'
-
 def stringInner : ParseM String := do
   let (tokens, _) ← takeUntil (char '\"') anyToken
   return ⟨tokens.toList⟩
@@ -98,7 +48,7 @@ partial def kind : ParseM Kind := withErrorMessage "expected kind" do
     <|> char 'U' *> pure Kind.comm
     <|> char 'R' **> Kind.row <$> kind
     <|> ParseM.paren kind
-  let tail: ParseM Kind := Kind.arr κ <$> (.ws *> ParseM.«↦» **> kind)
+  let tail: ParseM Kind := Kind.arr κ <$> (.ws *> (string "|->" <|> string "↦") **> kind)
   optionD tail κ
 
 -- TODO: implement proper typeclas parsing
@@ -127,53 +77,58 @@ def comm : ParseM Comm := withErrorMessage "expected commutativity" do
   <|> char 'N' *> pure .non
 
 def prodOrSum : ParseM ProdOrSum := withErrorMessage "expected prod or sum" do
-  ParseM.«Π» *> pure .prod
-  <|> ParseM.«Σ» *> pure .sum
+  (char 'P' <|> char 'Π') *> pure .prod
+    <|> (char 'S' <|> char 'Σ') *> pure .sum
+
+private
+def «▹» : ParseM String := string "|>" <|> string "▹"
 
 partial def monotype : ParseM Monotype := withErrorMessage "expected monotype" do
   let τ : Monotype ←
-    .paren monotype
-    <|> .«Lift» *> pure .lift
-    <|> .«All» *> pure .all
-    <|> .«ind» *> pure .ind
-    <|> .«Split» *> pure .split
-    <|> .«List» *> pure .list
-    <|> .«Nat» *> pure .nat
-    <|> .«Str» *> pure .str
+    ParseM.paren monotype
+    <|> string "Lift" *> pure .lift
+    <|> string "All" *> pure .all
+    <|> string "Ind" *> pure .ind
+    <|> string "Split" *> pure .split
+    <|> string "List" *> pure .list
+    <|> string "Nat" *> pure .nat
+    <|> string "Str" *> pure .str
     <|> .comm <$> comm
     <|> .prodOrSum <$> prodOrSum <**> (.paren monotype)
     <|> .tc <$> typeclass
     <|> .var <$> typevar (fresh? := false)
-    <|> .label <$> (.«'» *> .id <* .«'»)
+    <|> .label <$> (char '.' *> ParseM.id <* char '.')
     -- TODO: I think we can avoid putting quotes around labels if we parse literal .floor separately
-    <|> .floor <$> (.«⌊» **> monotype <** .«⌋»)
-    <|> .lam <$> (.«λ» **> (typevar (fresh? := true)) **> .«:» **> kind) <**> (.«.» **> monotype)
+    <|> .floor <$> ((string "|_" <|> string "⌊") **> monotype <** (string "_|" <|> string "⌋"))
+    <|> .lam <$> ((char '\\' <|> char 'λ') **> (typevar (fresh? := true)) **> char ':' **> kind)
+      <**> (char '.' **> monotype)
     <|> .row
-      <$> (.«⟨» **> (.sepBy (.mk <$> monotype <**> (.«▹» **> monotype)) (.string ",")))
-      <**> ((option? <| .«:» **> kind) <** .«⟩»)
+      <$> ((char '<' <|> char '⟨') **>
+        (.sepBy (.mk <$> monotype <**> («▹» **> monotype)) (.string ",")))
+        <**> ((option? <| char ':' **> kind) <** (char '>' <|> char '⟩'))
 
   let tail : ParseM Monotype :=
     .app τ <$> (.ws *> monotype)
-    <|> .arr τ <$> (.ws *> .«→» **> monotype)
+    <|> .arr τ <$> (.ws *> (string "->" <|> string "→") **> monotype)
     <|> .contain τ
-      <$> (.ws *> .«≲» **> .paren monotype)
+      <$> (.ws *> (string "~<" <|> string "≲") **> .paren monotype)
       <**> monotype
     <|> .concat τ
-      <$> (.ws *> .«⊙» **> .paren monotype)
+      <$> (.ws *> (char 'o' <|> char '⊙') **> .paren monotype)
       <**> monotype
-      <**> (.«~» **> monotype)
+      <**> (char '~' **> monotype)
 
   optionD tail τ
 
 partial def qualifiedType : ParseM QualifiedType := withErrorMessage "expected qualified type" do
   let τ ← monotype
-  optionD (QualifiedType.qual τ <$> (.ws *> .«⇒» **> qualifiedType)) τ
+  optionD (QualifiedType.qual τ <$> (.ws *> (string "=>" <|> string "⇒") **> qualifiedType)) τ
 
 partial def typescheme : ParseM TypeScheme := withErrorMessage  "expected type scheme" do
   TypeScheme.qual <$> qualifiedType
   <|> TypeScheme.quant
-    <$> (ParseM.«∀» **> (typevar (fresh? := true)) **> ParseM.«:» **> kind)
-    <**> (ParseM.«.» **> typescheme)
+    <$> ((string "forall" <|> string "∀") **> (typevar (fresh? := true)) **> char ':' **> kind)
+    <**> (char '.' **> typescheme)
 
 def termvar (fresh? : Bool) : ParseM Nat := withErrorMessage "expected term variable" <| var (get <&> S.termvars) (fun termvars => do set { ← get with termvars }) fresh?
 
@@ -191,29 +146,31 @@ partial def term : ParseM Term := withErrorMessage "expected term" do
     .paren term
     <|> .member <$> member
     <|> .var <$> termvar (fresh? := false)
-    <|> .label <$> (.«'» *> .id <* .«'»)
-    <|> .lam <$> (.«λ» **> (termvar (fresh? := true)) **> .«.» **> term)
-    <|> .let <$> (.«let» **> (termvar (fresh? := true)) **> .«:» **> typescheme) <**> (.«=» **> term) <**> (.«in» **> term)
-    <|> .prod <$> (ParseM.«{» **> (.sepBy (Prod.mk <$> term <**> (ParseM.«▹» **> term)) (.string ",")) <** ParseM.«}»)
-    <|> .sum <$> (.«[» **> term) <**> (.«▹» **> term <** .«]»)
-    <|> .prj <$> (.«prj» **> term)
-    <|> .inj <$> (.«inj» **> term)
-    <|> .ind <$> (.«ind» **> monotype) <**> monotype <**> (.«;» **> term) <**> (.«;» **> term)
-    <|> .splitₚ <$> (.«splitₚ» **> monotype) <**> term
-    <|> .splitₛ <$> (.«splitₛ» **> monotype) <**> term <**> (.«;» **> term)
-    <|> .str <$> (.«"» *> ParseM.stringInner <* .«"»)
-    <|> .nat <$> .nat
-    <|> .«nil» *> pure .nil
-    <|> .«fold» *> pure .fold
-    <|> .«range» *> pure .range
+    <|> .label <$> (char '.' *> ParseM.id <* char '.')
+    <|> .lam <$> ((char '\\' <|> char 'λ') **> (termvar (fresh? := true)) **> char '.' **> term)
+    <|> .let <$> (string "let" **> (termvar (fresh? := true)) **> char ':' **> typescheme) <**>
+      (char '=' **> term) <**> (string "in" **> term)
+    <|> .prod <$> (char '{' **>
+      (.sepBy (Prod.mk <$> term <**> («▹» **> term)) (.string ",")) <** char '}')
+    <|> .sum <$> (char '[' **> term) <**> («▹» **> term <** char ']')
+    <|> .prj <$> (string "prj" **> term)
+    <|> .inj <$> (string "inj" **> term)
+    <|> .ind <$> (string "ind" **> monotype) <**> monotype <**> (char ';' **> term) <**> (char ';' **> term)
+    <|> .splitₚ <$> (string "splitₚ" **> monotype) <**> term
+    <|> .splitₛ <$> (string "splitₛ" **> monotype) <**> term <**> (char ';' **> term)
+    <|> .str <$> (char '"' *> ParseM.stringInner <* char '"')
+    <|> .nat <$> ParseM.nat
+    <|> string "nil" *> pure .nil
+    <|> string "fold" *> pure .fold
+    <|> string "range" *> pure .range
 
   let tail : ParseM Term :=
     .app M <$> (.ws *> term)
-    <|> .annot M <$> (.ws *> .«:» **> typescheme)
-    <|> .unlabel M <$> (.ws *> .«/» **> term)
-    <|> .concat M <$> (.ws *> .«++» **> term)
-    <|> .elim M <$> (.ws *> .«▿» **> term)
-    <|> .cons M <$> (.ws *> .«::» **> term)
+    <|> .annot M <$> (.ws *> char ':' **> typescheme)
+    <|> .unlabel M <$> (.ws *> char '/' **> term)
+    <|> .concat M <$> (.ws *> string "++" **> term)
+    <|> .elim M <$> (.ws *> (string "\\/" <|> string "▿") **> term)
+    <|> .cons M <$> (.ws *> string "::" **> term)
     <|> (fun o t => .op o M t) <$> (.ws *> op) <**> term
 
   optionD tail M
