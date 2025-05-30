@@ -5,9 +5,7 @@ import Parser.Char
 namespace TabularTypeInterpreter.Interpreter.Parser
 
 open TabularTypeInterpreter.Interpreter
-open Parser
-open Parser.Char
-open Parser.Char.ASCII
+open _root_.Parser Char ASCII
 open Std
 
 abbrev VarTable := HashMap String Nat
@@ -21,20 +19,19 @@ abbrev ParseM := SimpleParserT Substring Char (StateM S)
 
 namespace ParseM
 
-def ws : ParseM Unit := Parser.dropMany <|
-  Parser.tokenFilter [' ', '\n', '\r', '\t'].contains
+def ws : ParseM Unit := dropMany <| tokenFilter [' ', '\n', '\r', '\t'].contains
 def id : ParseM String :=
-  (fun c cs => ⟨c::cs.toList⟩) <$> alpha <*> Parser.takeMany (alphanum <|> char '_')
+  (fun c cs => ⟨c::cs.toList⟩) <$> alpha <*> takeMany (alphanum <|> char '_')
 infixl:60 " **> " => fun l r => l *> ws *> r
 infixl:60 " <** " => fun l r => l <* ws <* r
 infixl:60 " <**> " => fun l r => l <*> (ws *> r)
 def paren (p : ParseM α) : ParseM α :=
   char '(' **> p <** char ')'
 def nat : ParseM Nat := do
-  let x ← Array.toList <$> Parser.takeMany1 numeric
+  let x ← Array.toList <$> takeMany1 numeric
   return (String.mk x).toNat!
-def string (s : String) : ParseM Unit := Parser.Char.string s *> pure ()
-def char (c : Char) : ParseM Unit := Parser.Char.char c *> pure ()
+def string (s : String) : ParseM Unit := Char.string s *> pure ()
+def char (c : Char) : ParseM Unit := Char.char c *> pure ()
 def sepBy (pₐ : ParseM α) (sep : ParseM Unit): ParseM (List α) :=
   Parser.sepBy sep pₐ <&> Array.toList
 
@@ -90,12 +87,12 @@ def «{» : ParseM Unit := .char '{'
 def «}» : ParseM Unit := .char '}'
 
 def stringInner : ParseM String := do
-  let (tokens, _) ← Parser.takeUntil (char '\"') Parser.anyToken
+  let (tokens, _) ← takeUntil (char '\"') anyToken
   return ⟨tokens.toList⟩
 
 end ParseM
 
-partial def kind : ParseM Kind := Parser.withErrorMessage "expected kind" do
+partial def kind : ParseM Kind := withErrorMessage "expected kind" do
   let κ : Kind ←
     (char '*' <|> char '⋆') *> pure Kind.star
     <|> char 'L' *> pure Kind.label
@@ -103,10 +100,10 @@ partial def kind : ParseM Kind := Parser.withErrorMessage "expected kind" do
     <|> char 'R' **> Kind.row <$> kind
     <|> ParseM.paren kind
   let tail: ParseM Kind := Kind.arr κ <$> (.ws *> ParseM.«↦» **> kind)
-  Parser.optionD tail κ
+  optionD tail κ
 
 -- TODO: implement proper typeclas parsing
-def typeclass : ParseM String := Parser.withErrorMessage "expected type class" ParseM.id
+def typeclass : ParseM String := withErrorMessage "expected type class" ParseM.id
 
 def var (get : ParseM VarTable) (set : VarTable -> ParseM Unit) (fresh? : Bool) : ParseM Nat := do
   let vars ← get
@@ -116,7 +113,7 @@ def var (get : ParseM VarTable) (set : VarTable -> ParseM Unit) (fresh? : Bool) 
       return n
     else
       --TODO: throw a more specific error.
-      Parser.throwUnexpected
+      throwUnexpected
   else
     let n := vars.size
     -- TODO: duplicate identifiers get overwritten.
@@ -124,17 +121,17 @@ def var (get : ParseM VarTable) (set : VarTable -> ParseM Unit) (fresh? : Bool) 
     set (vars.insert identifier n)
     return n
 
-def typevar (fresh? : Bool) : ParseM Nat := Parser.withErrorMessage "expected type variable" <| var (get <&> S.typevars) (fun typevars => do set { ← get with typevars }) fresh?
+def typevar (fresh? : Bool) : ParseM Nat := withErrorMessage "expected type variable" <| var (get <&> S.typevars) (fun typevars => do set { ← get with typevars }) fresh?
 
-def comm : ParseM Comm := Parser.withErrorMessage "expected commutativity" do
+def comm : ParseM Comm := withErrorMessage "expected commutativity" do
   char 'C' *> pure .comm
   <|> char 'N' *> pure .non
 
-def prodOrSum : ParseM ProdOrSum := Parser.withErrorMessage "expected prod or sum" do
+def prodOrSum : ParseM ProdOrSum := withErrorMessage "expected prod or sum" do
   ParseM.«Π» *> pure .prod
   <|> ParseM.«Σ» *> pure .sum
 
-partial def monotype : ParseM Monotype := Parser.withErrorMessage "expected monotype" do
+partial def monotype : ParseM Monotype := withErrorMessage "expected monotype" do
   let τ : Monotype ←
     .paren monotype
     <|> .«Lift» *> pure .lift
@@ -154,43 +151,43 @@ partial def monotype : ParseM Monotype := Parser.withErrorMessage "expected mono
     <|> .lam <$> (.«λ» **> (typevar (fresh? := true)) **> .«:» **> kind) <**> (.«.» **> monotype)
     <|> .row
       <$> (.«⟨» **> (.sepBy (.mk <$> monotype <**> (.«▹» **> monotype)) (.string ",")))
-      <**> ((Parser.option? <| .«:» **> kind) <** .«⟩»)
+      <**> ((option? <| .«:» **> kind) <** .«⟩»)
 
-  let tail : ParseM Monotype := 
+  let tail : ParseM Monotype :=
     .app τ <$> (.ws *> monotype)
     <|> .arr τ <$> (.ws *> .«→» **> monotype)
     <|> .contain τ
-      <$> (.ws *> .«≲» **> .paren monotype) 
+      <$> (.ws *> .«≲» **> .paren monotype)
       <**> monotype
     <|> .concat τ
       <$> (.ws *> .«⊙» **> .paren monotype)
       <**> monotype
       <**> (.«~» **> monotype)
 
-  Parser.optionD tail τ
+  optionD tail τ
 
-partial def qualifiedType : ParseM QualifiedType := Parser.withErrorMessage "expected qualified type" do
+partial def qualifiedType : ParseM QualifiedType := withErrorMessage "expected qualified type" do
   let τ ← monotype
-  Parser.optionD (QualifiedType.qual τ <$> (.ws *> .«⇒» **> qualifiedType)) τ
+  optionD (QualifiedType.qual τ <$> (.ws *> .«⇒» **> qualifiedType)) τ
 
-partial def typescheme : ParseM TypeScheme := Parser.withErrorMessage  "expected type scheme" do
+partial def typescheme : ParseM TypeScheme := withErrorMessage  "expected type scheme" do
   TypeScheme.qual <$> qualifiedType
   <|> TypeScheme.quant
     <$> (ParseM.«∀» **> (typevar (fresh? := true)) **> ParseM.«:» **> kind)
     <**> (ParseM.«.» **> typescheme)
 
-def termvar (fresh? : Bool) : ParseM Nat := Parser.withErrorMessage "expected term variable" <| var (get <&> S.termvars) (fun termvars => do set { ← get with termvars }) fresh?
+def termvar (fresh? : Bool) : ParseM Nat := withErrorMessage "expected term variable" <| var (get <&> S.termvars) (fun termvars => do set { ← get with termvars }) fresh?
 
 -- TODO: implement proper member parsing.
-def member : ParseM String := Parser.withErrorMessage "expected member" do ParseM.id
+def member : ParseM String := withErrorMessage "expected member" do ParseM.id
 
-def op : ParseM «λπι».Op := Parser.withErrorMessage "expected binary operator" do
+def op : ParseM «λπι».Op := withErrorMessage "expected binary operator" do
   char '+' *> pure .add
   <|> char '-' *> pure .sub
   <|> char '*' *> pure .mul
   <|> char '/' *> pure .div
 
-partial def term : ParseM Term := Parser.withErrorMessage "expected term" do
+partial def term : ParseM Term := withErrorMessage "expected term" do
   let M : Term ←
     .paren term
     <|> .member <$> member
@@ -212,7 +209,7 @@ partial def term : ParseM Term := Parser.withErrorMessage "expected term" do
     <|> .«fold» *> pure .fold
     <|> .«range» *> pure .range
 
-  let tail : ParseM Term := 
+  let tail : ParseM Term :=
     .app M <$> (.ws *> term)
     <|> .annot M <$> (.ws *> .«:» **> typescheme)
     <|> .unlabel M <$> (.ws *> .«/» **> term)
@@ -221,6 +218,6 @@ partial def term : ParseM Term := Parser.withErrorMessage "expected term" do
     <|> .cons M <$> (.ws *> .«::» **> term)
     <|> (fun o t => .op o M t) <$> (.ws *> op) <**> term
 
-  Parser.optionD tail M
+  optionD tail M
 
-def parse (s : String) := Parser.term.run s ⟨∅, ∅⟩ |>.fst
+def parse (s : String) := term.run s ⟨∅, ∅⟩ |>.fst
