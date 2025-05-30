@@ -47,7 +47,6 @@ def «let» : ParseM Unit := .string "let"
 def «in» : ParseM Unit := .string "in"
 def «prj» : ParseM Unit := .string "prj"
 def «inj» : ParseM Unit := .string "inj"
-def «order» : ParseM Unit := .string "order"
 def «ind» : ParseM Unit := .string "ind"
 def «splitₚ» : ParseM Unit := .string "splitₚ"
 def «splitₛ» : ParseM Unit := .string "splitₛ"
@@ -199,7 +198,6 @@ partial def term : ParseM Term := withErrorMessage "expected term" do
     <|> .sum <$> (.«[» **> term) <**> (.«▹» **> term <** .«]»)
     <|> .prj <$> (.«prj» **> term)
     <|> .inj <$> (.«inj» **> term)
-    <|> .order <$> (.«order» **> monotype) <**> term
     <|> .ind <$> (.«ind» **> monotype) <**> monotype <**> (.«;» **> term) <**> (.«;» **> term)
     <|> .splitₚ <$> (.«splitₚ» **> monotype) <**> term
     <|> .splitₛ <$> (.«splitₛ» **> monotype) <**> term <**> (.«;» **> term)

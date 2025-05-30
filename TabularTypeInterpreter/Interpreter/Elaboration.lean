@@ -211,8 +211,6 @@ inductive Typing : Term → TypeScheme → Type where
     Typing (M.elim N) (((prodOrSum .prod μ).app ρ₂).arr τ)
   | sub : Typing M σ₀ → Subtyping σ₀ σ₁ → Typing M σ₁
   | member : ConstraintSolution ((tc s).app τ) → Typing (member m) σ
-  | order : Typing M ((prodOrSum Ξ (comm .comm)).app ρ) →
-    Typing (M.order ρ) ((prodOrSum Ξ (comm .non)).app ρ)
   | ind : Typing M (quant .label (quant κ (quant κ.row (quant κ.row (quant κ.row
       (qual (.concat (.var 2) (comm .non) (row [(.var 4, .var 3)] none) (.var 1))
         (qual (.concat (.var 1) (comm .non) (.var 0) ρ)
@@ -262,7 +260,6 @@ def Typing.elab : Typing M σ → «λπι».Term
   | elim M'ty Nty concatso => concatso.elab.prodElim 1 |>.app M'ty.elab |>.app Nty.elab
   | sub Mty' σ₀st => σ₀st.elab.app Mty'.elab
   | member TCτso => TCτso.elab.prodElim 0
-  | order M'ty => M'ty.elab
   | ind M'ty Nty indso => indso.elab |>.app M'ty.elab |>.app Nty.elab
   | splitₚ M'ty splitso =>
     let E := M'ty.elab

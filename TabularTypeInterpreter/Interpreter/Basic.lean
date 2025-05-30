@@ -168,7 +168,6 @@ inductive Term where
   | concat : Term → Term → Term
   | inj : Term → Term
   | elim : Term → Term → Term
-  | order : Monotype → Term → Term
   | ind : Monotype → Monotype → Term → Term → Term
   | splitₚ : Monotype → Term → Term
   | splitₛ : Monotype → Term → Term → Term
@@ -230,7 +229,6 @@ def toString (M : Term) (table := false) : String := match M with
   | concat M' N => s!"{M'.toString} ++ {N.toString}"
   | inj M' => s!"inj {M'.toString}"
   | elim M' N => s!"{M'.toString} ▿ {N.toString}"
-  | order ρ M' => s!"order {ρ} {M'.toString}"
   | ind ϕ ρ M' N => s!"ind {ϕ} {ρ} {M'.toString} {N.toString}"
   | splitₚ ϕ M' => s!"splitₚ {ϕ} {M'.toString}"
   | splitₛ ϕ M' N => s!"splitₛ {ϕ} {M'.toString} {N.toString}"
