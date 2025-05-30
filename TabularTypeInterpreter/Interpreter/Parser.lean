@@ -148,7 +148,7 @@ partial def monotype : ParseM Monotype := withErrorMessage "expected monotype" d
     <|> .floor <$> ((string "|_" <|> string "⌊") **> monotype <** (string "_|" <|> string "⌋"))
     <|> .lam <$> ((char '\\' <|> char 'λ') **> (typevar (fresh? := true)) **> char ':' **> kind)
       <**> (char '.' **> monotype)
-    <|> .row
+    <|> (.row ∘ .ofList)
       <$> ((char '<' <|> char '⟨') **>
         (ParseM.sepBy (.mk <$> monotype <**> («▹» **> monotype)) (.string ",")))
         <**> ((option? <| char ':' **> kind) <** (char '>' <|> char '⟩'))
@@ -196,7 +196,7 @@ partial def term : ParseM Term := withErrorMessage "expected term" do
     <|> .lam <$> ((char '\\' <|> char 'λ') **> (termvar (fresh? := true)) **> char '.' **> term)
     <|> .let <$> (string "let" **> (termvar (fresh? := true)) **> char ':' **> typescheme) <**>
       (char '=' **> term) <**> (string "in" **> term)
-    <|> .prod <$> (char '{' **>
+    <|> (.prod ∘ .ofList) <$> (char '{' **>
       (ParseM.sepBy (Prod.mk <$> term <**> («▹» **> term)) ((string ",") *> pure ())) <** char '}')
     <|> .sum <$> (char '[' **> term) <**> («▹» **> term <** char ']')
     <|> .prj <$> (string "prj" **> term)

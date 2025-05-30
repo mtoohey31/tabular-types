@@ -55,32 +55,125 @@ instance : ToString ProdOrSum where
     | .prod => "Π"
     | .sum => "Σ"
 
-inductive Monotype where
-  | var : Nat → Monotype
-  | lam : Kind → Monotype → Monotype
-  | app : Monotype → Monotype → Monotype
-  | arr : Monotype → Monotype → Monotype
-  | label : String → Monotype
-  | floor : Monotype → Monotype
-  | comm : Comm → Monotype
-  | row : List (Monotype × Monotype) → Option Kind → Monotype
-  | prodOrSum : ProdOrSum → Monotype → Monotype
-  | lift
-  | contain (ρ₀ μ ρ₁ : Monotype)
-  | concat (ρ₀ μ ρ₁ ρ₂ : Monotype)
-  | tc : String → Monotype
-  | all
-  | ind
-  | split
-  | list
-  | nat
-  | str
-deriving Inhabited, BEq
+mutual
+
+inductive Monotype : (uvars : optParam Bool false) → Type where
+  | var (index : Nat) : Monotype uvars
+  | uvar (id : Nat) : Monotype true
+  | lam : Kind → Monotype uvars → Monotype uvars
+  | app : Monotype uvars → Monotype uvars → Monotype uvars
+  | arr : Monotype uvars → Monotype uvars → Monotype uvars
+  | label : String → Monotype uvars
+  | floor : Monotype uvars → Monotype uvars
+  | comm : Comm → Monotype uvars
+  | row : MonotypePairList uvars → Option Kind → Monotype uvars
+  | prodOrSum : ProdOrSum → Monotype uvars → Monotype uvars
+  | lift : Monotype uvars
+  | contain (ρ₀ μ ρ₁ : Monotype uvars) : Monotype uvars
+  | concat (ρ₀ μ ρ₁ ρ₂ : Monotype uvars) : Monotype uvars
+  | tc : String → Monotype uvars
+  | all : Monotype uvars
+  | ind : Monotype uvars
+  | split : Monotype uvars
+  | list : Monotype uvars
+  | nat : Monotype uvars
+  | str : Monotype uvars
+deriving BEq
+
+inductive MonotypePairList : (uvars : optParam Bool false) → Type where
+  | nil : MonotypePairList uvars
+  | cons (head₀ head₁ : Monotype uvars) (tail : MonotypePairList uvars) : MonotypePairList uvars
+deriving BEq
+
+end
+
+mutual
+
+@[simp]
+protected noncomputable
+def Monotype.sizeOf : Monotype uvars → Nat
+  | .var _ | .uvar _ | .label _ | .comm _ | .lift | .tc _ | .all | .ind | .split | .list | .nat
+  | .str => 1
+  | .lam κ τ => 1 + sizeOf κ + τ.sizeOf
+  | .app ϕ τ => 1 + ϕ.sizeOf + τ.sizeOf
+  | .arr τ₀ τ₁ => 1 + τ₀.sizeOf + τ₁.sizeOf
+  | .floor ξ => 1 + ξ.sizeOf
+  | .row ξτs κ? => 1 + ξτs.sizeOf + sizeOf κ?
+  | .prodOrSum _ ρ => 1 + ρ.sizeOf
+  | .contain ρ₀ μ ρ₁ => 1 + ρ₀.sizeOf + μ.sizeOf + ρ₁.sizeOf
+  | .concat ρ₀ μ ρ₁ ρ₂ => 1 + ρ₀.sizeOf + μ.sizeOf + ρ₁.sizeOf + ρ₂.sizeOf
+
+@[simp]
+protected noncomputable
+def MonotypePairList.sizeOf : MonotypePairList uvars → Nat
+  | .nil => 1
+  | .cons head₀ head₁ tail => 2 + head₀.sizeOf + head₁.sizeOf + tail.sizeOf
+
+end
+
+noncomputable
+instance (priority := high) : SizeOf (Monotype uvars) where
+  sizeOf := Monotype.sizeOf
+
+namespace MonotypePairList
+
+instance : Inhabited (MonotypePairList uvars) where
+  default := nil
+
+def toList : MonotypePairList uvars → List (Monotype uvars × Monotype uvars)
+  | nil => []
+  | cons head₀ head₁ tail => (head₀, head₁) :: tail.toList
+
+def ofList : List (Monotype uvars × Monotype uvars) → MonotypePairList uvars
+  | [] => nil
+  | (head₀, head₁) :: tail => cons head₀ head₁ <| .ofList tail
+
+noncomputable
+instance (priority := high) : SizeOf (MonotypePairList uvars) where
+  sizeOf := MonotypePairList.sizeOf
+
+@[simp]
+theorem sizeOf_toList' : MonotypePairList.sizeOf ξτs = SizeOf.sizeOf (toList ξτs) := by
+  match ξτs with
+  | nil =>
+    rw [toList, List.nil.sizeOf_spec]
+    simp [sizeOf]
+  | cons _ _ tail =>
+    rw [toList, List.cons.sizeOf_spec, Prod.mk.sizeOf_spec, ← Nat.add_assoc, ← Nat.add_assoc]
+    simp [SizeOf.sizeOf]
+    have := tail.sizeOf_toList'
+    simp [SizeOf.sizeOf] at this
+    rw [this]
+
+@[simp]
+theorem sizeOf_toList : SizeOf.sizeOf ξτs = SizeOf.sizeOf (toList ξτs) := by
+  rw [SizeOf.sizeOf, instSizeOf]
+  simp only
+  exact sizeOf_toList'
+
+@[simp]
+theorem sizeOf_ofList : SizeOf.sizeOf ξτs = SizeOf.sizeOf (ofList ξτs) := by
+  match ξτs with
+  | [] =>
+    rw [ofList, List.nil.sizeOf_spec]
+    simp [SizeOf.sizeOf]
+  | _ :: tail =>
+    rw [ofList, List.cons.sizeOf_spec, Prod.mk.sizeOf_spec, ← Nat.add_assoc, ← Nat.add_assoc]
+    simp [SizeOf.sizeOf]
+    have := sizeOf_ofList (ξτs := tail)
+    simp [SizeOf.sizeOf] at this
+    rw [this]
+
+end MonotypePairList
 
 namespace Monotype
 
-def toString : Monotype → String
+instance : Inhabited (Monotype uvars) where
+  default := var 1000000
+
+def toString (τ : Monotype uvars) : String := match τ with
   | var n => s!"{n}"
+  | uvar n => s!"u{n}"
   | lam κ τ => s!"(λ {κ}. {τ.toString})"
   | app ϕ τ => s!"{ϕ.toString} {τ.toString}"
   | arr τ₀ τ₁ => s!"{τ₀.toString} → {τ₁.toString}"
@@ -91,7 +184,7 @@ def toString : Monotype → String
     let κString := match κ? with
       | some κ => s!" : {κ}"
       | none => ""
-    let ξτsString := ξτs.mapMem fun (ξ, τ) _ => s!"{ξ.toString} ▹ {τ.toString}"
+    let ξτsString := ξτs.toList.mapMem fun (ξ, τ) _ => s!"{ξ.toString} ▹ {τ.toString}"
     s!"⟨{ξτsString}{κString}⟩"
   | prodOrSum Ξ μ => s!"{Ξ}({μ.toString})"
   | lift => "Lift"
@@ -104,83 +197,181 @@ def toString : Monotype → String
   | list => "List"
   | nat => "Nat"
   | str => "String"
+termination_by sizeOf τ
+decreasing_by
+  all_goals simp_arith [sizeOf]
+  all_goals (
+    apply Nat.le_add_right_of_le
+    apply Nat.le_of_lt <| Nat.lt_of_le_of_lt (m := sizeOf (ξ, τ)) _ <| List.sizeOf_lt_of_mem ..
+    · simp_arith
+      simp_arith [sizeOf]
+    · assumption
+  )
 
-instance : ToString Monotype where
+instance : ToString (Monotype uvars) where
   toString := toString
 
 end Monotype
 
-
-inductive QualifiedType where
-  | mono : Monotype → QualifiedType
-  | qual : Monotype → QualifiedType → QualifiedType
+inductive QualifiedType : (uvars : optParam Bool false) → Type where
+  | mono : Monotype uvars → QualifiedType uvars
+  | qual : Monotype uvars → QualifiedType uvars → QualifiedType uvars
 deriving Inhabited
 
 namespace QualifiedType
 
-instance : Coe Monotype QualifiedType where
+instance : Coe (Monotype uvars) (QualifiedType uvars) where
   coe := .mono
 
-def toString : QualifiedType → String
+def toString : QualifiedType uvars → String
   | .mono τ => τ.toString
   | .qual ψ γ => s!"{ψ} ⇒ {γ.toString}"
 
-instance : ToString QualifiedType where
+instance : ToString (QualifiedType uvars) where
   toString := QualifiedType.toString
 
 end QualifiedType
 
 open QualifiedType
 
-inductive TypeScheme where
-  | qual : QualifiedType → TypeScheme
-  | quant : Kind → TypeScheme → TypeScheme
+inductive TypeScheme : (uvars : optParam Bool false) → Type where
+  | qual : QualifiedType uvars → TypeScheme uvars
+  | quant : Kind → TypeScheme uvars → TypeScheme uvars
 deriving Inhabited
 
 namespace TypeScheme
 
-instance : Coe QualifiedType TypeScheme where
+instance : Coe (QualifiedType uvars) (TypeScheme uvars) where
   coe := .qual
 
-def toString : TypeScheme → String
+def toString : TypeScheme uvars → String
   | .qual γ => γ.toString
   | .quant κ σ => s!"∀ {κ}. {σ.toString}"
 
-instance : ToString TypeScheme where
+instance : ToString (TypeScheme uvars) where
   toString := toString
 
 end TypeScheme
 
 open TypeScheme
 
-inductive Term where
-  | var : Nat → Term
-  | member : String → Term
-  | lam : Term → Term
-  | app : Term → Term → Term
-  | let : TypeScheme → Term → Term → Term
-  | annot : Term → TypeScheme → Term
-  | label : String → Term
-  | prod : List (Term × Term) → Term
-  | sum : Term → Term → Term
-  | unlabel : Term → Term → Term
-  | prj : Term → Term
-  | concat : Term → Term → Term
-  | inj : Term → Term
-  | elim : Term → Term → Term
-  | ind : Monotype → Monotype → Term → Term → Term
-  | splitₚ : Monotype → Term → Term
-  | splitₛ : Monotype → Term → Term → Term
-  | nil : Term
-  | cons : Term → Term → Term
-  | fold
-  | nat : Nat → Term
-  | op : Op → Term → Term → Term
-  | range
-  | str : String → Term
-deriving Inhabited
+mutual
+
+inductive Term : (uvars : optParam Bool false) → Type where
+  | var : Nat → Term uvars
+  | member : String → Term uvars
+  | lam : Term uvars → Term uvars
+  | app : Term uvars → Term uvars → Term uvars
+  | let : TypeScheme uvars → Term uvars → Term uvars → Term uvars
+  | annot : Term uvars → TypeScheme uvars → Term uvars
+  | label : String → Term uvars
+  | prod : TermPairList uvars → Term uvars
+  | sum : Term uvars → Term uvars → Term uvars
+  | unlabel : Term uvars → Term uvars → Term uvars
+  | prj : Term uvars → Term uvars
+  | concat : Term uvars → Term uvars → Term uvars
+  | inj : Term uvars → Term uvars
+  | elim : Term uvars → Term uvars → Term uvars
+  | ind : Monotype uvars → Monotype uvars → Term uvars → Term uvars → Term uvars
+  | splitₚ : Monotype uvars → Term uvars → Term uvars
+  | splitₛ : Monotype uvars → Term uvars → Term uvars → Term uvars
+  | nil : Term uvars
+  | cons : Term uvars → Term uvars → Term uvars
+  | fold : Term uvars
+  | nat : Nat → Term uvars
+  | op : Op → Term uvars → Term uvars → Term uvars
+  | range : Term uvars
+  | str : String → Term uvars
+
+inductive TermPairList : (uvars : optParam Bool false) → Type where
+  | nil : TermPairList uvars
+  | cons (head₀ head₁ : Term uvars) (tail : TermPairList uvars) : TermPairList uvars
+
+end
+
+mutual
+
+@[simp]
+protected noncomputable
+def Term.sizeOf : Term uvars → Nat
+  | .var _ | .member _ | .label _ | .nil | .fold | .nat _ | .range | .str _ => 1
+  | .lam M | .prj M | .inj M => 1 + M.sizeOf
+  | .app M N | .sum M N | .unlabel M N | .concat M N | .elim M N | .cons M N | .op _ M N =>
+    1 + M.sizeOf + N.sizeOf
+  | .let σ M N => 1 + sizeOf σ + M.sizeOf + N.sizeOf
+  | .annot M σ => 1 + M.sizeOf + sizeOf σ
+  | .prod MNs => 1 + MNs.sizeOf
+  | .ind ϕ ρ M N => 1 + sizeOf ϕ + sizeOf ρ + M.sizeOf + N.sizeOf
+  | .splitₚ ϕ M => 1 + sizeOf ϕ + M.sizeOf
+  | .splitₛ ϕ M N => 1 + sizeOf ϕ + M.sizeOf + N.sizeOf
+
+@[simp]
+protected noncomputable
+def TermPairList.sizeOf : TermPairList uvars → Nat
+  | .nil => 1
+  | .cons head₀ head₁ tail => 2 + head₀.sizeOf + head₁.sizeOf + tail.sizeOf
+
+end
+
+noncomputable
+instance (priority := high) : SizeOf (Term uvars) where
+  sizeOf := Term.sizeOf
+
+namespace TermPairList
+
+instance : Inhabited (TermPairList uvars) where
+  default := .nil
+
+def toList : TermPairList uvars → List (Term uvars × Term uvars)
+  | nil => []
+  | cons head₀ head₁ tail => (head₀, head₁) :: tail.toList
+
+def ofList : List (Term uvars × Term uvars) → TermPairList uvars
+  | [] => nil
+  | (head₀, head₁) :: tail => cons head₀ head₁ <| .ofList tail
+
+noncomputable
+instance (priority := high) : SizeOf (TermPairList uvars) where
+  sizeOf := TermPairList.sizeOf
+
+@[simp]
+theorem sizeOf_toList' : TermPairList.sizeOf ξτs = SizeOf.sizeOf (toList ξτs) := by
+  match ξτs with
+  | nil =>
+    rw [toList, List.nil.sizeOf_spec]
+    simp [sizeOf]
+  | cons _ _ tail =>
+    rw [toList, List.cons.sizeOf_spec, Prod.mk.sizeOf_spec, ← Nat.add_assoc, ← Nat.add_assoc]
+    simp [SizeOf.sizeOf]
+    have := tail.sizeOf_toList'
+    simp [SizeOf.sizeOf] at this
+    rw [this]
+
+@[simp]
+theorem sizeOf_toList : SizeOf.sizeOf ξτs = SizeOf.sizeOf (toList ξτs) := by
+  rw [SizeOf.sizeOf, instSizeOf]
+  simp only
+  exact sizeOf_toList'
+
+@[simp]
+theorem sizeOf_ofList : SizeOf.sizeOf ξτs = SizeOf.sizeOf (ofList ξτs) := by
+  match ξτs with
+  | [] =>
+    rw [ofList, List.nil.sizeOf_spec]
+    simp [SizeOf.sizeOf]
+  | _ :: tail =>
+    rw [ofList, List.cons.sizeOf_spec, Prod.mk.sizeOf_spec, ← Nat.add_assoc, ← Nat.add_assoc]
+    simp [SizeOf.sizeOf]
+    have := sizeOf_ofList (ξτs := tail)
+    simp [SizeOf.sizeOf] at this
+    rw [this]
+
+end TermPairList
 
 namespace Term
+
+instance : Inhabited (Term uvars) where
+  default := var 1000000
 
 private
 def termsFromList (M : Term) : List Term × Option Term := match M with
@@ -195,9 +386,9 @@ mutual
 partial
 def tableFromTerms (Ms : List Term) : Option String := do
   let .prod MNs :: _ := Ms | none
-  let header ← MNs.mapM fun | (.label s, _) => some s | _ => none
+  let header ← MNs.toList.mapM fun | (.label s, _) => some s | _ => none
   let entries ← Ms.mapM fun
-    | .prod MNs' => some <| MNs'.map fun (_, N) => N.toString true
+    | .prod MNs' => some <| MNs'.toList.map fun (_, N) => N.toString true
     | _ => none
   let maxWidths := header.mapIdx fun i h => Option.get! <| List.max? <|
     (h :: entries.map (·.get! i)).flatMap (String.splitOn (sep := "\n")) |>.map String.length
@@ -222,7 +413,7 @@ def toString (M : Term) (table := false) : String := match M with
   | label s => s
   | prod M'Ns =>
     s!"\{{String.join <| List.intersperse ", " <|
-            M'Ns.map fun (M', N) => s!"{M'.toString} ▹ {N.toString}"}}"
+            M'Ns.toList.map fun (M', N) => s!"{M'.toString} ▹ {N.toString}"}}"
   | sum M' N => s!"[{M'.toString} ▹ {N.toString}]"
   | unlabel M' N => s!"{M'.toString}/{N.toString}"
   | prj M' => s!"prj {M'.toString}"

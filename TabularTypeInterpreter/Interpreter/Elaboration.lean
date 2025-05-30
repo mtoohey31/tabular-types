@@ -15,7 +15,8 @@ def shift (τ : Monotype) (off := 1) (min := 0) : Monotype := match τ with
   | label s => label s
   | floor ξ => floor <| shift ξ off min
   | comm u => comm u
-  | row ξτ's κ? => row (ξτ's.mapMem fun (ξ, τ') _ => (shift ξ off min, shift τ' off min)) κ?
+  | row ξτ's κ? =>
+    row (.ofList (ξτ's.toList.mapMem fun (ξ, τ') _ => (shift ξ off min, shift τ' off min))) κ?
   | prodOrSum Ξ μ => prodOrSum Ξ <| shift μ off min
   | lift => lift
   | contain ρ₀ μ ρ₁ => contain (shift ρ₀ off min) (shift μ off min) (shift ρ₁ off min)
@@ -28,6 +29,16 @@ def shift (τ : Monotype) (off := 1) (min := 0) : Monotype := match τ with
   | list => list
   | nat => nat
   | str => str
+termination_by sizeOf τ
+decreasing_by
+  all_goals simp_arith [sizeOf]
+  all_goals (
+    apply Nat.le_add_right_of_le
+    apply Nat.le_of_lt <| Nat.lt_of_le_of_lt (m := sizeOf (ξ, τ')) _ <| List.sizeOf_lt_of_mem ..
+    · simp_arith
+      simp_arith [sizeOf]
+    · assumption
+  )
 
 def «open» (τ : Monotype) (τ' : Monotype) (n : Nat := 0) : Monotype := match τ with
   | var m => if m == n then τ' else var m
@@ -37,7 +48,8 @@ def «open» (τ : Monotype) (τ' : Monotype) (n : Nat := 0) : Monotype := match
   | label s => label s
   | floor ξ => floor <| ξ.open τ' n
   | comm u => comm u
-  | row ξτ''s κ? => row (ξτ''s.mapMem fun (ξ, τ'') _ => (ξ.open τ' n, τ''.open τ' n)) κ?
+  | row ξτ''s κ? =>
+    row (.ofList (ξτ''s.toList.mapMem fun (ξ, τ'') _ => (ξ.open τ' n, τ''.open τ' n))) κ?
   | prodOrSum Ξ μ => prodOrSum Ξ <| μ.open τ' n
   | lift => lift
   | contain ρ₀ μ ρ₁ => contain (ρ₀.open τ' n) (μ.open τ' n) (ρ₁.open τ' n)
@@ -49,6 +61,16 @@ def «open» (τ : Monotype) (τ' : Monotype) (n : Nat := 0) : Monotype := match
   | list => list
   | nat => nat
   | str => str
+termination_by sizeOf τ
+decreasing_by
+  all_goals simp_arith [sizeOf]
+  all_goals (
+    apply Nat.le_add_right_of_le
+    apply Nat.le_of_lt <| Nat.lt_of_le_of_lt (m := sizeOf (ξ, τ'')) _ <| List.sizeOf_lt_of_mem ..
+    · simp_arith
+      simp_arith [sizeOf]
+    · assumption
+  )
 
 inductive CommutativityPartialOrdering : Monotype → Monotype → Prop where
   | non : CommutativityPartialOrdering (comm .non) μ
@@ -57,11 +79,12 @@ inductive CommutativityPartialOrdering : Monotype → Monotype → Prop where
 inductive RowEquivalence : Monotype → Monotype → Monotype → Type where
   | refl : RowEquivalence ρ μ ρ
   | trans : RowEquivalence ρ₀ μ ρ₁ → RowEquivalence ρ₁ μ ρ₂ → RowEquivalence ρ₀ μ ρ₂
-  | comm : List.Perm ξτs₀ ξτs₁ → RowEquivalence (row ξτs₀ κ?) (comm .non) (row ξτs₁ κ?)
-  | liftL : RowEquivalence ((lift.app ϕ).app (row ξτs κ?)) μ
-      (row (ξτs.map fun (ξ, τ) => (ξ, ϕ.app τ)) κ?)
-  | liftR : RowEquivalence (row (ξτs.map fun (ξ, τ) => (ξ, ϕ.app τ)) κ?) μ
-      ((lift.app ϕ).app (row ξτs κ?))
+  | comm : List.Perm ξτs₀ ξτs₁ →
+    RowEquivalence (row (.ofList ξτs₀) κ?) (comm .non) (row (.ofList ξτs₁) κ?)
+  | liftL : RowEquivalence ((lift.app ϕ).app (row (.ofList ξτs) κ?)) μ
+      (row (.ofList (ξτs.map fun (ξ, τ) => (ξ, ϕ.app τ))) κ?)
+  | liftR : RowEquivalence (row (.ofList (ξτs.map fun (ξ, τ) => (ξ, ϕ.app τ))) κ?) μ
+      ((lift.app ϕ).app (row (.ofList ξτs) κ?))
 
 namespace RowEquivalence
 
@@ -122,13 +145,13 @@ inductive Subtyping : TypeScheme → TypeScheme → Type where
   | scheme : Subtyping σ₀ σ₁ → Subtyping (quant κ σ₀) (quant κ σ₁)
   | prodOrSum {τ₀s τ₁s : List Monotype} :
     (∀ τ₀₁ ∈ List.zip τ₀s τ₁s, let (τ₀, τ₁) := τ₀₁; Subtyping τ₀ τ₁) →
-    Subtyping ((prodOrSum Ξ μ).app (row (List.zip ξs τ₀s) κ?))
-      ((prodOrSum Ξ μ).app (row (List.zip ξs τ₁s) κ?))
+    Subtyping ((prodOrSum Ξ μ).app (row (.ofList (List.zip ξs τ₀s)) κ?))
+      ((prodOrSum Ξ μ).app (row (.ofList (List.zip ξs τ₁s)) κ?))
   | prodOrSumRow : RowEquivalence ρ₀ μ ρ₁ →
     Subtyping ((prodOrSum Ξ μ).app ρ₀) ((prodOrSum Ξ μ).app ρ₁)
   | decay : CommutativityPartialOrdering μ₀ μ₁ →
     Subtyping ((prodOrSum Ξ μ₀).app ρ) ((prodOrSum Ξ μ₁).app ρ)
-  | never : Subtyping ((prodOrSum .sum (comm .comm)).app (.row [] (some star))) σ
+  | never : Subtyping ((prodOrSum (uvars := false) .sum (comm .comm)).app (.row .nil (some star))) σ
   | contain : RowEquivalence ρ₀ μ ρ₂ → RowEquivalence ρ₁ μ ρ₃ →
     Subtyping (contain ρ₀ μ ρ₁) (contain ρ₂ μ ρ₃)
   | concat : RowEquivalence ρ₀ μ ρ₃ → RowEquivalence ρ₁ μ ρ₄ → RowEquivalence ρ₂ μ ρ₅ →
@@ -137,7 +160,8 @@ inductive Subtyping : TypeScheme → TypeScheme → Type where
     Subtyping («open» σ τ₀) («open» σ τ₁) → Subtyping ((tc s).app τ₀) ((tc s).app τ₁)
   | allRow : RowEquivalence ρ₀ (comm .comm) ρ₁ → Subtyping ((all.app ϕ).app ρ₀) ((all.app ϕ).app ρ₁)
   | split : Subtyping (concat ((lift.app ϕ).app ρ₀) μ ρ₁ ρ₂) (concat ((lift.app ϕ).app ρ₃) μ ρ₄ ρ₅) →
-    Subtyping ((((split.app ϕ).app ρ₀).app ρ₁).app ρ₂) ((((split.app ϕ).app ρ₃).app ρ₄).app ρ₅)
+    Subtyping ((((split.app ϕ).app ρ₀).app ρ₁).app ρ₂)
+      ((((split.app (uvars := false) ϕ).app ρ₃).app ρ₄).app ρ₅)
 
 def Subtyping.elab : Subtyping σ₀ σ₁ → «λπι».Term
   | refl
@@ -194,12 +218,13 @@ inductive Typing : Term → TypeScheme → Type where
   | schemeE : Typing M (quant κ σ) → Typing M (σ.open τ)
   | let : Typing M σ₀ → Typing N σ₁ → Typing (M.let σ₀ N) σ₁
   | annot : Typing M σ → Typing (M.annot σ) σ
-  | label : Typing (label s) (floor (.label s))
+  | label : Typing (label s) (floor (uvars := false) (.label s))
   | prod : (∀ MNξτ ∈ MNs.zip ξτs, let ((_, N), _, τ) := MNξτ; Typing N τ) →
-    Typing (prod MNs) (row ξτs κ?)
+    Typing (prod (.ofList MNs)) (row (.ofList (uvars := false) ξτs) κ?)
   | sum {τ : Monotype} : Typing N τ →
-    Typing (sum M N) ((prodOrSum .sum (comm .non)).app (row [(ξ, τ)] none))
-  | unlabel : Typing M ((prodOrSum Ξ μ).app (row [(ξ, τ)] none)) → Typing (unlabel M N) τ
+    Typing (sum M N) ((prodOrSum .sum (comm .non)).app (row (.cons ξ τ .nil) none))
+  | unlabel : Typing M ((prodOrSum Ξ μ).app (row (.cons (uvars := false) ξ τ .nil) none)) →
+    Typing (unlabel M N) τ
   | prj : Typing M ((prodOrSum .prod μ).app ρ₀) → ConstraintSolution (contain ρ₁ μ ρ₀) →
     Typing (prj M) ((prodOrSum .prod μ).app ρ₁)
   | concat : Typing M ((prodOrSum .prod μ).app ρ₀) → Typing N ((prodOrSum .prod μ).app ρ₁) →
@@ -212,30 +237,31 @@ inductive Typing : Term → TypeScheme → Type where
   | sub : Typing M σ₀ → Subtyping σ₀ σ₁ → Typing M σ₁
   | member : ConstraintSolution ((tc s).app τ) → Typing (member m) σ
   | ind : Typing M (quant .label (quant κ (quant κ.row (quant κ.row (quant κ.row
-      (qual (.concat (.var 2) (comm .non) (row [(.var 4, .var 3)] none) (.var 1))
+      (qual (.concat (.var 2) (comm .non) (row (.cons (.var 4) (.var 3) .nil) none) (.var 1))
         (qual (.concat (.var 1) (comm .non) (.var 0) ρ)
           ((floor (.var 4)).arr ((ϕ.app (.var 2)).arr (ϕ.app (.var 1))))))))))) →
-    Typing N (ϕ.app (.row [] (some κ))) → ConstraintSolution (Monotype.ind.app ρ) →
+    Typing N (ϕ.app (.row .nil (some κ))) → ConstraintSolution (Monotype.ind.app ρ) →
     Typing (ind ϕ ρ M N) (ϕ.app ρ)
   | splitₚ : Typing M ((prodOrSum .prod (comm .comm)).app ρ₂) →
     ConstraintSolution ((((split.app ϕ).app ρ₀).app ρ₁).app ρ₂) →
     Typing (M.splitₚ ϕ) ((prodOrSum .prod (comm .non)).app
-      (row [
-        (.label "match", (prodOrSum .prod (comm .comm)).app ((lift.app ϕ).app ρ₀)),
-        (.label "rest", (prodOrSum .prod (comm .comm)).app ρ₁)
-      ] none))
+      (row (.cons
+        (.label "match") ((prodOrSum .prod (comm .comm)).app ((lift.app ϕ).app ρ₀))
+        (.cons (.label "rest") ((prodOrSum .prod (comm .comm)).app ρ₁) .nil)
+      ) none))
   | splitₛ : Typing M (((prodOrSum .sum (comm .comm)).app ((lift.app ϕ).app ρ₀)).arr τ) →
     Typing N (((prodOrSum .sum (comm .comm)).app ρ₁).arr τ) →
     ConstraintSolution ((((split.app ϕ).app ρ₀).app ρ₁).app ρ₂) →
     Typing (M.splitₛ ϕ N) (((prodOrSum .sum (comm .comm)).app ρ₂).arr τ)
-  | nil : Typing nil (list.app τ)
+  | nil : Typing nil (list.app (uvars := false) τ)
   | cons {τ : Monotype} : Typing M τ → Typing N (list.app τ) → Typing (cons M N) (list.app τ)
   | fold : Typing fold (quant star (quant star (qual (mono (arr
       (arr (.var 1) (arr (.var 0) (.var 1))) (arr (.var 1) ((list.app (.var 0)).arr (.var 1))))))))
-  | nat : Typing (nat n) Monotype.nat
-  | op : Typing M Monotype.nat → Typing N Monotype.nat → Typing (op o M N) Monotype.nat
-  | range : Typing range (Monotype.nat.arr (list.app .nat))
-  | str : Typing (str s) Monotype.str
+  | nat : Typing (nat n) (Monotype.nat (uvars := false))
+  | op : Typing M (Monotype.nat (uvars := false)) → Typing N (Monotype.nat (uvars := false)) →
+    Typing (op o M N) (Monotype.nat (uvars := false))
+  | range : Typing range (Monotype.nat.arr (uvars := false) (list.app .nat))
+  | str : Typing (str s) (Monotype.str (uvars := false))
 
 -- TODO: Figure out how to shift local constraint solutions used under lambdas.
 def Typing.elab : Typing M σ → «λπι».Term
@@ -298,18 +324,18 @@ def Value.delab (V : Value) (σ : Interpreter.TypeScheme) : Option Interpreter.T
   | .prodIntro Es =>
     let .app (.prodOrSum .prod _) (.row ξτ's _) := τ | none
     let EsIs := match EIs with | .prodIntro h => h
-    let true := Es.length == ξτ's.length | none
+    let true := Es.length == ξτ's.toList.length | none
     let V's : List { V' : Value // V'.val ∈ Es } := Es.mapMem fun E mem => ⟨⟨E, EsIs _ mem⟩, mem⟩
-    let MNs ← V's.zip ξτ's |>.mapM fun
+    let MNs ← V's.zip ξτ's.toList |>.mapM fun
       | (⟨V', _⟩, .label s, τ') => do
         let N ← V'.delab τ'
         return (TabularTypeInterpreter.Interpreter.Term.label s, N)
       | _ => none
-    return .prod MNs
+    return .prod <| .ofList MNs
   | .sumIntro n E' => do
     let .app (.prodOrSum .sum _) (.row ξτ's _) := τ | none
     let E'Is := match EIs with | .sumIntro h => h
-    let (.label s, τ') ← ξτ's.get? n | none
+    let (.label s, τ') ← ξτ's.toList.get? n | none
     let N ← delab ⟨E', E'Is⟩ τ'
     return .sum (.label s) N
   | .nil => some .nil
