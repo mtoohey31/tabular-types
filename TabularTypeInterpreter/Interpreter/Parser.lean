@@ -8,6 +8,36 @@ open TabularTypeInterpreter.Interpreter
 open _root_.Parser Char ASCII
 open Std
 
+private
+abbrev KindParseM := SimpleParser Substring Char
+
+private
+def ws : KindParseM Unit :=
+  dropMany <| tokenFilter [' ', '\n', '\r', '\t'].contains
+
+infixl:60 " **> " => fun l r => l *> liftM ws *> r
+
+infixl:60 " <** " => fun l r => l <* liftM ws <* r
+
+infixl:60 " <**> " => fun l r => l <*> (liftM ws *> r)
+
+prefix:60 "~*> " => fun r => liftM ws *> r
+
+private
+def paren [Monad m] [inst : MonadLiftT KindParseM m] (p : m α) : m α :=
+  (liftM (self := inst) (char '(')) **> p <** (liftM (self := inst) (char ')'))
+
+open Kind in
+private partial
+def kind : KindParseM Kind := withErrorMessage "expected kind" do
+  let κ ← char '*' *> pure star
+    <|> char 'L' *> pure label
+    <|> char 'U' *> pure comm
+    <|> char 'R' **> row <$> kind
+    <|> paren kind
+
+  optionD (default := κ) <| arr κ <$> (~*> (string "|->" <|> string "↦") **> kind)
+
 abbrev VarTable := HashMap String Nat
 
 structure S where
@@ -17,16 +47,13 @@ deriving Inhabited
 
 abbrev ParseM := SimpleParserT Substring Char (StateM S)
 
+instance : MonadLiftT KindParseM ParseM where
+  monadLift p s := pure <| p s
+
 namespace ParseM
 
-def ws : ParseM Unit := dropMany <| tokenFilter [' ', '\n', '\r', '\t'].contains
 def id : ParseM String :=
   (fun c cs => ⟨c::cs.toList⟩) <$> alpha <*> takeMany (alphanum <|> char '_')
-infixl:60 " **> " => fun l r => l *> ws *> r
-infixl:60 " <** " => fun l r => l <* ws <* r
-infixl:60 " <**> " => fun l r => l <*> (ws *> r)
-def paren (p : ParseM α) : ParseM α :=
-  char '(' **> p <** char ')'
 def nat : ParseM Nat := do
   let x ← Array.toList <$> takeMany1 numeric
   return (String.mk x).toNat!
@@ -40,16 +67,6 @@ def stringInner : ParseM String := do
   return ⟨tokens.toList⟩
 
 end ParseM
-
-partial def kind : ParseM Kind := withErrorMessage "expected kind" do
-  let κ : Kind ←
-    (char '*' <|> char '⋆') *> pure Kind.star
-    <|> char 'L' *> pure Kind.label
-    <|> char 'U' *> pure Kind.comm
-    <|> char 'R' **> Kind.row <$> kind
-    <|> ParseM.paren kind
-  let tail: ParseM Kind := Kind.arr κ <$> (.ws *> (string "|->" <|> string "↦") **> kind)
-  optionD tail κ
 
 -- TODO: implement proper typeclas parsing
 def typeclass : ParseM String := withErrorMessage "expected type class" ParseM.id
@@ -85,7 +102,7 @@ def «▹» : ParseM String := string "|>" <|> string "▹"
 
 partial def monotype : ParseM Monotype := withErrorMessage "expected monotype" do
   let τ : Monotype ←
-    ParseM.paren monotype
+    paren monotype
     <|> string "Lift" *> pure .lift
     <|> string "All" *> pure .all
     <|> string "Ind" *> pure .ind
@@ -94,7 +111,7 @@ partial def monotype : ParseM Monotype := withErrorMessage "expected monotype" d
     <|> string "Nat" *> pure .nat
     <|> string "Str" *> pure .str
     <|> .comm <$> comm
-    <|> .prodOrSum <$> prodOrSum <**> (.paren monotype)
+    <|> .prodOrSum <$> prodOrSum <**> paren monotype
     <|> .tc <$> typeclass
     <|> .var <$> typevar (fresh? := false)
     <|> .label <$> (char '.' *> ParseM.id <* char '.')
@@ -104,17 +121,17 @@ partial def monotype : ParseM Monotype := withErrorMessage "expected monotype" d
       <**> (char '.' **> monotype)
     <|> .row
       <$> ((char '<' <|> char '⟨') **>
-        (.sepBy (.mk <$> monotype <**> («▹» **> monotype)) (.string ",")))
+        (ParseM.sepBy (.mk <$> monotype <**> («▹» **> monotype)) (.string ",")))
         <**> ((option? <| char ':' **> kind) <** (char '>' <|> char '⟩'))
 
   let tail : ParseM Monotype :=
-    .app τ <$> (.ws *> monotype)
-    <|> .arr τ <$> (.ws *> (string "->" <|> string "→") **> monotype)
+    .app τ <$> (~*> monotype)
+    <|> .arr τ <$> (~*> (string "->" <|> string "→") **> monotype)
     <|> .contain τ
-      <$> (.ws *> (string "~<" <|> string "≲") **> .paren monotype)
+      <$> (~*> (string "~<" <|> string "≲") **> paren monotype)
       <**> monotype
     <|> .concat τ
-      <$> (.ws *> (char 'o' <|> char '⊙') **> .paren monotype)
+      <$> (~*> (char 'o' <|> char '⊙') **> paren monotype)
       <**> monotype
       <**> (char '~' **> monotype)
 
@@ -122,7 +139,7 @@ partial def monotype : ParseM Monotype := withErrorMessage "expected monotype" d
 
 partial def qualifiedType : ParseM QualifiedType := withErrorMessage "expected qualified type" do
   let τ ← monotype
-  optionD (QualifiedType.qual τ <$> (.ws *> (string "=>" <|> string "⇒") **> qualifiedType)) τ
+  optionD (QualifiedType.qual τ <$> (~*> (string "=>" <|> string "⇒") **> qualifiedType)) τ
 
 partial def typescheme : ParseM TypeScheme := withErrorMessage  "expected type scheme" do
   TypeScheme.qual <$> qualifiedType
@@ -143,7 +160,7 @@ def op : ParseM «λπι».Op := withErrorMessage "expected binary operator" do
 
 partial def term : ParseM Term := withErrorMessage "expected term" do
   let M : Term ←
-    .paren term
+    paren term
     <|> .member <$> member
     <|> .var <$> termvar (fresh? := false)
     <|> .label <$> (char '.' *> ParseM.id <* char '.')
@@ -151,7 +168,7 @@ partial def term : ParseM Term := withErrorMessage "expected term" do
     <|> .let <$> (string "let" **> (termvar (fresh? := true)) **> char ':' **> typescheme) <**>
       (char '=' **> term) <**> (string "in" **> term)
     <|> .prod <$> (char '{' **>
-      (.sepBy (Prod.mk <$> term <**> («▹» **> term)) (.string ",")) <** char '}')
+      (ParseM.sepBy (Prod.mk <$> term <**> («▹» **> term)) ((string ",") *> pure ())) <** char '}')
     <|> .sum <$> (char '[' **> term) <**> («▹» **> term <** char ']')
     <|> .prj <$> (string "prj" **> term)
     <|> .inj <$> (string "inj" **> term)
@@ -165,13 +182,13 @@ partial def term : ParseM Term := withErrorMessage "expected term" do
     <|> string "range" *> pure .range
 
   let tail : ParseM Term :=
-    .app M <$> (.ws *> term)
-    <|> .annot M <$> (.ws *> char ':' **> typescheme)
-    <|> .unlabel M <$> (.ws *> char '/' **> term)
-    <|> .concat M <$> (.ws *> string "++" **> term)
-    <|> .elim M <$> (.ws *> (string "\\/" <|> string "▿") **> term)
-    <|> .cons M <$> (.ws *> string "::" **> term)
-    <|> (fun o t => .op o M t) <$> (.ws *> op) <**> term
+    .app M <$> (~*> term)
+    <|> .annot M <$> (~*> char ':' **> typescheme)
+    <|> .unlabel M <$> (~*> char '/' **> term)
+    <|> .concat M <$> (~*> string "++" **> term)
+    <|> .elim M <$> (~*> (string "\\/" <|> string "▿") **> term)
+    <|> .cons M <$> (~*> string "::" **> term)
+    <|> (fun o t => .op o M t) <$> (~*> op) <**> term
 
   optionD tail M
 
