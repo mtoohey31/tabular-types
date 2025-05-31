@@ -340,7 +340,32 @@ theorem TermVarLocallyClosed_of (EtyA : [[Δ ⊢ E : A]]) : E.TermVarLocallyClos
       exact ih₁ i mem'
   | equiv Ety' _ ih => exact ih
 
-theorem weakening : [[Δ, Δ'' ⊢ E : A]] → [[⊢ Δ, Δ', Δ'']] → [[Δ, Δ', Δ'' ⊢ E : A]] := sorry
+open Environment in
+theorem weakening (h: [[Δ, Δ'' ⊢ E : A]]) (wf: [[⊢ Δ, Δ', Δ'']]): [[Δ, Δ', Δ'' ⊢ E : A]] := by
+  generalize Δ_eq : [[ Δ, Δ'' ]] = Δ_ at h
+  induction h generalizing Δ Δ'' <;> subst Δ_eq
+  case var x T wf' h =>
+    refine .var wf ?_
+    exact h.weakening <| Environment.append_assoc.subst wf |>.weakening.append_termVar_fresh_l
+  case lam T E A I h ih =>
+    refine .lam (I := I ++ Δ.termVarDom ++ Δ'.termVarDom ++ Δ''.termVarDom) fun x nin => ?_
+    repeat1' rw [append_termExt_assoc]
+    refine ih x (by simp_all) ?_ rfl
+    simp [append]
+    have TkiStar := match h x (by simp_all) |>.WellFormedness_of with |.termVarExt _ _ h => h |>.weakening wf
+    exact .termVarExt wf (by simp_all [TermVarNotInDom, TermVarInDom, termVarDom_append]) TkiStar
+  case typeLam K E A I EtyA ih =>
+    refine .typeLam (I := I ++ Δ.typeVarDom ++ Δ'.typeVarDom ++ Δ''.typeVarDom) (λ a nin => ?_)
+    repeat1' rw [append_typeExt_assoc]
+    refine ih a (by simp_all) ?_ rfl
+    simp [append]
+    exact .typeVarExt wf (by simp_all [TypeVarNotInDom, TypeVarInDom, typeVarDom_append])
+  case sumIntro i n E A iltn EtyA AkiStar ih =>
+    exact .sumIntro iltn (ih wf rfl) (λ i' i'ltn => AkiStar i' i'ltn |>.weakening wf)
+  case equiv E A B h AB ih =>
+    have EtyA := ih wf rfl
+    refine EtyA.equiv <| AB.weakening EtyA.Type_TypeVarLocallyClosed_of h.WellFormedness_of wf
+  all_goals try aesop (add safe constructors Kinding, unsafe constructors Typing, safe forward Kinding.weakening) (config := { enableSimp := false }); done
 
 open Environment in
 theorem inv_arr' (Ety: [[Δ ⊢ λ x? : T. E : C ]]) (eqC: [[ Δ ⊢ C ≡ A → B ]]): [[ Δ ⊢ T ≡ A ]] ∧ (∃(I: List _), ∀x ∉ I, [[ Δ, x: T ⊢ E^x : B ]]) := by

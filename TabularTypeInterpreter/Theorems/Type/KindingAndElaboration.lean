@@ -432,7 +432,7 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
       rw [← Δ.empty_append] at Γwe Bk ⊢
       exact A'k a |>.weakening (Δ := .empty) (Δ'' := .typeExt .empty ..)
        (Γwe.soundness Γcw |>.typeVarExt <| Γwe.TypeVarNotInDom_preservation aninΓ)
-        |>.Type_open_preservation (Δ' := .empty) aninA' Bk
+        |>.Type_open_preservation aninA' Bk
     · case isFalse h =>
       let ⟨a, anin⟩ := Γ.typeVarDom ++ ↑(Aₛ (i - 1)).freeTypeVars |>.exists_fresh
       let ⟨aninΓ, aninAₛ⟩ := List.not_mem_append'.mp anin
@@ -442,7 +442,7 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
       exact Aₛk a (i - 1) ⟨Nat.zero_le _, this, Nat.mod_one _⟩ |>.weakening (Δ := .empty)
         (Δ'' := .typeExt .empty ..)
         (Γwe.soundness Γcw |>.typeVarExt <| Γwe.TypeVarNotInDom_preservation aninΓ)
-        |>.Type_open_preservation (Δ' := .empty) aninAₛ Bk
+        |>.Type_open_preservation aninAₛ Bk
   | .qual (.mono (.all (.mk κ ψ) ρ)), .all I ψke κe' ρke =>
     let .constr := κe
     let Aopki : «F⊗⊕ω».Kinding .. := .lam (I := Γ.typeVarDom ++ I) fun a anin =>
