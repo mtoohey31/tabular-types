@@ -45,7 +45,8 @@ def main (args : List String) : IO UInt32 := do
     return internalError
   | .ok _ M =>
   let σ : TypeScheme := sorry
-  let ty : Typing M σ := sorry
+  let M' : Term := sorry
+  let ty : Typing M' σ := sorry
   match ty.elab.eval with
   | .error e =>
     stderr.putStrLn s!"eval error: {e}\nthis means there is a bug in a prior stage"

@@ -59,6 +59,8 @@ mutual
 
 inductive Monotype : (uvars : optParam Bool false) → Type where
   | var (index : Nat) : Monotype uvars
+  -- A uvar that can only be unified with a variable.
+  | varuvar (id : Nat) : Monotype true
   | uvar (id : Nat) : Monotype true
   | lam : Kind → Monotype uvars → Monotype uvars
   | app : Monotype uvars → Monotype uvars → Monotype uvars
@@ -78,6 +80,7 @@ inductive Monotype : (uvars : optParam Bool false) → Type where
   | list : Monotype uvars
   | nat : Monotype uvars
   | str : Monotype uvars
+  | alias : String → Monotype uvars
 deriving BEq
 
 inductive MonotypePairList : (uvars : optParam Bool false) → Type where
@@ -92,8 +95,8 @@ mutual
 @[simp]
 protected noncomputable
 def Monotype.sizeOf : Monotype uvars → Nat
-  | .var _ | .uvar _ | .label _ | .comm _ | .lift | .tc _ | .all | .ind | .split | .list | .nat
-  | .str => 1
+  | .var _ | .varuvar _ | .uvar _ | .label _ | .comm _ | .lift | .tc _ | .all | .ind | .split
+  | .list | .nat | .str | .alias _ => 1
   | .lam κ τ => 1 + sizeOf κ + τ.sizeOf
   | .app ϕ τ => 1 + ϕ.sizeOf + τ.sizeOf
   | .arr τ₀ τ₁ => 1 + τ₀.sizeOf + τ₁.sizeOf
@@ -173,6 +176,7 @@ instance : Inhabited (Monotype uvars) where
 
 def toString (τ : Monotype uvars) : String := match τ with
   | var n => s!"{n}"
+  | varuvar n => s!"vu{n}"
   | uvar n => s!"u{n}"
   | lam κ τ => s!"(λ {κ}. {τ.toString})"
   | app ϕ τ => s!"{ϕ.toString} {τ.toString}"
@@ -197,6 +201,7 @@ def toString (τ : Monotype uvars) : String := match τ with
   | list => "List"
   | nat => "Nat"
   | str => "String"
+  | «alias» s => s
 termination_by sizeOf τ
 decreasing_by
   all_goals simp_arith [sizeOf]
@@ -216,7 +221,7 @@ end Monotype
 inductive QualifiedType : (uvars : optParam Bool false) → Type where
   | mono : Monotype uvars → QualifiedType uvars
   | qual : Monotype uvars → QualifiedType uvars → QualifiedType uvars
-deriving Inhabited
+deriving Inhabited, BEq
 
 namespace QualifiedType
 
@@ -237,7 +242,7 @@ open QualifiedType
 inductive TypeScheme : (uvars : optParam Bool false) → Type where
   | qual : QualifiedType uvars → TypeScheme uvars
   | quant : Kind → TypeScheme uvars → TypeScheme uvars
-deriving Inhabited
+deriving Inhabited, BEq
 
 namespace TypeScheme
 

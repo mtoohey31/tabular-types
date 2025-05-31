@@ -29,6 +29,7 @@ def shift (τ : Monotype) (off := 1) (min := 0) : Monotype := match τ with
   | list => list
   | nat => nat
   | str => str
+  | «alias» s => «alias» s
 termination_by sizeOf τ
 decreasing_by
   all_goals simp_arith [sizeOf]
@@ -61,6 +62,7 @@ def «open» (τ : Monotype) (τ' : Monotype) (n : Nat := 0) : Monotype := match
   | list => list
   | nat => nat
   | str => str
+  | «alias» s => «alias» s
 termination_by sizeOf τ
 decreasing_by
   all_goals simp_arith [sizeOf]
