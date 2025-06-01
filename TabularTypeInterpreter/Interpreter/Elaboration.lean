@@ -231,7 +231,8 @@ inductive Typing : Term → TypeScheme → Type where
   | annot : Typing M σ → Typing (M.annot σ) σ
   | label : Typing (label s) (floor (uvars := false) (.label s))
   | prod : (∀ MNξτ ∈ MNs.zip ξτs, let ((_, N), _, τ) := MNξτ; Typing N τ) →
-    Typing (prod (.ofList MNs)) (row (.ofList (uvars := false) ξτs) κ?)
+    Typing (prod (.ofList MNs))
+      ((prodOrSum .prod (comm .non)).app (row (.ofList (uvars := false) ξτs) none))
   | sum {τ : Monotype} : Typing N τ →
     Typing (sum M N) ((prodOrSum .sum (comm .non)).app (row (.cons ξ τ .nil) none))
   | unlabel : Typing M ((prodOrSum Ξ μ).app (row (.cons (uvars := false) ξ τ .nil) none)) →
