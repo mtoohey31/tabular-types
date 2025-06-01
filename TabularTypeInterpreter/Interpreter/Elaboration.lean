@@ -5,6 +5,8 @@ namespace TabularTypeInterpreter
 
 namespace Interpreter
 
+open Std
+
 namespace Monotype
 
 def shift (τ : Monotype) (off := 1) (min := 0) : Monotype := match τ with
@@ -164,10 +166,11 @@ inductive Subtyping : TypeScheme → TypeScheme → Type where
   | split : Subtyping (concat ((lift.app ϕ).app ρ₀) μ ρ₁ ρ₂) (concat ((lift.app ϕ).app ρ₃) μ ρ₄ ρ₅) →
     Subtyping ((((split.app ϕ).app ρ₀).app ρ₁).app ρ₂)
       ((((split.app (uvars := false) ϕ).app ρ₃).app ρ₄).app ρ₅)
+  | aliasₗ : Subtyping («alias» (uvars := false) s) σ
+  | aliasᵣ : Subtyping σ («alias» (uvars := false) s)
 
 def Subtyping.elab : Subtyping σ₀ σ₁ → «λπι».Term
-  | refl
-  | decay _ => .id
+  | refl | decay _ | aliasₗ | aliasᵣ => .id
   | trans σ₀₁'st σ₁'₂st => .lam <| σ₁'₂st.elab.shift.app <| σ₀₁'st.elab.shift.app <| .var 0
   | arr st st'
   | qual st st' => .lam <| .lam <| st'.elab.shift 2 |>.app <| .app (.var 1) <| st.elab.shift 2 |>.app <| .var 0
@@ -264,43 +267,53 @@ inductive Typing : Term → TypeScheme → Type where
     Typing (op o M N) (Monotype.nat (uvars := false))
   | range : Typing range (Monotype.nat.arr (uvars := false) (list.app .nat))
   | str : Typing (str s) (Monotype.str (uvars := false))
+  | def : Typing («def» s) σ
+
+instance [Inhabited α] : Inhabited (Thunk α) where
+  default := .mk fun _ => default
 
 -- TODO: Figure out how to shift local constraint solutions used under lambdas.
-def Typing.elab : Typing M σ → «λπι».Term
-  | var (n := n) => .var n
-  | lam M'ty => M'ty.elab.lam
-  | app M'ty Nty => M'ty.elab.app Nty.elab
-  | qualI Mty'_of_so => Mty'_of_so .local |>.elab.lam
-  | qualE ψso Mty' => Mty'.elab.app ψso.elab
+def Typing.elab : Typing M σ → ReaderM (HashMap String (Thunk «λπι».Term)) «λπι».Term
+  | var (n := n) => return .var n
+  | lam M'ty => M'ty.elab <&> .lam
+  | app M'ty Nty => return (← M'ty.elab).app <| ← Nty.elab
+  | qualI Mty'_of_so => «elab» (Mty'_of_so .local) <&> .lam
+  | qualE ψso Mty' => return (← Mty'.elab).app ψso.elab
   | schemeI Mty' => Mty'.elab
   | schemeE Mty' => Mty'.elab
-  | .let M'ty Nty => Nty.elab.lam.app M'ty.elab
+  | .let M'ty Nty => return (← Nty.elab).lam.app <| ← M'ty.elab
   | annot M'ty => M'ty.elab
-  | label => .prodIntro []
-  | prod Nsty (MNs := MNs) (ξτs := ξτs) => .prodIntro <| MNs.zip ξτs |>.mapMem (Nsty · · |>.elab)
-  | sum Nty => Nty.elab.sumIntro 0
+  | label => return .prodIntro []
+  | prod Nsty (MNs := MNs) (ξτs := ξτs) =>
+    return .prodIntro <| ← MNs.zip ξτs |>.mapMemM (Nsty · · |>.elab)
+  | sum Nty => Nty.elab <&> .sumIntro 0
   | unlabel M'ty (Ξ := Ξ) => match Ξ with
-    | .prod => M'ty.elab.prodElim 0
-    | .sum => M'ty.elab.sumElim [.id]
-  | prj M'ty containso => containso.elab.prodElim 0 |>.app M'ty.elab
-  | concat M'ty Nty concatso => concatso.elab.prodElim 0 |>.app M'ty.elab |>.app Nty.elab
-  | inj M'ty containso => containso.elab.prodElim 1 |>.app M'ty.elab
-  | elim M'ty Nty concatso => concatso.elab.prodElim 1 |>.app M'ty.elab |>.app Nty.elab
-  | sub Mty' σ₀st => σ₀st.elab.app Mty'.elab
-  | member TCτso => TCτso.elab.prodElim 0
-  | ind M'ty Nty indso => indso.elab |>.app M'ty.elab |>.app Nty.elab
-  | splitₚ M'ty splitso =>
-    let E := M'ty.elab
+    | .prod => M'ty.elab <&> .prodElim 0
+    | .sum => return (← M'ty.elab).sumElim [.id]
+  | prj M'ty containso => return containso.elab.prodElim 0 |>.app <| ← M'ty.elab
+  | concat M'ty Nty concatso =>
+    return concatso.elab.prodElim 0 |>.app (← M'ty.elab) |>.app <| ← Nty.elab
+  | inj M'ty containso => return containso.elab.prodElim 1 |>.app <| ← M'ty.elab
+  | elim M'ty Nty concatso =>
+    return concatso.elab.prodElim 1 |>.app (← M'ty.elab) |>.app <| ← Nty.elab
+  | sub Mty' σ₀st =>
+    return σ₀st.elab.app <| ← Mty'.elab
+  | member TCτso => return TCτso.elab.prodElim 0
+  | ind M'ty Nty indso => return indso.elab |>.app (← M'ty.elab) |>.app <| ← Nty.elab
+  | splitₚ M'ty splitso => do
+    let E ← M'ty.elab
     let F := splitso.elab
-    .prodIntro [F.prodElim 2 |>.prodElim 0 |>.app E, F.prodElim 3 |>.prodElim 0 |>.app E]
-  | splitₛ M'ty Nty splitso => splitso.elab |>.prodElim 1 |>.app M'ty.elab |>.app Nty.elab
-  | nil => .nil
-  | cons M'ty Nty => .cons M'ty.elab Nty.elab
-  | fold => .fold
-  | nat (n := n) => .nat n
-  | op M'ty Nty (o := o) => .op o M'ty.elab Nty.elab
-  | range => .range
-  | str (s := s) => .str s
+    return .prodIntro [F.prodElim 2 |>.prodElim 0 |>.app E, F.prodElim 3 |>.prodElim 0 |>.app E]
+  | splitₛ M'ty Nty splitso =>
+    return splitso.elab |>.prodElim 1 |>.app (← M'ty.elab) |>.app <| ← Nty.elab
+  | nil => return .nil
+  | cons M'ty Nty => return .cons (← M'ty.elab) (← Nty.elab)
+  | fold => return .fold
+  | nat (n := n) => return .nat n
+  | op M'ty Nty (o := o) => return .op o (← M'ty.elab) (← Nty.elab)
+  | range => return .range
+  | str (s := s) => return .str s
+  | «def» (s := s) => return (← read)[s]!.get
 
 end Term
 
@@ -355,3 +368,7 @@ def Value.delab (V : Value) (σ : Interpreter.TypeScheme) : Option Interpreter.T
 termination_by sizeOf V.val
 
 end «λπι»
+
+end Interpreter
+
+end TabularTypeInterpreter

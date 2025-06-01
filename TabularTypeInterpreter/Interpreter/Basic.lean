@@ -287,10 +287,13 @@ inductive Term : (uvars : optParam Bool false) → Type where
   | op : Op → Term uvars → Term uvars → Term uvars
   | range : Term uvars
   | str : String → Term uvars
+  | def : String → Term uvars
+deriving BEq
 
 inductive TermPairList : (uvars : optParam Bool false) → Type where
   | nil : TermPairList uvars
   | cons (head₀ head₁ : Term uvars) (tail : TermPairList uvars) : TermPairList uvars
+deriving BEq
 
 end
 
@@ -299,7 +302,7 @@ mutual
 @[simp]
 protected noncomputable
 def Term.sizeOf : Term uvars → Nat
-  | .var _ | .member _ | .label _ | .nil | .fold | .nat _ | .range | .str _ => 1
+  | .var _ | .member _ | .label _ | .nil | .fold | .nat _ | .range | .str _ | .def _ => 1
   | .lam M | .prj M | .inj M => 1 + M.sizeOf
   | .app M N | .sum M N | .unlabel M N | .concat M N | .elim M N | .cons M N | .op _ M N =>
     1 + M.sizeOf + N.sizeOf
@@ -379,7 +382,7 @@ instance : Inhabited (Term uvars) where
   default := var 1000000
 
 private
-def termsFromList (M : Term) : List Term × Option Term := match M with
+def termsFromList (M : Term uvars) : List (Term uvars) × Option (Term uvars) := match M with
   | cons M' N =>
     let (Ms, N'?) := termsFromList N
     (M' :: Ms, N'?)
@@ -389,7 +392,7 @@ def termsFromList (M : Term) : List Term × Option Term := match M with
 mutual
 
 partial
-def tableFromTerms (Ms : List Term) : Option String := do
+def tableFromTerms (Ms : List (Term uvars)) : Option String := do
   let .prod MNs :: _ := Ms | none
   let header ← MNs.toList.mapM fun | (.label s, _) => some s | _ => none
   let entries ← Ms.mapM fun
@@ -408,7 +411,7 @@ def tableFromTerms (Ms : List Term) : Option String := do
           (lines.mapIdx (fun i l => l.rightpad <| maxWidths.get! i)))
 
 partial
-def toString (M : Term) (table := false) : String := match M with
+def toString (M : Term uvars) (table := false) : String := match M with
   | var n => s!"v{n}"
   | member s => s
   | lam M' => s!"(λ. {M'.toString})"
@@ -442,10 +445,11 @@ def toString (M : Term) (table := false) : String := match M with
   | op o M' N => s!"{M'.toString} {o} {N.toString}"
   | range => "range"
   | str s => s.quote
+  | «def» s => s
 
 end
 
-instance : ToString Term where
+instance : ToString (Term uvars) where
   toString := toString
 
 end Term

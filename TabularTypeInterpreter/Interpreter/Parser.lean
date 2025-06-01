@@ -74,7 +74,7 @@ structure ProgramContext where
   defs : HashSet String := .empty
   typeAliases : HashSet String := .empty
   classes : HashSet String := .empty
-  methods : HashSet String := .empty
+  members : HashSet String := .empty
 deriving Inhabited
 
 private
@@ -84,64 +84,30 @@ structure TypeContext extends ProgramContext where
 deriving Inhabited
 
 private
-structure TypeInTermContext where
+structure UVarState where
   nextFresh : Nat := 0
-  -- A map from type var name to the id of the uvar which will represent it within the generalizing
-  -- scope.
-  varuvars : HashMap String Nat := .empty
-
-private
-abbrev TypeM := SimpleParserT Substring Char (StateT TypeInTermContext (ReaderM TypeContext))
-
-private
-def TypeM.pushTypeVars (ids : List String) : TypeM α → TypeM α :=
-  fun x s s' r => x s s' { r with typeVars := ids ++ r.typeVars }
-
-private
-abbrev VarTable := HashMap String Nat
-
-private
-structure S where
-  termvars: VarTable
-  typevars: VarTable
 deriving Inhabited
 
 private
-abbrev ParseM := SimpleParserT Substring Char (StateM S)
+structure TypeInTermState extends UVarState where
+  -- A map from type var name to the id of the uvar which will represent it within the generalizing
+  -- scope.
+  varuvars : HashMap String Nat := .empty
+deriving Inhabited
 
 private
-instance : MonadLiftT CoreM ParseM where
-  monadLift p s := pure <| p s
+abbrev TypeM := SimpleParserT Substring Char (StateT TypeInTermState (ReaderM TypeContext))
+
+private
+def TypeM.pushVars (ids : List String) : TypeM α → TypeM α :=
+  fun x s s' r => x s s' { r with typeVars := ids ++ r.typeVars }
 
 private
 instance : MonadLiftT CoreM TypeM where
-  monadLift p s r _ := (p s, r)
-
-private
-instance : MonadLiftT TypeM ParseM where
-  monadLift p s r := ((p s ·, r) { } |>.fst default |>.fst, r)
+  monadLift p s s' _ := (p s, s')
 
 private
 def rawId : CoreM String := (⟨· :: ·.toList⟩) <$> alpha <*> takeMany (alphanum <|> char '_')
-
-private
-def nat : CoreM Nat := (String.toNat! ∘ String.mk ∘ Array.toList) <$> takeMany1 numeric
-
-def var (get : ParseM VarTable) (set : VarTable -> ParseM Unit) (fresh? : Bool) : ParseM Nat := do
-  let vars ← get
-  let identifier ← rawId
-  if fresh? then
-    if let .some n := vars.get? identifier then
-      return n
-    else
-      --TODO: throw a more specific error.
-      throwUnexpected
-  else
-    let n := vars.size
-    -- TODO: duplicate identifiers get overwritten.
-    -- I feel like this is fine as long as when we're done parsing a lambda, we discard the state of variables inside which I believe is what we do. Though I need confirmation.
-    set (vars.insert identifier n)
-    return n
 
 private
 def typeReserved :=
@@ -177,7 +143,7 @@ def typeId (inTerm : Bool) : TypeM (Monotype inTerm) := do
     else
       set {
         nextFresh := nextFresh + 1
-        varuvars := varuvars.insert id nextFresh : TypeInTermContext
+        varuvars := varuvars.insert id nextFresh : TypeInTermState
       }
       return .varuvar nextFresh
   | false => throwUnexpectedWithMessage none "undeclared type var"
@@ -198,12 +164,12 @@ open Monotype in
 private partial
 def monotype (inTerm : Bool) (greedy := true) : TypeM (Monotype inTerm) :=
   withErrorMessage "expected monotype" do
+  -- TODO: Add `_` holes.
   let τ ← typeId inTerm
     <|> (do
-      let _ ← char '\\' <|> char 'λ' <*~
-      let idsκs ← sepBy (~*> char ',' <*~)
-        (Prod.mk <$> sepBy ws unreservedTypeId <**> char ':' **> liftM kind) <** char '.' <*~
-      let τ ← TypeM.pushTypeVars (idsκs.flatMap Prod.fst).toList.reverse go
+      let idsκs ← (char '\\' <|> char 'λ') **> sepBy (~*> char ',' <*~)
+        (Prod.mk <$> sepBy ws unreservedTypeId <**> char ':' **> kind) <** char '.' <*~
+      let τ ← TypeM.pushVars (idsκs.flatMap Prod.fst).toList.reverse go
       return idsκs.foldr (fun (ids, κ) τ' => ids.foldr (fun _ τ'' => lam κ τ'') τ') τ)
     <|> (label ∘ String.mk ∘ Array.toList ∘ Prod.fst) <$>
       (char '\'' *> takeUntil (char '\'') anyToken)
@@ -236,20 +202,19 @@ where
   go (greedy := true) := monotype inTerm greedy
 
 open QualifiedType in
-partial
+private partial
 def qualifiedType (inTerm : Bool) : TypeM (QualifiedType inTerm) :=
   withErrorMessage "expected qualified type" do
   let τ ← monotype inTerm
   optionD (qual τ <$> (~*> (string "=>" <|> string "⇒") **> qualifiedType inTerm)) τ
 
 open TypeScheme in
-partial
+private partial
 def typeScheme (inTerm : Bool) : TypeM (TypeScheme inTerm) :=
   withErrorMessage "expected type scheme" <| (do
-      let _ ← (string "forall" <|> string "∀") <*~
-      let idsκs ← sepBy (~*> char ',' <*~)
+      let idsκs ← (string "forall" <|> string "∀") **> sepBy (~*> char ',' <*~)
         (Prod.mk <$> sepBy ws unreservedTypeId <**> char ':' **> liftM kind) <** char '.' <*~
-      let σ ← TypeM.pushTypeVars (idsκs.flatMap Prod.fst).toList.reverse <| typeScheme inTerm
+      let σ ← TypeM.pushVars (idsκs.flatMap Prod.fst).toList.reverse <| typeScheme inTerm
       return idsκs.foldr (fun (ids, κ) σ' => ids.foldr (fun _ σ'' => quant κ σ'') σ') σ)
       <|> qual <$> qualifiedType inTerm
 
@@ -257,15 +222,19 @@ local
 macro "#parse_type " input:str " to " expected:term : command =>
   `(#eval assertResultEq (α := TypeScheme true)
       (open TypeScheme in open QualifiedType in open Monotype in $expected)
-      <| (typeScheme true <* endOfInput) $input { } { typeVars := ["a", "b", "c"] } |>.fst)
+      <| (typeScheme true <* endOfInput) $input { } {
+          typeAliases := { "Option", "Bool" }
+          classes := { "Eq", "LE" }
+          typeVars := ["a", "b", "c"]
+        } |>.fst)
 
-#parse_type "b" to Monotype.var (uvars := true) 1
+#parse_type "b" to var (uvars := true) 1
 #parse_type "q" to varuvar 0
-#parse_type "a b c" to app (uvars := true) (app (.var 0) (.var 1)) (.var 2)
-#parse_type "λ a : *. a" to lam (uvars := true) .star (.var 0)
-#parse_type "\\d : R *. a d" to lam (uvars := true) (.row .star) <| app (.var 1) (.var 0)
+#parse_type "a b c" to app (uvars := true) (app (var 0) (var 1)) (var 2)
+#parse_type "λ a : *. a" to lam (uvars := true) .star (var 0)
+#parse_type "\\d : R *. a d" to lam (uvars := true) (.row .star) <| app (var 1) (var 0)
 #parse_type "λ a b : *, c d : C. a d" to lam (uvars := true) .star <| lam .star <| lam .constr <|
-  lam .constr <| app (.var 3) (.var 0)
+  lam .constr <| app (var 3) (var 0)
 #parse_type "''" to label (uvars := true) ""
 #parse_type "⌊'value'⌋" to floor (uvars := true) (label "value")
 #parse_type "C" to Monotype.comm (uvars := true) .comm
@@ -279,76 +248,191 @@ macro "#parse_type " input:str " to " expected:term : command =>
 #parse_type "P(C)" to Monotype.prodOrSum (uvars := true) .prod <| .comm .comm
 #parse_type "Σ(C)" to Monotype.prodOrSum (uvars := true) .sum <| .comm .comm
 #parse_type "S(N)" to Monotype.prodOrSum (uvars := true) .sum <| .comm .non
-#parse_type "a ≲(N) b" to contain (uvars := true) (.var 0) (Monotype.comm .non) (.var 1)
-#parse_type "a b ~<(C) c d" to contain (uvars := true) (app (.var 0) (.var 1)) (Monotype.comm .comm)
-  (app (.var 2) (varuvar 0))
+#parse_type "a ≲(N) b" to contain (uvars := true) (var 0) (Monotype.comm .non) (var 1)
+#parse_type "a b d ~<(C) c d" to contain (uvars := true) (app (app (var 0) (var 1)) (varuvar 0))
+  (Monotype.comm .comm) (app (var 2) (varuvar 0))
 #parse_type "a ⊙(N) b ~ c ⇒ a" to qual (uvars := true)
-  (concat (.var 0) (Monotype.comm .non) (.var 1) (.var 2)) (mono (.var 0))
+  (concat (var 0) (Monotype.comm .non) (var 1) (var 2)) (mono (var 0))
 #parse_type "a o(C) b ~ c => a" to qual (uvars := true)
-  (concat (.var 0) (Monotype.comm .comm) (.var 1) (.var 2)) (mono (.var 0))
-#parse_type "Split a b c -> List a" to split (uvars := true) |>.app (.var 0) |>.app (.var 1)
-  |>.app (.var 2) |>.arr (list.app <| .var 0)
+  (concat (var 0) (Monotype.comm .comm) (var 1) (var 2)) (mono (var 0))
+#parse_type "Eq" to tc (uvars := true) "Eq"
+#parse_type "LE" to tc (uvars := true) "LE"
+#parse_type "Split a b c -> List a" to split (uvars := true) |>.app (var 0) |>.app (var 1)
+  |>.app (var 2) |>.arr (list.app <| var 0)
 #parse_type "Nat → String" to Monotype.nat (uvars := true) |>.arr str
-#parse_type "∀ a : *. a" to quant (uvars := true) .star <| qual <| mono <| .var 0
+#parse_type "∀ a : *. a" to quant (uvars := true) .star <| qual <| mono <| var 0
 #parse_type "forall d : R *. a d" to quant (uvars := true) (.row .star) <| qual <| mono <|
-  app (.var 1) (.var 0)
+  app (var 1) (var 0)
 #parse_type "∀ a b : *, c d : C. a d" to quant (uvars := true) .star <| quant .star <|
-  quant .constr <| quant .constr <| qual <| mono <| app (.var 3) (.var 0)
+  quant .constr <| quant .constr <| qual <| mono <| app (var 3) (var 0)
+#parse_type "Bool" to «alias» (uvars := true) "Bool"
+#parse_type "Option" to «alias» (uvars := true) "Option"
 
-def termvar (fresh? : Bool) : ParseM Nat := withErrorMessage "expected term variable" <| var (get <&> S.termvars) (fun termvars => do set { ← get with termvars }) fresh?
+private
+structure TermContext extends ProgramContext where
+  -- The names of identifiers declared in enclosing term binders (either lambdas or lets).
+  termVars : List String
+deriving Inhabited
 
--- TODO: implement proper member parsing.
-def member : ParseM String := withErrorMessage "expected member" rawId
+private
+abbrev TermM := SimpleParserT Substring Char (StateT TypeInTermState (ReaderM TermContext))
 
-def op : ParseM «λπι».Op := withErrorMessage "expected binary operator" do
+namespace TermM
+
+private
+def pushVar (id : String) : TermM α → TermM α :=
+  fun x s s' r => x s s' { r with termVars := id :: r.termVars }
+
+private
+def pushVars (ids : List String) : TermM α → TermM α :=
+  fun x s s' r => x s s' { r with termVars := ids ++ r.termVars }
+
+private
+def newGenScope : TermM α → TermM α :=
+  fun x s s' r =>
+    let (res, { nextFresh, .. }) := x s { s' with varuvars := .empty } r
+    (res, { s' with nextFresh })
+
+end TermM
+
+private
+instance : MonadLiftT TypeM TermM where
+  monadLift p s s' r := p s s' { r with typeVars := [] }
+
+private
+instance : MonadLiftT CoreM TermM where
+  monadLift x := liftM <| liftM (n := TypeM) x
+
+private
+def termReserved := ["let", "in", "prj", "inj", "ind", "splitp", "splits"]
+
+private
+def unreservedTermId : TermM String := do
+  let id ← liftM rawId
+  if termReserved.contains id then
+    throwUnexpectedWithMessage none s!"use of reserved identifier '{id}'"
+
+  return id
+
+private
+def termId : TermM (Term true) := do
+  let id ← unreservedTermId
+
+  let { termVars, defs, members, .. } ← read
+  if let some idx := termVars.idxOf? id then
+    return .var idx
+
+  if members.contains id then
+    return .member id
+
+  if defs.contains id then
+    return .def id
+
+  throwUnexpectedWithMessage none "undeclared term var"
+
+private
+def op : TermM «λπι».Op := withErrorMessage "expected binary operator" <|
   char '+' *> pure .add
-  <|> char '-' *> pure .sub
-  <|> char '*' *> pure .mul
-  <|> char '/' *> pure .div
-
-abbrev Term := Interpreter.Term true
+    <|> char '-' *> pure .sub
+    <|> char '*' *> pure .mul
+    <|> char '/' *> pure .div
 
 open Term in
-partial
-def term : ParseM Term := withErrorMessage "expected term" do
-  let M : Term ←
-    paren term
-    <|> Term.member <$> member
-    <|> Term.var <$> termvar (fresh? := false)
-    <|> label <$> (char '.' *> liftM rawId <* char '.')
-    <|> lam <$> ((char '\\' <|> char 'λ') **> (termvar (fresh? := true)) **> char '.' **> term)
-    <|> Term.«let» <$>
-      (string "let" **> termvar (fresh? := true) **> char ':' **> typeScheme)
-      <**> (char '=' **> term)
-      <**> (string "in" **> term)
+private partial
+def term (greedy unlabel := true) : TermM (Term true) := withErrorMessage "expected term" do
+  let M ← termId
+    -- TODO: Add optional type annotation syntax.
+    <|> (do
+      let ids ← (char '\\' <|> char 'λ') **> sepBy ws unreservedTermId <** char '.' <*~
+      let M ← TermM.pushVars ids.toList.reverse term
+      return ids.size.fold (fun _ _ M' => M'.lam) M)
+    -- TODO: Make σ optional?
+    <|> (do
+      let id ← string "let" **> unreservedTermId <*~
+      let σ ← char ':' **> typeScheme <*~
+      let M ← char '=' **> TermM.newGenScope term <*~
+      let N ← string "in" **> TermM.pushVar id term
+      return .let σ M N)
+    <|> (label ∘ String.mk ∘ Array.toList ∘ Prod.fst) <$>
+      (char '\'' *> takeUntil (char '\'') anyToken)
     <|> (prod ∘ .ofList ∘ Array.toList) <$> (char '{' **>
-      (sepBy (string ",") (Prod.mk <$> term <**> liftM «▹» **> term)) <** char '}')
+      sepBy (~*> string "," <*~) (Prod.mk <$> term <**> liftM «▹» **> term) <** char '}')
     <|> sum <$> (char '[' **> term) <**> liftM «▹» **> term <** char ']'
-    <|> prj <$> (string "prj" **> term)
-    <|> inj <$> (string "inj" **> term)
-    <|> ind <$> (string "ind" **> monotype) <**> monotype
-      <**> (char ';' **> term) <**> (char ';' **> term)
-    <|> splitₚ <$> (string "splitₚ" **> monotype) <**> term
-    <|> splitₛ <$> (string "splitₛ" **> monotype) <**> term <**> (char ';' **> term)
+    <|> prj <$> (string "prj" **> term false)
+    <|> inj <$> (string "inj" **> term false)
+    <|> ind <$> (string "ind" **> monotype false) <**> monotype false
+      <**> TermM.newGenScope (term false) <**> term false
+    <|> splitₚ <$> ((string "splitp" <|> string "splitₚ") **> monotype false) <**> term false
+    <|> splitₛ <$> ((string "splits" <|> string "splitₛ") **> monotype false)
+      <**> term false <**> term false
     <|> (str ∘ String.mk ∘ Array.toList ∘ Prod.fst) <$>
       (char '"' *> takeUntil (char '"') anyToken)
-    <|> Term.nat <$> liftM nat
+    <|> Term.nat <$> (String.toNat! ∘ String.mk ∘ Array.toList) <$> takeMany1 numeric
     <|> string "nil" *> pure nil
     <|> string "fold" *> pure fold
     <|> string "range" *> pure range
+    <|> paren term
 
-  let tail :=
-    app M <$> (~*> term)
-    <|> annot M <$> (~*> char ':' **> typeScheme)
-    <|> unlabel M <$> (~*> char '/' **> term)
-    <|> concat M <$> (~*> string "++" **> term)
-    <|> elim M <$> (~*> (string "\\/" <|> string "▿") **> term)
-    <|> cons M <$> (~*> string "::" **> term)
-    <|> (fun o t => .op o M t) <$> (~*> op) <**> term
+  if !unlabel then
+    return M
 
-  optionD tail M
+  let M' ← Array.foldl Term.unlabel M <$> takeMany (~*> char '/' **> term false false)
+
+  if !greedy then
+    return M'
+
+  let M'' ← Array.foldl app M' <$> takeMany (~*> term false)
+
+  let tail := annot M'' <$> (~*> char ':' **> typeScheme)
+    <|> concat M'' <$> (~*> string "++" **> term)
+    <|> elim M'' <$> (~*> (string "\\/" <|> string "▿") **> term)
+    <|> cons M'' <$> (~*> string "::" **> term)
+    <|> (.op · M'' ·) <$> (~*> op) <**> term
+
+  optionD tail M''
 where
-  typeScheme : ParseM (TypeScheme true) := liftM <| Parser.typeScheme true
-  monotype : ParseM (Monotype true) := liftM <| Parser.monotype true
+  typeScheme : TermM (TypeScheme true) := Parser.typeScheme true
+  monotype (greedy := true) : TermM (Monotype true) := Parser.monotype true greedy
 
-def parse (s : String) := term.run s ⟨∅, ∅⟩ |>.fst
+local
+macro "#parse_term " input:str " to " expected:term : command =>
+  `(#eval assertResultEq (α := Term true) (open Term in $expected) <|
+      (term <* endOfInput) $input { } {
+          defs := { "map", "true" }
+          members := { "eq", "le" }
+          termVars := ["a", "b", "c"]
+        } |>.fst)
+
+#parse_term "b" to var 1
+#parse_term "le" to member "le"
+#parse_term "\\a. a" to lam <| var 0
+#parse_term "λ l acc. acc/l" to lam <| lam <| unlabel (var 0) (var 1)
+#parse_term "let xs : List Nat = nil in xs xs" to «let» (Monotype.app (uvars := true) .list .nat)
+  nil <| app (var 0) (var 0)
+-- TODO: Test generalizing scope handling here.
+#parse_term "''" to label ""
+#parse_term "'asdf'" to label "asdf"
+#parse_term "{}" to prod .nil
+#parse_term "{'foo' ▹ 0, a |> \"hi\"}" to prod <| .cons (label "foo") (nat 0) <|
+  .cons (var 0) (str "hi") .nil
+#parse_term "[c ▹ 5]" to sum (var 2) (nat 5)
+#parse_term "['baz' |> 0153]" to sum (label "baz") (nat 153)
+#parse_term "prj a/b c" to app (prj (unlabel (var 0) (var 1))) (var 2)
+#parse_term "inj c/'hi'" to inj <| unlabel (var 2) (label "hi")
+-- q inside the lam is distinct from the one outside since type vars can be shadowed at
+-- generalization points, which the first term argument to ind qualifies as.
+#parse_term "ind (λ d : R *. P(N) (Lift q d)) r (λ l acc. acc ++ {l : ⌊q⌋ ▹ 0}) {}" to ind
+  (.lam (.row .star)
+    (.app (.prodOrSum .prod (.comm .non)) (.app (.app .lift (.varuvar 0)) (.var 0))))
+  (.varuvar 1)
+  (lam (lam (concat (var 0)
+    (prod (.cons (Term.annot (var 1) (Monotype.floor (.varuvar 2))) (nat 0) .nil))))) (prod .nil)
+#parse_term "splitₚ List nil" to splitₚ .list nil
+#parse_term "splitp List (fold)" to splitₚ .list fold
+#parse_term "splitₛ List range b" to splitₛ .list range (var 1)
+#parse_term "splits List a b" to splitₛ .list (var 0) (var 1)
+#parse_term "\"\"" to str ""
+#parse_term "map" to «def» "map"
+#parse_term "true" to «def» "true"
+
+def parse (s : String) := term.run s default default |>.fst

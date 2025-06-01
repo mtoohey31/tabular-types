@@ -7,6 +7,7 @@ inductive Op where
   | sub
   | mul
   | div
+deriving BEq
 
 instance : ToString Op where
   toString
