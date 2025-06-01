@@ -348,8 +348,20 @@ instance : MonadLiftT CoreM TermM where
   monadLift x := liftM <| liftM (n := TypeM) x
 
 private
-def termReserved := programReserved ++
-  ["let", "in", "prj", "inj", "ind", "splitp", "splits", "if", "then", "else"]
+def termReserved := programReserved ++ [
+    "let",
+    "in",
+    "prj",
+    "inj",
+    "ind",
+    "splitp",
+    "splits",
+    "orderp",
+    "orders",
+    "if",
+    "then",
+    "else"
+  ]
 
 private
 def unreservedTermId : TermM String := do
@@ -432,6 +444,19 @@ def term (greedy unlabel := true) : TermM (Term true) := withErrorMessage "expec
     <|> (str ∘ String.mk ∘ Array.toList ∘ Prod.fst) <$>
       (char '"' *> takeUntil (char '"') anyToken)
     <|> string "throw" *> pure Term.throw
+    <|> (do
+      let ρ ← (string "orderp" <|> string "orderₚ") **> monotype false
+      return lam <|
+        ind (.lam (.row .star) (.app (.prodOrSum .prod (.comm .non)) (.var 0))) ρ
+          (lam <| lam (concat (var 0) (.unlabel (prj (var 2)) (var 1)))) (prod .nil))
+    <|> (do
+      let ρ ← (string "orders" <|> string "orderₛ") **> monotype false
+      return ind
+        (.lam (.row .star) (.arr
+          (.app (.prodOrSum .sum (.comm .comm)) (.var 0))
+          (.app (.prodOrSum .sum (.comm .non)) (.var 0)))) ρ
+        (lam <| lam (elim (var 0) (lam (inj (sum (var 2) (.unlabel (var 0) (var 2)))))))
+        (lam (var 0)))
     -- TODO: These aren't actually the min/max... could probably make things more correct by
     -- erroring if we encounter anything out of range.
     <|> string "minInt" *> pure (int (- 2 ^ 63))
