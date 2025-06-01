@@ -239,10 +239,17 @@ def «⇒» : CoreM String := string "=>" <|> string "⇒"
 
 open QualifiedType in
 private partial
-def qualifiedType (inTerm : Bool) : TypeM (QualifiedType inTerm) :=
+def qualifiedType (inTerm : Bool) (arrowRequired := false) : TypeM (QualifiedType inTerm) :=
   withErrorMessage "expected qualified type" do
   let τ ← monotype inTerm
-  optionD (qual τ <$> (~*> liftM «⇒» **> qualifiedType inTerm)) τ
+  let γ? ← option? <|
+    ~*> (liftM «⇒» **> qualifiedType inTerm <|> string "," **> qualifiedType inTerm true)
+  match γ? with
+  | none =>
+    if arrowRequired then
+      throwUnexpectedWithMessage none "last separator for qualified type must be '⇒' instead of ','"
+    return τ
+  | some γ => return qual τ γ
 
 open TypeScheme in
 private partial
