@@ -37,7 +37,7 @@ inductive Term where
   | nil
   | cons : Term → Term → Term
   | fold
-  | nat : Nat → Term
+  | int : Int → Term
   | op : Op → Term → Term → Term
   | range
   | str : String → Term
@@ -61,7 +61,7 @@ def shift (E : Term) (off := 1) (min := 0) : Term := match E with
   | nil => nil
   | cons E' F => cons (shift E' off min) (shift F off min)
   | fold => fold
-  | nat n => nat n
+  | int i => int i
   | op o E' F => op o (shift E' off min) (shift F off min)
   | range => range
   | str s => str s
@@ -78,7 +78,7 @@ inductive Value.Is : Term → Prop where
   | fold₀ : Is .fold
   | fold₁ : Is E → Is (.app .fold E)
   | fold₂ : Is E → Is F → Is (.app (.app .fold E) F)
-  | nat : Is (.nat n)
+  | int : Is (.int i)
   | range : Is .range
   | str : Is (.str s)
   | throw : Is .throw
@@ -104,7 +104,7 @@ def Value.Is.decide : Decidable (Is E) := match E with
         | isTrue h => match decide (E := F) with
           | isFalse h' => isFalse fun | .fold₂ _ h'' => h' h''
           | isTrue h' => isTrue <| .fold₂ h h'
-      | .nat _ => isFalse nofun
+      | .int _ => isFalse nofun
       | .op .. => isFalse nofun
       | .range => isFalse nofun
       | .str _ => isFalse nofun
@@ -118,7 +118,7 @@ def Value.Is.decide : Decidable (Is E) := match E with
     | .fold => match decide (E := F) with
       | isFalse h => isFalse fun | .fold₁ h' => h h'
       | isTrue h => isTrue <| .fold₁ h
-    | .nat _ => isFalse nofun
+    | .int _ => isFalse nofun
     | .op .. => isFalse nofun
     | .range => isFalse nofun
     | .str _ => isFalse nofun
@@ -148,7 +148,7 @@ def Value.Is.decide : Decidable (Is E) := match E with
       | isFalse h' => isFalse fun | .cons _ h'' => h' h''
       | isTrue h' => isTrue <| .cons h h'
   | .fold => isTrue .fold₀
-  | .nat _ => isTrue .nat
+  | .int _ => isTrue .int
   | .op .. => isFalse nofun
   | .range => isTrue .range
   | .str _ => isTrue .str
@@ -192,9 +192,9 @@ theorem Is.shift_preservation {min} (EIs : Is E) : Is (E.shift off min) := by
   | fold₂ _ _ E'ih Fih =>
     rw [Term.shift, Term.shift, Term.shift]
     exact fold₂ E'ih Fih
-  | nat =>
+  | int =>
     rw [Term.shift]
-    exact nat
+    exact int
   | range =>
     rw [Term.shift]
     exact range
@@ -213,16 +213,16 @@ def bool : Bool → Value
 
 end Value
 
-def Op.fn (n₀ n₁ : Nat) : Op → Value
-  | .add => ⟨.nat <| n₀ + n₁, .nat⟩
-  | .sub => ⟨.nat <| n₀ - n₁, .nat⟩
-  | .mul => ⟨.nat <| n₀ * n₁, .nat⟩
-  | .div => ⟨.nat <| n₀ / n₁, .nat⟩
-  | .eq => .bool <| n₀ == n₁
-  | .lt => .bool <| n₀ < n₁
-  | .le => .bool <| n₀ ≤ n₁
-  | .gt => .bool <| n₀ > n₁
-  | .ge => .bool <| n₀ ≥ n₁
+def Op.fn (i₀ i₁ : Int) : Op → Value
+  | .add => ⟨.int <| i₀ + i₁, .int⟩
+  | .sub => ⟨.int <| i₀ - i₁, .int⟩
+  | .mul => ⟨.int <| i₀ * i₁, .int⟩
+  | .div => ⟨.int <| i₀ / i₁, .int⟩
+  | .eq => .bool <| i₀ == i₁
+  | .lt => .bool <| i₀ < i₁
+  | .le => .bool <| i₀ ≤ i₁
+  | .gt => .bool <| i₀ > i₁
+  | .ge => .bool <| i₀ ≥ i₁
 
 namespace Term
 
@@ -237,7 +237,7 @@ def «open» (E : Term) (V : Value) (n : Nat := 0) : Term := match E with
   | nil => nil
   | cons E' F => cons (E'.open V n) (F.open V n)
   | fold => fold
-  | nat n => nat n
+  | int i => int i
   | op o E' F => op o (E'.open V n) (F.open V n)
   | range => range
   | str s => str s
@@ -251,9 +251,9 @@ inductive eval.Error where
   | nonSumIntroSumElim
   | invalidSumIdx (n l : Nat)
   | nonLamSumElim
-  | nonNatOperand
+  | nonIntOperand
   | nonListFold
-  | nonNatRange
+  | nonIntRange
   | nonStringThrow
   | throw (s : String)
 
@@ -268,9 +268,9 @@ instance : ToString eval.Error where
     | .invalidSumIdx n l =>
       s!"sum intro index {n} is out of range for sum elim with {l} entries"
     | .nonLamSumElim => "sum elim contained non-lambda term"
-    | .nonNatOperand => "non-nat term used as operand"
+    | .nonIntOperand => "non-int term used as operand"
     | .nonListFold => "non-list term used as third argument for fold"
-    | .nonNatRange => "non-nat term used as argument for range"
+    | .nonIntRange => "non-int term used as argument for range"
     | .nonStringThrow => "non-string term used as argument for throw"
     | .throw s => s
 
@@ -292,9 +292,9 @@ def eval (E : Term) : Except eval.Error Value := do match E with
       | ⟨.cons Eₙ V', _⟩ => eval <| fold.app F' |>.app (F'.app Eᵢ |>.app Eₙ) |>.app V'
       | _ => throw .nonListFold
     | ⟨range, _⟩ =>
-      let ⟨nat n, _⟩ := V | throw .nonNatRange
-      return n.fold (init := (⟨nil, .nil⟩ : Value)) fun i _ V =>
-        ⟨cons (.nat i) V, .cons .nat V.property⟩
+      let ⟨int i, _⟩ := V | throw .nonIntRange
+      return i.toNat.fold (init := (⟨nil, .nil⟩ : Value)) fun j _ V =>
+        ⟨cons (.int j) V, .cons .int V.property⟩
     | ⟨.throw, _⟩ =>
       let ⟨.str Fs, _⟩ := V | throw .nonStringThrow
       throw <| .throw Fs
@@ -331,11 +331,11 @@ def eval (E : Term) : Except eval.Error Value := do match E with
     let VF ← eval F
     return ⟨cons VE VF, .cons VE.property VF.property⟩
   | fold => return ⟨fold, .fold₀⟩
-  | nat n => return ⟨nat n, .nat⟩
+  | int i => return ⟨int i, .int⟩
   | op o E F =>
-    let ⟨nat En, _⟩ ← eval E | throw .nonNatOperand
-    let ⟨nat Fn, _⟩ ← eval F | throw .nonNatOperand
-    return o.fn En Fn
+    let ⟨int Ei, _⟩ ← eval E | throw .nonIntOperand
+    let ⟨int Fi, _⟩ ← eval F | throw .nonIntOperand
+    return o.fn Ei Fi
   | range => return ⟨range, .range⟩
   | str s => return ⟨str s, .str⟩
   | .throw => return ⟨.throw, .throw⟩

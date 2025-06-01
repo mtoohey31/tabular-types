@@ -78,7 +78,7 @@ inductive Monotype : (uvars : optParam Bool false) → Type where
   | ind : Monotype uvars
   | split : Monotype uvars
   | list : Monotype uvars
-  | nat : Monotype uvars
+  | int : Monotype uvars
   | str : Monotype uvars
   | alias : String → Monotype uvars
 deriving BEq
@@ -96,7 +96,7 @@ mutual
 protected noncomputable
 def Monotype.sizeOf : Monotype uvars → Nat
   | .var _ | .varuvar _ | .uvar _ | .label _ | .comm _ | .lift | .tc _ | .all | .ind | .split
-  | .list | .nat | .str | .alias _ => 1
+  | .list | .int | .str | .alias _ => 1
   | .lam κ τ => 1 + sizeOf κ + τ.sizeOf
   | .app ϕ τ => 1 + ϕ.sizeOf + τ.sizeOf
   | .arr τ₀ τ₁ => 1 + τ₀.sizeOf + τ₁.sizeOf
@@ -199,7 +199,7 @@ def toString (τ : Monotype uvars) : String := match τ with
   | ind => "Ind"
   | split => "Split"
   | list => "List"
-  | nat => "Nat"
+  | int => "Int"
   | str => "String"
   | «alias» s => s
 termination_by sizeOf τ
@@ -288,7 +288,7 @@ inductive Term : (uvars : optParam Bool false) → Type where
   | nil : Term uvars
   | cons : Term uvars → Term uvars → Term uvars
   | fold : Term uvars
-  | nat : Nat → Term uvars
+  | int : Int → Term uvars
   | op : Op → Term uvars → Term uvars → Term uvars
   | range : Term uvars
   | str : String → Term uvars
@@ -308,7 +308,7 @@ mutual
 @[simp]
 protected noncomputable
 def Term.sizeOf : Term uvars → Nat
-  | .var _ | .member _ | .label _ | .nil | .fold | .nat _ | .range | .str _ | .throw | .def _ => 1
+  | .var _ | .member _ | .label _ | .nil | .fold | .int _ | .range | .str _ | .throw | .def _ => 1
   | .lam M | .prj M | .inj M => 1 + M.sizeOf
   | .app M N | .sum M N | .unlabel M N | .concat M N | .elim M N | .cons M N | .op _ M N =>
     1 + M.sizeOf + N.sizeOf
@@ -451,7 +451,7 @@ def toString (M : Term uvars) (table := false) : String := match M with
         return table
     return s!"[{M's.map toString}]"
   | fold => "fold"
-  | nat n => s!"{n}"
+  | int i => s!"{i}"
   | op o M' N => s!"{M'.toString} {o} {N.toString}"
   | range => "range"
   | str s => s.quote

@@ -30,7 +30,7 @@ def shift (τ : Monotype) (off := 1) (min := 0) : Monotype := match τ with
   | ind => ind
   | split => split
   | list => list
-  | nat => nat
+  | int => int
   | str => str
   | «alias» s => «alias» s
 termination_by sizeOf τ
@@ -63,7 +63,7 @@ def «open» (τ : Monotype) (τ' : Monotype) (n : Nat := 0) : Monotype := match
   | ind => ind
   | split => split
   | list => list
-  | nat => nat
+  | int => int
   | str => str
   | «alias» s => «alias» s
 termination_by sizeOf τ
@@ -211,7 +211,7 @@ end TypeScheme
 open TypeScheme
 
 def «λπι».Op.result : «λπι».Op → Monotype
-  | .add | .sub | .mul | .div => .nat
+  | .add | .sub | .mul | .div => .int
   | .eq | .lt | .le | .gt | .ge => .bool
 
 namespace Term
@@ -268,10 +268,10 @@ inductive Typing : Term → TypeScheme → Type where
   | cons {τ : Monotype} : Typing M τ → Typing N (list.app τ) → Typing (cons M N) (list.app τ)
   | fold : Typing fold (quant star (quant star (qual (mono (arr
       (arr (.var 1) (arr (.var 0) (.var 1))) (arr (.var 1) ((list.app (.var 0)).arr (.var 1))))))))
-  | nat : Typing (nat n) (Monotype.nat (uvars := false))
-  | op : Typing M (Monotype.nat (uvars := false)) → Typing N (Monotype.nat (uvars := false)) →
+  | int : Typing (int i) (Monotype.int (uvars := false))
+  | op : Typing M (Monotype.int (uvars := false)) → Typing N (Monotype.int (uvars := false)) →
     Typing (op o M N) o.result
-  | range : Typing range (Monotype.nat.arr (uvars := false) (list.app .nat))
+  | range : Typing range (Monotype.int.arr (uvars := false) (list.app .int))
   | str : Typing (str s) (Monotype.str (uvars := false))
   | throw : Typing throw (Monotype.str (uvars := false).arr σ)
   | def : Typing («def» s) σ
@@ -316,7 +316,7 @@ def Typing.elab : Typing M σ → ReaderM (HashMap String (Thunk «λπι».Term
   | nil => return .nil
   | cons M'ty Nty => return .cons (← M'ty.elab) (← Nty.elab)
   | fold => return .fold
-  | nat (n := n) => return .nat n
+  | int (i := i) => return .int i
   | op M'ty Nty (o := o) => return .op o (← M'ty.elab) (← Nty.elab)
   | range => return .range
   | str (s := s) => return .str s
@@ -370,7 +370,7 @@ def Value.delab (V : Value) (σ : Interpreter.TypeScheme) : Option Interpreter.T
     let N ← delab ⟨F, FIs⟩ <| .qual <| .mono <| .app .list τ'
     return M.cons N
   | .fold => some <| .fold
-  | .nat n => some <| .nat n
+  | .int i => some <| .int i
   | .range => some <| .range
   | .str s => some <| .str s
   | .throw => some <| .throw

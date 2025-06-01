@@ -134,7 +134,7 @@ def programReserved := ["def", "type", "class", "instance"]
 
 private
 def typeReserved := programReserved ++
-  ["where", "C", "N", "P", "S", "Lift", "All", "Ind", "Split", "List", "Nat", "String", "o"]
+  ["where", "C", "N", "P", "S", "Lift", "All", "Ind", "Split", "List", "Int", "String", "o"]
 
 private
 def unreservedTypeId : TypeM String := do
@@ -217,7 +217,7 @@ def monotype (inTerm : Bool) (greedy := true) : TypeM (Monotype inTerm) :=
     <|> string "Ind" *> pure ind
     <|> string "Split" *> pure split
     <|> string "List" *> pure list
-    <|> string "Nat" *> pure Monotype.nat
+    <|> string "Int" *> pure int
     <|> string "String" *> pure str
     <|> paren go
 
@@ -303,7 +303,7 @@ macro "#parse_type " input:str " to " expected:term : command =>
 #parse_type "LE" to tc (uvars := true) "LE"
 #parse_type "Split a b c -> List a" to split (uvars := true) |>.app (var 0) |>.app (var 1)
   |>.app (var 2) |>.arr (list.app <| var 0)
-#parse_type "Nat → String" to Monotype.nat (uvars := true) |>.arr str
+#parse_type "Int → String" to int (uvars := true) |>.arr str
 #parse_type "∀ a : *. a" to quant (uvars := true) .star <| qual <| mono <| var 0
 #parse_type "forall d : R *. a d" to quant (uvars := true) (.row .star) <| qual <| mono <|
   app (var 1) (var 0)
@@ -427,14 +427,15 @@ def term (greedy unlabel := true) : TermM (Term true) := withErrorMessage "expec
       <**> term false <**> term false
     <|> string "nil" *> pure nil
     <|> string "fold" *> pure fold
-    <|> Term.nat <$> (String.toNat! ∘ String.mk ∘ Array.toList) <$> takeMany1 numeric
+    <|> int <$> (String.toInt! ∘ String.mk ∘ Array.toList) <$> takeMany1 numeric
     <|> string "range" *> pure range
     <|> (str ∘ String.mk ∘ Array.toList ∘ Prod.fst) <$>
       (char '"' *> takeUntil (char '"') anyToken)
     <|> string "throw" *> pure Term.throw
-    -- TODO: This isn't actually the max... could probably make things more correct by erroring if
-    -- any literals are larger and any computations produce something larger.
-    <|> string "maxNat" *> pure (nat UInt64.size)
+    -- TODO: These aren't actually the min/max... could probably make things more correct by
+    -- erroring if we encounter anything out of range.
+    <|> string "minInt" *> pure (int (- 2 ^ 63))
+    <|> string "maxInt" *> pure (int (2 ^ 63 - 1))
     <|> (do
       let M ← string "if" **> term
       let N₀ ← ~*> string "then" **> TermM.pushVar "_" term
@@ -479,19 +480,19 @@ macro "#parse_term " input:str " to " expected:term : command =>
 
 #parse_term "b" to var 1
 #parse_term "le" to member "le"
-#parse_term "\\a : Nat. a" to annot (lam <| var 0) (Monotype.arr (uvars := true) .nat (.uvar 0))
+#parse_term "\\a : Int. a" to annot (lam <| var 0) (Monotype.arr (uvars := true) .int (.uvar 0))
 #parse_term "λ l acc. acc/l" to lam <| lam <| unlabel (var 0) (var 1)
 -- TODO: Test generalizing scope handling here.
-#parse_term "let xs : List Nat = nil in xs xs" to «let» (Monotype.app (uvars := true) .list .nat)
+#parse_term "let xs : List Int = nil in xs xs" to «let» (Monotype.app (uvars := true) .list .int)
   nil <| app (var 0) (var 0)
 #parse_term "let xs = nil in xs xs" to «let» none nil <| app (var 0) (var 0)
 #parse_term "''" to label ""
 #parse_term "'asdf'" to label "asdf"
 #parse_term "{}" to prod .nil
-#parse_term "{'foo' ▹ 0, a |> \"hi\"}" to prod <| .cons (label "foo") (nat 0) <|
+#parse_term "{'foo' ▹ 0, a |> \"hi\"}" to prod <| .cons (label "foo") (int 0) <|
   .cons (var 0) (str "hi") .nil
-#parse_term "[c ▹ 5]" to sum (var 2) (nat 5)
-#parse_term "['baz' |> 0153]" to sum (label "baz") (nat 153)
+#parse_term "[c ▹ 5]" to sum (var 2) (int 5)
+#parse_term "['baz' |> 0153]" to sum (label "baz") (int 153)
 #parse_term "prj a/b c" to app (prj (unlabel (var 0) (var 1))) (var 2)
 #parse_term "inj c/'hi'" to inj <| unlabel (var 2) (label "hi")
 -- q inside the lam is distinct from the one outside since type vars can be shadowed at
@@ -501,7 +502,7 @@ macro "#parse_term " input:str " to " expected:term : command =>
     (.app (.prodOrSum .prod (.comm .non)) (.app (.app .lift (.varuvar 0)) (.var 0))))
   (.varuvar 1)
   (lam (lam (concat (var 0)
-    (prod (.cons (Term.annot (var 1) (Monotype.floor (.varuvar 2))) (nat 0) .nil))))) (prod .nil)
+    (prod (.cons (Term.annot (var 1) (Monotype.floor (.varuvar 2))) (int 0) .nil))))) (prod .nil)
 #parse_term "a ▿ b c" to (var 0).elim (var 1) |>.app <| var 2
 #parse_term "a \\/ b c" to (var 0).elim (var 1) |>.app <| var 2
 #parse_term "splitₚ List nil" to splitₚ .list nil
@@ -511,18 +512,18 @@ macro "#parse_term " input:str " to " expected:term : command =>
 #parse_term "\"\"" to str ""
 #parse_term "map" to «def» "map"
 #parse_term "true" to «def» "true"
-#parse_term "5 + 7" to .op .add (nat 5) (nat 7)
-#parse_term "5 - 7" to .op .sub (nat 5) (nat 7)
-#parse_term "5 * 7" to .op .mul (nat 5) (nat 7)
-#parse_term "5 ÷ 7" to .op .div (nat 5) (nat 7)
-#parse_term "5 // 7" to .op .div (nat 5) (nat 7)
-#parse_term "5 == 7" to .op .eq (nat 5) (nat 7)
-#parse_term "5 < 7" to .op .lt (nat 5) (nat 7)
-#parse_term "5 ≤ 7" to .op .le (nat 5) (nat 7)
-#parse_term "5 <= 7" to .op .le (nat 5) (nat 7)
-#parse_term "5 > 7" to .op .gt (nat 5) (nat 7)
-#parse_term "5 ≥ 7" to .op .ge (nat 5) (nat 7)
-#parse_term "5 >= 7" to .op .ge (nat 5) (nat 7)
+#parse_term "5 + 7" to .op .add (int 5) (int 7)
+#parse_term "5 - 7" to .op .sub (int 5) (int 7)
+#parse_term "5 * 7" to .op .mul (int 5) (int 7)
+#parse_term "5 ÷ 7" to .op .div (int 5) (int 7)
+#parse_term "5 // 7" to .op .div (int 5) (int 7)
+#parse_term "5 == 7" to .op .eq (int 5) (int 7)
+#parse_term "5 < 7" to .op .lt (int 5) (int 7)
+#parse_term "5 ≤ 7" to .op .le (int 5) (int 7)
+#parse_term "5 <= 7" to .op .le (int 5) (int 7)
+#parse_term "5 > 7" to .op .gt (int 5) (int 7)
+#parse_term "5 ≥ 7" to .op .ge (int 5) (int 7)
+#parse_term "5 >= 7" to .op .ge (int 5) (int 7)
 
 private
 abbrev ProgramM := SimpleParserT Substring Char (StateM ProgramContext)
