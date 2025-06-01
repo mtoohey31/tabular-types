@@ -368,7 +368,12 @@ def op : TermM «λπι».Op := withErrorMessage "expected binary operator" <|
   char '+' *> pure .add
     <|> char '-' *> pure .sub
     <|> char '*' *> pure .mul
-    <|> char '/' *> pure .div
+    <|> (string "//" <|> string "÷") *> pure .div
+    <|> string "==" *> pure .eq
+    <|> (string "<=" <|> string "≤") *> pure .le
+    <|> char '<' *> pure .lt
+    <|> (string ">=" <|> string "≥") *> pure .ge
+    <|> char '>' *> pure .gt
 
 open Term in
 private partial
@@ -376,7 +381,7 @@ def term (greedy unlabel := true) : TermM (Term true) := withErrorMessage "expec
   let M ← termId
     <|> (do
       let idsτ?s ← (char '\\' <|> char 'λ') **> sepBy (~*> char ',' <*~)
-        (Prod.mk <$> sepBy ws unreservedTypeId <**> option? (char ':' **> monotype true))
+        (Prod.mk <$> sepBy ws unreservedTermId <**> option? (char ':' **> monotype true))
         <** char '.' <*~
       let M ← TermM.pushVars (idsτ?s.flatMap Prod.fst).toList.reverse term
       idsτ?s.foldrM (init := M) fun (ids, τ?) M' =>
@@ -478,6 +483,18 @@ macro "#parse_term " input:str " to " expected:term : command =>
 #parse_term "\"\"" to str ""
 #parse_term "map" to «def» "map"
 #parse_term "true" to «def» "true"
+#parse_term "5 + 7" to .op .add (nat 5) (nat 7)
+#parse_term "5 - 7" to .op .sub (nat 5) (nat 7)
+#parse_term "5 * 7" to .op .mul (nat 5) (nat 7)
+#parse_term "5 ÷ 7" to .op .div (nat 5) (nat 7)
+#parse_term "5 // 7" to .op .div (nat 5) (nat 7)
+#parse_term "5 == 7" to .op .eq (nat 5) (nat 7)
+#parse_term "5 < 7" to .op .lt (nat 5) (nat 7)
+#parse_term "5 ≤ 7" to .op .le (nat 5) (nat 7)
+#parse_term "5 <= 7" to .op .le (nat 5) (nat 7)
+#parse_term "5 > 7" to .op .gt (nat 5) (nat 7)
+#parse_term "5 ≥ 7" to .op .ge (nat 5) (nat 7)
+#parse_term "5 >= 7" to .op .ge (nat 5) (nat 7)
 
 private
 abbrev ProgramM := SimpleParserT Substring Char (StateM ProgramContext)

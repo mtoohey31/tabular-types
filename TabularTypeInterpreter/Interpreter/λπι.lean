@@ -7,6 +7,11 @@ inductive Op where
   | sub
   | mul
   | div
+  | eq
+  | lt
+  | le
+  | gt
+  | ge
 deriving BEq
 
 instance : ToString Op where
@@ -14,7 +19,12 @@ instance : ToString Op where
     | .add => "+"
     | .sub => "-"
     | .mul => "*"
-    | .div => "/"
+    | .div => "÷"
+    | .eq => "=="
+    | .lt => "<"
+    | .le => "≤"
+    | .gt => ">"
+    | .ge => "≥"
 
 inductive Term where
   | var : Nat → Term
@@ -142,10 +152,12 @@ instance : Decidable (Value.Is E) := Value.Is.decide
 
 abbrev Value := { E : Term // Value.Is E }
 
+namespace Value
+
 instance : Inhabited Value where
   default := ⟨default, .prodIntro nofun⟩
 
-theorem Value.Is.shift_preservation {min} (EIs : Is E) : Is (E.shift off min) := by
+theorem Is.shift_preservation {min} (EIs : Is E) : Is (E.shift off min) := by
   induction EIs with
   | lam =>
     rw [Term.shift]
@@ -183,6 +195,25 @@ theorem Value.Is.shift_preservation {min} (EIs : Is E) : Is (E.shift off min) :=
   | str =>
     rw [Term.shift]
     exact str
+
+def unit : Value := ⟨.prodIntro [], .prodIntro nofun⟩
+
+def bool : Bool → Value
+  | false => ⟨.sumIntro 0 unit, .sumIntro unit.property⟩
+  | true => ⟨.sumIntro 1 unit, .sumIntro unit.property⟩
+
+end Value
+
+def Op.fn (n₀ n₁ : Nat) : Op → Value
+  | .add => ⟨.nat <| n₀ + n₁, .nat⟩
+  | .sub => ⟨.nat <| n₀ - n₁, .nat⟩
+  | .mul => ⟨.nat <| n₀ * n₁, .nat⟩
+  | .div => ⟨.nat <| n₀ / n₁, .nat⟩
+  | .eq => .bool <| n₀ == n₁
+  | .lt => .bool <| n₀ < n₁
+  | .le => .bool <| n₀ ≤ n₁
+  | .gt => .bool <| n₀ > n₁
+  | .ge => .bool <| n₀ ≥ n₁
 
 namespace Term
 
@@ -287,12 +318,7 @@ def eval (E : Term) : Except eval.Error Value := do match E with
   | op o E F =>
     let ⟨nat En, _⟩ ← eval E | throw .nonNatOperand
     let ⟨nat Fn, _⟩ ← eval F | throw .nonNatOperand
-    let f := match o with
-      | .add => Nat.add
-      | .sub => Nat.sub
-      | .mul => Nat.mul
-      | .div => Nat.div
-    return ⟨nat (f En Fn), .nat⟩
+    return o.fn En Fn
   | range => return ⟨range, .range⟩
   | str s => return ⟨str s, .str⟩
 

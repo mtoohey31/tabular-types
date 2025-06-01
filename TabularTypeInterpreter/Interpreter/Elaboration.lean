@@ -210,7 +210,12 @@ end TypeScheme
 
 open TypeScheme
 
+def «λπι».Op.result : «λπι».Op → Monotype
+  | .add | .sub | .mul | .div => .nat
+  | .eq | .lt | .le | .gt | .ge => .bool
+
 namespace Term
+
 -- Existence of this Typing term doesn't actually prove the Term has this type; this is only used to
 -- guide elaboration, so it is up to the function producing this to ensure it is constructed
 -- correctly, since mistakes will not necessarily be caught by the type checker.
@@ -265,7 +270,7 @@ inductive Typing : Term → TypeScheme → Type where
       (arr (.var 1) (arr (.var 0) (.var 1))) (arr (.var 1) ((list.app (.var 0)).arr (.var 1))))))))
   | nat : Typing (nat n) (Monotype.nat (uvars := false))
   | op : Typing M (Monotype.nat (uvars := false)) → Typing N (Monotype.nat (uvars := false)) →
-    Typing (op o M N) (Monotype.nat (uvars := false))
+    Typing (op o M N) o.result
   | range : Typing range (Monotype.nat.arr (uvars := false) (list.app .nat))
   | str : Typing (str s) (Monotype.str (uvars := false))
   | def : Typing («def» s) σ

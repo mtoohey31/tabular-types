@@ -216,6 +216,11 @@ decreasing_by
 instance : ToString (Monotype uvars) where
   toString := toString
 
+def unit : Monotype uvars := row .nil <| some .star
+
+def bool : Monotype uvars := prodOrSum .sum (comm .non) |>.app <|
+  row (.cons (label "false") unit (.cons (label "true") unit .nil)) none
+
 end Monotype
 
 inductive QualifiedType : (uvars : optParam Bool false) → Type where
