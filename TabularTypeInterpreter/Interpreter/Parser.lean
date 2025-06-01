@@ -337,7 +337,8 @@ instance : MonadLiftT CoreM TermM where
   monadLift x := liftM <| liftM (n := TypeM) x
 
 private
-def termReserved := programReserved ++ ["let", "in", "prj", "inj", "ind", "splitp", "splits"]
+def termReserved := programReserved ++
+  ["let", "in", "prj", "inj", "ind", "splitp", "splits", "if", "then", "else"]
 
 private
 def unreservedTermId : TermM String := do
@@ -419,6 +420,13 @@ def term (greedy unlabel := true) : TermM (Term true) := withErrorMessage "expec
     <|> string "nil" *> pure nil
     <|> string "fold" *> pure fold
     <|> string "range" *> pure range
+    <|> (do
+      let M ← string "if" **> term
+      let N₀ ← ~*> string "then" **> TermM.pushVar "_" term
+      let N₁ ← ~*> string "else" **> TermM.pushVar "_" term
+      let τ := Monotype.row (uvars := true) (.cons (.label "true") .unit .nil) none |>.arr <|
+        ← freshUVar
+      return N₀.lam.annot τ |>.elim N₁.lam |>.app M)
     <|> paren term
 
   if !unlabel then
