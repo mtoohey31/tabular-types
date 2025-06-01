@@ -1,3 +1,4 @@
+import Lott.Data.Option
 import TabularTypeInterpreter.Interpreter.«λπι»
 import TabularTypeInterpreter.Interpreter.Basic
 
@@ -221,7 +222,7 @@ inductive Typing : Term → TypeScheme → Type where
   | qualE {γ : QualifiedType} : ConstraintSolution ψ → (Typing M (γ.qual ψ)) → Typing M γ
   | schemeI : Typing M σ → Typing M (quant κ σ)
   | schemeE : Typing M (quant κ σ) → Typing M (σ.open τ)
-  | let : Typing M σ₀ → Typing N σ₁ → Typing (M.let σ₀ N) σ₁
+  | let : Typing M σ₀ → Typing N σ₁ → Typing (M.let (Option.someIf σ₀ b) N) σ₁
   | annot : Typing M σ → Typing (M.annot σ) σ
   | label : Typing (label s) (floor (uvars := false) (.label s))
   | prod : (∀ MNξτ ∈ MNs.zip ξτs, let ((_, N), _, τ) := MNξτ; Typing N τ) →

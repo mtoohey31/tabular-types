@@ -1,1 +1,10 @@
-\lottjudgement{Multi Parallel Reduction}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{≡>*} \, \targetpre B \targetpost}{\lottinferencerule{refl}{\\\\}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{≡>*} \, \targetpre A \targetpost} \lottinferencerulesep \lottinferencerule{step}{\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{≡>} \, \targetpre A' \targetpost} \\ \lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A' \targetpost \, \lottsym{≡>*} \, \targetpre A'' \targetpost}}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{≡>*} \, \targetpre A'' \targetpost}}
+\lottjudgement{Multi Parallel Reduction}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{≡>*} \, \targetpre B \targetpost}{
+\lottinferencerule{refl}{
+\\\\
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{≡>*} \, \targetpre A \targetpost}
+\lottinferencerulesep
+\lottinferencerule{step}{
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{≡>} \, \targetpre A' \targetpost}\\
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A' \targetpost \, \lottsym{≡>*} \, \targetpre A'' \targetpost}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{≡>*} \, \targetpre A'' \targetpost}
+}

@@ -181,7 +181,7 @@ def toString (τ : Monotype uvars) : String := match τ with
   | lam κ τ => s!"(λ {κ}. {τ.toString})"
   | app ϕ τ => s!"{ϕ.toString} {τ.toString}"
   | arr τ₀ τ₁ => s!"{τ₀.toString} → {τ₁.toString}"
-  | label s => s
+  | label s => s!"'{s}'"
   | floor ξ => s!"⌊{ξ.toString}⌋"
   | comm u => s!"{u}"
   | row ξτs κ? =>
@@ -267,7 +267,7 @@ inductive Term : (uvars : optParam Bool false) → Type where
   | member : String → Term uvars
   | lam : Term uvars → Term uvars
   | app : Term uvars → Term uvars → Term uvars
-  | let : TypeScheme uvars → Term uvars → Term uvars → Term uvars
+  | let : Option (TypeScheme uvars) → Term uvars → Term uvars → Term uvars
   | annot : Term uvars → TypeScheme uvars → Term uvars
   | label : String → Term uvars
   | prod : TermPairList uvars → Term uvars
@@ -306,7 +306,7 @@ def Term.sizeOf : Term uvars → Nat
   | .lam M | .prj M | .inj M => 1 + M.sizeOf
   | .app M N | .sum M N | .unlabel M N | .concat M N | .elim M N | .cons M N | .op _ M N =>
     1 + M.sizeOf + N.sizeOf
-  | .let σ M N => 1 + sizeOf σ + M.sizeOf + N.sizeOf
+  | .let σ? M N => 1 + sizeOf σ? + M.sizeOf + N.sizeOf
   | .annot M σ => 1 + M.sizeOf + sizeOf σ
   | .prod MNs => 1 + MNs.sizeOf
   | .ind ϕ ρ M N => 1 + sizeOf ϕ + sizeOf ρ + M.sizeOf + N.sizeOf
@@ -412,13 +412,17 @@ def tableFromTerms (Ms : List (Term uvars)) : Option String := do
 
 partial
 def toString (M : Term uvars) (table := false) : String := match M with
-  | var n => s!"v{n}"
+  | var n => s!"{n}"
   | member s => s
   | lam M' => s!"(λ. {M'.toString})"
   | app M' N => s!"{M'.toString} {N.toString}"
-  | «let» σ M' N => s!"let {σ} = {M'.toString} in {N.toString}"
+  | «let» σ? M' N =>
+    if let some σ := σ? then
+      s!"let {σ} = {M'.toString} in {N.toString}"
+    else
+      s!"let {M'.toString} in {N.toString}"
   | annot M' σ => s!"({M'.toString} : {σ})"
-  | label s => s
+  | label s => s!"'{s}'"
   | prod M'Ns =>
     s!"\{{String.join <| List.intersperse ", " <|
             M'Ns.toList.map fun (M', N) => s!"{M'.toString} ▹ {N.toString}"}}"
@@ -453,6 +457,31 @@ instance : ToString (Term uvars) where
   toString := toString
 
 end Term
+
+inductive ProgramEntry where
+  | def (x : String) (σ? : Option TypeScheme) (M : Term true)
+  | typeAlias (a : String) (σ : TypeScheme)
+  | class (TCₛs : List String) (TC : String) (κ : Kind) (m : String) (σ : TypeScheme)
+  | instance (ψs : List (Monotype true)) (TC : String) (τ : (Monotype true)) (M : Term true)
+deriving BEq
+
+variable {TC} in
+instance : ToString ProgramEntry where
+  toString
+    | .def x σ? M => s!"def {x} {match σ? with | some σ => s!": {σ} " | none => ""}= {M}"
+    | .typeAlias a σ => s!"type {a} = {σ}"
+    | .class TCₛs TC κ m σ =>
+      let TCₛs := if TCₛs.length == 0 then "" else s!"{", ".intercalate TCₛs} ⇒ "
+      s!"class {TCₛs}{TC} : {κ} where\n  {m} : {σ}"
+    | .instance ψs TC τ M =>
+      let ψs := if ψs.length == 0 then "" else
+        s!"{", ".intercalate <| ψs.map ToString.toString} ⇒ "
+      s!"instance {ψs}{TC} {τ} where\n  {M}"
+
+abbrev Program := List ProgramEntry
+
+instance (priority := high) : ToString Program where
+  toString pgm := "\n\n".intercalate <| pgm.map ToString.toString
 
 end Interpreter
 
