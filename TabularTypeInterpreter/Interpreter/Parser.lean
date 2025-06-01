@@ -420,6 +420,9 @@ def term (greedy unlabel := true) : TermM (Term true) := withErrorMessage "expec
     <|> string "nil" *> pure nil
     <|> string "fold" *> pure fold
     <|> string "range" *> pure range
+    -- TODO: This isn't actually the max... could probably make things more correct by erroring if
+    -- any literals are larger and any computations produce something larger.
+    <|> string "maxNat" *> pure (nat UInt64.size)
     <|> (do
       let M ← string "if" **> term
       let N₀ ← ~*> string "then" **> TermM.pushVar "_" term
