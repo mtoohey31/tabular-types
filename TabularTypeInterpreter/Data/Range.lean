@@ -45,4 +45,27 @@ theorem map_append' {f g : Nat → α} (h₁ : l ≤ m) (h₂ : m ≤ n)
     . case isFalse => rfl
   rw [eqfmap, eqgmap, ← List.map_append, toList_append h₁ h₂]
 
+theorem mem_zip_map_append {f g : Nat → α} {h : Nat → β} (h₀ : l ≤ m) (h₁ : m ≤ n)
+  (mem : x ∈ ([l:m].map f ++ [m:n].map g).zip ([l:n].map h))
+  : (∃ i ∈ [l:m], x = (f i, h i)) ∨ ∃ i ∈ [m:n], x = (g i, h i) := by
+  rw [map, map, map, toList] at mem
+  split at mem
+  · case isTrue h =>
+    rw [List.map_cons, toList.eq_def [l:n], if_pos <| Nat.lt_of_lt_of_le h h₁, List.map_cons,
+        List.cons_append, List.zip_cons_cons] at mem
+    cases mem with
+    | head => exact .inl ⟨l, ⟨Nat.le.refl, h, Nat.mod_one _⟩, rfl⟩
+    | tail _ mem' => match mem_zip_map_append h h₁ mem' with
+      | .inl ⟨i, imem, eq⟩ => exact .inl ⟨i, ⟨Nat.le_trans Nat.le.refl.step imem.lower, imem.upper, Nat.mod_one _⟩, eq⟩
+      | .inr ⟨i, imem, eq⟩ => exact .inr ⟨i, imem, eq⟩
+  · case isFalse h =>
+    rw [List.map_nil, List.nil_append] at mem
+    cases Nat.eq_iff_le_and_ge.mpr ⟨h₀, Nat.ge_of_not_lt h⟩
+    exact .inr <| mem_zip_map mem
+termination_by m - l
+decreasing_by
+  all_goals simp_arith
+  apply Nat.sub_succ_lt_self
+  assumption
+
 end Std.Range

@@ -1,3 +1,4 @@
 import TabularTypeInterpreter.Lemmas.Type.Basic
 import TabularTypeInterpreter.Lemmas.Type.MonotypeOpenPreservation
+import TabularTypeInterpreter.Lemmas.Type.MultiOpen
 import TabularTypeInterpreter.Lemmas.Type.ToKinding

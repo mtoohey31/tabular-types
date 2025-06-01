@@ -1,2 +1,2 @@
 import TabularTypeInterpreter.Lemmas.TypeEnvironment.Basic
-import TabularTypeInterpreter.Lemmas.TypeEnvironment.TermVarIn
+import TabularTypeInterpreter.Lemmas.TypeEnvironment.WellFormednessAndElaboration

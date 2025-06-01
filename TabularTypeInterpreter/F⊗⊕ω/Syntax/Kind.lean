@@ -2,10 +2,10 @@ import Lott
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
 
-nonterminal Kind, K :=
-  | "*"         : star
+nonterminal (tex pre := "\\targetpre", post := "\\targetpost") Kind, K :=
+  | "*"         : star (tex := "\\star")
   | K₁ " ↦ " K₂ : arr
-  | "L " K      : list
-  | "(" K ")"   : paren (expand := return K)
+  | "L " K      : list (tex := s!"\\lottkw\{L}^\{{K}}")
+  | "(" K ")"   : paren notex (expand := return K)
 
 end TabularTypeInterpreter.«F⊗⊕ω»

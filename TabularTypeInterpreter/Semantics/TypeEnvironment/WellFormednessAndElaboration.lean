@@ -1,4 +1,4 @@
-import TabularTypeInterpreter.Semantics.Type
+import TabularTypeInterpreter.Semantics.Type.KindingAndElaboration
 
 namespace TabularTypeInterpreter
 
@@ -6,7 +6,7 @@ open «F⊗⊕ω»
 
 judgement_syntax Γc " ⊢ " Γ " ⇝ " Δ : TypeEnvironment.WellFormednessAndElaboration
 
-judgement TypeEnvironment.WellFormednessAndElaboration :=
+judgement TypeEnvironment.WellFormednessAndElaboration where
 
 ────────── empty
 Γc ⊢ ε ⇝ ε

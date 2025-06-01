@@ -6,9 +6,19 @@ import TabularTypeInterpreter.RuleSets
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
 
+termonly
+def Type.TypeVar_multi_open (A : «Type») (a : Nat → TypeVarId) : Nat → «Type»
+  | 0 => A
+  | n + 1 => A.TypeVar_open (a n) n |>.TypeVar_multi_open a n
+
+termonly
+def Type.Type_multi_open (A : «Type») (B : Nat → «Type») : Nat → «Type»
+  | 0 => A
+  | n + 1 => A.Type_open (B n) n |>.Type_multi_open B n
+
 judgement_syntax Δ " ⊢ " A " : " K : Kinding
 
-judgement Kinding :=
+judgement Kinding where
 
 a : K ∈ Δ
 ───────── var
@@ -32,9 +42,9 @@ a : K ∈ Δ
 ───────────── arr
 Δ ⊢ A → B : *
 
-</ Δ ⊢ A@i : K // i in [:n] />
-────────────────────────────────── list
-Δ ⊢ {</ A@i // i in [:n] />} : L K
+</ Δ ⊢ A@i : K // i in [:n] notex />
+──────────────────────────────────────── list
+Δ ⊢ {</ A@i // i in [:n] notex />} : L K
 
 Δ ⊢ A : K₁ ↦ K₂
 Δ ⊢ B : L K₁
@@ -50,6 +60,7 @@ a : K ∈ Δ
 Δ ⊢ ⊕ A : *
 
 namespace Kinding
+
 @[app_unexpander Kinding]
 def delabK: Lean.PrettyPrinter.Unexpander
   | `($(_) $Δ $A $B) =>
@@ -58,32 +69,35 @@ def delabK: Lean.PrettyPrinter.Unexpander
     let colon := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info ":") }
     `([ $Δ $vdash $A $colon $B ])
   | _ => throw ()
+
 end Kinding
 
 judgement_syntax "lc_" T : TypeVarLC
 
+termonly
 @[simp]
 def TypeVarLC (T: «Type») := T.TypeVarLocallyClosed 0
 
 judgement_syntax "body" T : TypeVarBody
 
+termonly
 @[simp]
 def TypeVarBody (T: «Type») := T.TypeVarLocallyClosed 1
 
 judgement_syntax Δ " ⊢ " A " ≡ " B : TypeEquivalence
 
-judgement TypeEquivalence :=
+judgement TypeEquivalence where
 
 ───────── refl
 Δ ⊢ A ≡ A
 
 Δ ⊢ B: K
-───────────────────────── lamApp
-Δ ⊢ (λ a : K. A) B ≡ A^^B
+─────────────────────────── lamApp
+Δ ⊢ (λ a : K. A) B ≡ A^^B/a
 
 lc_ A   -- NOTE this is for preserve_lc when n = 0
 ───────────────────────────────────────────────────────────────── lamListApp
-Δ ⊢ A ⟦{ </ B@i // i in [:n] /> }⟧ ≡ { </ A B@i // i in [:n] /> }
+Δ ⊢ A ⟦{ </ B@i // i in [:n] notex /> }⟧ ≡ { </ A B@i // i in [:n] notex /> }
 
 Δ ⊢ A: L K
 ────────────────────────── listAppId
@@ -107,9 +121,9 @@ lc_ A   -- NOTE this is for preserve_lc when n = 0
 ───────────────────── arr
 Δ ⊢ A₁ → B₁ ≡ A₂ → B₂
 
-</ Δ ⊢ A@i ≡ B@i // i in [:n] />
-─────────────────────────────────────────────────────── list
-Δ ⊢ {</ A@i // i in [:n] />} ≡ {</ B@i // i in [:n] />}
+</ Δ ⊢ A@i ≡ B@i // i in [:n] notex />
+─────────────────────────────────────────────────────────────────── list
+Δ ⊢ {</ A@i // i in [:n] notex />} ≡ {</ B@i // i in [:n] notex />}
 
 Δ ⊢ A₁ ≡ A₂
 Δ ⊢ B₁ ≡ B₂
@@ -137,6 +151,10 @@ lc_ A₀
 ───────── trans
 Δ ⊢ A ≡ C
 
+judgement_syntax Δ " ⊢ " A " ≢ " B : TypeInequivalence
+
+judgement TypeInequivalence := fun Δ A B => ¬[[Δ ⊢ A ≡ B]]
+
 @[app_unexpander TypeEquivalence]
 def TypeEquivalence.delab: Lean.PrettyPrinter.Unexpander
   | `($(_) $Δ $A $B) =>
@@ -148,18 +166,18 @@ def TypeEquivalence.delab: Lean.PrettyPrinter.Unexpander
 
 judgement_syntax Δ " ⊢ " A " ≡ᵢ " B : TypeEquivalenceI
 
-judgement TypeEquivalenceI :=
+judgement TypeEquivalenceI where
 
 ────────── refl
 Δ ⊢ A ≡ᵢ A
 
 Δ ⊢ B: K
-───────────────────────── lamApp
-Δ ⊢ (λ a : K. A) B ≡ᵢ A^^B
+─────────────────────────── lamApp
+Δ ⊢ (λ a : K. A) B ≡ᵢ A^^B/a
 
 lc_ A   -- NOTE this is for preserve_lc when n = 0
 ───────────────────────────────────────────────────────────────── lamListApp
-Δ ⊢ A ⟦{ </ B@i // i in [:n] /> }⟧ ≡ᵢ { </ A B@i // i in [:n] /> }
+Δ ⊢ A ⟦{ </ B@i // i in [:n] notex /> }⟧ ≡ᵢ { </ A B@i // i in [:n] notex /> }
 
 Δ ⊢ A: L K
 ────────────────────────── listAppId
@@ -183,9 +201,9 @@ lc_ A   -- NOTE this is for preserve_lc when n = 0
 ───────────────────── arr
 Δ ⊢ A₁ → B₁ ≡ᵢ A₂ → B₂
 
-</ Δ ⊢ A@i ≡ᵢ B@i // i in [:n] />
+</ Δ ⊢ A@i ≡ᵢ B@i // i in [:n] notex />
 ─────────────────────────────────────────────────────── list
-Δ ⊢ {</ A@i // i in [:n] />} ≡ᵢ {</ B@i // i in [:n] />}
+Δ ⊢ {</ A@i // i in [:n] notex />} ≡ᵢ {</ B@i // i in [:n] notex />}
 
 Δ ⊢ A₁ ≡ᵢ A₂
 Δ ⊢ B₁ ≡ᵢ B₂
@@ -204,6 +222,7 @@ lc_ A₀
 ───────────── sum
 Δ ⊢ ⊕ A ≡ᵢ ⊕ B
 
+termonly
 @[app_unexpander TypeEquivalenceI]
 def TypeEquivalenceI.delab: Lean.PrettyPrinter.Unexpander
   | `($(_) $Δ $A $B) =>
@@ -215,7 +234,7 @@ def TypeEquivalenceI.delab: Lean.PrettyPrinter.Unexpander
 
 judgement_syntax Δ " ⊢ " A " ≡ₛ " B : TypeEquivalenceS
 
-judgement TypeEquivalenceS :=
+judgement TypeEquivalenceS where
 
 Δ ⊢ A ≡ᵢ B
 ────────── base
@@ -230,6 +249,7 @@ judgement TypeEquivalenceS :=
 ────────── trans
 Δ ⊢ A ≡ₛ C
 
+termonly
 @[app_unexpander TypeEquivalenceS]
 def TypeEquivalenceS.delab: Lean.PrettyPrinter.Unexpander
   | `($(_) $Δ $A $B) =>
@@ -241,7 +261,7 @@ def TypeEquivalenceS.delab: Lean.PrettyPrinter.Unexpander
 
 judgement_syntax Δ " ⊢ " A " ≡> " B : ParallelReduction
 
-judgement ParallelReduction :=
+judgement ParallelReduction where
 
 ───────── refl
 Δ ⊢ A ≡> A
@@ -250,13 +270,13 @@ judgement ParallelReduction :=
 ∀ a ∉ (I: List _), Δ, a : K ⊢ A^a ≡> A'^a
 Δ ⊢ B ≡> B'
 ────────────────────────────── lamApp
-Δ ⊢ (λ a : K. A) B ≡> A'^^B'
+Δ ⊢ (λ a : K. A) B ≡> A'^^B'/a
 
 Δ ⊢ A ≡> A'
-</ Δ ⊢ B@i ≡> B'@i // i in [:n] />
+</ Δ ⊢ B@i ≡> B'@i // i in [:n] notex />
 lc_ A   -- NOTE this is for preserve_lc when n = 0
 ──────────────────────────────────────────────────────────────────────────────── lamListApp
-Δ ⊢ A ⟦{ </ B@i // i in [:n] /> }⟧ ≡> { </ A' B'@i // i in [:n] /> }
+Δ ⊢ A ⟦{ </ B@i // i in [:n] notex /> }⟧ ≡> { </ A' B'@i // i in [:n] notex /> }
 
 Δ ⊢ A: L K
 Δ ⊢ A ≡> A'
@@ -281,9 +301,9 @@ lc_ A   -- NOTE this is for preserve_lc when n = 0
 ───────────────────── arr
 Δ ⊢ A₁ → B₁ ≡> A₂ → B₂
 
-</ Δ ⊢ A@i ≡> B@i // i in [:n] />
-──────────────────────────────────────────────────────────────────────────────── list
-Δ ⊢ { </ A@i // i in [:n] /> } ≡> { </ B@i // i in [:n] /> }
+</ Δ ⊢ A@i ≡> B@i // i in [:n] notex />
+──────────────────────────────────────────────────────────────────────── list
+Δ ⊢ { </ A@i // i in [:n] notex /> } ≡> { </ B@i // i in [:n] notex /> }
 
 Δ ⊢ A₁ ≡> A₂
 Δ ⊢ B₁ ≡> B₂
@@ -305,6 +325,7 @@ lc_ A₀
 ───────────── sum
 Δ ⊢ ⊕ A ≡> ⊕ B
 
+termonly
 @[app_unexpander ParallelReduction]
 def ParallelReduction.delabPRed: Lean.PrettyPrinter.Unexpander
   | `($(_) $Δ $A $B) =>
@@ -316,7 +337,7 @@ def ParallelReduction.delabPRed: Lean.PrettyPrinter.Unexpander
 
 judgement_syntax Δ " ⊢ " A " ≡>* " B : MultiParallelReduction
 
-judgement MultiParallelReduction :=
+judgement MultiParallelReduction where
 
 ───────── refl
 Δ ⊢ A ≡>* A
@@ -326,6 +347,7 @@ judgement MultiParallelReduction :=
 ────────────── step
 Δ ⊢ A ≡>* A''
 
+termonly
 @[app_unexpander MultiParallelReduction]
 def MultiParallelReduction.delabMPRed: Lean.PrettyPrinter.Unexpander
   | `($(_) $Δ $A $B) =>
@@ -335,11 +357,12 @@ def MultiParallelReduction.delabMPRed: Lean.PrettyPrinter.Unexpander
     `([ $Δ $vdash $A $into $B ])
   | _ => throw ()
 
+termonly
 def ParallelReduction.Multi_of (red: [[ Δ ⊢ A ≡> B ]]): [[ Δ ⊢ A ≡>* B ]] := .step red .refl
 
 judgement_syntax Δ " ⊢ " A " <≡>* " B : EqParallelReduction
 
-judgement EqParallelReduction :=
+judgement EqParallelReduction where
 
 ──────────── refl
 Δ ⊢ A <≡>* A
@@ -357,6 +380,7 @@ judgement EqParallelReduction :=
 ─────────────── trans
 Δ ⊢ A <≡>* A''
 
+termonly
 @[app_unexpander EqParallelReduction]
 def EqParallelReduction.delabMPRed: Lean.PrettyPrinter.Unexpander
   | `($(_) $Δ $A $B) =>
@@ -366,13 +390,16 @@ def EqParallelReduction.delabMPRed: Lean.PrettyPrinter.Unexpander
     `([ $Δ $vdash $A $into $B ])
   | _ => throw ()
 
+termonly
 def ParallelReduction.Equiv_of (red: [[ Δ ⊢ A ≡> B ]]): [[ Δ ⊢ A <≡>* B ]] := .step red
 
+termonly
 def MultiParallelReduction.Equiv_of (red: [[ Δ ⊢ A ≡>* B ]]): [[ Δ ⊢ A <≡>* B ]] := by
   induction red with
   | refl => exact .refl
   | step base _ ih => exact base.Equiv_of |>.trans ih
 
+termonly
 attribute [aesop unsafe simp constructors (rule_sets := [pred])] ParallelReduction MultiParallelReduction EqParallelReduction
 
 end TabularTypeInterpreter.«F⊗⊕ω»

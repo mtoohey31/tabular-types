@@ -737,7 +737,7 @@ theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ �
       have ⟨T, ih2⟩ := Std.Range.skolem <| λi iltn => ih2 i iltn wf (BB2 i iltn) (Bilc i iltn)
       refine ⟨[[ { </ T@i // i in [:n] /> } ]], .list λi iltn => ?_, .list λi iltn => ?_, .list λT Tin => ?_⟩
       . have ⟨B'T, B2T, T2ilc⟩ := ih2 i iltn
-        simp; rw [ [[ T@i ]].expand_app_id ]
+        rw [ [[ T@i ]].expand_app_id ]
         have B'kiK := BB' i iltn |>.preservation wf (BkiLK.inv_list i iltn)
         exact .lamApp (I := []) B'kiK (λa nin => .refl) B'T
       . have ⟨B'T, B2T, T2ilc⟩ := ih2 i iltn
@@ -774,7 +774,7 @@ theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ �
       have ⟨T, B'T, B2T, Tlc⟩ := ih wf (.list BB2) Blc
       have ⟨T, Teq, B2T⟩ := B2T.inv_list; rw [Teq] at B'T Tlc; clear Teq
       refine ⟨[[ { </ T@i // i in [:n] /> } ]], B'T, .list λ i iltn => ?_, Tlc⟩
-      . simp; rw [ [[ T@i ]].expand_app_id ]
+      . rw [ [[ T@i ]].expand_app_id ]
         have B2kiK := BB2 i iltn |>.preservation wf (BkiLK.inv_list i iltn)
         exact .lamApp (I := []) B2kiK (λa nin => .refl) (B2T i iltn)
     . case listAppId _ BB2 => exact ih wf BB2 Blc

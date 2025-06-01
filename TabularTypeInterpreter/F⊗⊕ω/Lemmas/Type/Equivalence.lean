@@ -338,21 +338,6 @@ theorem _root_.Std.Range.mem_zip_map_append_cons {f g : Nat → α}
     (xy.fst = x ∧ xy.snd = y) ∨
     (∃ j, m - (i + 1) < j ∧ j < m ∧ xy.fst = g j ∧ xy.snd = g j) := sorry
 
-open Std.Range in
-theorem _root_.Std.Range.map_eq_cons_of_lt (mltn : m < n) : [m:n].map f = f m :: [m+1:n].map f := by
-  rw [map, toList, if_pos mltn, List.map_cons, ← map]
-
-open Std.Range in
-theorem _root_.Std.Range.map_same_eq_nil : [n:n].map f = [] := by
-  rw [map, toList, if_neg <| Nat.not_lt_of_le Nat.le.refl, List.map_nil]
-
-open Std.Range in
-theorem _root_.Std.Range.map_eq_snoc_of_lt (mltn : m < n) : [m:n].map f = [m:n - 1].map f ++ [f (n - 1)] := by
-  let npos := Nat.lt_of_le_of_lt (Nat.zero_le _) mltn
-  rw [map, ← map_append (l := m) (m := n - 1) (n := n) (Nat.le_sub_one_of_lt mltn) (Nat.sub_le _ _),
-      ← map, ← map, map_eq_cons_of_lt <| Nat.sub_lt npos Nat.one_pos, Nat.sub_add_cancel npos,
-      map_same_eq_nil]
-
 open «Type» TypeVarLocallyClosed Environment in
 theorem TypeEquivalence.preserve_lc (h: [[ Δ ⊢ A ≡ B ]]): (A.TypeVarLocallyClosed → B.TypeVarLocallyClosed) ∧ (B.TypeVarLocallyClosed → A.TypeVarLocallyClosed) := by
   induction h
@@ -530,6 +515,101 @@ theorem TermVar_drop (equiv: [[ Δ, x: T, Δ'' ⊢ A ≡ B ]]): [[ Δ, Δ'' ⊢ 
     refine .scheme I (λ a nin => ?_)
     exact @ih a nin [[ Δ'', a: K ]] rfl
   all_goals aesop (add unsafe constructors TypeEquivalence, safe forward Kinding.TermVar_drop)
+
+local instance : Inhabited «Type» where
+  default := .list []
+
+theorem listAppEmptyL : [[Δ ⊢ A ⟦{ }⟧ ≡ { }]] := by
+  let B (i : Nat) := [[{ }]]
+  rw [← Std.Range.map_get!_eq (as := []), List.length_nil]
+  rw (occs := .pos [1]) [Std.Range.map_eq_of_eq_of_mem'' (by
+    intro i mem
+    show _ = B i
+    nomatch mem
+  )]
+  rw (occs := .pos [2]) [Std.Range.map_eq_of_eq_of_mem'' (by
+    intro i mem
+    show _ = [[A B@i]]
+    nomatch mem
+  )]
+  exact lamListApp sorry -- TODO require lc A
+
+theorem listAppEmptyR : [[Δ ⊢ { } ≡ A ⟦{ }⟧]] := by
+  let B (i : Nat) := [[{ }]]
+  rw [← Std.Range.map_get!_eq (as := []), List.length_nil]
+  rw (occs := .pos [1]) [Std.Range.map_eq_of_eq_of_mem'' (by
+    intro i mem
+    show _ = [[A B@i]]
+    nomatch mem
+  )]
+  rw (occs := .pos [2]) [Std.Range.map_eq_of_eq_of_mem'' (by
+    intro i mem
+    show _ = B i
+    nomatch mem
+  )]
+  exact symm <| lamListApp sorry -- TODO require lc A
+
+theorem listAppSingletonL : [[Δ ⊢ A ⟦{B}⟧ ≡ {A B}]] := by
+  let B' (i : Nat) := B
+  rw [← Std.Range.map_get!_eq (as := [_]), ← Std.Range.map_get!_eq (as := [ [[A B]]])]
+  rw (occs := .pos [1]) [Std.Range.map_eq_of_eq_of_mem'' (by
+    intro i mem
+    show _ = B' i
+    cases Nat.eq_of_le_of_lt_succ mem.lower mem.upper
+    dsimp [B']
+    rw [List.get!_cons_zero]
+  )]
+  rw (occs := .pos [2]) [Std.Range.map_eq_of_eq_of_mem'' (by
+    intro i mem
+    show _ = [[A B'@i]]
+    cases Nat.eq_of_le_of_lt_succ mem.lower mem.upper
+    dsimp [B']
+    rw [List.get!_cons_zero]
+  )]
+  exact lamListApp sorry -- TODO require lc A
+
+theorem listAppSingletonR : [[Δ ⊢ {A B} ≡ A ⟦{B}⟧]] := by
+  let B' (i : Nat) := B
+  rw [← Std.Range.map_get!_eq (as := [_]), ← Std.Range.map_get!_eq (as := [B])]
+  rw (occs := .pos [1]) [Std.Range.map_eq_of_eq_of_mem'' (by
+    intro i mem
+    show _ = [[A B'@i]]
+    cases Nat.eq_of_le_of_lt_succ mem.lower mem.upper
+    dsimp [B']
+    rw [List.get!_cons_zero]
+  )]
+  rw (occs := .pos [2]) [Std.Range.map_eq_of_eq_of_mem'' (by
+    intro i mem
+    show _ = B' i
+    cases Nat.eq_of_le_of_lt_succ mem.lower mem.upper
+    dsimp [B']
+    rw [List.get!_cons_zero]
+  )]
+  exact symm <| lamListApp sorry -- TODO require lc A
+
+theorem listSingleton (AequB : [[Δ ⊢ A ≡ B]]) : [[Δ ⊢ {A} ≡ {B}]] := by
+  let A' (i : Nat) := A
+  let B' (i : Nat) := B
+  rw [← Std.Range.map_get!_eq (as := [_]), List.length_singleton,
+      Std.Range.map_eq_of_eq_of_mem'' (by
+      intro i mem
+      show _ = A' i
+      cases Nat.eq_of_le_of_lt_succ mem.lower mem.upper
+      dsimp [A']
+      rw [List.get!_cons_zero]
+  ), ← Std.Range.map_get!_eq (as := [_]), List.length_singleton]
+  rw (occs := .pos [2]) [Std.Range.map_eq_of_eq_of_mem'' (by
+      intro i mem
+      show _ = B' i
+      cases Nat.eq_of_le_of_lt_succ mem.lower mem.upper
+      dsimp [B']
+      rw [List.get!_cons_zero]
+  )]
+  apply list
+  intro i mem
+  cases Nat.eq_of_le_of_lt_succ mem.lower mem.upper
+  dsimp [A', B']
+  exact AequB
 
 end TypeEquivalence
 

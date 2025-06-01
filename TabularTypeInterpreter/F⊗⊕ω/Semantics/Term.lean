@@ -4,9 +4,38 @@ import TabularTypeInterpreter.«F⊗⊕ω».Syntax.Value
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
 
+namespace Term
+
+termonly
+def multi_app (Es : List Term) (F : Term) : Term := match Es with
+  | [] => F
+  | E :: Es' => multi_app Es' <| E.app F
+
+termonly
+def TypeVar_multi_open (E : Term) (a : Nat → TypeVarId) : Nat → Term
+  | 0 => E
+  | n + 1 => E.TypeVar_open (a n) n |>.TypeVar_multi_open a n
+
+termonly
+def TermVar_multi_open (E : Term) (x : Nat → TermVarId) : Nat → Term
+  | 0 => E
+  | n + 1 => E.TermVar_open (x n) n |>.TermVar_multi_open x n
+
+termonly
+def Type_multi_open (E : Term) (A : Nat → «Type») : Nat → Term
+  | 0 => E
+  | n + 1 => E.Type_open (A n) n |>.Type_multi_open A n
+
+termonly
+def Term_multi_open (E : Term) (F : Nat → Term) : Nat → Term
+  | 0 => E
+  | n + 1 => E.Term_open (F n) n |>.Term_multi_open F n
+
+end Term
+
 judgement_syntax Δ " ⊢ " E " : " A : Typing
 
-judgement Typing :=
+judgement Typing where
 
 ⊢ Δ
 x : A ∈ Δ
@@ -29,40 +58,41 @@ x : A ∈ Δ
 Δ ⊢ E : ∀ a : K. A
 Δ ⊢ B : K
 ────────────────── typeApp
-Δ ⊢ E [B] : A^^B
+Δ ⊢ E [B] : A^^B/a
 
 ⊢ Δ
-</ Δ ⊢ E@i : A@i // i in [:n] />
-───────────────────────────────────────────────────────── prodIntro
-Δ ⊢ (</ E@i // i in [:n] />) : ⊗ {</ A@i // i in [:n] />}
+</ Δ ⊢ E@i : A@i // i in [:n] notex />
+───────────────────────────────────────────────────────────────────── prodIntro
+Δ ⊢ (</ E@i // i in [:n] notex />) : ⊗ {</ A@i // i in [:n] notex />}
 
-Δ ⊢ E : ⊗ {</ A@i // i in [:n'] />}
-n ∈ [0:n']
-─────────────────────────────────── prodElim
-Δ ⊢ π n E : A@n
+Δ ⊢ E : ⊗ {</ A@i // i in [:n] />}
+j ∈ [:n]
+────────────────────────────────── prodElim
+Δ ⊢ π j E : A@j
 
-n ∈ [0:n']
-Δ ⊢ E : A@n
-</ Δ ⊢ A@i : * // i in [:n'] />
-─────────────────────────────────────── sumIntro
-Δ ⊢ ι n E : ⊕ {</ A@i // i in [:n'] />}
+j ∈ [:n]
+Δ ⊢ E : A@j
+</ Δ ⊢ A@i : * // i in [:n] />
+────────────────────────────────────── sumIntro
+Δ ⊢ ι j E : ⊕ {</ A@i // i in [:n] />}
 
-Δ ⊢ E : ⊕ {</ A@i // i in [:n] />}
-</ Δ ⊢ F@i : A@i → B // i in [:n] />
+Δ ⊢ E : ⊕ {</ A@i // i in [:n] notex />}
+</ Δ ⊢ F@i : A@i → B // i in [:n] notex />
 Δ ⊢ B : *
-─────────────────────────────────────── sumElim
-Δ ⊢ case E {</ F@i // i in [:n] />} : B
+───────────────────────────────────────────── sumElim
+Δ ⊢ case E {</ F@i // i in [:n] notex />} : B
 
 Δ ⊢ E : A
 Δ ⊢ A ≡ B
 ───────── equiv
 Δ ⊢ E : B
 
+termonly
 attribute [app_unexpander Typing] Kinding.delabK
 
-judgement_syntax E " -> " F : OperationalSemantics
+judgement_syntax E " -> " F : OperationalSemantics (tex := s!"{E} \\, \\lottsym\{→} \\, {F}")
 
-judgement OperationalSemantics :=
+judgement OperationalSemantics where
 
 E -> E'
 ─────────── appL
@@ -72,43 +102,43 @@ F -> F'
 ─────────── appR
 V F -> V F'
 
-────────────────────── lamApp
-⦅λ x : A. E⦆ V -> E^^V
+──────────────────────── lamApp
+⦅λ x : A. E⦆ V -> E^^V/x
 
 E -> E'
 ─────────────── typeApp
 E [A] -> E' [A]
 
-──────────────────────── typeLamApp
-⦅Λ a : K. E⦆ [A] -> E^^A
+────────────────────────── typeLamApp
+⦅Λ a : K. E⦆ [A] -> E^^A/a
 
 E -> E'
-─────────────────────────────────────────────────────────────────────────────────────────────────────────── prodIntro
-(</ V@i // i in [:n] />, E, </ F@j // j in [:m] />) -> (</ V@i // i in [:n] />, E', </ F@j // j in [:m] />)
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── prodIntro
+(</ V@i // i in [:n] notex />, E, </ F@j // j in [:m] notex />) -> (</ V@i // i in [:n] notex />, E', </ F@j // j in [:m] notex />)
 
 E -> E'
 ───────────────────────────────────── prodElim
-π n E -> π n E'
+π i E -> π i E'
 
-n ∈ [0:n']
-──────────────────────────────────── prodElimIntro
-π n (</ V@i // i in [:n'] />) -> V@n
+j ∈ [:n]
+─────────────────────────────────── prodElimIntro
+π j (</ V@i // i in [:n] />) -> V@j
 
 E -> E'
 ─────────────── sumIntro
-ι n E -> ι n E'
+ι i E -> ι i E'
 
 E -> E'
-─────────────────────────────────────────────────────────────────── sumElimL
-case E {</ F@i // i in [:n] />} -> case E' {</ F@i // i in [:n] />}
+─────────────────────────────────────────────────────────────────────────────── sumElimL
+case E {</ F@i // i in [:n] notex />} -> case E' {</ F@i // i in [:n] notex />}
 
 E -> E'
-─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── sumElimR
-case V {</ V'@i // i in [:n] />, E, </ F@j // j in [:m] />} -> case V {</ V'@i // i in [:n] />, E', </ F@j // j in [:m] />}
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── sumElimR
+case V {</ V'@i // i in [:n] notex />, E, </ F@j // j in [:m] notex />} -> case V {</ V'@i // i in [:n] notex />, E', </ F@j // j in [:m] notex />}
 
-n ∈ [0:n']
-───────────────────────────────────────────────────── sumElimIntro
-case ι n V {</ V'@i // i in [:n'] />} -> V'@n V
+j ∈ [:n]
+────────────────────────────────────────────── sumElimIntro
+case ι j V {</ V'@i // i in [:n] />} -> V'@j V
 
 namespace OperationalSemantics
 

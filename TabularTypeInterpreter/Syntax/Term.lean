@@ -3,25 +3,26 @@ import TabularTypeInterpreter.Syntax.ClassEnvironment
 
 namespace TabularTypeInterpreter
 
-nonterminal Term, M, «N» :=
+nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") Term, M, «N» :=
   | x                                   : var
   | m                                   : member nosubst
   | "λ " x ". " M                       : lam (bind x in M)
   | M «N»                               : app
   | "let " x " : " σ " = " M " in " «N» : «let» (bind x in «N»)
-  | M " :' " σ                          : annot
+  | M " :' " σ                          : annot (tex := s!"{M} \\, \\lottsym\{:} \\, {σ}")
   | ℓ                                   : label nosubst
-  | "{" sepBy(M " ▹ " «N», ", ") "}"    : prod
+  | "{" M " ▹ " «N» "}"                 : prod
   | "[" M " ▹ " «N» "]"                 : sum
   | M "/" «N»                           : unlabel
   | "prj " M                            : prj
-  | M " ++ " «N»                        : concat
+  | M " ++ " «N»                        : concat (tex := s!"{M} \\doubleplus {«N»}")
   | "inj " M                            : inj
   | M " ▿ " «N»                         : elim
-  | "order " ρ M                        : order
-  | "ind " «λτ» ρ "; " M "; " «N»       : ind
+  | "ind " «λτ» ρ "; " M "; " «N»       : ind (tex := s!"\\lottkw\{ind} \\, {«λτ»} \\, {ρ} \\, {M} \\, {«N»}")
   | "splitₚ " «λτ» M                    : splitₚ
-  | "splitₛ " «λτ» M "; " «N»           : splitₛ
-  | "(" M ")"                           : paren (expand := return M)
+  | "splitₛ " «λτ» M "; " «N»           : splitₛ (tex := s!"\\lottkw\{splitₛ} \\, {«λτ»} \\, {M} \\, {«N»}")
+  | M "^^^" a "#" n                     : TypeVar_multi_open notex (id a) (expand := return .mkCApp `TabularTypeInterpreter.Term.TypeVar_multi_open #[M, a, n]) (tex := M)
+  | M "^^^" x "#" n                     : TermVar_multi_open notex (id x) (expand := return .mkCApp `TabularTypeInterpreter.Term.TermVar_multi_open #[M, x, n]) (tex := M)
+  | "(" M ")"                           : paren notex (expand := return M)
 
 end TabularTypeInterpreter

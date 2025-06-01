@@ -2,12 +2,12 @@ import Lott
 
 namespace TabularTypeInterpreter
 
-nonterminal Kind, κ :=
-  | "*"         : star
-  | κ₀ " ↦ " κ₁ : arr
+nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") Kind, κ :=
+  | "*"         : star (tex := "\\star")
   | "L"         : label
+  | "R" κ       : row (tex := s!"\\lottkw\{R}^\{{κ}}")
   | "U"         : comm
-  | "R" κ       : row
   | "C"         : constr
+  | κ₀ " ↦ " κ₁ : arr
 
 end TabularTypeInterpreter
