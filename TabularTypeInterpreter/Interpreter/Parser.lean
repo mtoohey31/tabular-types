@@ -444,11 +444,14 @@ def term (greedy unlabel := true) : TermM (Term true) := withErrorMessage "expec
   if !greedy then
     return M'
 
-  let M'' ← Array.foldl app M' <$> takeMany (~*> term false)
+  let M'' ← Array.foldl (fun M'' (isElim, M''') => if isElim then
+      M''.elim M'''
+    else
+      M''.app M''') M' <$> takeMany
+    (~*> Prod.mk <$> (Option.isSome <$> option? (string "\\/" <|> string "▿")) <**> term false)
 
   let tail := annot M'' <$> (~*> char ':' **> typeScheme)
     <|> concat M'' <$> (~*> string "++" **> term)
-    <|> elim M'' <$> (~*> (string "\\/" <|> string "▿") **> term)
     <|> cons M'' <$> (~*> string "::" **> term)
     <|> (.op · M'' ·) <$> (~*> op) <**> term
 
@@ -491,6 +494,8 @@ macro "#parse_term " input:str " to " expected:term : command =>
   (.varuvar 1)
   (lam (lam (concat (var 0)
     (prod (.cons (Term.annot (var 1) (Monotype.floor (.varuvar 2))) (nat 0) .nil))))) (prod .nil)
+#parse_term "a ▿ b c" to (var 0).elim (var 1) |>.app <| var 2
+#parse_term "a \\/ b c" to (var 0).elim (var 1) |>.app <| var 2
 #parse_term "splitₚ List nil" to splitₚ .list nil
 #parse_term "splitp List (fold)" to splitₚ .list fold
 #parse_term "splitₛ List range b" to splitₛ .list range (var 1)
