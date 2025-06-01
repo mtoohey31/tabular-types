@@ -12,7 +12,11 @@ private
 abbrev CoreM := SimpleParser Substring Char
 
 private
-def ws : CoreM Unit := dropMany <| tokenFilter [' ', '\n', '\r', '\t'].contains
+def comment : CoreM Unit := string "--" *> takeUntil (char '\n') anyToken *> pure ()
+
+private
+def ws : CoreM Unit := dropMany <|
+  tokenFilter [' ', '\n', '\r', '\t'].contains *> pure () <|> comment
 
 local
 infixl:60 " **> " => fun l r => l *> liftM ws *> r
