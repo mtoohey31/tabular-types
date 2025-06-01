@@ -273,6 +273,7 @@ inductive Typing : Term → TypeScheme → Type where
     Typing (op o M N) o.result
   | range : Typing range (Monotype.nat.arr (uvars := false) (list.app .nat))
   | str : Typing (str s) (Monotype.str (uvars := false))
+  | throw : Typing throw (Monotype.str (uvars := false).arr σ)
   | def : Typing («def» s) σ
 
 instance [Inhabited α] : Inhabited (Thunk α) where
@@ -319,6 +320,7 @@ def Typing.elab : Typing M σ → ReaderM (HashMap String (Thunk «λπι».Term
   | op M'ty Nty (o := o) => return .op o (← M'ty.elab) (← Nty.elab)
   | range => return .range
   | str (s := s) => return .str s
+  | throw => return .throw
   | «def» (s := s) => return (← read)[s]!.get
 
 end Term
@@ -371,6 +373,7 @@ def Value.delab (V : Value) (σ : Interpreter.TypeScheme) : Option Interpreter.T
   | .nat n => some <| .nat n
   | .range => some <| .range
   | .str s => some <| .str s
+  | .throw => some <| .throw
 termination_by sizeOf V.val
 
 end «λπι»

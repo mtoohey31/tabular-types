@@ -418,12 +418,13 @@ def term (greedy unlabel := true) : TermM (Term true) := withErrorMessage "expec
     <|> splitₚ <$> ((string "splitp" <|> string "splitₚ") **> monotype false) <**> term false
     <|> splitₛ <$> ((string "splits" <|> string "splitₛ") **> monotype false)
       <**> term false <**> term false
-    <|> (str ∘ String.mk ∘ Array.toList ∘ Prod.fst) <$>
-      (char '"' *> takeUntil (char '"') anyToken)
-    <|> Term.nat <$> (String.toNat! ∘ String.mk ∘ Array.toList) <$> takeMany1 numeric
     <|> string "nil" *> pure nil
     <|> string "fold" *> pure fold
+    <|> Term.nat <$> (String.toNat! ∘ String.mk ∘ Array.toList) <$> takeMany1 numeric
     <|> string "range" *> pure range
+    <|> (str ∘ String.mk ∘ Array.toList ∘ Prod.fst) <$>
+      (char '"' *> takeUntil (char '"') anyToken)
+    <|> string "throw" *> pure Term.throw
     -- TODO: This isn't actually the max... could probably make things more correct by erroring if
     -- any literals are larger and any computations produce something larger.
     <|> string "maxNat" *> pure (nat UInt64.size)

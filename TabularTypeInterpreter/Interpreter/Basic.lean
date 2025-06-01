@@ -292,6 +292,7 @@ inductive Term : (uvars : optParam Bool false) → Type where
   | op : Op → Term uvars → Term uvars → Term uvars
   | range : Term uvars
   | str : String → Term uvars
+  | throw : Term uvars
   | def : String → Term uvars
 deriving BEq
 
@@ -307,7 +308,7 @@ mutual
 @[simp]
 protected noncomputable
 def Term.sizeOf : Term uvars → Nat
-  | .var _ | .member _ | .label _ | .nil | .fold | .nat _ | .range | .str _ | .def _ => 1
+  | .var _ | .member _ | .label _ | .nil | .fold | .nat _ | .range | .str _ | .throw | .def _ => 1
   | .lam M | .prj M | .inj M => 1 + M.sizeOf
   | .app M N | .sum M N | .unlabel M N | .concat M N | .elim M N | .cons M N | .op _ M N =>
     1 + M.sizeOf + N.sizeOf
@@ -454,6 +455,7 @@ def toString (M : Term uvars) (table := false) : String := match M with
   | op o M' N => s!"{M'.toString} {o} {N.toString}"
   | range => "range"
   | str s => s.quote
+  | throw => "throw"
   | «def» s => s
 
 end

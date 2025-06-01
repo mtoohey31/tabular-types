@@ -41,6 +41,7 @@ inductive Term where
   | op : Op → Term → Term → Term
   | range
   | str : String → Term
+  | throw
 
 namespace Term
 
@@ -64,6 +65,7 @@ def shift (E : Term) (off := 1) (min := 0) : Term := match E with
   | op o E' F => op o (shift E' off min) (shift F off min)
   | range => range
   | str s => str s
+  | throw => throw
 
 end Term
 
@@ -79,6 +81,7 @@ inductive Value.Is : Term → Prop where
   | nat : Is (.nat n)
   | range : Is .range
   | str : Is (.str s)
+  | throw : Is .throw
 
 def Value.Is.decide : Decidable (Is E) := match E with
   | .var _ => isFalse nofun
@@ -105,6 +108,7 @@ def Value.Is.decide : Decidable (Is E) := match E with
       | .op .. => isFalse nofun
       | .range => isFalse nofun
       | .str _ => isFalse nofun
+      | .throw => isFalse nofun
     | .prodIntro _ => isFalse nofun
     | .prodElim .. => isFalse nofun
     | .sumIntro .. => isFalse nofun
@@ -118,6 +122,7 @@ def Value.Is.decide : Decidable (Is E) := match E with
     | .op .. => isFalse nofun
     | .range => isFalse nofun
     | .str _ => isFalse nofun
+    | .throw => isFalse nofun
   | .prodIntro E's => match E's with
     | [] => isTrue <| .prodIntro nofun
     | E' :: E's' => match decide (E := E') with
@@ -147,6 +152,7 @@ def Value.Is.decide : Decidable (Is E) := match E with
   | .op .. => isFalse nofun
   | .range => isTrue .range
   | .str _ => isTrue .str
+  | .throw => isTrue .throw
 
 instance : Decidable (Value.Is E) := Value.Is.decide
 
@@ -195,6 +201,9 @@ theorem Is.shift_preservation {min} (EIs : Is E) : Is (E.shift off min) := by
   | str =>
     rw [Term.shift]
     exact str
+  | throw =>
+    rw [Term.shift]
+    exact throw
 
 def unit : Value := ⟨.prodIntro [], .prodIntro nofun⟩
 
@@ -232,6 +241,7 @@ def «open» (E : Term) (V : Value) (n : Nat := 0) : Term := match E with
   | op o E' F => op o (E'.open V n) (F.open V n)
   | range => range
   | str s => str s
+  | throw => throw
 
 inductive eval.Error where
   | freeVar (n : Nat)
@@ -244,6 +254,8 @@ inductive eval.Error where
   | nonNatOperand
   | nonListFold
   | nonNatRange
+  | nonStringThrow
+  | throw (s : String)
 
 instance : ToString eval.Error where
   toString
@@ -258,7 +270,9 @@ instance : ToString eval.Error where
     | .nonLamSumElim => "sum elim contained non-lambda term"
     | .nonNatOperand => "non-nat term used as operand"
     | .nonListFold => "non-list term used as third argument for fold"
-    | .nonNatRange => "non-nat term used as first argument for range"
+    | .nonNatRange => "non-nat term used as argument for range"
+    | .nonStringThrow => "non-string term used as argument for throw"
+    | .throw s => s
 
 partial
 def eval (E : Term) : Except eval.Error Value := do match E with
@@ -281,6 +295,9 @@ def eval (E : Term) : Except eval.Error Value := do match E with
       let ⟨nat n, _⟩ := V | throw .nonNatRange
       return n.fold (init := (⟨nil, .nil⟩ : Value)) fun i _ V =>
         ⟨cons (.nat i) V, .cons .nat V.property⟩
+    | ⟨.throw, _⟩ =>
+      let ⟨.str Fs, _⟩ := V | throw .nonStringThrow
+      throw <| .throw Fs
     | _ => throw .nonLamApp
   | prodIntro Es =>
     let Vs ← Es.mapM eval
@@ -321,6 +338,9 @@ def eval (E : Term) : Except eval.Error Value := do match E with
     return o.fn En Fn
   | range => return ⟨range, .range⟩
   | str s => return ⟨str s, .str⟩
+  | .throw => return ⟨.throw, .throw⟩
+where
+  throw := MonadExcept.throw
 
 end Term
 
