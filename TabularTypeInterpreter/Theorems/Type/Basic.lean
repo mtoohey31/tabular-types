@@ -202,7 +202,7 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (�
           simp only [Term.TermVar_open, List.mapMem_eq_map, if_pos]
           rw [List.map_map, List.map_map, List.map_map, List.map_map, List.map_map,
               ← Range.map, ← Range.map]
-          apply Typing.equiv _ <| .prod <| .symm <| .lamListApp sorry -- TODO lc
+          apply Typing.equiv _ <| .prod <| .symm <| .lamListApp .var_free
           simp only [Function.comp, Term.TypeVar_open, Term.TermVar_open, if_pos]
           apply Typing.prodIntro _
           · intro i imem
@@ -214,7 +214,7 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (�
             apply Typing.prodElim _
               (Range.mem_of_mem_toList <| perm.mem_iff.mp <| List.get!_mem imem.upper)
               (A := fun i => .app (.var (.free a)) ((B' (p'.get! i)).TypeVar_open a))
-            apply Typing.equiv _ <| .prod <| .lamListApp sorry -- TODO lc
+            apply Typing.equiv _ <| .prod <| .lamListApp .var_free
             rw [Range.map, Range.map_eq_of_eq_of_mem <| by
               intro i imem
               show (A' i).TypeVar_open a = (B' (p'.get! i)).TypeVar_open a
@@ -270,14 +270,14 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (�
           rw [← Range.map_get!_eq (as := p'), length_eq', Range.map, List.zip_eq_zipWith,
               Range.map, List.zipWith_map_right, List.zipWith_self, List.map_map, List.map_map,
               List.map_map, List.map_map, List.map_map, ← Range.map, ← Range.map, ← Range.map]
-          apply Typing.sumElim <| .equiv (.var Δaxwf .head) <| .sum <| .lamListApp sorry -- TODO lc
+          apply Typing.sumElim <| .equiv (.var Δaxwf .head) <| .sum <| .lamListApp .var_free
           · intro i imem
             simp only [Function.comp, Type.TypeVar_open, Term.TypeVar_open, Term.TermVar_open,
                        if_pos]
             rw [if_neg nofun]
             exact .lam (I := x :: Δa.termVarDom) fun x' x'nin => by
               simp only [Term.TermVar_open, if_pos]
-              apply Typing.equiv _ <| .sum <| .symm <| .lamListApp sorry -- TODO lc
+              apply Typing.equiv _ <| .sum <| .symm <| .lamListApp .var_free
               let iltplen := imem.upper
               rw [← length_eq'] at iltplen
               apply Typing.sumIntro <| Range.mem_of_mem_toList <| perm'.mem_iff.mp <|
@@ -359,30 +359,44 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (�
     let Aki := ρ₀ke.soundness Γcw Γwe κe.row
     let Alc := Aki.TypeVarLocallyClosed_of
     exact ⟨
-      .equiv (.prod_id Δwf Aki) <| .scheme (I := []) fun a anin => by
+      .equiv (.prod_id Δwf Aki) <| .scheme (I := Δ.typeVarDom) fun a anin => by
         simp only [Type.TypeVar_open, if_pos]
         rw [List.mapMem_eq_map, List.mapMem_eq_map, Range.map, List.map_map, List.map_map,
             ← Range.map, ← Range.map]
-        apply TypeEquivalence.arr .refl <| .prod <| .trans _ <| .symm <| .lamListApp sorry -- TODO lc
-        apply TypeEquivalence.trans (.listApp .refl <| .lamListApp sorry) <| .trans (.lamListApp sorry) <| .list _  -- TODO lc
+        apply TypeEquivalence.arr .refl <| .prod <| .trans _ <| .symm <| .lamListApp .var_free
+        let .listApp A'lc _ := Alc
+        rw [← A'lc.TypeVar_open_id (a := a), Type.TypeVar_open] at A'lc
+        apply TypeEquivalence.trans (.listApp .refl <| .lamListApp A'lc) <|
+          .trans (.lamListApp .var_free) <| .list _
         intro i imem
         simp only [Function.comp]
-        apply TypeEquivalence.app .refl <| .trans (.lamApp sorry) _ -- TODO kinding
+        let Δawf := Δwf.typeVarExt anin (K := [[(K ↦ *)]])
+        let A''ki := τ₀ke i imem |>.soundness Γcw Γwe κ₀e |>.weakening Δawf
+          (Δ' := .typeExt .empty ..) (Δ'' := .empty)
+        rw [← A''ki.TypeVarLocallyClosed_of.TypeVar_open_id (a := a)] at A''ki
+        apply TypeEquivalence.app .refl <| .trans (.lamApp A''ki) _
         let .list A'opslc := ρ₁ke.soundness Γcw Γwe κe.row |>.TypeVarLocallyClosed_of
         let A''ilc := τ₀ke i imem |>.soundness Γcw Γwe κ₀e |>.TypeVarLocallyClosed_of
         rw [A''ilc.TypeVar_open_id, A'opslc (A'.Type_open (A'' i)) (Range.mem_map_of_mem imem)
               |>.weaken (n := 1) |>.Type_open_drop (n := 1) Nat.one_pos |>.TypeVar_open_id,
             A''ilc.Type_open_TypeVar_open_eq]
         exact .refl,
-     .equiv (.sum_id Δwf Aki) <| .scheme (I := []) fun a anin => by
+     .equiv (.sum_id Δwf Aki) <| .scheme (I := Δ.typeVarDom) fun a anin => by
         simp only [Type.TypeVar_open, if_pos]
         rw [List.mapMem_eq_map, List.mapMem_eq_map, Range.map, List.map_map, List.map_map,
             ← Range.map, ← Range.map]
-        apply TypeEquivalence.arr .refl <| .sum <| .trans _ <| .symm <| .lamListApp sorry   -- TODO lc
-        apply TypeEquivalence.trans (.listApp .refl <| .lamListApp sorry) <| .trans (.lamListApp sorry) <| .list _  -- TODO lc
+        apply TypeEquivalence.arr .refl <| .sum <| .trans _ <| .symm <| .lamListApp .var_free
+        let .listApp A'lc r := Alc
+        rw [← A'lc.TypeVar_open_id (a := a), Type.TypeVar_open] at A'lc
+        apply TypeEquivalence.trans (.listApp .refl <| .lamListApp A'lc) <|
+          .trans (.lamListApp .var_free) <| .list _
         intro i imem
         simp only [Function.comp]
-        apply TypeEquivalence.app .refl <| .trans (.lamApp sorry) _   -- TODO kinding
+        let Δawf := Δwf.typeVarExt anin (K := [[(K ↦ *)]])
+        let A''ki := τ₀ke i imem |>.soundness Γcw Γwe κ₀e |>.weakening Δawf
+          (Δ' := .typeExt .empty ..) (Δ'' := .empty)
+        rw [← A''ki.TypeVarLocallyClosed_of.TypeVar_open_id (a := a)] at A''ki
+        apply TypeEquivalence.app .refl <| .trans (.lamApp A''ki) _
         let .list A'opslc := ρ₁ke.soundness Γcw Γwe κe.row |>.TypeVarLocallyClosed_of
         let A''ilc := τ₀ke i imem |>.soundness Γcw Γwe κ₀e |>.TypeVarLocallyClosed_of
         rw [A''ilc.TypeVar_open_id, A'opslc (A'.Type_open (A'' i)) (Range.mem_map_of_mem imem)
@@ -416,30 +430,44 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (�
     let Aki := ρ₁ke.soundness Γcw Γwe κe.row
     let Alc := Aki.TypeVarLocallyClosed_of
     exact ⟨
-      .equiv (.prod_id Δwf Aki) <| .scheme (I := []) fun a anin => by
+      .equiv (.prod_id Δwf Aki) <| .scheme (I := Δ.typeVarDom) fun a anin => by
         simp only [Type.TypeVar_open, if_pos]
         rw [List.mapMem_eq_map, List.mapMem_eq_map, Range.map, List.map_map, List.map_map,
             ← Range.map, ← Range.map]
-        apply TypeEquivalence.arr (.prod <| .trans _ <| .symm <| .lamListApp sorry) .refl  -- TODO lc
-        apply TypeEquivalence.trans (.listApp .refl <| .lamListApp sorry) <| .trans (.lamListApp sorry) <| .list _  -- TODO lc
+        apply TypeEquivalence.arr (.prod <| .trans _ <| .symm <| .lamListApp .var_free) .refl
+        let .listApp A'lc r := Alc
+        rw [← A'lc.TypeVar_open_id (a := a), Type.TypeVar_open] at A'lc
+        apply TypeEquivalence.trans (.listApp .refl <| .lamListApp A'lc) <|
+          .trans (.lamListApp .var_free) <| .list _
         intro i imem
         simp only [Function.comp]
-        apply TypeEquivalence.app .refl <| .trans (.lamApp sorry) _   -- TODO kinding
+        let Δawf := Δwf.typeVarExt anin (K := [[(K ↦ *)]])
+        let A''ki := τ₀ke i imem |>.soundness Γcw Γwe κ₀e |>.weakening Δawf
+          (Δ' := .typeExt .empty ..) (Δ'' := .empty)
+        rw [← A''ki.TypeVarLocallyClosed_of.TypeVar_open_id (a := a)] at A''ki
+        apply TypeEquivalence.app .refl <| .trans (.lamApp A''ki) _
         let .list A'opslc := ρ₀ke.soundness Γcw Γwe κe.row |>.TypeVarLocallyClosed_of
         let A''ilc := τ₀ke i imem |>.soundness Γcw Γwe κ₀e |>.TypeVarLocallyClosed_of
         rw [A''ilc.TypeVar_open_id, A'opslc (A'.Type_open (A'' i)) (Range.mem_map_of_mem imem)
               |>.weaken (n := 1) |>.Type_open_drop (n := 1) Nat.one_pos |>.TypeVar_open_id,
             A''ilc.Type_open_TypeVar_open_eq]
         exact .refl,
-      .equiv (.sum_id Δwf Aki) <| .scheme (I := []) fun a anin => by
+      .equiv (.sum_id Δwf Aki) <| .scheme (I := Δ.typeVarDom) fun a anin => by
         simp only [Type.TypeVar_open, if_pos]
         rw [List.mapMem_eq_map, List.mapMem_eq_map, Range.map, List.map_map, List.map_map,
             ← Range.map, ← Range.map]
-        apply TypeEquivalence.arr (.sum <| .trans _ <| .symm <| .lamListApp sorry) .refl  -- TODO lc
-        apply TypeEquivalence.trans (.listApp .refl <| .lamListApp sorry) <| .trans (.lamListApp sorry) <| .list _  -- TODO lc
+        apply TypeEquivalence.arr (.sum <| .trans _ <| .symm <| .lamListApp .var_free) .refl
+        let .listApp A'lc r := Alc
+        rw [← A'lc.TypeVar_open_id (a := a), Type.TypeVar_open] at A'lc
+        apply TypeEquivalence.trans (.listApp .refl <| .lamListApp A'lc) <|
+          .trans (.lamListApp .var_free) <| .list _
         intro i imem
         simp only [Function.comp]
-        apply TypeEquivalence.app .refl <| .trans (.lamApp sorry) _   -- TODO kinding
+        let Δawf := Δwf.typeVarExt anin (K := [[(K ↦ *)]])
+        let A''ki := τ₀ke i imem |>.soundness Γcw Γwe κ₀e |>.weakening Δawf
+          (Δ' := .typeExt .empty ..) (Δ'' := .empty)
+        rw [← A''ki.TypeVarLocallyClosed_of.TypeVar_open_id (a := a)] at A''ki
+        apply TypeEquivalence.app .refl <| .trans (.lamApp A''ki) _
         let .list A'opslc := ρ₀ke.soundness Γcw Γwe κe.row |>.TypeVarLocallyClosed_of
         let A''ilc := τ₀ke i imem |>.soundness Γcw Γwe κ₀e |>.TypeVarLocallyClosed_of
         rw [A''ilc.TypeVar_open_id, A'opslc (A'.Type_open (A'' i)) (Range.mem_map_of_mem imem)
@@ -684,7 +712,9 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γcw : [[⊢c �
     simp only [Type.Type_open, if_pos] at this
     rw [ρ₀ke.soundness Γcw Γwe (.row .star) |>.TypeVarLocallyClosed_of.Type_open_id,
         ρ₁ke.soundness Γcw Γwe (.row .star) |>.TypeVarLocallyClosed_of.Type_open_id] at this
-    exact .equiv (this .id) <| .arr (.prod <| .listAppId sorry) (.prod <| .listAppId sorry)   -- TODO kinding
+    let A'ki := ρ₀ke.soundness Γcw Γwe <| .row .star
+    let A''ki := ρ₁ke.soundness Γcw Γwe <| .row .star
+    exact .equiv (this .id) <| .arr (.prod <| .listAppId A'ki) (.prod <| .listAppId A''ki)
   | sumRow ρ₀₁ee sumke =>
     let Alc := σ₀ke.soundness Γcw Γwe κe |>.TypeVarLocallyClosed_of
     let .sum _ ρ₀ke := σ₀ke
@@ -694,7 +724,9 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γcw : [[⊢c �
     simp only [Type.Type_open, if_pos] at this
     rw [ρ₀ke.soundness Γcw Γwe (.row .star) |>.TypeVarLocallyClosed_of.Type_open_id,
         ρ₁ke.soundness Γcw Γwe (.row .star) |>.TypeVarLocallyClosed_of.Type_open_id] at this
-    exact .equiv (this .id) <| .arr (.sum <| .listAppId sorry) (.sum <| .listAppId sorry)  -- TODO kinding
+    let A'ki := ρ₀ke.soundness Γcw Γwe <| .row .star
+    let A''ki := ρ₁ke.soundness Γcw Γwe <| .row .star
+    exact .equiv (this .id) <| .arr (.sum <| .listAppId A'ki) (.sum <| .listAppId A''ki)
   | decay σ₀ke' _ _ =>
     rename ProdOrSum => Ξ
     rcases σ₀ke.deterministic σ₀ke' with ⟨rfl, rfl⟩
