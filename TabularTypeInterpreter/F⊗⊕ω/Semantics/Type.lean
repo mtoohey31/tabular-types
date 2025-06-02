@@ -72,7 +72,7 @@ def delabK: Lean.PrettyPrinter.Unexpander
 
 end Kinding
 
-judgement_syntax "lc_" T : TypeVarLC
+judgement_syntax "lc_" T : TypeVarLC (tex := s!"\\lottkw\{lc}\\lottsym\{(}{T}\\lottsym\{)}")
 
 termonly
 @[simp]
