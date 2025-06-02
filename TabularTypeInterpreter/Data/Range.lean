@@ -68,4 +68,35 @@ decreasing_by
   apply Nat.sub_succ_lt_self
   assumption
 
+theorem mem_zip_map_append_cons {f g : Nat → α}
+  (mem : xy ∈ (([k:l].map f) ++ x :: [m:n].map g).zip (([k:l].map f) ++ y :: [m:n].map g))
+  : (∃ j ∈ [k:l], xy.fst = f j ∧ xy.snd = f j) ∨ (xy.fst = x ∧ xy.snd = y) ∨
+    (∃ j ∈ [m:n], xy.fst = g j ∧ xy.snd = g j) := by
+  rw [map, toList] at mem
+  split at mem
+  · case isTrue h =>
+    rw [List.map_cons, List.cons_append, List.cons_append, List.zip_cons_cons] at mem
+    cases mem with
+    | head => exact .inl ⟨k, ⟨Nat.le.refl, h, Nat.mod_one _⟩, rfl, rfl⟩
+    | tail _ mem' =>
+      rw [← map] at mem'
+      simp only at mem'
+      match mem_zip_map_append_cons mem' with
+      | .inl ⟨j, mem, eq⟩ =>
+        exact .inl ⟨j, ⟨Nat.le_of_succ_le mem.lower, mem.upper, Nat.mod_one _⟩, eq⟩
+      | .inr (.inl eq) => exact .inr <| .inl eq
+      | .inr (.inr h') => exact .inr <| .inr h'
+  · case isFalse h =>
+    rw [List.map_nil, List.nil_append, List.nil_append, List.zip_cons_cons] at mem
+    cases mem with
+    | head => simp
+    | tail _ mem' =>
+      let ⟨j, mem, eq⟩ := mem_zip_map mem'
+      exact .inr <| .inr ⟨j, mem, Prod.mk.inj eq⟩
+termination_by l - k
+decreasing_by
+  all_goals simp_arith
+  apply Nat.sub_succ_lt_self
+  assumption
+
 end Std.Range

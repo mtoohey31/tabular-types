@@ -331,13 +331,6 @@ theorem listApp (h1: [[ Δ ⊢ A ≡ₛ A' ]]) (h2: [[ Δ ⊢ B ≡ₛ B' ]]) : 
 
 end TypeEquivalenceS
 
--- TODO use upstream version after we upgrade to latest lott
-theorem _root_.Std.Range.mem_zip_map_append_cons {f g : Nat → α}
-  (h : xy ∈ (([:m - (i + 1)].map f) ++ x :: [m - i:m].map g).zip (([:m - (i + 1)].map f) ++ y :: [m - i:m].map g))
-  : (∃ j < m - (i + 1), xy.fst = f j ∧ xy.snd = f j) ∨
-    (xy.fst = x ∧ xy.snd = y) ∨
-    (∃ j, m - (i + 1) < j ∧ j < m ∧ xy.fst = g j ∧ xy.snd = g j) := sorry
-
 open «Type» TypeVarLocallyClosed Environment in
 theorem TypeEquivalence.preserve_lc (h: [[ Δ ⊢ A ≡ B ]]): (A.TypeVarLocallyClosed → B.TypeVarLocallyClosed) ∧ (B.TypeVarLocallyClosed → A.TypeVarLocallyClosed) := by
   induction h
@@ -455,25 +448,25 @@ theorem TypeEquivalence.TypeEquivalenceS_of (h: [[Δ ⊢ A ≡ B]]) (Alc: A.Type
       | base h =>
         refine .base <| .list' _ _ (by simp_all) (λ _ _ mem => ?_)
         match Std.Range.mem_zip_map_append_cons mem with
-        | .inl ⟨j, jlt, Aeq, Beq⟩ =>
+        | .inl ⟨_, _, Aeq, Beq⟩ =>
           subst Aeq Beq
           refine .refl
         | .inr (.inl ⟨Aeq, Beq⟩) =>
           subst Aeq Beq
           exact h
-        | .inr (.inr ⟨j, ltj, jlt, Aeq, Beq⟩) =>
+        | .inr (.inr ⟨_, _, Aeq, Beq⟩) =>
           subst Aeq Beq
           refine .refl
       | symm h =>
         refine .symm <| .list' _ _ (by simp_all) (λ _ _ mem => ?_)
         match Std.Range.mem_zip_map_append_cons mem with
-        | .inl ⟨j, jlt, Aeq, Beq⟩ =>
+        | .inl ⟨_, _, Aeq, Beq⟩ =>
           subst Aeq Beq
           refine .refl
         | .inr (.inl ⟨Aeq, Beq⟩) =>
           subst Aeq Beq
           exact h
-        | .inr (.inr ⟨j, ltj, jlt, Aeq, Beq⟩) =>
+        | .inr (.inr ⟨_, _, Aeq, Beq⟩) =>
           subst Aeq Beq
           refine .refl
       | trans h h' ih'' ih''' =>
