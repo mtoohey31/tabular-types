@@ -8,6 +8,9 @@ open TabularTypeInterpreter.Interpreter
 open _root_.Parser Char ASCII
 open Std
 
+-- TODO: Replace `SimpleParser` with `Parser` and custom error types, and replace `<|>` with first
+-- using a custom combine so that we can report better messages.
+
 private
 abbrev CoreM := SimpleParser Substring Char
 
