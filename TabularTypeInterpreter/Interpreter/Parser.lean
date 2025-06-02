@@ -53,18 +53,37 @@ def kind (greedy := true) : CoreM Kind := withErrorMessage "expected kind" do
   foldl arr κ <| ~*> (string "|->" <|> string "↦") **> kind
 
 private
-def assertResultEq [BEq α] [ToString α] (expected : α)
+def _root_.String.Pos.line (pos : String.Pos) (s : Substring) : Nat :=
+  s.extract s.startPos pos |>.foldl (fun n d => if d = '\n' then n + 1 else n) 1
+
+private
+def _root_.String.Pos.col (pos : String.Pos) (s : String) : Nat :=
+  s.extract (s.findLineStart pos) pos |>.length.succ
+
+private
+def _root_.String.Pos.lineAndCol (pos : String.Pos) (s : String) : String :=
+  s!"{pos.line s}:{pos.col s}"
+
+private
+def _root_.Parser.Error.Simple.toString (s : String) : Error.Simple Substring Char → String
+  | .unexpected pos (some tok) =>
+    s!"unexpected token {repr tok} at {String.Pos.lineAndCol pos s}"
+  | .unexpected pos none => s!"unexpected token at {String.Pos.lineAndCol pos s}"
+  | .addMessage e pos msg => e.toString s ++ s!"; {msg} at {String.Pos.lineAndCol pos s}"
+
+private
+def assertResultEq [BEq α] [ToString α] (input : String) (expected : α)
   (result : Parser.Result (Parser.Error.Simple Substring Char) Substring α)
   : Lean.Elab.TermElabM Unit :=
   match result with
   | .ok _ actual => do
     if expected != actual then
       throwError "× -- expected: {expected}, actual: {actual}"
-  | .error _ e => throwError "× -- {e}"
+  | .error _ e => throwError "× -- {e.toString input}"
 
 local
 macro "#parse_kind " input:str " to " expected:term : command =>
-  `(#eval assertResultEq (open Kind in $expected) ((kind <* endOfInput).run $input))
+  `(#eval assertResultEq $input (open Kind in $expected) ((kind <* endOfInput).run $input))
 
 #parse_kind "*" to star
 #parse_kind "* |-> L" to star.arr label
@@ -263,7 +282,7 @@ def typeScheme (inTerm : Bool) : TypeM (TypeScheme inTerm) :=
 
 local
 macro "#parse_type " input:str " to " expected:term : command =>
-  `(#eval assertResultEq (α := TypeScheme true)
+  `(#eval assertResultEq $input (α := TypeScheme true)
       (open TypeScheme in open QualifiedType in open Monotype in $expected)
       <| (typeScheme true <* endOfInput) $input { } {
           typeAliases := { "Option", "Bool" }
@@ -496,7 +515,7 @@ where
 
 local
 macro "#parse_term " input:str " to " expected:term : command =>
-  `(#eval assertResultEq (α := Term true) (open Term in $expected) <|
+  `(#eval assertResultEq $input (α := Term true) (open Term in $expected) <|
       (term <* endOfInput) $input { } {
           defs := { "map", "true" }
           classToMember := { ("Eq", "eq"), ("LE", "le") }
