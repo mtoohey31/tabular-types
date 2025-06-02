@@ -50,7 +50,7 @@ def kind (greedy := true) : CoreM Kind := withErrorMessage "expected kind" do
   if !greedy then
     return κ
 
-  optionD (default := κ) <| arr κ <$> (~*> (string "|->" <|> string "↦") **> kind)
+  foldl arr κ <| ~*> (string "|->" <|> string "↦") **> kind
 
 private
 def assertResultEq [BEq α] [ToString α] (expected : α)
@@ -224,7 +224,7 @@ def monotype (inTerm : Bool) (greedy := true) : TypeM (Monotype inTerm) :=
   if !greedy then
     return τ
 
-  let τ' ← Array.foldl app τ <$> takeMany (~*> go false)
+  let τ' ← foldl app τ <| ~*> go false
 
   let tail := arr τ' <$> (~*> (string "->" <|> string "→") **> go)
     <|> contain τ' <$> (~*> (string "~<" <|> string "≲") **> paren go) <**> go
@@ -473,16 +473,16 @@ def term (greedy unlabel := true) : TermM (Term true) := withErrorMessage "expec
   if !unlabel then
     return M
 
-  let M' ← Array.foldl Term.unlabel M <$> takeMany (~*> char '/' **> term false false)
+  let M' ← foldl Term.unlabel M <| ~*> char '/' **> term false false
 
   if !greedy then
     return M'
 
-  let M'' ← Array.foldl (fun M'' (isElim, M''') => if isElim then
+  let M'' ← foldl (fun M'' (isElim, M''') => if isElim then
       M''.elim M'''
     else
-      M''.app M''') M' <$> takeMany
-    (~*> Prod.mk <$> (Option.isSome <$> option? (string "\\/" <|> string "▿")) <**> term false)
+      M''.app M''') M' <|
+    ~*> Prod.mk <$> (Option.isSome <$> option? (string "\\/" <|> string "▿")) <**> term false
 
   let tail := annot M'' <$> (~*> char ':' **> typeScheme)
     <|> concat M'' <$> (~*> string "++" **> term)
