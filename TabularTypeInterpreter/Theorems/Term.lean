@@ -362,7 +362,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     simp [Type.Type_open] at this
     rw [ρ₀ke.soundness Γcw Γwe (.row .star) |>.TypeVarLocallyClosed_of.Type_open_id,
         ρ₁ke.soundness Γcw Γwe (.row .star) |>.TypeVarLocallyClosed_of.Type_open_id] at this
-    exact .equiv this <| .arr (.prod .listAppIdL) (.prod .listAppIdL)
+    exact .equiv this <| .arr (.prod <| .listAppId sorry) (.prod <| .listAppId sorry)   -- TODO lc
   | concat Mte Nte concatce Mih Nih =>
     let ⟨_, prod₀ke⟩ := Mte.to_Kinding Γᵢw Γcw Γwe
     let ⟨_, prod₁ke⟩ := Nte.to_Kinding Γᵢw Γcw Γwe
@@ -383,7 +383,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     rw [ρ₀ke.soundness Γcw Γwe (.row .star) |>.TypeVarLocallyClosed_of.Type_open_id,
         ρ₁ke.soundness Γcw Γwe (.row .star) |>.TypeVarLocallyClosed_of.Type_open_id,
         ρ₂ke.soundness Γcw Γwe (.row .star) |>.TypeVarLocallyClosed_of.Type_open_id] at this
-    exact .equiv this <| .arr (.prod .listAppIdL) (.arr (.prod .listAppIdL) (.prod .listAppIdL))
+    exact .equiv this <| .arr (.prod <| .listAppId sorry) (.arr (.prod <| .listAppId sorry) (.prod <| .listAppId sorry))  -- TODO lc
   | «inj» Mte containce Mih =>
     let ⟨_, sumke@(.sum μke ρ₀ke)⟩ := Mte.to_Kinding Γᵢw Γcw Γwe
     apply Typing.app _ <| Mih sumke Γᵢw Γcw Γwe
@@ -397,7 +397,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     simp [Type.Type_open] at this
     rw [ρ₀ke.soundness Γcw Γwe (.row .star) |>.TypeVarLocallyClosed_of.Type_open_id,
         ρ₁ke.soundness Γcw Γwe (.row .star) |>.TypeVarLocallyClosed_of.Type_open_id] at this
-    exact .equiv this <| .arr (.sum .listAppIdL) (.sum .listAppIdL)
+    exact .equiv this <| .arr (.sum <| .listAppId sorry) (.sum <| .listAppId sorry)   -- TODO lc
   | elim Mte Nte concatce τke Mih Nih =>
     let ⟨_, arr₀ke⟩ := Mte.to_Kinding Γᵢw Γcw Γwe
     let ⟨_, arr₁ke⟩ := Nte.to_Kinding Γᵢw Γcw Γwe
@@ -426,8 +426,8 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     have := this.typeApp <| τke.soundness Γcw Γwe .star
     simp [Type.Type_open] at this
     rw [A₀lc.Type_open_id, A₁lc.Type_open_id, A₂lc.Type_open_id] at this
-    exact .equiv this <| .arr (.arr (.sum .listAppIdL) .refl) <|
-      .arr (.arr (.sum .listAppIdL) .refl) <| .arr (.sum .listAppIdL) .refl
+    exact .equiv this <| .arr (.arr (.sum <| .listAppId sorry) .refl) <|
+      .arr (.arr (.sum <| .listAppId sorry) .refl) <| .arr (.sum <| .listAppId sorry) .refl   -- TODO lc
   | sub Mte τse ih =>
     let ⟨_, τ₀ke⟩ := Mte.to_Kinding Γᵢw Γcw Γwe
     let ⟨_, _, _, τ₀ke', τ₁ke⟩ := τse.to_Kinding Γcw Γwe
@@ -484,7 +484,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
       τke a aninI |>.soundness Γcw (Γwe.typeExt aninΓ κe.row) .star
     simp [Type.Type_open] at this
     rw [ρke.soundness Γcw Γwe κe.row |>.TypeVarLocallyClosed_of.Type_open_id] at this
-    apply Typing.app <| this.equiv <| .arr .refl <| .arr .lamAppL .lamAppL
+    apply Typing.app <| this.equiv <| .arr .refl <| .arr (.lamApp sorry) (.lamApp sorry) -- TODO kinding
     apply Typing.typeLam <| Γ.typeVarDom ++ I₀ ++ Iₛ
     intro aₗ aₗnin
     let ⟨aₗninΓI₀, aₗninIₛ⟩ := List.not_mem_append'.mp aₗnin
@@ -520,7 +520,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     let Γaₗₜₚᵢwe := Γwe.typeExt aₗninΓ .label |>.typeExt aₜninΓ κe |>.typeExt aₚninΓ κe.row
       |>.typeExt aᵢninΓ κe.row
     let Γaₗₜₚᵢₙwe := Γaₗₜₚᵢwe.typeExt aₙninΓ κe.row
-    apply Typing.equiv _ <| .arr .refl <| .arr .refl <| .arr .refl <| .arr .lamAppR .lamAppR
+    apply Typing.equiv _ <| .arr .refl <| .arr .refl <| .arr .refl <| .arr (.symm <| .lamApp sorry) (.symm <| .lamApp sorry)  -- TODO kinding
     apply Mih _ aₗninIₛ _ aₜninIₛ _ aₚninIₛ _ aᵢninIₛ _ aₙninIₛ _ Γᵢw Γcw Γaₗₜₚᵢₙwe
     open TypeScheme.KindingAndElaboration in
     let keBₗ' := keBₗ _ aₗninI₀ _ aₜninI₀ _ aₚninI₀ _ aᵢninI₀
@@ -633,7 +633,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
       rw [List.get!_cons_zero] at τ'ke'
       simp only at τ'ke'
       rw [And.right <| τ'ke'.deterministic <| .prod .comm liftke]
-      exact .equiv this <| .arr (.prod .listAppIdL) <| .prod .listAppIdL
+      exact .equiv this <| .arr (.prod <| .listAppId sorry) <| .prod <| .listAppId sorry  -- TODO lc
     · case tail mem' =>
       cases mem'
       case tail mem'' => nomatch mem''
@@ -663,7 +663,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
       rw [List.get!_cons_succ, List.get!_cons_zero] at τ'ke'
       simp only at τ'ke'
       rw [And.right <| τ'ke'.deterministic <| .prod .comm ρ₁ke]
-      exact .equiv this <| .arr (.prod .listAppIdL) <| .prod .listAppIdL
+      exact .equiv this <| .arr (.prod <| .listAppId sorry) <| .prod <| .listAppId sorry  -- TODO lc
   | splitS Mte Nte splitce τ₁ke Mih Nih =>
     let ⟨_, arr₁ke@(.arr sum₁ke τ₁ke')⟩ := Nte.to_Kinding Γᵢw Γcw Γwe
     rcases τ₁ke.deterministic τ₁ke' with ⟨_, rfl⟩
@@ -698,8 +698,8 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     have := this.typeApp (τ₁ke.soundness Γcw Γwe .star)
     simp [Type.Type_open] at this
     rw [A₀lc.Type_open_id, A₁lc.Type_open_id, A₂lc.Type_open_id] at this
-    exact .equiv this <| .arr (.arr (.sum .listAppIdL) .refl) <|
-      .arr (.arr (.sum .listAppIdL) .refl) <| .arr (.sum .listAppIdL) .refl
+    exact .equiv this <| .arr (.arr (.sum <| .listAppId sorry) .refl) <|
+      .arr (.arr (.sum <| .listAppId sorry) .refl) <| .arr (.sum <| .listAppId sorry) .refl   -- TODO lc
 
 end Term.TypingAndElaboration
 

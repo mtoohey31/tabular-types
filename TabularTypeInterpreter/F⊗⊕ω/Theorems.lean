@@ -66,8 +66,8 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
       | .inr FIsValue =>
         let VE' : Value := ⟨E', E'IsValue⟩
         have : E' = VE'.1 := rfl
-        have A'Blc := E'tyA'arrB.Type_TypeVarLocallyClosed_of
-        have ⟨_, _, VE'eq⟩ := VE'.canonical_form_of_arr E'tyA'arrB E'tyA'arrB.Type_TypeVarLocallyClosed_of
+        have A'Blc := E'tyA'arrB.TypeVarLocallyClosed_of
+        have ⟨_, _, VE'eq⟩ := VE'.canonical_form_of_arr E'tyA'arrB E'tyA'arrB.TypeVarLocallyClosed_of
         rw [this, VE'eq]
         exact .inl <| .intro _ <| .lamApp (V := ⟨F, FIsValue⟩)
   · case typeLam => exact .inr .typeLam
@@ -76,7 +76,7 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
     | .inr E'IsValue =>
       let V : Value := ⟨E', E'IsValue⟩
       have : E' = V.1 := rfl
-      have ⟨_, _, Veq⟩ := V.canonical_form_of_forall E'ty E'ty.Type_TypeVarLocallyClosed_of
+      have ⟨_, _, Veq⟩ := V.canonical_form_of_forall E'ty E'ty.TypeVarLocallyClosed_of
       rw [this, Veq]
       exact .inl <| .intro _ <| .typeLamApp
   · case prodIntro n E' A wf E'ty ih => match progress.fold E'ty (fun i mem => ih i mem rfl) with
@@ -101,7 +101,7 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
     | .inr E'IsValue =>
       let V : Value := ⟨E', E'IsValue⟩
       have : E' = V.1 := rfl
-      have ⟨_, Veq⟩ := V.canonical_form_of_prod E'ty E'ty.Type_TypeVarLocallyClosed_of
+      have ⟨_, Veq⟩ := V.canonical_form_of_prod E'ty E'ty.TypeVarLocallyClosed_of
       rw [this, Veq]
       exact .inl <| .intro _ <| .prodElimIntro mem
   · case sumIntro ih => match ih rfl with
@@ -111,7 +111,7 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
     | .inl ⟨E'', E'toE''⟩ => exact .inl <| .intro _ <| .sumElimL E'toE''
     | .inr E'IsValue =>
       let VE' : Value := ⟨E', E'IsValue⟩
-      have ⟨n', mem, VE'', VE'_eq⟩ := VE'.canonical_form_of_sum E'ty E'ty.Type_TypeVarLocallyClosed_of
+      have ⟨n', mem, VE'', VE'_eq⟩ := VE'.canonical_form_of_sum E'ty E'ty.TypeVarLocallyClosed_of
       cases VE'_eq
       match progress.fold Fty (fun i mem => ih₂ i mem rfl) with
       | .inl ⟨j, ⟨_, jltn, _⟩, IsValue, F', toF'⟩ =>
@@ -222,7 +222,7 @@ theorem weakening_r' (EtyT: [[ Δ, Δ'' ⊢ E: T ]]) (wf: [[ ⊢ Δ, Δ', Δ'' ]
     exact wf.append_typeVar_fresh_l a (by simp_all [typeVarDom_append])
   case equiv Δ_ E T T' EtyT equiv ih =>
     subst Δ_
-    refine .equiv (ih wf rfl) (equiv.weakening EtyT.Type_TypeVarLocallyClosed_of EtyT.WellFormedness_of wf)
+    refine .equiv (ih wf rfl) (equiv.weakening EtyT.TypeVarLocallyClosed_of EtyT.WellFormedness_of wf)
 
   all_goals aesop (add unsafe constructors Typing) (config := { enableSimp := false })
 
@@ -274,7 +274,7 @@ theorem term_subst' (EtyA: [[ Δ, x: T, Δ' ⊢ E: A ]]) (FtyT : [[ Δ ⊢ F: T 
   . case typeLam Δ_ K E A I EtyA ih =>
     subst Δ_
     refine .typeLam (I := x :: (I ++ F.freeTypeVars)) (λ a' a'nin => ?_)
-    rw [<- FtyT.TypeVarLocallyClosed_of.TermVar_open_TypeVar_subst_comm]
+    rw [<- FtyT.TermTypeVarLocallyClosed_of.TermVar_open_TypeVar_subst_comm]
     exact ih a' (by simp_all) (by rw [Environment.append_typeExt_assoc])
   . case typeApp Δ_ E K A B EtyA BkiK ih =>
     subst Δ_
@@ -398,7 +398,7 @@ theorem type_subst' (EtyA: [[ Δ, a: K, Δ' ⊢ E: A ]]) (BkiK : [[ Δ ⊢ B: K 
     exact .sumElim (n := n) (by unfold Function.comp at ih1; simp_all) (λ x xin => ih2 x xin rfl) (B'kiStar.subst' EtyA.WellFormedness_of BkiK)
   . case equiv Δ_ E A A' EtyA equiv ih =>
     subst Δ_
-    refine .equiv (ih rfl) (equiv.subst' EtyA.Type_TypeVarLocallyClosed_of EtyA.WellFormedness_of BkiK)
+    refine .equiv (ih rfl) (equiv.subst' EtyA.TypeVarLocallyClosed_of EtyA.WellFormedness_of BkiK)
 
 theorem type_subst (EtyA: [[ Δ, a: K ⊢ E: A ]]) (BkiK : [[ Δ ⊢ B: K ]]): [[ Δ ⊢ E[B/a] : A[B/a] ]] :=
   Typing.type_subst' (Δ' := [[ ε ]]) EtyA BkiK

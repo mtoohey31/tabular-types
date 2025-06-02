@@ -604,7 +604,7 @@ theorem Δext_TypeVarLocallyClosed_of' (EtyA : [[Δ, x: T, Δ' ⊢ E : A]]) : T.
 theorem Δext_TypeVarLocallyClosed_of (EtyA : [[Δ, x: T ⊢ E : A]]) : T.TypeVarLocallyClosed :=
   EtyA.Δext_TypeVarLocallyClosed_of' (Δ' := .empty)
 
-theorem Type_TypeVarLocallyClosed_of (EtyA : [[Δ ⊢ E : A]]) : A.TypeVarLocallyClosed 0 := by
+theorem TypeVarLocallyClosed_of (EtyA : [[Δ ⊢ E : A]]) : A.TypeVarLocallyClosed 0 := by
   induction EtyA
   . case var Δ x A wf In =>
     induction In <;> (try cases wf; simp_all)
@@ -649,34 +649,6 @@ theorem Type_TypeVarLocallyClosed_of (EtyA : [[Δ ⊢ E : A]]) : A.TypeVarLocall
     exact Bki.TypeVarLocallyClosed_of
   . case equiv Δ E A B EtyA eqAB ih =>
     exact eqAB.preserve_lc.1 ih
-
-theorem TypeVarLocallyClosed_of (EtyA : [[Δ ⊢ E : A]]) : E.TypeVarLocallyClosed := by
-  induction EtyA with
-  | var _ _ => exact .var
-  | lam I ihTy ihLc =>
-    let ⟨x, xnin⟩ := I.exists_fresh
-    exact .lam
-      (ihTy x xnin |>.Δext_TypeVarLocallyClosed_of)
-      (ihLc x xnin |>.TermVar_open_drop)
-  | app _ _ ih₀ ih₁ => exact .app ih₀ ih₁
-  | typeLam I _ ih =>
-    let ⟨x, xnin⟩ := I.exists_fresh
-    exact .typeLam <| ih x xnin |>.weaken.TypeVar_open_drop Nat.one_pos
-  | typeApp _ BkiK ih =>
-    refine .typeApp ih BkiK.TypeVarLocallyClosed_of
-  | prodIntro _ _ ih =>
-    exact .prodIntro fun E mem => by
-      let ⟨i, mem', eq⟩ := Std.Range.mem_of_mem_map mem
-      cases eq
-      exact ih i mem'
-  | prodElim _ _ ih => exact .prodElim ih
-  | sumIntro _ _ _ ih => exact .sumIntro ih
-  | sumElim _ _ _ ih₀ ih₁ =>
-    exact .sumElim ih₀ fun i mem => by
-      let ⟨i, mem', eq⟩ := Std.Range.mem_of_mem_map mem
-      cases eq
-      exact ih₁ i mem'
-  | equiv Ety' _ ih => exact ih
 
 theorem TermTypeVarLocallyClosed_of (EtyA : [[Δ ⊢ E : A]]) : E.TypeVarLocallyClosed := by
   induction EtyA with
@@ -754,7 +726,7 @@ theorem weakening (h: [[Δ, Δ'' ⊢ E : A]]) (wf: [[⊢ Δ, Δ', Δ'']]): [[Δ,
     exact .sumIntro iltn (ih wf rfl) (λ i' i'ltn => AkiStar i' i'ltn |>.weakening wf)
   case equiv E A B h AB ih =>
     have EtyA := ih wf rfl
-    refine EtyA.equiv <| AB.weakening EtyA.Type_TypeVarLocallyClosed_of h.WellFormedness_of wf
+    refine EtyA.equiv <| AB.weakening EtyA.TypeVarLocallyClosed_of h.WellFormedness_of wf
   all_goals try aesop (add safe constructors Kinding, unsafe constructors Typing, safe forward Kinding.weakening) (config := { enableSimp := false }); done
 
 open Environment in
@@ -767,7 +739,7 @@ theorem inv_arr' (Ety: [[Δ ⊢ λ x? : T. E : C ]]) (eqC: [[ Δ ⊢ C ≡ A →
       have ⟨x, xnin⟩ := I.exists_fresh
       have EtyB' := EtyB' x xnin
       have ⟨wf, AkiStar⟩ := match EtyB'.WellFormedness_of with | .termVarExt wf _ AkiStar => And.intro wf AkiStar
-      have B'lc := EtyB'.Type_TypeVarLocallyClosed_of
+      have B'lc := EtyB'.TypeVarLocallyClosed_of
       have Tlc := EtyB'.Δext_TypeVarLocallyClosed_of
       have TB'lc := Tlc.arr B'lc
       And.intro wf (And.intro AkiStar TB'lc)
@@ -799,7 +771,7 @@ theorem inv_forall' (Ety: [[Δ ⊢ Λ a? : K. E : T ]]) (eqT: [[ Δ ⊢ T ≡ �
       have ⟨a, nin⟩ := (I ++ A'.freeTypeVars).exists_fresh
       have EtyA' := EtyA' a (by simp_all)
       have wf := match EtyA'.WellFormedness_of with | .typeVarExt wf _ => wf
-      have A'lc := EtyA'.Type_TypeVarLocallyClosed_of |>.TypeVar_close_inc (a := a)
+      have A'lc := EtyA'.TypeVarLocallyClosed_of |>.TypeVar_close_inc (a := a)
       have A'lc: A'.TypeVarLocallyClosed 1 := (by
         rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars (by simp_all)] at A'lc
         exact A'lc
@@ -827,7 +799,7 @@ theorem inv_prod' (Ety: [[ Δ ⊢ (</ E@i // i in [:n] />) : T ]]) (eqT: [[ Δ �
     have ⟨eqn'n, eAA_⟩ := eqT.EqParallelReduction_of (by
       refine .prod (.list λ T Tin => ?_)
       have ⟨i, iltn, Teq⟩ := Std.Range.mem_of_mem_map Tin; subst Teq
-      exact EtyA i iltn |>.Type_TypeVarLocallyClosed_of
+      exact EtyA i iltn |>.TypeVarLocallyClosed_of
     ) wf |>.sym.inv_prod wf Alc |>.inv_list wf Alc'
     subst n'
     refine ⟨rfl, λ x xin => ?_⟩
@@ -835,7 +807,7 @@ theorem inv_prod' (Ety: [[ Δ ⊢ (</ E@i // i in [:n] />) : T ]]) (eqT: [[ Δ �
     exact .equiv (EtyA x xin) <| eAA_ x xin |>.sym.TypeEquivalence_of wf
   . case equiv.refl _ _ _ eqA'B' _ ih => exact ih (eqA'B'.trans eqT) rfl
 
-theorem inv_prod (Ety: [[ Δ ⊢ (</ E@i // i in [:n] />) : ⊗ {</ A@i // i in [:n'] />} ]]) : n = n' ∧ [[ </ Δ ⊢ E@i : A@i // i in [:n] /> ]] := Ety.inv_prod' .refl Ety.Type_TypeVarLocallyClosed_of
+theorem inv_prod (Ety: [[ Δ ⊢ (</ E@i // i in [:n] />) : ⊗ {</ A@i // i in [:n'] />} ]]) : n = n' ∧ [[ </ Δ ⊢ E@i : A@i // i in [:n] /> ]] := Ety.inv_prod' .refl Ety.TypeVarLocallyClosed_of
 
 -- NOTE I believe this stronger version holds but idk how to prove it. For details, check the notes.
 -- theorem inv_sum' (Ety: [[ Δ ⊢ ι n E : T ]]) (eqT: [[ Δ ⊢ T ≡ ⊕ {</ A@i // i in [:n'] />} ]]) (Alc: [[ ⊕ {</ A@i // i in [:n'] />} ]].TypeVarLocallyClosed) : n ∈ [0:n'] ∧ [[ Δ ⊢ E : A@n ]] ∧ [[ </ Δ ⊢ A@i : * // i in [:n'] /> ]] := by
@@ -873,7 +845,7 @@ theorem inv_sum' (Ety: [[ Δ ⊢ ι n E : T ]]) (eqT: [[ Δ ⊢ T ≡ ⊕ {</ A@
     exact ⟨nin, .equiv EtyA' <| eAA' n nin |>.sym.TypeEquivalence_of wf⟩
   . case equiv.refl _ _ _ eqA'B' _ ih => exact ih (eqA'B'.trans eqT) rfl
 
-theorem inv_sum (Ety: [[ Δ ⊢ ι n E : ⊕ {</ A@i // i in [:n'] />} ]]) : n ∈ [0:n'] ∧ [[ Δ ⊢ E : A@n ]] := Ety.inv_sum' .refl Ety.Type_TypeVarLocallyClosed_of
+theorem inv_sum (Ety: [[ Δ ⊢ ι n E : ⊕ {</ A@i // i in [:n'] />} ]]) : n ∈ [0:n'] ∧ [[ Δ ⊢ E : A@n ]] := Ety.inv_sum' .refl Ety.TypeVarLocallyClosed_of
 
 end Typing
 

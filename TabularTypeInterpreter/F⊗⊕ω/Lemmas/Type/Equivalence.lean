@@ -519,7 +519,7 @@ theorem TermVar_drop (equiv: [[ Δ, x: T, Δ'' ⊢ A ≡ B ]]): [[ Δ, Δ'' ⊢ 
 local instance : Inhabited «Type» where
   default := .list []
 
-theorem listAppEmptyL : [[Δ ⊢ A ⟦{ }⟧ ≡ { }]] := by
+theorem listAppEmptyL (Alc : A.TypeVarLocallyClosed) : [[Δ ⊢ A ⟦{ }⟧ ≡ { }]] := by
   let B (i : Nat) := [[{ }]]
   rw [← Std.Range.map_get!_eq (as := []), List.length_nil]
   rw (occs := .pos [1]) [Std.Range.map_eq_of_eq_of_mem'' (by
@@ -532,9 +532,9 @@ theorem listAppEmptyL : [[Δ ⊢ A ⟦{ }⟧ ≡ { }]] := by
     show _ = [[A B@i]]
     nomatch mem
   )]
-  exact lamListApp sorry -- TODO require lc A
+  exact lamListApp Alc
 
-theorem listAppEmptyR : [[Δ ⊢ { } ≡ A ⟦{ }⟧]] := by
+theorem listAppEmptyR (Alc : A.TypeVarLocallyClosed) : [[Δ ⊢ { } ≡ A ⟦{ }⟧]] := by
   let B (i : Nat) := [[{ }]]
   rw [← Std.Range.map_get!_eq (as := []), List.length_nil]
   rw (occs := .pos [1]) [Std.Range.map_eq_of_eq_of_mem'' (by
@@ -547,9 +547,9 @@ theorem listAppEmptyR : [[Δ ⊢ { } ≡ A ⟦{ }⟧]] := by
     show _ = B i
     nomatch mem
   )]
-  exact symm <| lamListApp sorry -- TODO require lc A
+  exact symm <| lamListApp Alc
 
-theorem listAppSingletonL : [[Δ ⊢ A ⟦{B}⟧ ≡ {A B}]] := by
+theorem listAppSingletonL (Alc : A.TypeVarLocallyClosed) : [[Δ ⊢ A ⟦{B}⟧ ≡ {A B}]] := by
   let B' (i : Nat) := B
   rw [← Std.Range.map_get!_eq (as := [_]), ← Std.Range.map_get!_eq (as := [ [[A B]]])]
   rw (occs := .pos [1]) [Std.Range.map_eq_of_eq_of_mem'' (by
@@ -566,9 +566,9 @@ theorem listAppSingletonL : [[Δ ⊢ A ⟦{B}⟧ ≡ {A B}]] := by
     dsimp [B']
     rw [List.get!_cons_zero]
   )]
-  exact lamListApp sorry -- TODO require lc A
+  exact lamListApp Alc
 
-theorem listAppSingletonR : [[Δ ⊢ {A B} ≡ A ⟦{B}⟧]] := by
+theorem listAppSingletonR (Alc: A.TypeVarLocallyClosed) : [[Δ ⊢ {A B} ≡ A ⟦{B}⟧]] := by
   let B' (i : Nat) := B
   rw [← Std.Range.map_get!_eq (as := [_]), ← Std.Range.map_get!_eq (as := [B])]
   rw (occs := .pos [1]) [Std.Range.map_eq_of_eq_of_mem'' (by
@@ -585,7 +585,7 @@ theorem listAppSingletonR : [[Δ ⊢ {A B} ≡ A ⟦{B}⟧]] := by
     dsimp [B']
     rw [List.get!_cons_zero]
   )]
-  exact symm <| lamListApp sorry -- TODO require lc A
+  exact symm <| lamListApp Alc
 
 theorem listSingleton (AequB : [[Δ ⊢ A ≡ B]]) : [[Δ ⊢ {A} ≡ {B}]] := by
   let A' (i : Nat) := A
