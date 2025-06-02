@@ -3,37 +3,17 @@
 \\\\
 }{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{≡} \, \targetpre A \targetpost}
 \lottinferencerulesep
-\lottinferencerule{lamAppL}{
-\\\\
+\lottinferencerule{lamApp}{
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre B \targetpost \, \lottsym{:} \, \targetpre K \targetpost}
 }{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \targetpre \lottsym{(} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre A \targetpost \targetpost \lottsym{)} \targetpost \, \targetpre B \targetpost \targetpost \, \lottsym{≡} \, \targetpre \targetpre A \targetpost\left[\targetpre B \targetpost/\targetpre a \targetpost\right] \targetpost}
 \lottinferencerulesep
-\lottinferencerule{lamAppR}{
-\\\\
-}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \targetpre A \targetpost\left[\targetpre B \targetpost/\targetpre a \targetpost\right] \targetpost \, \lottsym{≡} \, \targetpre \targetpre \lottsym{(} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre A \targetpost \targetpost \lottsym{)} \targetpost \, \targetpre B \targetpost \targetpost}
-\lottinferencerulesep
-\lottinferencerule{listAppL}{
-\\\\
+\lottinferencerule{lamListApp}{
+\lotthypothesis{\lottsym{lc\_} \targetpre A \targetpost}
 }{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \targetpre A \targetpost \, \lottsym{⟦} \targetpre \lottsym{\{} \lottsepbycomprehension{\targetpre {B}_{i} \targetpost} \lottsym{\}} \targetpost \lottsym{⟧} \targetpost \, \lottsym{≡} \, \targetpre \lottsym{\{} \lottsepbycomprehension{\targetpre \targetpre A \targetpost \, \targetpre {B}_{i} \targetpost \targetpost} \lottsym{\}} \targetpost}
 \lottinferencerulesep
-\lottinferencerule{listAppR}{
-\\\\
-}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \lottsym{\{} \lottsepbycomprehension{\targetpre \targetpre A \targetpost \, \targetpre {B}_{i} \targetpost \targetpost} \lottsym{\}} \targetpost \, \lottsym{≡} \, \targetpre \targetpre A \targetpost \, \lottsym{⟦} \targetpre \lottsym{\{} \lottsepbycomprehension{\targetpre {B}_{i} \targetpost} \lottsym{\}} \targetpost \lottsym{⟧} \targetpost}
-\lottinferencerulesep
-\lottinferencerule{listAppIdL}{
-\\\\
+\lottinferencerule{listAppId}{
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{:} \, \targetpre \lottkw{L}^{\targetpre K \targetpost} \targetpost}
 }{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \targetpre \lottsym{(} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre \targetpre a \targetpost \targetpost \targetpost \lottsym{)} \targetpost \, \lottsym{⟦} \targetpre A \targetpost \lottsym{⟧} \targetpost \, \lottsym{≡} \, \targetpre A \targetpost}
-\lottinferencerulesep
-\lottinferencerule{listAppIdR}{
-\\\\
-}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{≡} \, \targetpre \targetpre \lottsym{(} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre \targetpre a \targetpost \targetpost \targetpost \lottsym{)} \targetpost \, \lottsym{⟦} \targetpre A \targetpost \lottsym{⟧} \targetpost}
-\lottinferencerulesep
-\lottinferencerule{listAppCompL}{
-\\\\
-}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \targetpre A₀ \targetpost \, \lottsym{⟦} \targetpre \targetpre \lottsym{(} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre A₁ \targetpost \targetpost \lottsym{)} \targetpost \, \lottsym{⟦} \targetpre B \targetpost \lottsym{⟧} \targetpost \lottsym{⟧} \targetpost \, \lottsym{≡} \, \targetpre \targetpre \lottsym{(} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre \targetpre A₀ \targetpost \, \targetpre A₁ \targetpost \targetpost \targetpost \lottsym{)} \targetpost \, \lottsym{⟦} \targetpre B \targetpost \lottsym{⟧} \targetpost}
-\lottinferencerulesep
-\lottinferencerule{listAppCompR}{
-\\\\
-}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \targetpre \lottsym{(} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre \targetpre A₀ \targetpost \, \targetpre A₁ \targetpost \targetpost \targetpost \lottsym{)} \targetpost \, \lottsym{⟦} \targetpre B \targetpost \lottsym{⟧} \targetpost \, \lottsym{≡} \, \targetpre \targetpre A₀ \targetpost \, \lottsym{⟦} \targetpre \targetpre \lottsym{(} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre A₁ \targetpost \targetpost \lottsym{)} \targetpost \, \lottsym{⟦} \targetpre B \targetpost \lottsym{⟧} \targetpost \lottsym{⟧} \targetpost}
 \lottinferencerulesep
 \lottinferencerule{lam}{
 \lotthypothesis{\targetpre \targetpre Δ \targetpost \lottsym{,} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \targetpost \, \lottsym{⊢} \, \targetpre \targetpre A \targetpost \targetpost \, \lottsym{≡} \, \targetpre \targetpre B \targetpost \targetpost}
@@ -62,6 +42,10 @@
 \lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre B₁ \targetpost \, \lottsym{≡} \, \targetpre B₂ \targetpost}
 }{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \targetpre A₁ \targetpost \, \lottsym{⟦} \targetpre B₁ \targetpost \lottsym{⟧} \targetpost \, \lottsym{≡} \, \targetpre \targetpre A₂ \targetpost \, \lottsym{⟦} \targetpre B₂ \targetpost \lottsym{⟧} \targetpost}
 \lottinferencerulesep
+\lottinferencerule{listAppComp}{
+\lotthypothesis{\lottsym{lc\_} \targetpre A₀ \targetpost}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \targetpre A₀ \targetpost \, \lottsym{⟦} \targetpre \targetpre \lottsym{(} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre A₁ \targetpost \targetpost \lottsym{)} \targetpost \, \lottsym{⟦} \targetpre B \targetpost \lottsym{⟧} \targetpost \lottsym{⟧} \targetpost \, \lottsym{≡} \, \targetpre \targetpre \lottsym{(} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre \targetpre A₀ \targetpost \, \targetpre A₁ \targetpost \targetpost \targetpost \lottsym{)} \targetpost \, \lottsym{⟦} \targetpre B \targetpost \lottsym{⟧} \targetpost}
+\lottinferencerulesep
 \lottinferencerule{prod}{
 \lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{≡} \, \targetpre B \targetpost}
 }{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \lottsym{⊗} \, \targetpre A \targetpost \targetpost \, \lottsym{≡} \, \targetpre \lottsym{⊗} \, \targetpre B \targetpost \targetpost}
@@ -69,4 +53,13 @@
 \lottinferencerule{sum}{
 \lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{≡} \, \targetpre B \targetpost}
 }{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \lottsym{⊕} \, \targetpre A \targetpost \targetpost \, \lottsym{≡} \, \targetpre \lottsym{⊕} \, \targetpre B \targetpost \targetpost}
+\lottinferencerulesep
+\lottinferencerule{symm}{
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{≡} \, \targetpre B \targetpost}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre B \targetpost \, \lottsym{≡} \, \targetpre A \targetpost}
+\lottinferencerulesep
+\lottinferencerule{trans}{
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{≡} \, \targetpre B \targetpost}\\
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre B \targetpost \, \lottsym{≡} \, \targetpre C \targetpost}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{≡} \, \targetpre C \targetpost}
 }

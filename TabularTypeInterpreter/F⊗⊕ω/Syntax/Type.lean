@@ -50,6 +50,21 @@ def delabTOpen: Lean.PrettyPrinter.Unexpander
   | _ => throw ()
 
 termonly
+@[app_unexpander TypeVar_close]
+def delabTVClose: Lean.PrettyPrinter.Unexpander
+  | `($(_) $T $a)
+  | `($(_) $T $a 0) =>
+    let info := Lean.SourceInfo.none
+    let close := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "\\") }
+    `( $close $a^$T )
+  | `($(_) $T $a $n) =>
+    let info := Lean.SourceInfo.none
+    let close := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "\\") }
+    let d := `( $close $a@$n^$T )
+    d
+  | _ => throw ()
+
+termonly
 @[app_unexpander TypeVar_subst]
 def delabTVSubst: Lean.PrettyPrinter.Unexpander
   | `($(_) $T $a $A) =>

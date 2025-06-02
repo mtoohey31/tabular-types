@@ -28,6 +28,9 @@ termonly
 attribute [app_unexpander TypeVar_open] Type.delabTVOpen
 
 termonly
+attribute [app_unexpander TypeVar_close] Type.delabTVClose
+
+termonly
 attribute [app_unexpander Type_open] Type.delabTOpen
 
 termonly
@@ -35,6 +38,9 @@ attribute [app_unexpander TypeVar_subst] Type.delabTVSubst
 
 termonly
 attribute [app_unexpander TermVar_open] Type.delabTVOpen
+
+termonly
+attribute [app_unexpander TermVar_close] Type.delabTVClose
 
 termonly
 attribute [app_unexpander Term_open] Type.delabTOpen

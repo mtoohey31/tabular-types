@@ -484,6 +484,11 @@ theorem Type_open_TypeVar_close_eq_TypeVar_subst
 private
 theorem Type_open_id' : TypeVarLocallyClosed A n → A = A.Type_open B n := (Type_open_id · |>.symm)
 
+theorem TypeVar_open_TypeVar_subst_comm {T A: «Type»} (lc: A.TypeVarLocallyClosed n) (neq: x ≠ y): (T.TypeVar_open y n).TypeVar_subst x A = (T.TypeVar_subst x A).TypeVar_open y n := by
+  set_option aesop.dev.statefulForward false in
+  induction T using rec_uniform generalizing n <;> aesop
+    (add simp [TypeVar_open, TypeVar_subst], 40% Type_open_id', 40% forward TypeVar_open_id, 40% weaken)
+
 theorem Type_open_TypeVar_subst_dist
   : TypeVarLocallyClosed B' n → (Type_open A B n).TypeVar_subst a B' =
     (A.TypeVar_subst a B').Type_open (B.TypeVar_subst a B') n := by
@@ -557,19 +562,6 @@ theorem aux_of : TypeVarLocallyClosed A → TypeVarLocallyClosed_aux A := by
 theorem aux_iff : (TypeVarLocallyClosed_aux A ↔ A.TypeVarLocallyClosed) := ⟨of_aux, aux_of⟩
 
 end TypeVarLocallyClosed
-
-
--- NOTE only this is needed
-theorem subst_open_var {T A: «Type»} (neq: x ≠ y) (lc: A.TypeVarLocallyClosed n): (T.TypeVar_open y n).TypeVar_subst x A = (T.TypeVar_subst x A).TypeVar_open y n := sorry
-
-
-theorem subst_close_var {T A: «Type»} (neq: x ≠ y) (fresh: y ∉ A.freeTypeVars): (T.TypeVar_close y n).TypeVar_subst x A = (T.TypeVar_subst x A).TypeVar_close y n := sorry
-
-
-theorem subst_fresh {A T : «Type»} (fresh: a ∉ A.freeTypeVars) : a ∉ (T.TypeVar_subst a A |>.freeTypeVars) := sorry
-
-
-theorem subst_fresh' {A T: «Type»} (freshA: a ∉ A.freeTypeVars) (freshT: a ∉ T.freeTypeVars) : a ∉ (T.TypeVar_subst a' A |>.freeTypeVars) := sorry -- TODO by induction on T, wait is the a a' part right?
 
 theorem freeTypeVars_TypeVar_open {T: «Type»} : a ∈ T.freeTypeVars -> a ∈ (T.TypeVar_open a' n).freeTypeVars := by
   induction T using rec_uniform generalizing n <;> aesop (add simp [freeTypeVars, TypeVar_open])
