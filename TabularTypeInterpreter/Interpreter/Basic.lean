@@ -55,14 +55,14 @@ instance : ToString ProdOrSum where
     | .prod => "Π"
     | .sum => "Σ"
 
+abbrev TId := Id `type
+
 mutual
 
 inductive Monotype : (uvars : optParam Bool false) → Type where
-  | var (index : Nat) : Monotype uvars
-  -- A uvar that can only be unified with a variable.
-  | varuvar (id : Nat) : Monotype true
-  | uvar (id : Nat) : Monotype true
-  | lam : Kind → Monotype uvars → Monotype uvars
+  | var : TId → Monotype uvars
+  | uvar : Nat → Monotype true
+  | lam : TId → Kind → Monotype uvars → Monotype uvars
   | app : Monotype uvars → Monotype uvars → Monotype uvars
   | arr : Monotype uvars → Monotype uvars → Monotype uvars
   | label : String → Monotype uvars
@@ -95,9 +95,9 @@ mutual
 @[simp]
 protected noncomputable
 def Monotype.sizeOf : Monotype uvars → Nat
-  | .var _ | .varuvar _ | .uvar _ | .label _ | .comm _ | .lift | .tc _ | .all | .ind | .split
+  | .var _ | .uvar _ | .label _ | .comm _ | .lift | .tc _ | .all | .ind | .split
   | .list | .int | .str | .alias _ => 1
-  | .lam κ τ => 1 + sizeOf κ + τ.sizeOf
+  | .lam _ κ τ => 1 + sizeOf κ + τ.sizeOf
   | .app ϕ τ => 1 + ϕ.sizeOf + τ.sizeOf
   | .arr τ₀ τ₁ => 1 + τ₀.sizeOf + τ₁.sizeOf
   | .floor ξ => 1 + ξ.sizeOf
@@ -172,13 +172,12 @@ end MonotypePairList
 namespace Monotype
 
 instance : Inhabited (Monotype uvars) where
-  default := var 1000000
+  default := var <| .mk 1000000
 
-def toString (τ : Monotype uvars) : String := match τ with
-  | var n => s!"{n}"
-  | varuvar n => s!"vu{n}"
+def toString [ToString TId] (τ : Monotype uvars) : String := match τ with
+  | var i => s!"{i}"
   | uvar n => s!"u{n}"
-  | lam κ τ => s!"(λ {κ}. {τ.toString})"
+  | lam i κ τ => s!"(λ {i} : {κ}. {τ.toString})"
   | app ϕ τ => s!"{ϕ.toString} {τ.toString}"
   | arr τ₀ τ₁ => s!"{τ₀.toString} → {τ₁.toString}"
   | label s => s!"'{s}'"
@@ -213,7 +212,7 @@ decreasing_by
     · assumption
   )
 
-instance : ToString (Monotype uvars) where
+instance [ToString TId] : ToString (Monotype uvars) where
   toString := toString
 
 def unit : Monotype uvars := row .nil <| some .star
@@ -233,11 +232,11 @@ namespace QualifiedType
 instance : Coe (Monotype uvars) (QualifiedType uvars) where
   coe := .mono
 
-def toString : QualifiedType uvars → String
+def toString [ToString TId] : QualifiedType uvars → String
   | .mono τ => τ.toString
   | .qual ψ γ => s!"{ψ} ⇒ {γ.toString}"
 
-instance : ToString (QualifiedType uvars) where
+instance [ToString TId] : ToString (QualifiedType uvars) where
   toString := QualifiedType.toString
 
 end QualifiedType
@@ -246,7 +245,7 @@ open QualifiedType
 
 inductive TypeScheme : (uvars : optParam Bool false) → Type where
   | qual : QualifiedType uvars → TypeScheme uvars
-  | quant : Kind → TypeScheme uvars → TypeScheme uvars
+  | quant : TId → Kind → TypeScheme uvars → TypeScheme uvars
 deriving Inhabited, BEq
 
 namespace TypeScheme
@@ -254,25 +253,27 @@ namespace TypeScheme
 instance : Coe (QualifiedType uvars) (TypeScheme uvars) where
   coe := .qual
 
-def toString : TypeScheme uvars → String
+def toString [ToString TId] : TypeScheme uvars → String
   | .qual γ => γ.toString
-  | .quant κ σ => s!"∀ {κ}. {σ.toString}"
+  | .quant i κ σ => s!"∀ {i} {κ}. {σ.toString}"
 
-instance : ToString (TypeScheme uvars) where
+instance [ToString TId] : ToString (TypeScheme uvars) where
   toString := toString
 
 end TypeScheme
 
 open TypeScheme
 
+abbrev MId := Id `term
+
 mutual
 
 inductive Term : (uvars : optParam Bool false) → Type where
-  | var : Nat → Term uvars
+  | var : MId → Term uvars
   | member : String → Term uvars
-  | lam : Term uvars → Term uvars
+  | lam : MId → Term uvars → Term uvars
   | app : Term uvars → Term uvars → Term uvars
-  | let : Option (TypeScheme uvars) → Term uvars → Term uvars → Term uvars
+  | let : MId → Option (TypeScheme uvars) → Term uvars → Term uvars → Term uvars
   | annot : Term uvars → TypeScheme uvars → Term uvars
   | label : String → Term uvars
   | prod : TermPairList uvars → Term uvars
@@ -282,7 +283,7 @@ inductive Term : (uvars : optParam Bool false) → Type where
   | concat : Term uvars → Term uvars → Term uvars
   | inj : Term uvars → Term uvars
   | elim : Term uvars → Term uvars → Term uvars
-  | ind : Monotype uvars → Monotype uvars → Term uvars → Term uvars → Term uvars
+  | ind (ϕ ρ : Monotype uvars) (l t rn ri rp : TId) (M N : Term uvars) : Term uvars
   | splitₚ : Monotype uvars → Term uvars → Term uvars
   | splitₛ : Monotype uvars → Term uvars → Term uvars → Term uvars
   | nil : Term uvars
@@ -309,13 +310,13 @@ mutual
 protected noncomputable
 def Term.sizeOf : Term uvars → Nat
   | .var _ | .member _ | .label _ | .nil | .fold | .int _ | .range | .str _ | .throw | .def _ => 1
-  | .lam M | .prj M | .inj M => 1 + M.sizeOf
+  | .lam _ M | .prj M | .inj M => 1 + M.sizeOf
   | .app M N | .sum M N | .unlabel M N | .concat M N | .elim M N | .cons M N | .op _ M N =>
     1 + M.sizeOf + N.sizeOf
-  | .let σ? M N => 1 + sizeOf σ? + M.sizeOf + N.sizeOf
+  | .let _ σ? M N => 1 + sizeOf σ? + M.sizeOf + N.sizeOf
   | .annot M σ => 1 + M.sizeOf + sizeOf σ
   | .prod MNs => 1 + MNs.sizeOf
-  | .ind ϕ ρ M N => 1 + sizeOf ϕ + sizeOf ρ + M.sizeOf + N.sizeOf
+  | .ind ϕ ρ _ _ _ _ _ M N => 1 + sizeOf ϕ + sizeOf ρ + M.sizeOf + N.sizeOf
   | .splitₚ ϕ M => 1 + sizeOf ϕ + M.sizeOf
   | .splitₛ ϕ M N => 1 + sizeOf ϕ + M.sizeOf + N.sizeOf
 
@@ -385,7 +386,7 @@ end TermPairList
 namespace Term
 
 instance : Inhabited (Term uvars) where
-  default := var 1000000
+  default := label "default"
 
 private
 def termsFromList (M : Term uvars) : List (Term uvars) × Option (Term uvars) := match M with
@@ -398,7 +399,7 @@ def termsFromList (M : Term uvars) : List (Term uvars) × Option (Term uvars) :=
 mutual
 
 partial
-def tableFromTerms (Ms : List (Term uvars)) : Option String := do
+def tableFromTerms [ToString TId] [ToString MId] (Ms : List (Term uvars)) : Option String := do
   let .prod MNs :: _ := Ms | none
   let header ← MNs.toList.mapM fun | (.label s, _) => some s | _ => none
   let entries ← Ms.mapM fun
@@ -417,16 +418,16 @@ def tableFromTerms (Ms : List (Term uvars)) : Option String := do
           (lines.mapIdx (fun i l => l.rightpad <| maxWidths.get! i)))
 
 partial
-def toString (M : Term uvars) (table := false) : String := match M with
-  | var n => s!"{n}"
+def toString [ToString TId] [ToString MId] (M : Term uvars) (table := false) : String := match M with
+  | var i => s!"{i}"
   | member s => s
-  | lam M' => s!"(λ. {M'.toString})"
+  | lam i M' => s!"(λ {i}. {M'.toString})"
   | app M' N => s!"{M'.toString} {N.toString}"
-  | «let» σ? M' N =>
+  | «let» i σ? M' N =>
     if let some σ := σ? then
-      s!"let {σ} = {M'.toString} in {N.toString}"
+      s!"let {i} : {σ} = {M'.toString} in {N.toString}"
     else
-      s!"let {M'.toString} in {N.toString}"
+      s!"let {i} = {M'.toString} in {N.toString}"
   | annot M' σ => s!"({M'.toString} : {σ})"
   | label s => s!"'{s}'"
   | prod M'Ns =>
@@ -438,7 +439,7 @@ def toString (M : Term uvars) (table := false) : String := match M with
   | concat M' N => s!"{M'.toString} ++ {N.toString}"
   | inj M' => s!"inj {M'.toString}"
   | elim M' N => s!"{M'.toString} ▿ {N.toString}"
-  | ind ϕ ρ M' N => s!"ind {ϕ} {ρ} {M'.toString} {N.toString}"
+  | ind ϕ ρ _ _ _ _ _ M' N => s!"ind {ϕ} {ρ} {M'.toString} {N.toString}"
   | splitₚ ϕ M' => s!"splitₚ {ϕ} {M'.toString}"
   | splitₛ ϕ M' N => s!"splitₛ {ϕ} {M'.toString} {N.toString}"
   | nil => "[]"
@@ -460,7 +461,7 @@ def toString (M : Term uvars) (table := false) : String := match M with
 
 end
 
-instance : ToString (Term uvars) where
+instance [ToString TId] [ToString MId] : ToString (Term uvars) where
   toString := toString
 
 end Term
@@ -468,26 +469,27 @@ end Term
 inductive ProgramEntry where
   | def (x : String) (σ? : Option TypeScheme) (M : Term true)
   | typeAlias (a : String) (σ : TypeScheme)
-  | class (TCₛs : List String) (TC : String) (κ : Kind) (m : String) (σ : TypeScheme)
-  | instance (ψs : List (Monotype true)) (TC : String) (τ : (Monotype true)) (M : Term true)
+  | class (TCₛs : List String) (TC : String) (a : TId) (κ : Kind) (m : String) (σ : TypeScheme)
+  | instance (as : List TId) (ψs : List Monotype) (TC : String) (τ : Monotype) (M : Term true)
 deriving BEq
 
 variable {TC} in
-instance : ToString ProgramEntry where
+instance [ToString TId] [ToString MId] : ToString ProgramEntry where
   toString
     | .def x σ? M => s!"def {x} {match σ? with | some σ => s!": {σ} " | none => ""}= {M}"
     | .typeAlias a σ => s!"type {a} = {σ}"
-    | .class TCₛs TC κ m σ =>
-      let TCₛs := if TCₛs.length == 0 then "" else s!"{", ".intercalate TCₛs} ⇒ "
-      s!"class {TCₛs}{TC} : {κ} where\n  {m} : {σ}"
-    | .instance ψs TC τ M =>
+    | .class TCₛs TC a κ m σ =>
+      let TCₛs := if TCₛs.length == 0 then "" else
+        s!"{", ".intercalate <| TCₛs.map (s!"{·} {a}")} ⇒ "
+      s!"class {TCₛs}{TC} {a} : {κ} where\n  {m} : {σ}"
+    | .instance _ ψs TC τ M =>
       let ψs := if ψs.length == 0 then "" else
         s!"{", ".intercalate <| ψs.map ToString.toString} ⇒ "
       s!"instance {ψs}{TC} {τ} where\n  {M}"
 
 abbrev Program := List ProgramEntry
 
-instance (priority := high) : ToString Program where
+instance (priority := high) [ToString TId] [ToString MId] : ToString Program where
   toString pgm := "\n\n".intercalate <| pgm.map ToString.toString
 
 end Interpreter

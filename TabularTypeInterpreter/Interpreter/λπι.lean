@@ -1,6 +1,15 @@
 import Lott.Data.List
 
-namespace TabularTypeInterpreter.Interpreter.«λπι»
+namespace TabularTypeInterpreter.Interpreter
+
+structure Id (n : Name) where
+  private val : Nat
+deriving BEq, Inhabited, Ord
+
+namespace «λπι»
+
+nonrec
+abbrev Id := Id `«λπι»
 
 inductive Op where
   | add
@@ -27,8 +36,8 @@ instance : ToString Op where
     | .ge => "≥"
 
 inductive Term where
-  | var : Nat → Term
-  | lam : Term → Term
+  | var : Id → Term
+  | lam : Id → Term → Term
   | app : Term → Term → Term
   | prodIntro : List Term → Term
   | prodElim : Nat → Term → Term
@@ -43,34 +52,13 @@ inductive Term where
   | str : String → Term
   | throw
 
-namespace Term
-
 instance : Inhabited Term where
-  default := prodIntro []
+  default := .prodIntro []
 
-def id := lam <| .var 0
-
-def shift (E : Term) (off := 1) (min := 0) : Term := match E with
-  | var n => var <| if min ≤ n then n + off else n
-  | lam E' => lam <| shift E' off (min + 1)
-  | app E' F => app (shift E' off min) (shift F off min)
-  | prodIntro E's => prodIntro <| E's.mapMem fun E' _ => shift E' off min
-  | prodElim n E' => prodElim n <| shift E' off min
-  | sumIntro n E' => sumIntro n <| shift E' off min
-  | sumElim E' Fs => sumElim (shift E' off min) <| Fs.mapMem fun F _ => shift F off min
-  | nil => nil
-  | cons E' F => cons (shift E' off min) (shift F off min)
-  | fold => fold
-  | int i => int i
-  | op o E' F => op o (shift E' off min) (shift F off min)
-  | range => range
-  | str s => str s
-  | throw => throw
-
-end Term
+def Term.id := lam (.mk 0) <| var (.mk 0)
 
 inductive Value.Is : Term → Prop where
-  | lam : Is (.lam E)
+  | lam : Is (.lam i E)
   | prodIntro : (∀ E ∈ Es, Is E) → Is (.prodIntro Es)
   | sumIntro : Is E → Is (.sumIntro i E)
   | nil : Is .nil
@@ -85,13 +73,13 @@ inductive Value.Is : Term → Prop where
 
 def Value.Is.decide : Decidable (Is E) := match E with
   | .var _ => isFalse nofun
-  | .lam _ => isTrue .lam
+  | .lam _ _ => isTrue .lam
   | .app E' F => match E' with
     | .var _ => isFalse nofun
-    | .lam _ => isFalse nofun
+    | .lam _ _ => isFalse nofun
     | .app E'' F' => match E'' with
       | .var _ => isFalse nofun
-      | .lam _ => isFalse nofun
+      | .lam _ _ => isFalse nofun
       | .app .. => isFalse nofun
       | .prodIntro _ => isFalse nofun
       | .prodElim .. => isFalse nofun
@@ -163,48 +151,6 @@ namespace Value
 instance : Inhabited Value where
   default := ⟨default, .prodIntro nofun⟩
 
-theorem Is.shift_preservation {min} (EIs : Is E) : Is (E.shift off min) := by
-  induction EIs with
-  | lam =>
-    rw [Term.shift]
-    exact lam
-  | prodIntro _ ih =>
-    rw [Term.shift, List.mapMem_eq_map]
-    apply prodIntro
-    intro _ mem
-    rcases List.mem_map.mp mem with ⟨_, mem', rfl⟩
-    exact ih _ mem'
-  | sumIntro _ ih =>
-    rw [Term.shift]
-    exact sumIntro ih
-  | nil =>
-    rw [Term.shift]
-    exact nil
-  | cons _ _ E'ih Fih =>
-    rw [Term.shift]
-    exact cons E'ih Fih
-  | fold₀ =>
-    rw [Term.shift]
-    exact fold₀
-  | fold₁ _ ih =>
-    rw [Term.shift, Term.shift]
-    exact fold₁ ih
-  | fold₂ _ _ E'ih Fih =>
-    rw [Term.shift, Term.shift, Term.shift]
-    exact fold₂ E'ih Fih
-  | int =>
-    rw [Term.shift]
-    exact int
-  | range =>
-    rw [Term.shift]
-    exact range
-  | str =>
-    rw [Term.shift]
-    exact str
-  | throw =>
-    rw [Term.shift]
-    exact throw
-
 def unit : Value := ⟨.prodIntro [], .prodIntro nofun⟩
 
 def bool : Bool → Value
@@ -226,25 +172,25 @@ def Op.fn (i₀ i₁ : Int) : Op → Value
 
 namespace Term
 
-def «open» (E : Term) (V : Value) (n : Nat := 0) : Term := match E with
-  | var m => if m == n then V else var m
-  | lam E' => lam <| E'.open ⟨V.val.shift, V.property.shift_preservation⟩ (n + 1)
-  | app E' F => app (E'.open V n) (F.open V n)
-  | prodIntro Es => prodIntro <| Es.mapMem fun E' _ => E'.open V n
-  | prodElim n E' => prodElim n <| E'.open V n
-  | sumIntro n E' => sumIntro n <| E'.open V n
-  | sumElim E' Fs => sumElim (E'.open V n) <| Fs.mapMem fun F _ => F.open V n
+def subst (E F : Term) (i : Id) : Term := match E with
+  | var i' => if i' == i then F else var i'
+  | lam i' E' => if i' == i then lam i' E' else lam i' <| subst E' F i
+  | app E' F' => app (subst E' F i) (subst F' F i)
+  | prodIntro Es => prodIntro <| Es.mapMem fun E' _ => subst E' F i
+  | prodElim n E' => prodElim n <| subst E' F i
+  | sumIntro n E' => sumIntro n <| subst E' F i
+  | sumElim E' Fs => sumElim (subst E' F i) <| Fs.mapMem fun F' _ => subst F' F i
   | nil => nil
-  | cons E' F => cons (E'.open V n) (F.open V n)
+  | cons E' F' => cons (subst E' F i) (subst F' F i)
   | fold => fold
   | int i => int i
-  | op o E' F => op o (E'.open V n) (F.open V n)
+  | op o E' F' => op o (subst E' F i) (subst F' F i)
   | range => range
   | str s => str s
   | throw => throw
 
 inductive eval.Error where
-  | freeVar (n : Nat)
+  | freeVar (i : Id)
   | nonLamApp
   | nonProdIntroProdElim
   | invalidProdIdx (n l : Nat)
@@ -257,9 +203,9 @@ inductive eval.Error where
   | nonStringThrow
   | throw (s : String)
 
-instance : ToString eval.Error where
+instance [ToString Id] : ToString eval.Error where
   toString
-    | .freeVar n => s!"encountered free variable: {n}"
+    | .freeVar i => s!"encountered free variable: {i}"
     | .nonLamApp => "application of non-lambda term"
     | .nonProdIntroProdElim => "prod elimination of non-prod intro term"
     | .invalidProdIdx n l =>
@@ -276,13 +222,13 @@ instance : ToString eval.Error where
 
 partial
 def eval (E : Term) : Except eval.Error Value := do match E with
-  | var n => throw <| .freeVar n
-  | lam E => return ⟨lam E, .lam⟩
+  | var i => throw <| .freeVar i
+  | lam i E => return ⟨lam i E, .lam⟩
   | app E F =>
     let VE ← eval E
     let V ← eval F
     match VE with
-    | ⟨lam E', _⟩ => eval <| E'.open V
+    | ⟨lam i E', _⟩ => eval <| subst E' V i
     | ⟨fold, _⟩ => return ⟨app fold V, .fold₁ V.property⟩
     | ⟨app fold F', appfoldIs⟩ =>
       let F'Is := match appfoldIs with | .fold₁ h => h
@@ -323,8 +269,8 @@ def eval (E : Term) : Except eval.Error Value := do match E with
     let VEIs := match sumIntroIs with | .sumIntro h => h
     let VFs ← Fs.mapM eval
     let some VF := VFs.get? n | throw <| .invalidSumIdx n VFs.length
-    let ⟨lam F', _⟩ := VF | throw .nonLamSumElim
-    eval <| F'.open ⟨VE, VEIs⟩
+    let ⟨lam i F', _⟩ := VF | throw .nonLamSumElim
+    eval <| subst F' VE i
   | nil => return ⟨nil, .nil⟩
   | cons E F =>
     let VE ← eval E
@@ -344,4 +290,6 @@ where
 
 end Term
 
-namespace TabularTypeInterpreter.Interpreter.«λπι»
+end «λπι»
+
+end TabularTypeInterpreter.Interpreter

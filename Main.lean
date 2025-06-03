@@ -47,7 +47,10 @@ def main (args : List String) : IO UInt32 := do
   let σ : TypeScheme := sorry
   let M' : Term := sorry
   let ty : Typing M' σ := sorry
-  match ty.elab sorry |>.eval with
+  have : ToString TId := ⟨sorry⟩
+  have : ToString MId := ⟨sorry⟩
+  have : ToString «λπι».Id := ⟨sorry⟩
+  match ty.elab sorry sorry |>.fst.eval with
   | .error e =>
     stderr.putStrLn s!"eval error: {e}\nthis means there is a bug in a prior stage"
     return internalError

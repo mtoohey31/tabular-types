@@ -6,58 +6,41 @@ namespace TabularTypeInterpreter
 
 namespace Interpreter
 
+private
+structure ElabState where
+  nextFresh : Nat
+
+private
+abbrev ElabM := StateM ElabState
+
+def freshId : ElabM «λπι».Id := do
+  let { nextFresh } ← getModify fun st => { st with nextFresh := st.nextFresh + 1 }
+  return { val := nextFresh }
+
+instance : Coe MId «λπι».Id where
+  coe | { val } => { val }
+
+instance : Coe «λπι».Id MId where
+  coe | { val } => { val }
+
 open Std
 
 namespace Monotype
 
-def shift (τ : Monotype) (off := 1) (min := 0) : Monotype := match τ with
-  | var n => var <| if min ≤ n then n + off else n
-  | lam κ τ' => lam κ <| shift τ' off (min + 1)
-  | app ϕ τ' => app (shift ϕ off min) (shift τ' off min)
-  | arr τ₀ τ₁ => arr (shift τ₀ off min) (shift τ₁ off min)
+def subst (τ τ' : Monotype) (i : TId) : Monotype := match τ with
+  | var i' => if i == i' then τ' else var i'
+  | lam i' κ τ'' => lam i' κ <| if i == i' then τ'' else subst τ'' τ' i
+  | app ϕ τ'' => app (subst ϕ τ' i) (subst τ'' τ' i)
+  | arr τ₀ τ₁ => app (subst τ₀ τ' i) (subst τ₁ τ' i)
   | label s => label s
-  | floor ξ => floor <| shift ξ off min
-  | comm u => comm u
-  | row ξτ's κ? =>
-    row (.ofList (ξτ's.toList.mapMem fun (ξ, τ') _ => (shift ξ off min, shift τ' off min))) κ?
-  | prodOrSum Ξ μ => prodOrSum Ξ <| shift μ off min
-  | lift => lift
-  | contain ρ₀ μ ρ₁ => contain (shift ρ₀ off min) (shift μ off min) (shift ρ₁ off min)
-  | concat ρ₀ μ ρ₁ ρ₂ =>
-    concat (shift ρ₀ off min) (shift μ off min) (shift ρ₁ off min) (shift ρ₂ off min)
-  | tc s => tc s
-  | all => all
-  | ind => ind
-  | split => split
-  | list => list
-  | int => int
-  | str => str
-  | «alias» s => «alias» s
-termination_by sizeOf τ
-decreasing_by
-  all_goals simp_arith [sizeOf]
-  all_goals (
-    apply Nat.le_add_right_of_le
-    apply Nat.le_of_lt <| Nat.lt_of_le_of_lt (m := sizeOf (ξ, τ')) _ <| List.sizeOf_lt_of_mem ..
-    · simp_arith
-      simp_arith [sizeOf]
-    · assumption
-  )
-
-def «open» (τ : Monotype) (τ' : Monotype) (n : Nat := 0) : Monotype := match τ with
-  | var m => if m == n then τ' else var m
-  | lam κ τ'' => lam κ <| τ''.open τ'.shift (n + 1)
-  | app ϕ τ'' => app (ϕ.open τ' n) (τ''.open τ' n)
-  | arr τ₀ τ₁ => app (τ₀.open τ' n) (τ₁.open τ' n)
-  | label s => label s
-  | floor ξ => floor <| ξ.open τ' n
+  | floor ξ => floor <| subst ξ τ' i
   | comm u => comm u
   | row ξτ''s κ? =>
-    row (.ofList (ξτ''s.toList.mapMem fun (ξ, τ'') _ => (ξ.open τ' n, τ''.open τ' n))) κ?
-  | prodOrSum Ξ μ => prodOrSum Ξ <| μ.open τ' n
+    row (.ofList (ξτ''s.toList.mapMem fun (ξ, τ'') _ => (subst ξ τ' i, subst τ'' τ' i))) κ?
+  | prodOrSum Ξ μ => prodOrSum Ξ <| subst μ τ' i
   | lift => lift
-  | contain ρ₀ μ ρ₁ => contain (ρ₀.open τ' n) (μ.open τ' n) (ρ₁.open τ' n)
-  | concat ρ₀ μ ρ₁ ρ₂ => concat (ρ₀.open τ' n) (μ.open τ' n) (ρ₁.open τ' n) (ρ₂.open τ' n)
+  | contain ρ₀ μ ρ₁ => contain (subst ρ₀ τ' i) (subst μ τ' i) (subst ρ₁ τ' i)
+  | concat ρ₀ μ ρ₁ ρ₂ => concat (subst ρ₀ τ' i) (subst μ τ' i) (subst ρ₁ τ' i) (subst ρ₂ τ' i)
   | tc s => tc s
   | all => all
   | ind => ind
@@ -100,25 +83,38 @@ def symm : RowEquivalence ρ₀ μ ρ₁ → RowEquivalence ρ₁ μ ρ₀
   | liftL => liftR
   | liftR => liftL
 
-def prodElab : RowEquivalence ρ₀ μ ρ₁ → «λπι».Term
-  | refl | liftL | liftR => .id
-  | trans ρ₀₁re ρ₁₂re => .lam <| ρ₁₂re.prodElab.shift.app <| ρ₀₁re.prodElab.shift.app <| .var 0
-  | comm _ (ξτs₀ := ξτs₀) (ξτs₁ := ξτs₁) =>
-    .lam <| .prodIntro <| ξτs₁.map fun (ξ₁, _) => .prodElim (ξτs₀.findIdx (·.fst == ξ₁)) <| .var 0
+def prodElab : RowEquivalence ρ₀ μ ρ₁ → ElabM «λπι».Term
+  | refl | liftL | liftR => return .id
+  | trans ρ₀₁re ρ₁₂re => do
+    let i ← freshId
+    let F₀₁ ← ρ₀₁re.prodElab
+    let F₁₂ ← ρ₁₂re.prodElab
+    return .lam i <| F₁₂.app <| F₀₁.app <| .var i
+  | comm _ (ξτs₀ := ξτs₀) (ξτs₁ := ξτs₁) => do
+    let i ← freshId
+    return .lam i <| .prodIntro <| ξτs₁.map fun (ξ₁, _) =>
+      .prodElim (ξτs₀.findIdx (·.fst == ξ₁)) <| .var i
 
-def sumElab : RowEquivalence ρ₀ μ ρ₁ → «λπι».Term
-  | refl | liftL | liftR => .id
-  | trans ρ₀₁re ρ₁₂re => .lam <| ρ₁₂re.sumElab.shift.app <| ρ₀₁re.sumElab.shift.app <| .var 0
-  | comm _ (ξτs₀ := ξτs₀) (ξτs₁ := ξτs₁) => .lam <| .sumElim (.var 0) <| ξτs₀.map fun (ξ₀, _) =>
-      .lam <| .sumIntro (ξτs₁.findIdx (·.fst == ξ₀)) <| .var 0
+def sumElab : RowEquivalence ρ₀ μ ρ₁ → ElabM «λπι».Term
+  | refl | liftL | liftR => return .id
+  | trans ρ₀₁re ρ₁₂re => do
+    let i ← freshId
+    let F₀₁ ← ρ₀₁re.sumElab
+    let F₁₂ ← ρ₁₂re.sumElab
+    return .lam i <| F₁₂.app <| F₀₁.app <| .var i
+  | comm _ (ξτs₀ := ξτs₀) (ξτs₁ := ξτs₁) => do
+    let i ← freshId
+    return .lam i <| .sumElim (.var i) <| ← ξτs₀.mapM fun (ξ₀, _) => do
+      let i ← freshId
+      return .lam i <| .sumIntro (ξτs₁.findIdx (·.fst == ξ₀)) <| .var i
 
 end RowEquivalence
 
 opaque ConstraintSolution : Monotype → Type
 
-opaque ConstraintSolution.elab : ConstraintSolution τ → «λπι».Term
+opaque ConstraintSolution.elab : ConstraintSolution τ → ElabM «λπι».Term
 
-opaque ConstraintSolution.local : ConstraintSolution τ := sorry
+opaque ConstraintSolution.local : «λπι».Id → ConstraintSolution τ := sorry
 
 end Monotype
 
@@ -126,9 +122,9 @@ open Monotype
 
 namespace QualifiedType
 
-def «open» (γ : QualifiedType) (τ : Monotype) (n : Nat := 0) : QualifiedType := match γ with
-  | .mono τ' => τ'.open τ n
-  | .qual ψ γ' => γ'.open τ n |>.qual <| ψ.open τ n
+def subst (γ : QualifiedType) (τ : Monotype) (i : TId) : QualifiedType := match γ with
+  | .mono τ' => τ'.subst τ i
+  | .qual ψ γ' => subst γ' τ i |>.qual <| ψ.subst τ i
 
 end QualifiedType
 
@@ -136,9 +132,10 @@ open QualifiedType
 
 namespace TypeScheme
 
-def «open» (σ : TypeScheme) (τ : Monotype) (n : Nat := 0) : TypeScheme := match σ with
-  | .qual γ => γ.open τ n
-  | .quant κ σ' => σ'.open τ (n + 1) |>.quant κ
+def subst (σ : TypeScheme) (τ : Monotype) (i : TId) : TypeScheme := match σ with
+  | .qual γ => γ.subst τ i
+  | .quant i' κ σ' =>
+    .quant i' κ <| if i == i' then σ' else subst σ' τ i
 
 inductive Subtyping : TypeScheme → TypeScheme → Type where
   | refl : Subtyping σ σ
@@ -147,7 +144,7 @@ inductive Subtyping : TypeScheme → TypeScheme → Type where
     Subtyping (arr τ₀ τ₁) (arr τ₂ τ₃)
   | qual {ψ₀ ψ₁ : Monotype} {γ₀ γ₁ : QualifiedType} : Subtyping ψ₁ ψ₀ → Subtyping γ₀ γ₁ →
     Subtyping (γ₀.qual ψ₀) (γ₁.qual ψ₁)
-  | scheme : Subtyping σ₀ σ₁ → Subtyping (quant κ σ₀) (quant κ σ₁)
+  | scheme : Subtyping σ₀ (subst σ₁ (var i) i') → Subtyping (quant i κ σ₀) (quant i' κ σ₁)
   | prodOrSum {τ₀s τ₁s : List Monotype} :
     (∀ τ₀₁ ∈ List.zip τ₀s τ₁s, let (τ₀, τ₁) := τ₀₁; Subtyping τ₀ τ₁) →
     Subtyping ((prodOrSum Ξ μ).app (row (.ofList (List.zip ξs τ₀s)) κ?))
@@ -162,7 +159,7 @@ inductive Subtyping : TypeScheme → TypeScheme → Type where
   | concat : RowEquivalence ρ₀ μ ρ₃ → RowEquivalence ρ₁ μ ρ₄ → RowEquivalence ρ₂ μ ρ₅ →
     Subtyping (concat ρ₀ μ ρ₁ ρ₂) (concat ρ₃ μ ρ₄ ρ₅)
   | tc {supers : List String} : (∀ s ∈ supers, Subtyping ((tc s).app τ₀) ((tc s).app τ₁)) →
-    Subtyping («open» σ τ₀) («open» σ τ₁) → Subtyping ((tc s).app τ₀) ((tc s).app τ₁)
+    Subtyping (subst σ τ₀ i) (subst σ τ₁ i) → Subtyping ((tc s).app τ₀) ((tc s).app τ₁)
   | allRow : RowEquivalence ρ₀ (comm .comm) ρ₁ → Subtyping ((all.app ϕ).app ρ₀) ((all.app ϕ).app ρ₁)
   | split : Subtyping (concat ((lift.app ϕ).app ρ₀) μ ρ₁ ρ₂) (concat ((lift.app ϕ).app ρ₃) μ ρ₄ ρ₅) →
     Subtyping ((((split.app ϕ).app ρ₀).app ρ₁).app ρ₂)
@@ -170,41 +167,68 @@ inductive Subtyping : TypeScheme → TypeScheme → Type where
   | aliasₗ : Subtyping («alias» (uvars := false) s) σ
   | aliasᵣ : Subtyping σ («alias» (uvars := false) s)
 
-def Subtyping.elab : Subtyping σ₀ σ₁ → «λπι».Term
-  | refl | decay _ | aliasₗ | aliasᵣ => .id
-  | trans σ₀₁'st σ₁'₂st => .lam <| σ₁'₂st.elab.shift.app <| σ₀₁'st.elab.shift.app <| .var 0
+def Subtyping.elab : Subtyping σ₀ σ₁ → ElabM «λπι».Term
+  | refl | decay _ | aliasₗ | aliasᵣ => return .id
+  | trans σ₀₁'st σ₁'₂st => do
+    let i ← freshId
+    return .lam i <| (← σ₁'₂st.elab).app <| (← σ₀₁'st.elab).app <| .var i
   | arr st st'
-  | qual st st' => .lam <| .lam <| st'.elab.shift 2 |>.app <| .app (.var 1) <| st.elab.shift 2 |>.app <| .var 0
+  | qual st st' => do
+    let i ← freshId
+    let i' ← freshId
+    return .lam i <| .lam i' <| (← st'.elab).app <| .app (.var i) <| (← st.elab).app <| .var i'
   | scheme σ₀₁'st => σ₀₁'st.elab
-  | prodOrSum τ₀₁sst (Ξ := Ξ) (τ₀s := τ₀s) (τ₁s := τ₁s) => match Ξ with
-    | .prod => .lam <| .prodIntro <| τ₀s.zip τ₁s |>.mapMemIdx fun i _ mem =>
-        τ₀₁sst _ mem |>.elab.shift.app <| .prodElim i <| .var 0
-    | .sum => .lam <| .sumElim (.var 0) <| τ₀s.zip τ₁s |>.mapMemIdx fun i _ mem =>
-        .lam <| .sumIntro i <| τ₀₁sst _ mem |>.elab.shift 2 |>.app <| .var 0
+  | prodOrSum τ₀₁sst (Ξ := Ξ) (τ₀s := τ₀s) (τ₁s := τ₁s) => do
+    let i ← freshId
+    match Ξ with
+    | .prod => return .lam i <| .prodIntro <| ← τ₀s.zip τ₁s |>.mapMemIdxM fun j _ mem =>
+        return (← τ₀₁sst _ mem |>.elab).app <| .prodElim j <| .var i
+    | .sum => return .lam i <| .sumElim (.var i) <| ← τ₀s.zip τ₁s |>.mapMemIdxM fun j _ mem => do
+        let i' ← freshId
+        return .lam i' <| .sumIntro j <| (← τ₀₁sst _ mem |>.elab).app <| .var i'
   | prodOrSumRow ρ₀₁re (Ξ := Ξ) => match Ξ with | .prod => ρ₀₁re.prodElab | .sum => ρ₀₁re.sumElab
-  | never => .lam <| .sumElim (.var 0) []
-  | contain ρ₀₂re ρ₁₃re => .lam <| contain.elab ρ₀₂re ρ₁₃re
-  | concat ρ₀₃re ρ₁₄re ρ₂₅re => .lam <| .prodIntro [
-      .lam <| .lam <| ρ₂₅re.prodElab.shift 3 |>.app <| «λπι».Term.app (.var 2) (ρ₀₃re.symm.prodElab.shift 3 |>.app (.var 1))
-        |>.app (ρ₁₄re.symm.prodElab.shift 3 |>.app (.var 0)),
-      .lam <| .lam <| .lam <| («λπι».Term.var 3) |>.app (.lam (.app (.var 3) (ρ₀₃re.sumElab.shift 5 |>.app (.var 0))))
-        |>.app (.lam (.app (.var 2) (ρ₁₄re.sumElab.shift 5 |>.app (.var 0)))) |>.app <|
-        ρ₂₅re.symm.sumElab.shift 4 |>.app (.var 0),
-      contain.elab ρ₀₃re ρ₂₅re,
-      contain.elab ρ₁₄re ρ₂₅re
+  | never => do
+    let i ← freshId
+    return .lam i <| .sumElim (.var i) []
+  | contain ρ₀₂re ρ₁₃re => do
+    let i ← freshId
+    return .lam i <| ← contain.elab ρ₀₂re ρ₁₃re i
+  | concat ρ₀₃re ρ₁₄re ρ₂₅re => do
+    let i₀ ← freshId
+    let i₁ ← freshId
+    let i₂ ← freshId
+    let i₃ ← freshId
+    let i₄ ← freshId
+    let i₅ ← freshId
+    let i₆ ← freshId
+    let i₇ ← freshId
+    return .lam i₀ <| .prodIntro [
+      .lam i₁ <| .lam i₂ <| (← ρ₂₅re.prodElab).app <| «λπι».Term.app (.var i₀)
+        ((← ρ₀₃re.symm.prodElab).app (.var i₁)) |>.app ((← ρ₁₄re.symm.prodElab).app (.var i₂)),
+      .lam i₃ <| .lam i₄ <| .lam i₅ <| («λπι».Term.var i₀) |>.app
+        (.lam i₆ (.app (.var i₃) ((← ρ₀₃re.sumElab).app (.var i₆))))
+        |>.app (.lam i₇ (.app (.var i₄) ((← ρ₁₄re.sumElab).app (.var i₇)))) |>.app <|
+        (← ρ₂₅re.symm.sumElab).app (.var i₅),
+      ← contain.elab ρ₀₃re ρ₂₅re i₀,
+      ← contain.elab ρ₁₄re ρ₂₅re i₀
     ]
-  | tc superst memberst (supers := supers) =>
-    .lam <| .prodIntro <|
-      (memberst.elab.shift.app (.prodElim 0 (.var 0))) :: supers.mapMemIdx fun i _ mem =>
-        superst _ mem |>.elab.shift.app <| .prodElim (i + 1) <| .var 0
+  | tc superst memberst (supers := supers) => do
+    let i ← freshId
+    return .lam i <| .prodIntro <| List.cons ((← memberst.elab).app (.prodElim 0 (.var i))) <|
+      ← supers.mapMemIdxM fun j _ mem =>
+        return (← superst _ mem |>.elab).app <| .prodElim (j + 1) <| .var i
   | allRow ρ₀₁re => ρ₀₁re.prodElab
   | split concatst => concatst.elab
 where
-  contain.elab {μ ρ₀ ρ₁ ρ₂ ρ₃} (ρ₀₂re : RowEquivalence ρ₀ μ ρ₂) (ρ₁₃re : RowEquivalence ρ₁ μ ρ₃) :=
-    «λπι».Term.prodIntro [
-      .lam <| ρ₀₂re.prodElab.shift 2 |>.app <| .app (.var 1) <| ρ₁₃re.symm.prodElab.shift 2 |>.app <| .var 0,
-      .lam <| ρ₁₃re.sumElab.shift 2 |>.app <| .app (.var 1) <| ρ₀₂re.symm.sumElab.shift 2 |>.app <| .var 0
-    ]
+  contain.elab {μ ρ₀ ρ₁ ρ₂ ρ₃} (ρ₀₂re : RowEquivalence ρ₀ μ ρ₂) (ρ₁₃re : RowEquivalence ρ₁ μ ρ₃)
+    (i : «λπι».Id) : ElabM «λπι».Term := do
+      let i' ← freshId
+      let i'' ← freshId
+      return «λπι».Term.prodIntro [
+        .lam i' <| (← ρ₀₂re.prodElab).app <| .app (.var i) <|
+          (← ρ₁₃re.symm.prodElab).app <| .var i',
+        .lam i'' <| (← ρ₁₃re.sumElab).app <| .app (.var i) <| (← ρ₀₂re.symm.sumElab).app <| .var i''
+      ]
 
 end TypeScheme
 
@@ -221,13 +245,13 @@ namespace Term
 -- correctly, since mistakes will not necessarily be caught by the type checker.
 inductive Typing : Term → TypeScheme → Type where
   | var : Typing (.var n) σ
-  | lam {τ₁ : Monotype} : Typing M τ₁ → Typing M.lam (arr τ₀ τ₁)
+  | lam {τ₁ : Monotype} : Typing M τ₁ → Typing (M.lam i) (arr τ₀ τ₁)
   | app {ϕ : Monotype} : Typing M (ϕ.arr τ) → Typing N ϕ → Typing (M.app N) τ
   | qualI {γ : QualifiedType} : (ConstraintSolution ψ → Typing M γ) → Typing M (γ.qual ψ)
   | qualE {γ : QualifiedType} : ConstraintSolution ψ → (Typing M (γ.qual ψ)) → Typing M γ
-  | schemeI : Typing M σ → Typing M (quant κ σ)
-  | schemeE : Typing M (quant κ σ) → Typing M (σ.open τ)
-  | let : Typing M σ₀ → Typing N σ₁ → Typing (M.let (Option.someIf σ₀ b) N) σ₁
+  | schemeI : Typing M σ → Typing M (quant i κ σ)
+  | schemeE : Typing M (quant i κ σ) → Typing M (subst σ τ i)
+  | let : Typing M σ₀ → Typing N σ₁ → Typing (M.let i (Option.someIf σ₀ b) N) σ₁
   | annot : Typing M σ → Typing (M.annot σ) σ
   | label : Typing (label s) (floor (uvars := false) (.label s))
   | prod : (∀ MNξτ ∈ MNs.zip ξτs, let ((_, N), _, τ) := MNξτ; Typing N τ) →
@@ -248,12 +272,12 @@ inductive Typing : Term → TypeScheme → Type where
     Typing (M.elim N) (((prodOrSum .prod μ).app ρ₂).arr τ)
   | sub : Typing M σ₀ → Subtyping σ₀ σ₁ → Typing M σ₁
   | member : ConstraintSolution ((tc s).app τ) → Typing (member m) σ
-  | ind : Typing M (quant .label (quant κ (quant κ.row (quant κ.row (quant κ.row
-      (qual (.concat (.var 2) (comm .non) (row (.cons (.var 4) (.var 3) .nil) none) (.var 1))
-        (qual (.concat (.var 1) (comm .non) (.var 0) ρ)
-          ((floor (.var 4)).arr ((ϕ.app (.var 2)).arr (ϕ.app (.var 1))))))))))) →
+  | ind : Typing M (quant iₗ .label (quant iₜ κ (quant iₚ κ.row (quant iᵢ κ.row (quant iₙ κ.row
+      (qual (.concat (.var iₚ) (comm .non) (row (.cons (.var iₗ) (.var iₜ) .nil) none) (.var iᵢ))
+        (qual (.concat (.var iᵢ) (comm .non) (.var iₙ) ρ)
+          ((floor (.var iₗ)).arr ((ϕ.app (.var iₚ)).arr (ϕ.app (.var iᵢ))))))))))) →
     Typing N (ϕ.app (.row .nil (some κ))) → ConstraintSolution (Monotype.ind.app ρ) →
-    Typing (ind ϕ ρ M N) (ϕ.app ρ)
+    Typing (ind ϕ ρ iₗ iₜ iₚ iᵢ iₙ M N) (ϕ.app ρ)
   | splitₚ : Typing M ((prodOrSum .prod (comm .comm)).app ρ₂) →
     ConstraintSolution ((((split.app ϕ).app ρ₀).app ρ₁).app ρ₂) →
     Typing (M.splitₚ ϕ) ((prodOrSum .prod (comm .non)).app
@@ -267,8 +291,8 @@ inductive Typing : Term → TypeScheme → Type where
     Typing (M.splitₛ ϕ N) (((prodOrSum .sum (comm .comm)).app ρ₂).arr τ)
   | nil : Typing nil (list.app (uvars := false) τ)
   | cons {τ : Monotype} : Typing M τ → Typing N (list.app τ) → Typing (cons M N) (list.app τ)
-  | fold : Typing fold (quant star (quant star (qual (mono (arr
-      (arr (.var 1) (arr (.var 0) (.var 1))) (arr (.var 1) ((list.app (.var 0)).arr (.var 1))))))))
+  | fold : Typing fold (quant i star (quant iₐ star (qual (mono (arr (arr
+      (.var iₐ) (arr (.var i) (.var iₐ))) (arr (.var iₐ) ((list.app (.var i)).arr (.var iₐ))))))))
   | int : Typing (int i) (Monotype.int (uvars := false))
   | op : Typing M (Monotype.int (uvars := false)) → Typing N (Monotype.int (uvars := false)) →
     Typing (op o M N) o.result
@@ -280,16 +304,17 @@ inductive Typing : Term → TypeScheme → Type where
 instance [Inhabited α] : Inhabited (Thunk α) where
   default := .mk fun _ => default
 
--- TODO: Figure out how to shift local constraint solutions used under lambdas.
-def Typing.elab : Typing M σ → ReaderM (HashMap String (Thunk «λπι».Term)) «λπι».Term
+def Typing.elab : Typing M σ → ReaderT (HashMap String (Thunk «λπι».Term)) ElabM «λπι».Term
   | var (n := n) => return .var n
-  | lam M'ty => M'ty.elab <&> .lam
+  | lam (i := i) M'ty => M'ty.elab <&> .lam i
   | app M'ty Nty => return (← M'ty.elab).app <| ← Nty.elab
-  | qualI Mty'_of_so => «elab» (Mty'_of_so .local) <&> .lam
-  | qualE ψso Mty' => return (← Mty'.elab).app ψso.elab
+  | qualI Mty'_of_so => do
+    let i ← freshId
+    «elab» (Mty'_of_so <| .local i) <&> .lam i
+  | qualE ψso Mty' => return (← Mty'.elab).app <| ← ψso.elab
   | schemeI Mty' => Mty'.elab
   | schemeE Mty' => Mty'.elab
-  | .let M'ty Nty => return (← Nty.elab).lam.app <| ← M'ty.elab
+  | .let (i := i) M'ty Nty => return (← Nty.elab).lam i |>.app <| ← M'ty.elab
   | annot M'ty => M'ty.elab
   | label => return .prodIntro []
   | prod Nsty (MNs := MNs) (ξτs := ξτs) =>
@@ -298,22 +323,22 @@ def Typing.elab : Typing M σ → ReaderM (HashMap String (Thunk «λπι».Term
   | unlabel M'ty (Ξ := Ξ) => match Ξ with
     | .prod => M'ty.elab <&> .prodElim 0
     | .sum => return (← M'ty.elab).sumElim [.id]
-  | prj M'ty containso => return containso.elab.prodElim 0 |>.app <| ← M'ty.elab
+  | prj M'ty containso => return (← containso.elab).prodElim 0 |>.app <| ← M'ty.elab
   | concat M'ty Nty concatso =>
-    return concatso.elab.prodElim 0 |>.app (← M'ty.elab) |>.app <| ← Nty.elab
-  | inj M'ty containso => return containso.elab.prodElim 1 |>.app <| ← M'ty.elab
+    return (← concatso.elab).prodElim 0 |>.app (← M'ty.elab) |>.app <| ← Nty.elab
+  | inj M'ty containso => return (← containso.elab).prodElim 1 |>.app <| ← M'ty.elab
   | elim M'ty Nty concatso =>
-    return concatso.elab.prodElim 1 |>.app (← M'ty.elab) |>.app <| ← Nty.elab
+    return (← concatso.elab).prodElim 1 |>.app (← M'ty.elab) |>.app <| ← Nty.elab
   | sub Mty' σ₀st =>
-    return σ₀st.elab.app <| ← Mty'.elab
-  | member TCτso => return TCτso.elab.prodElim 0
-  | ind M'ty Nty indso => return indso.elab |>.app (← M'ty.elab) |>.app <| ← Nty.elab
+    return (← σ₀st.elab).app <| ← Mty'.elab
+  | member TCτso => return (← TCτso.elab).prodElim 0
+  | ind M'ty Nty indso => return (← indso.elab).app (← M'ty.elab) |>.app <| ← Nty.elab
   | splitₚ M'ty splitso => do
     let E ← M'ty.elab
-    let F := splitso.elab
+    let F ← splitso.elab
     return .prodIntro [F.prodElim 2 |>.prodElim 0 |>.app E, F.prodElim 3 |>.prodElim 0 |>.app E]
   | splitₛ M'ty Nty splitso =>
-    return splitso.elab |>.prodElim 1 |>.app (← M'ty.elab) |>.app <| ← Nty.elab
+    return (← splitso.elab).prodElim 1 |>.app (← M'ty.elab) |>.app <| ← Nty.elab
   | nil => return .nil
   | cons M'ty Nty => return .cons (← M'ty.elab) (← Nty.elab)
   | fold => return .fold
@@ -332,11 +357,11 @@ def Value.delab (V : Value) (σ : Interpreter.TypeScheme) : Option Interpreter.T
   let .qual (.mono τ) := σ | none
   let ⟨E, EIs⟩ := V
   match E with
-  | .lam E' =>
+  | .lam i E' =>
     if E'Is : Is E' then
       let .arr _ τ₁ := τ | none
       let M ← delab ⟨E', E'Is⟩ τ₁
-      return M.lam
+      return M.lam i
     none
   | .app E' F => match E' with
     | .fold =>
