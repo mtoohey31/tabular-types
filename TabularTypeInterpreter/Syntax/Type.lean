@@ -26,7 +26,7 @@ mutual
 nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") TypeLambda, «λτ» :=
   | "(" "λ " a " : " κ ". " τ ")" : mk (bind a in τ)
 
-nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") Monotype, τ, ξ, μ, ρ, ψ, ϕ :=
+nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") Monotype, τ, ϕ, ρ, ψ, ξ, μ :=
   | a                                                  : var
   | ϕ τ                                                : app
   | τ₀ " → " τ₁                                        : arr

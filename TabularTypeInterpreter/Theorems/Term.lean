@@ -144,7 +144,7 @@ theorem to_Kinding (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (Γᵢw : [[Γc �
     let σ'ke' := σ'ke a |>.weakening Γawe (Γ' := Γ) (Γ'' := .typeExt .empty ..)
     rw [TypeEnvironment.empty_append] at Γawe σ'ke'
     exact ⟨_, σ'ke'.Monotype_open_preservation Γcw Γawe nofun aninσ' aninA τke (Γ' := .empty)⟩
-  | «ind» Iₘ Iₛ ρke τke κe =>
+  | «ind» Iₘ Iₛ ρke τke _ _ κe =>
     rename TypeEnvironment => Γ
     rename Monotype => τ
     rename «Type» => B
@@ -415,7 +415,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
         List.get!_cons_zero] at πty
     simp only at πty
     exact πty
-  | «ind» Iₘ Iₛ ρke τke κe Mte Nte indce Mih Nih =>
+  | «ind» Iₘ Iₛ ρke τke Mte Nte κe indce Mih Nih =>
     rename_i Γc Γ ρ κ τ B K _ _ _ _ _ _
     let ⟨a, anin⟩ := Γ.typeVarDom ++ τ.freeTypeVars ++ ↑B.freeTypeVars ++ Iₘ |>.exists_fresh
     let ⟨aninΓτB, aninI⟩ := List.not_mem_append'.mp anin
