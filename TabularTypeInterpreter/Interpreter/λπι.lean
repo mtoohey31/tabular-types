@@ -6,6 +6,8 @@ structure Id (n : Name) where
   private val : Nat
 deriving BEq, Inhabited, Ord
 
+instance {n : Name} : ToString (Id n) where toString x := toString x.val
+
 namespace «λπι»
 
 nonrec
