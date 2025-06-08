@@ -22,6 +22,7 @@ inductive ContextItem where
 | xunivar (ᾱ : UniVar) (κ : Kind)
 | sunivar (ᾱ : UniVar) (τ : Monotype)
 | mark (ᾱ : UniVar)
+| constraint (ψ : Monotype)
 deriving Inhabited
 
 instance : ToString ContextItem where toString
@@ -30,6 +31,7 @@ instance : ToString ContextItem where toString
 | .xunivar ᾱ κ => s!"{ᾱ} : {κ}"
 | .sunivar ᾱ τ => s!"{ᾱ} = {τ.toString}"
 | .mark ᾱ => s!"mark {ᾱ}"
+| .constraint ψ => toString ψ
 
 /-- Equivalence for context items is entirely determined by the variable, since each must be uniquely declared.
 I believe we could derive this instance, but I want to be explicit just in case.
@@ -40,6 +42,7 @@ instance : BEq ContextItem where beq
 | .xunivar ᾱ₀ _, .xunivar ᾱ₁ _ => ᾱ₀ == ᾱ₁
 | .sunivar ᾱ₀ _, .xunivar ᾱ₁ _ => ᾱ₀ == ᾱ₁
 | .mark ᾱ₀, .mark ᾱ₁ => ᾱ₀ == ᾱ₁
+| .constraint ψ₀, .constraint ψ₁ => sorry -- TODO
 | _, _ => false
 
 abbrev Context := List ContextItem
@@ -60,9 +63,7 @@ def split (item : ContextItem) : InferM (Context × Context) := do
     return (before, after)
   else panic! "malfunction in core `List.idxOf`"
 
-
-
-def wellFormedType (σ : TypeScheme) : InferM Unit := do 
+def kind (σ : TypeScheme) (κ : Kind) : InferM Unit := do 
   let { Γ .. } <- get
   match σ with
   | .qual $ .mono $ .var α₀ =>
@@ -72,23 +73,36 @@ def wellFormedType (σ : TypeScheme) : InferM Unit := do
 
 def wellFormedContext : InferM Unit := sorry
 
-def subtype (σ₀ σ₁ : TypeScheme) : InferM Unit := sorry
+def subtype (σ₀ σ₁ : TypeScheme) : InferM (σ₀.Subtyping σ₁) := sorry
 def instantiateLeft (ᾱ : UniVar) (σ : TypeScheme) : InferM Unit := sorry
 def instantiateRight (σ : TypeScheme) (ᾱ : UniVar) : InferM Unit := sorry
 
+mutual
 def check (e : Term) (σ : TypeScheme) : InferM (e.Typing σ) := do
   match σ with
-  | .quant α κ σbody =>
-    let decl : ContextItem := (.typevar α κ)
-    push decl
-    let t ← check e σbody
-    let (before, _after) ← split decl
+  | .quant α κ σ =>
+    let item : ContextItem := (.typevar α κ)
+    push item
+    let t ← check e σ
+    let (before, _after) ← split item
     set ({ Γ := before } : InferState)
     return t.schemeI
-  | _ => throw $ .panic "TODO"
+  -- TODO: I am deeply inconfident in this rule.
+  | .qual $ .qual ψ γ =>
+    kind ψ .constr
+    let item : ContextItem := (.constraint ψ)
+    push item
+    let t ← check e γ
+    let (before, _after) ← split item
+    set ({ Γ := before } : InferState)
+    return .qualI (fun _ => t)
+  | σ =>
+    let ⟨σ', t⟩ ← infer e
+    -- TODO: σ' and σ should have their bodies solved before subtyping begins
+    let s ← subtype σ' σ
+    return t.sub s
+
 def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := sorry
 -- TODO: How do we produce a typing derivation for inferApp?
 def inferApp (σ : TypeScheme) (e : Term) : InferM TypeScheme := sorry
-
-
-
+end
