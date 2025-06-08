@@ -7,7 +7,7 @@ namespace TabularTypeInterpreter.Interpreter.Inference
 /-- type variables -/
 abbrev TypeVar := TId
 /-- term variables -/
-abbrev TermVar := Nat
+abbrev TermVar := MId
 /-- unification variables -/
 abbrev UniVar := Nat
 
@@ -49,9 +49,20 @@ abbrev Context := List ContextItem
 
 inductive InferError where
 | panic (message : String)
-structure InferState where Γ : Context
+deriving Inhabited
+structure InferState where Γ : Context deriving Inhabited
 
 abbrev InferM := EStateM InferError InferState
+def getType (χ : TermVar) : InferM TypeScheme := do
+  let { Γ } ← get
+  let σ ← (getType' Γ χ).getDM (throw $ .panic "variable not defined")
+  return σ
+  where getType' (Γ : Context) (χ : TermVar) : Option TypeScheme :=
+    match Γ with
+    | .nil => .none
+    | .cons (.termvar χ' σ) Γ' => if χ == χ' then .some σ else getType' Γ' χ
+    | .cons _ Γ' => getType' Γ' χ
+
 def push (item : ContextItem) : InferM Unit := do
   let { Γ } <- get
   set ({ Γ := item::Γ } : InferState)
@@ -78,7 +89,7 @@ def instantiateLeft (ᾱ : UniVar) (σ : TypeScheme) : InferM Unit := sorry
 def instantiateRight (σ : TypeScheme) (ᾱ : UniVar) : InferM Unit := sorry
 
 mutual
-def check (e : Term) (σ : TypeScheme) : InferM (e.Typing σ) := do
+partial def check (e : Term) (σ : TypeScheme) : InferM (e.Typing σ) := do
   match σ with
   | .quant α κ σ =>
     let item : ContextItem := (.typevar α κ)
@@ -102,7 +113,34 @@ def check (e : Term) (σ : TypeScheme) : InferM (e.Typing σ) := do
     let s ← subtype σ' σ
     return t.sub s
 
-def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := sorry
+partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
+  match e with
+  | .var χ =>
+    let { Γ } ← get
+    let σ ← getType χ
+    return ⟨σ, .var⟩
+  | .annot e σ =>
+    let t ← check e σ
+    return ⟨σ, t.annot⟩
+  | .let χ σ? e e' =>
+    -- HACK: Had to duplicate code here since the b:=false and b:=true branches have special type checking requirements.
+    match σ? with
+    | .none => 
+      let ⟨σ, t⟩ ← infer e
+      let item : ContextItem := .termvar χ σ
+      push item
+      let ⟨σ', t'⟩ ← infer e'
+      let (before, after) ← split item
+      return ⟨σ', t.let (b := false) t'⟩
+    | .some σ => 
+      let t ← check e σ
+      let item : ContextItem := .termvar χ σ
+      push item
+      let ⟨σ', t'⟩ ← infer e'
+      let (before, after) ← split item
+      return ⟨σ', t.let (b := true) t'⟩
+  | _ => throw $ .panic "unimplemented"
+
 -- TODO: How do we produce a typing derivation for inferApp?
-def inferApp (σ : TypeScheme) (e : Term) : InferM TypeScheme := sorry
+partial def inferApp (σ : TypeScheme) (e : Term) : InferM TypeScheme := sorry
 end
