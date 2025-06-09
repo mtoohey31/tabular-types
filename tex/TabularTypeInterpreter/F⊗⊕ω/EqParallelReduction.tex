@@ -1,18 +1,18 @@
-\lottjudgement{Eq Parallel Reduction}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{<≡>*} \, \targetpre B \targetpost}{
+\lottjudgement{Eq Parallel Reduction}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \Lleftrightarrow^* \targetpre B \targetpost}{
 \lottinferencerule{refl}{
 \\\\
-}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{<≡>*} \, \targetpre A \targetpost}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \Lleftrightarrow^* \targetpre A \targetpost}
 \lottinferencerulesep
 \lottinferencerule{step}{
-\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{≡>} \, \targetpre B \targetpost}
-}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{<≡>*} \, \targetpre B \targetpost}
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \Rrightarrow \targetpre B \targetpost}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \Lleftrightarrow^* \targetpre B \targetpost}
 \lottinferencerulesep
 \lottinferencerule{sym}{
-\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre B \targetpost \, \lottsym{<≡>*} \, \targetpre A \targetpost}
-}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{<≡>*} \, \targetpre B \targetpost}
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre B \targetpost \Lleftrightarrow^* \targetpre A \targetpost}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \Lleftrightarrow^* \targetpre B \targetpost}
 \lottinferencerulesep
 \lottinferencerule{trans}{
-\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{<≡>*} \, \targetpre A' \targetpost}\\
-\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A' \targetpost \, \lottsym{<≡>*} \, \targetpre A'' \targetpost}
-}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{<≡>*} \, \targetpre A'' \targetpost}
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \Lleftrightarrow^* \targetpre A' \targetpost}\\
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A' \targetpost \Lleftrightarrow^* \targetpre A'' \targetpost}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \Lleftrightarrow^* \targetpre A'' \targetpost}
 }

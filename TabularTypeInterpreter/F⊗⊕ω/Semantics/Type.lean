@@ -78,7 +78,7 @@ termonly
 @[simp]
 def TypeVarLC (T: «Type») := T.TypeVarLocallyClosed 0
 
-judgement_syntax "body" T : TypeVarBody
+judgement_syntax "body " T : TypeVarBody
 
 termonly
 @[simp]
@@ -259,7 +259,7 @@ def TypeEquivalenceS.delab: Lean.PrettyPrinter.Unexpander
     `([ $Δ $vdash $A $into $B ])
   | _ => throw ()
 
-judgement_syntax Δ " ⊢ " A " ≡> " B : ParallelReduction
+judgement_syntax Δ " ⊢ " A " ≡> " B : ParallelReduction (tex := s!"{Δ} \\, \\lottsym\{⊢} \\, {A} \\Rrightarrow {B}")
 
 judgement ParallelReduction where
 
@@ -335,7 +335,7 @@ def ParallelReduction.delabPRed: Lean.PrettyPrinter.Unexpander
     `([ $Δ $vdash $A $into $B ])
   | _ => throw ()
 
-judgement_syntax Δ " ⊢ " A " ≡>* " B : MultiParallelReduction
+judgement_syntax Δ " ⊢ " A " ≡>* " B : MultiParallelReduction (tex := s!"{Δ} \\, \\lottsym\{⊢} \\, {A} \\Rrightarrow^* {B}")
 
 judgement MultiParallelReduction where
 
@@ -360,7 +360,7 @@ def MultiParallelReduction.delabMPRed: Lean.PrettyPrinter.Unexpander
 termonly
 def ParallelReduction.Multi_of (red: [[ Δ ⊢ A ≡> B ]]): [[ Δ ⊢ A ≡>* B ]] := .step red .refl
 
-judgement_syntax Δ " ⊢ " A " <≡>* " B : EqParallelReduction
+judgement_syntax Δ " ⊢ " A " <≡>* " B : EqParallelReduction (tex := s!"{Δ} \\, \\lottsym\{⊢} \\, {A} \\Lleftrightarrow^* {B}")
 
 judgement EqParallelReduction where
 

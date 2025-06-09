@@ -90,7 +90,7 @@ j ∈ [:n]
 termonly
 attribute [app_unexpander Typing] Kinding.delabK
 
-judgement_syntax E " -> " F : OperationalSemantics (tex := s!"{E} \\, \\lottsym\{→} \\, {F}")
+judgement_syntax E " -> " F : OperationalSemantics (tex := s!"{E} \\, \\lottsym\{⟶} \\, {F}")
 
 judgement OperationalSemantics where
 

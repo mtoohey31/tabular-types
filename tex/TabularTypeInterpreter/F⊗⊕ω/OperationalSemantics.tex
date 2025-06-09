@@ -1,49 +1,49 @@
-\lottjudgement{Operational Semantics}{\targetpre E \targetpost \, \lottsym{→} \, \targetpre F \targetpost}{
+\lottjudgement{Operational Semantics}{\targetpre E \targetpost \, \lottsym{⟶} \, \targetpre F \targetpost}{
 \lottinferencerule{appL}{
-\lotthypothesis{\targetpre E \targetpost \, \lottsym{→} \, \targetpre E' \targetpost}
-}{\targetpre \targetpre E \targetpost \, \targetpre F \targetpost \targetpost \, \lottsym{→} \, \targetpre \targetpre E' \targetpost \, \targetpre F \targetpost \targetpost}
+\lotthypothesis{\targetpre E \targetpost \, \lottsym{⟶} \, \targetpre E' \targetpost}
+}{\targetpre \targetpre E \targetpost \, \targetpre F \targetpost \targetpost \, \lottsym{⟶} \, \targetpre \targetpre E' \targetpost \, \targetpre F \targetpost \targetpost}
 \lottinferencerulesep
 \lottinferencerule{appR}{
-\lotthypothesis{\targetpre F \targetpost \, \lottsym{→} \, \targetpre F' \targetpost}
-}{\targetpre \targetpre \targetpre V \targetpost \targetpost \, \targetpre F \targetpost \targetpost \, \lottsym{→} \, \targetpre \targetpre \targetpre V \targetpost \targetpost \, \targetpre F' \targetpost \targetpost}
+\lotthypothesis{\targetpre F \targetpost \, \lottsym{⟶} \, \targetpre F' \targetpost}
+}{\targetpre \targetpre \targetpre V \targetpost \targetpost \, \targetpre F \targetpost \targetpost \, \lottsym{⟶} \, \targetpre \targetpre \targetpre V \targetpost \targetpost \, \targetpre F' \targetpost \targetpost}
 \lottinferencerulesep
 \lottinferencerule{lamApp}{
 \\\\
-}{\targetpre \targetpre \lottsym{(} \targetpre \lottsym{λ} \, \targetpre x \targetpost \, \lottsym{:} \, \targetpre A \targetpost \lottsym{.} \, \targetpre E \targetpost \targetpost \lottsym{)} \targetpost \, \targetpre \targetpre V \targetpost \targetpost \targetpost \, \lottsym{→} \, \targetpre \targetpre E \targetpost\left[\targetpre \targetpre V \targetpost \targetpost/\targetpre x \targetpost\right] \targetpost}
+}{\targetpre \targetpre \lottsym{(} \targetpre \lottsym{λ} \, \targetpre x \targetpost \, \lottsym{:} \, \targetpre A \targetpost \lottsym{.} \, \targetpre E \targetpost \targetpost \lottsym{)} \targetpost \, \targetpre \targetpre V \targetpost \targetpost \targetpost \, \lottsym{⟶} \, \targetpre \targetpre E \targetpost\left[\targetpre \targetpre V \targetpost \targetpost/\targetpre x \targetpost\right] \targetpost}
 \lottinferencerulesep
 \lottinferencerule{typeApp}{
-\lotthypothesis{\targetpre E \targetpost \, \lottsym{→} \, \targetpre E' \targetpost}
-}{\targetpre \targetpre E \targetpost \, \lottsym{[} \targetpre A \targetpost \lottsym{]} \targetpost \, \lottsym{→} \, \targetpre \targetpre E' \targetpost \, \lottsym{[} \targetpre A \targetpost \lottsym{]} \targetpost}
+\lotthypothesis{\targetpre E \targetpost \, \lottsym{⟶} \, \targetpre E' \targetpost}
+}{\targetpre \targetpre E \targetpost \, \lottsym{[} \targetpre A \targetpost \lottsym{]} \targetpost \, \lottsym{⟶} \, \targetpre \targetpre E' \targetpost \, \lottsym{[} \targetpre A \targetpost \lottsym{]} \targetpost}
 \lottinferencerulesep
 \lottinferencerule{typeLamApp}{
 \\\\
-}{\targetpre \targetpre \lottsym{(} \targetpre \lottsym{Λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre E \targetpost \targetpost \lottsym{)} \targetpost \, \lottsym{[} \targetpre A \targetpost \lottsym{]} \targetpost \, \lottsym{→} \, \targetpre \targetpre E \targetpost\left[\targetpre A \targetpost/\targetpre a \targetpost\right] \targetpost}
+}{\targetpre \targetpre \lottsym{(} \targetpre \lottsym{Λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre E \targetpost \targetpost \lottsym{)} \targetpost \, \lottsym{[} \targetpre A \targetpost \lottsym{]} \targetpost \, \lottsym{⟶} \, \targetpre \targetpre E \targetpost\left[\targetpre A \targetpost/\targetpre a \targetpost\right] \targetpost}
 \lottinferencerulesep
 \lottinferencerule{prodIntro}{
-\lotthypothesis{\targetpre E \targetpost \, \lottsym{→} \, \targetpre E' \targetpost}
-}{\targetpre \lottsym{(} \lottsepbycomprehension{\targetpre \targetpre {V}_{i} \targetpost \targetpost} \lottsym{,} \, \targetpre E \targetpost \lottsym{,} \, \lottsepbycomprehension{\targetpre {F}_{j} \targetpost} \lottsym{)} \targetpost \, \lottsym{→} \, \targetpre \lottsym{(} \lottsepbycomprehension{\targetpre \targetpre {V}_{i} \targetpost \targetpost} \lottsym{,} \, \targetpre E' \targetpost \lottsym{,} \, \lottsepbycomprehension{\targetpre {F}_{j} \targetpost} \lottsym{)} \targetpost}
+\lotthypothesis{\targetpre E \targetpost \, \lottsym{⟶} \, \targetpre E' \targetpost}
+}{\targetpre \lottsym{(} \lottsepbycomprehension{\targetpre \targetpre {V}_{i} \targetpost \targetpost} \lottsym{,} \, \targetpre E \targetpost \lottsym{,} \, \lottsepbycomprehension{\targetpre {F}_{j} \targetpost} \lottsym{)} \targetpost \, \lottsym{⟶} \, \targetpre \lottsym{(} \lottsepbycomprehension{\targetpre \targetpre {V}_{i} \targetpost \targetpost} \lottsym{,} \, \targetpre E' \targetpost \lottsym{,} \, \lottsepbycomprehension{\targetpre {F}_{j} \targetpost} \lottsym{)} \targetpost}
 \lottinferencerulesep
 \lottinferencerule{prodElim}{
-\lotthypothesis{\targetpre E \targetpost \, \lottsym{→} \, \targetpre E' \targetpost}
-}{\targetpre \lottsym{π}_{i} \, \targetpre E \targetpost \targetpost \, \lottsym{→} \, \targetpre \lottsym{π}_{i} \, \targetpre E' \targetpost \targetpost}
+\lotthypothesis{\targetpre E \targetpost \, \lottsym{⟶} \, \targetpre E' \targetpost}
+}{\targetpre \lottsym{π}_{i} \, \targetpre E \targetpost \targetpost \, \lottsym{⟶} \, \targetpre \lottsym{π}_{i} \, \targetpre E' \targetpost \targetpost}
 \lottinferencerulesep
 \lottinferencerule{prodElimIntro}{
 \lotthypothesis{j \, \lottsym{∈} \, \lottsym{[} \lottsym{:} n \lottsym{]}}
-}{\targetpre \lottsym{π}_{j} \, \targetpre \lottsym{(} \lottsepbycomprehensionpatcollection{\targetpre \targetpre {V}_{i} \targetpost \targetpost}{i}{[:n]} \lottsym{)} \targetpost \targetpost \, \lottsym{→} \, \targetpre \targetpre {V}_{j} \targetpost \targetpost}
+}{\targetpre \lottsym{π}_{j} \, \targetpre \lottsym{(} \lottsepbycomprehensionpatcollection{\targetpre \targetpre {V}_{i} \targetpost \targetpost}{i}{[:n]} \lottsym{)} \targetpost \targetpost \, \lottsym{⟶} \, \targetpre \targetpre {V}_{j} \targetpost \targetpost}
 \lottinferencerulesep
 \lottinferencerule{sumIntro}{
-\lotthypothesis{\targetpre E \targetpost \, \lottsym{→} \, \targetpre E' \targetpost}
-}{\targetpre \lottsym{ι}_{i} \, \targetpre E \targetpost \targetpost \, \lottsym{→} \, \targetpre \lottsym{ι}_{i} \, \targetpre E' \targetpost \targetpost}
+\lotthypothesis{\targetpre E \targetpost \, \lottsym{⟶} \, \targetpre E' \targetpost}
+}{\targetpre \lottsym{ι}_{i} \, \targetpre E \targetpost \targetpost \, \lottsym{⟶} \, \targetpre \lottsym{ι}_{i} \, \targetpre E' \targetpost \targetpost}
 \lottinferencerulesep
 \lottinferencerule{sumElimL}{
-\lotthypothesis{\targetpre E \targetpost \, \lottsym{→} \, \targetpre E' \targetpost}
-}{\targetpre \lottkw{case} \, \targetpre E \targetpost \, \lottsym{\{} \lottsepbycomprehension{\targetpre {F}_{i} \targetpost} \lottsym{\}} \targetpost \, \lottsym{→} \, \targetpre \lottkw{case} \, \targetpre E' \targetpost \, \lottsym{\{} \lottsepbycomprehension{\targetpre {F}_{i} \targetpost} \lottsym{\}} \targetpost}
+\lotthypothesis{\targetpre E \targetpost \, \lottsym{⟶} \, \targetpre E' \targetpost}
+}{\targetpre \lottkw{case} \, \targetpre E \targetpost \, \lottsym{\{} \lottsepbycomprehension{\targetpre {F}_{i} \targetpost} \lottsym{\}} \targetpost \, \lottsym{⟶} \, \targetpre \lottkw{case} \, \targetpre E' \targetpost \, \lottsym{\{} \lottsepbycomprehension{\targetpre {F}_{i} \targetpost} \lottsym{\}} \targetpost}
 \lottinferencerulesep
 \lottinferencerule{sumElimR}{
-\lotthypothesis{\targetpre E \targetpost \, \lottsym{→} \, \targetpre E' \targetpost}
-}{\targetpre \lottkw{case} \, \targetpre \targetpre V \targetpost \targetpost \, \lottsym{\{} \lottsepbycomprehension{\targetpre \targetpre {V'}_{i} \targetpost \targetpost} \lottsym{,} \, \targetpre E \targetpost \lottsym{,} \, \lottsepbycomprehension{\targetpre {F}_{j} \targetpost} \lottsym{\}} \targetpost \, \lottsym{→} \, \targetpre \lottkw{case} \, \targetpre \targetpre V \targetpost \targetpost \, \lottsym{\{} \lottsepbycomprehension{\targetpre \targetpre {V'}_{i} \targetpost \targetpost} \lottsym{,} \, \targetpre E' \targetpost \lottsym{,} \, \lottsepbycomprehension{\targetpre {F}_{j} \targetpost} \lottsym{\}} \targetpost}
+\lotthypothesis{\targetpre E \targetpost \, \lottsym{⟶} \, \targetpre E' \targetpost}
+}{\targetpre \lottkw{case} \, \targetpre \targetpre V \targetpost \targetpost \, \lottsym{\{} \lottsepbycomprehension{\targetpre \targetpre {V'}_{i} \targetpost \targetpost} \lottsym{,} \, \targetpre E \targetpost \lottsym{,} \, \lottsepbycomprehension{\targetpre {F}_{j} \targetpost} \lottsym{\}} \targetpost \, \lottsym{⟶} \, \targetpre \lottkw{case} \, \targetpre \targetpre V \targetpost \targetpost \, \lottsym{\{} \lottsepbycomprehension{\targetpre \targetpre {V'}_{i} \targetpost \targetpost} \lottsym{,} \, \targetpre E' \targetpost \lottsym{,} \, \lottsepbycomprehension{\targetpre {F}_{j} \targetpost} \lottsym{\}} \targetpost}
 \lottinferencerulesep
 \lottinferencerule{sumElimIntro}{
 \lotthypothesis{j \, \lottsym{∈} \, \lottsym{[} \lottsym{:} n \lottsym{]}}
-}{\targetpre \lottkw{case} \, \targetpre \lottsym{ι}_{j} \, \targetpre \targetpre V \targetpost \targetpost \targetpost \, \lottsym{\{} \lottsepbycomprehensionpatcollection{\targetpre \targetpre {V'}_{i} \targetpost \targetpost}{i}{[:n]} \lottsym{\}} \targetpost \, \lottsym{→} \, \targetpre \targetpre \targetpre {V'}_{j} \targetpost \targetpost \, \targetpre \targetpre V \targetpost \targetpost \targetpost}
+}{\targetpre \lottkw{case} \, \targetpre \lottsym{ι}_{j} \, \targetpre \targetpre V \targetpost \targetpost \targetpost \, \lottsym{\{} \lottsepbycomprehensionpatcollection{\targetpre \targetpre {V'}_{i} \targetpost \targetpost}{i}{[:n]} \lottsym{\}} \targetpost \, \lottsym{⟶} \, \targetpre \targetpre \targetpre {V'}_{j} \targetpost \targetpost \, \targetpre \targetpre V \targetpost \targetpost \targetpost}
 }
