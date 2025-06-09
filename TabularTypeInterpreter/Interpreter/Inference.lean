@@ -145,7 +145,15 @@ partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
     let t ← withItem (.termvar χ τa) do check e τb
     return ⟨Monotype.arr τa τb, t.lam⟩
   | .label l => return ⟨Monotype.floor (.label l), .label⟩
-  | .elim e₁ e₂ => throw $ .panic "unimplemented"
+  | .unlabel e₁ e₂ =>
+    -- TODO: I think forcing the kind information to be none is a mistake here, but that's what the typing tree expects. I assume it's a mistake there.
+    if let ⟨Monotype.app (.prodOrSum Ξ μ) (.row (.cons ξ τ .nil) none), t₁⟩ ← infer e₁ then
+      let t₂ ← check e₂ (ξ.floor)
+      return ⟨τ, t₁.unlabel⟩
+    else throw $ .panic "expected a singleton product or sum"
+  | .prod labeledTerms => throw $ .panic "unimplemented"
+  | .sum ξ τ => throw $ .panic "unimplemented"
+  -- NOTE: the rest of the rules use constraints, so we should get some scaffolding setup soon.
   | _ => throw $ .panic "unimplemented"
 
 -- TODO: How do we produce a typing derivation for inferApp?
