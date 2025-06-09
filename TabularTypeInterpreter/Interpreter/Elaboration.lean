@@ -29,6 +29,7 @@ namespace Monotype
 
 def subst (τ τ' : Monotype) (i : TId) : Monotype := match τ with
   | var i' => if i == i' then τ' else var i'
+  | uvar _ => panic! "Encountered unexpected unification variable."
   | lam i' κ τ'' => lam i' κ <| if i == i' then τ'' else subst τ'' τ' i
   | app ϕ τ'' => app (subst ϕ τ' i) (subst τ'' τ' i)
   | arr τ₀ τ₁ => app (subst τ₀ τ' i) (subst τ₁ τ' i)
@@ -449,7 +450,7 @@ inductive Subtyping : TypeScheme → TypeScheme → Type where
     Subtyping ((prodOrSum Ξ μ).app ρ₀) ((prodOrSum Ξ μ).app ρ₁)
   | decay : CommutativityPartialOrdering μ₀ μ₁ →
     Subtyping ((prodOrSum Ξ μ₀).app ρ) ((prodOrSum Ξ μ₁).app ρ)
-  | never : Subtyping ((prodOrSum (uvars := false) .sum (comm .comm)).app (.row .nil (some star))) σ
+  | never : Subtyping ((prodOrSum .sum (comm .comm)).app (.row .nil (some star))) σ
   | contain : RowEquivalence ρ₀ μ ρ₂ → RowEquivalence ρ₁ μ ρ₃ →
     Subtyping (contain ρ₀ μ ρ₁) (contain ρ₂ μ ρ₃)
   | concat : RowEquivalence ρ₀ μ ρ₃ → RowEquivalence ρ₁ μ ρ₄ → RowEquivalence ρ₂ μ ρ₅ →
@@ -457,9 +458,9 @@ inductive Subtyping : TypeScheme → TypeScheme → Type where
   | all : RowEquivalence ρ₀ (comm .comm) ρ₁ → Subtyping ((all.app ϕ).app ρ₀) ((all.app ϕ).app ρ₁)
   | split : Subtyping (concat ((lift.app ϕ).app ρ₀) μ ρ₁ ρ₂) (concat ((lift.app ϕ).app ρ₃) μ ρ₄ ρ₅) →
     Subtyping ((((split.app ϕ).app ρ₀).app ρ₁).app ρ₂)
-      ((((split.app (uvars := false) ϕ).app ρ₃).app ρ₄).app ρ₅)
-  | aliasₗ : Subtyping («alias» (uvars := false) s) σ
-  | aliasᵣ : Subtyping σ («alias» (uvars := false) s)
+      ((((split.app ϕ).app ρ₃).app ρ₄).app ρ₅)
+  | aliasₗ : Subtyping («alias» s) σ
+  | aliasᵣ : Subtyping σ («alias» s)
 
 def Subtyping.elab : Subtyping σ₀ σ₁ → ElabM «λπι».Term
   | refl | decay _ | aliasₗ | aliasᵣ => return .id
@@ -542,13 +543,13 @@ inductive Typing : Term → TypeScheme → Type where
   | schemeE : Typing M (quant i κ σ) → Typing M (subst σ τ i)
   | let : Typing M σ₀ → Typing N σ₁ → Typing (M.let i (Option.someIf σ₀ b) N) σ₁
   | annot : Typing M σ → Typing (M.annot σ) σ
-  | label : Typing (label s) (floor (uvars := false) (.label s))
+  | label : Typing (label s) (floor (.label s))
   | prod : (∀ MNξτ ∈ MNs.zip ξτs, let ((_, N), _, τ) := MNξτ; Typing N τ) →
     Typing (prod (.ofList MNs))
-      ((prodOrSum .prod (comm .non)).app (row (.ofList (uvars := false) ξτs) none))
+      ((prodOrSum .prod (comm .non)).app (row (.ofList ξτs) none))
   | sum {τ : Monotype} : Typing N τ →
     Typing (sum M N) ((prodOrSum .sum (comm .non)).app (row (.cons ξ τ .nil) none))
-  | unlabel : Typing M ((prodOrSum Ξ μ).app (row (.cons (uvars := false) ξ τ .nil) none)) →
+  | unlabel : Typing M ((prodOrSum Ξ μ).app (row (.cons ξ τ .nil) none)) →
     Typing (unlabel M N) τ
   | prj : Typing M ((prodOrSum .prod μ).app ρ₀) → ConstraintSolution (contain ρ₁ μ ρ₀) →
     Typing (prj M) ((prodOrSum .prod μ).app ρ₁)
@@ -578,16 +579,16 @@ inductive Typing : Term → TypeScheme → Type where
     Typing N (((prodOrSum .sum (comm .comm)).app ρ₁).arr τ) →
     ConstraintSolution ((((split.app ϕ).app ρ₀).app ρ₁).app ρ₂) →
     Typing (M.splitₛ ϕ N) (((prodOrSum .sum (comm .comm)).app ρ₂).arr τ)
-  | nil : Typing nil (list.app (uvars := false) τ)
+  | nil : Typing nil (list.app τ)
   | cons {τ : Monotype} : Typing M τ → Typing N (list.app τ) → Typing (cons M N) (list.app τ)
   | fold : Typing fold (quant i star (quant iₐ star (qual (mono (arr (arr
       (.var iₐ) (arr (.var i) (.var iₐ))) (arr (.var iₐ) ((list.app (.var i)).arr (.var iₐ))))))))
-  | int : Typing (int i) (Monotype.int (uvars := false))
-  | op : Typing M (Monotype.int (uvars := false)) → Typing N (Monotype.int (uvars := false)) →
+  | int : Typing (int i) Monotype.int
+  | op : Typing M Monotype.int → Typing N Monotype.int →
     Typing (op o M N) o.result
-  | range : Typing range (Monotype.int.arr (uvars := false) (list.app .int))
-  | str : Typing (str s) (Monotype.str (uvars := false))
-  | throw : Typing throw (Monotype.str (uvars := false).arr σ)
+  | range : Typing range (Monotype.int.arr (list.app .int))
+  | str : Typing (str s) (Monotype.str)
+  | throw : Typing throw (Monotype.str.arr σ)
   | def : Typing («def» s) σ
 
 instance [Inhabited α] : Inhabited (Thunk α) where

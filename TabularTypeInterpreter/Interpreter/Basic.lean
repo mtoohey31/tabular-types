@@ -59,33 +59,33 @@ abbrev TId := Id `type
 
 mutual
 
-inductive Monotype : (uvars : optParam Bool false) → Type where
-  | var : TId → Monotype uvars
-  | uvar : Nat → Monotype true
-  | lam : TId → Kind → Monotype uvars → Monotype uvars
-  | app : Monotype uvars → Monotype uvars → Monotype uvars
-  | arr : Monotype uvars → Monotype uvars → Monotype uvars
-  | label : String → Monotype uvars
-  | floor : Monotype uvars → Monotype uvars
-  | comm : Comm → Monotype uvars
-  | row : MonotypePairList uvars → Option Kind → Monotype uvars
-  | prodOrSum : ProdOrSum → Monotype uvars → Monotype uvars
-  | lift : Monotype uvars
-  | contain (ρ₀ μ ρ₁ : Monotype uvars) : Monotype uvars
-  | concat (ρ₀ μ ρ₁ ρ₂ : Monotype uvars) : Monotype uvars
-  | tc : String → Monotype uvars
-  | all : Monotype uvars
-  | ind : Monotype uvars
-  | split : Monotype uvars
-  | list : Monotype uvars
-  | int : Monotype uvars
-  | str : Monotype uvars
-  | alias : String → Monotype uvars
+inductive Monotype where
+  | var : TId → Monotype
+  | uvar : Nat → Monotype
+  | lam : TId → Kind → Monotype → Monotype
+  | app : Monotype → Monotype → Monotype
+  | arr : Monotype → Monotype → Monotype
+  | label : String → Monotype
+  | floor : Monotype → Monotype
+  | comm : Comm → Monotype
+  | row : MonotypePairList → Option Kind → Monotype
+  | prodOrSum : ProdOrSum → Monotype → Monotype
+  | lift : Monotype
+  | contain (ρ₀ μ ρ₁ : Monotype) : Monotype
+  | concat (ρ₀ μ ρ₁ ρ₂ : Monotype) : Monotype
+  | tc : String → Monotype
+  | all : Monotype
+  | ind : Monotype
+  | split : Monotype
+  | list : Monotype
+  | int : Monotype
+  | str : Monotype
+  | alias : String → Monotype
 deriving BEq
 
-inductive MonotypePairList : (uvars : optParam Bool false) → Type where
-  | nil : MonotypePairList uvars
-  | cons (head₀ head₁ : Monotype uvars) (tail : MonotypePairList uvars) : MonotypePairList uvars
+inductive MonotypePairList where
+  | nil : MonotypePairList
+  | cons (head₀ head₁ : Monotype) (tail : MonotypePairList) : MonotypePairList
 deriving BEq
 
 end
@@ -94,7 +94,7 @@ mutual
 
 @[simp]
 protected noncomputable
-def Monotype.sizeOf : Monotype uvars → Nat
+def Monotype.sizeOf : Monotype → Nat
   | .var _ | .uvar _ | .label _ | .comm _ | .lift | .tc _ | .all | .ind | .split
   | .list | .int | .str | .alias _ => 1
   | .lam _ κ τ => 1 + sizeOf κ + τ.sizeOf
@@ -108,31 +108,31 @@ def Monotype.sizeOf : Monotype uvars → Nat
 
 @[simp]
 protected noncomputable
-def MonotypePairList.sizeOf : MonotypePairList uvars → Nat
+def MonotypePairList.sizeOf : MonotypePairList → Nat
   | .nil => 1
   | .cons head₀ head₁ tail => 2 + head₀.sizeOf + head₁.sizeOf + tail.sizeOf
 
 end
 
 noncomputable
-instance (priority := high) : SizeOf (Monotype uvars) where
+instance (priority := high) : SizeOf Monotype where
   sizeOf := Monotype.sizeOf
 
 namespace MonotypePairList
 
-instance : Inhabited (MonotypePairList uvars) where
+instance : Inhabited MonotypePairList where
   default := nil
 
-def toList : MonotypePairList uvars → List (Monotype uvars × Monotype uvars)
+def toList : MonotypePairList → List (Monotype × Monotype)
   | nil => []
   | cons head₀ head₁ tail => (head₀, head₁) :: tail.toList
 
-def ofList : List (Monotype uvars × Monotype uvars) → MonotypePairList uvars
+def ofList : List (Monotype × Monotype) → MonotypePairList
   | [] => nil
   | (head₀, head₁) :: tail => cons head₀ head₁ <| .ofList tail
 
 noncomputable
-instance (priority := high) : SizeOf (MonotypePairList uvars) where
+instance (priority := high) : SizeOf MonotypePairList where
   sizeOf := MonotypePairList.sizeOf
 
 @[simp]
@@ -171,10 +171,10 @@ end MonotypePairList
 
 namespace Monotype
 
-instance : Inhabited (Monotype uvars) where
+instance : Inhabited Monotype where
   default := var <| .mk 1000000
 
-def toString [ToString TId] (τ : Monotype uvars) : String := match τ with
+def toString [ToString TId] (τ : Monotype) : String := match τ with
   | var i => s!"{i}"
   | uvar n => s!"u{n}"
   | lam i κ τ => s!"(λ {i} : {κ}. {τ.toString})"
@@ -212,52 +212,52 @@ decreasing_by
     · assumption
   )
 
-instance [ToString TId] : ToString (Monotype uvars) where
+instance [ToString TId] : ToString Monotype where
   toString := toString
 
-def unit : Monotype uvars := row .nil <| some .star
+def unit : Monotype := row .nil <| some .star
 
-def bool : Monotype uvars := prodOrSum .sum (comm .non) |>.app <|
+def bool : Monotype := prodOrSum .sum (comm .non) |>.app <|
   row (.cons (label "false") unit (.cons (label "true") unit .nil)) none
 
 end Monotype
 
-inductive QualifiedType : (uvars : optParam Bool false) → Type where
-  | mono : Monotype uvars → QualifiedType uvars
-  | qual : Monotype uvars → QualifiedType uvars → QualifiedType uvars
+inductive QualifiedType where
+  | mono : Monotype → QualifiedType
+  | qual : Monotype → QualifiedType → QualifiedType
 deriving Inhabited, BEq
 
 namespace QualifiedType
 
-instance : Coe (Monotype uvars) (QualifiedType uvars) where
+instance : Coe Monotype QualifiedType where
   coe := .mono
 
-def toString [ToString TId] : QualifiedType uvars → String
+def toString [ToString TId] : QualifiedType → String
   | .mono τ => τ.toString
   | .qual ψ γ => s!"{ψ} ⇒ {γ.toString}"
 
-instance [ToString TId] : ToString (QualifiedType uvars) where
+instance [ToString TId] : ToString QualifiedType where
   toString := QualifiedType.toString
 
 end QualifiedType
 
 open QualifiedType
 
-inductive TypeScheme : (uvars : optParam Bool false) → Type where
-  | qual : QualifiedType uvars → TypeScheme uvars
-  | quant : TId → Kind → TypeScheme uvars → TypeScheme uvars
+inductive TypeScheme where
+  | qual : QualifiedType → TypeScheme
+  | quant : TId → Kind → TypeScheme → TypeScheme
 deriving Inhabited, BEq
 
 namespace TypeScheme
 
-instance : Coe (QualifiedType uvars) (TypeScheme uvars) where
+instance : Coe QualifiedType TypeScheme where
   coe := .qual
 
-def toString [ToString TId] : TypeScheme uvars → String
+def toString [ToString TId] : TypeScheme → String
   | .qual γ => γ.toString
   | .quant i κ σ => s!"∀ {i} {κ}. {σ.toString}"
 
-instance [ToString TId] : ToString (TypeScheme uvars) where
+instance [ToString TId] : ToString TypeScheme where
   toString := toString
 
 end TypeScheme
@@ -268,38 +268,38 @@ abbrev MId := Id `term
 
 mutual
 
-inductive Term : (uvars : optParam Bool false) → Type where
-  | var : MId → Term uvars
-  | member : String → Term uvars
-  | lam : MId → Term uvars → Term uvars
-  | app : Term uvars → Term uvars → Term uvars
-  | let : MId → Option (TypeScheme uvars) → Term uvars → Term uvars → Term uvars
-  | annot : Term uvars → TypeScheme uvars → Term uvars
-  | label : String → Term uvars
-  | prod : TermPairList uvars → Term uvars
-  | sum : Term uvars → Term uvars → Term uvars
-  | unlabel : Term uvars → Term uvars → Term uvars
-  | prj : Term uvars → Term uvars
-  | concat : Term uvars → Term uvars → Term uvars
-  | inj : Term uvars → Term uvars
-  | elim : Term uvars → Term uvars → Term uvars
-  | ind (ϕ ρ : Monotype uvars) (l t rn ri rp : TId) (M N : Term uvars) : Term uvars
-  | splitₚ : Monotype uvars → Term uvars → Term uvars
-  | splitₛ : Monotype uvars → Term uvars → Term uvars → Term uvars
-  | nil : Term uvars
-  | cons : Term uvars → Term uvars → Term uvars
-  | fold : Term uvars
-  | int : Int → Term uvars
-  | op : Op → Term uvars → Term uvars → Term uvars
-  | range : Term uvars
-  | str : String → Term uvars
-  | throw : Term uvars
-  | def : String → Term uvars
+inductive Term where
+  | var : MId → Term
+  | member : String → Term
+  | lam : MId → Term → Term
+  | app : Term → Term → Term
+  | let : MId → Option TypeScheme → Term → Term → Term
+  | annot : Term → TypeScheme → Term
+  | label : String → Term
+  | prod : TermPairList → Term
+  | sum : Term → Term → Term
+  | unlabel : Term → Term → Term
+  | prj : Term → Term
+  | concat : Term → Term → Term
+  | inj : Term → Term
+  | elim : Term → Term → Term
+  | ind (ϕ ρ : Monotype) (l t rn ri rp : TId) (M N : Term) : Term
+  | splitₚ : Monotype → Term → Term
+  | splitₛ : Monotype → Term → Term → Term
+  | nil : Term
+  | cons : Term → Term → Term
+  | fold : Term
+  | int : Int → Term
+  | op : Op → Term → Term → Term
+  | range : Term
+  | str : String → Term
+  | throw : Term
+  | def : String → Term
 deriving BEq
 
-inductive TermPairList : (uvars : optParam Bool false) → Type where
-  | nil : TermPairList uvars
-  | cons (head₀ head₁ : Term uvars) (tail : TermPairList uvars) : TermPairList uvars
+inductive TermPairList where
+  | nil : TermPairList
+  | cons (head₀ head₁ : Term) (tail : TermPairList) : TermPairList
 deriving BEq
 
 end
@@ -308,7 +308,7 @@ mutual
 
 @[simp]
 protected noncomputable
-def Term.sizeOf : Term uvars → Nat
+def Term.sizeOf : Term → Nat
   | .var _ | .member _ | .label _ | .nil | .fold | .int _ | .range | .str _ | .throw | .def _ => 1
   | .lam _ M | .prj M | .inj M => 1 + M.sizeOf
   | .app M N | .sum M N | .unlabel M N | .concat M N | .elim M N | .cons M N | .op _ M N =>
@@ -322,31 +322,31 @@ def Term.sizeOf : Term uvars → Nat
 
 @[simp]
 protected noncomputable
-def TermPairList.sizeOf : TermPairList uvars → Nat
+def TermPairList.sizeOf : TermPairList → Nat
   | .nil => 1
   | .cons head₀ head₁ tail => 2 + head₀.sizeOf + head₁.sizeOf + tail.sizeOf
 
 end
 
 noncomputable
-instance (priority := high) : SizeOf (Term uvars) where
+instance (priority := high) : SizeOf Term where
   sizeOf := Term.sizeOf
 
 namespace TermPairList
 
-instance : Inhabited (TermPairList uvars) where
+instance : Inhabited TermPairList where
   default := .nil
 
-def toList : TermPairList uvars → List (Term uvars × Term uvars)
+def toList : TermPairList → List (Term × Term)
   | nil => []
   | cons head₀ head₁ tail => (head₀, head₁) :: tail.toList
 
-def ofList : List (Term uvars × Term uvars) → TermPairList uvars
+def ofList : List (Term × Term) → TermPairList
   | [] => nil
   | (head₀, head₁) :: tail => cons head₀ head₁ <| .ofList tail
 
 noncomputable
-instance (priority := high) : SizeOf (TermPairList uvars) where
+instance (priority := high) : SizeOf TermPairList where
   sizeOf := TermPairList.sizeOf
 
 @[simp]
@@ -385,11 +385,11 @@ end TermPairList
 
 namespace Term
 
-instance : Inhabited (Term uvars) where
+instance : Inhabited Term where
   default := label "default"
 
 private
-def termsFromList (M : Term uvars) : List (Term uvars) × Option (Term uvars) := match M with
+def termsFromList (M : Term) : List Term × Option Term := match M with
   | cons M' N =>
     let (Ms, N'?) := termsFromList N
     (M' :: Ms, N'?)
@@ -399,7 +399,7 @@ def termsFromList (M : Term uvars) : List (Term uvars) × Option (Term uvars) :=
 mutual
 
 partial
-def tableFromTerms [ToString TId] [ToString MId] (Ms : List (Term uvars)) : Option String := do
+def tableFromTerms [ToString TId] [ToString MId] (Ms : List Term) : Option String := do
   let .prod MNs :: _ := Ms | none
   let header ← MNs.toList.mapM fun | (.label s, _) => some s | _ => none
   let entries ← Ms.mapM fun
@@ -418,7 +418,7 @@ def tableFromTerms [ToString TId] [ToString MId] (Ms : List (Term uvars)) : Opti
           (lines.mapIdx (fun i l => l.rightpad <| maxWidths.get! i)))
 
 partial
-def toString [ToString TId] [ToString MId] (M : Term uvars) (table := false) : String := match M with
+def toString [ToString TId] [ToString MId] (M : Term) (table := false) : String := match M with
   | var i => s!"{i}"
   | member s => s
   | lam i M' => s!"(λ {i}. {M'.toString})"
@@ -461,16 +461,16 @@ def toString [ToString TId] [ToString MId] (M : Term uvars) (table := false) : S
 
 end
 
-instance [ToString TId] [ToString MId] : ToString (Term uvars) where
+instance [ToString TId] [ToString MId] : ToString Term where
   toString := toString
 
 end Term
 
 inductive ProgramEntry where
-  | def (x : String) (σ? : Option TypeScheme) (M : Term true)
+  | def (x : String) (σ? : Option TypeScheme) (M : Term)
   | typeAlias (a : String) (σ : TypeScheme)
   | class (TCₛs : List String) (TC : String) (a : TId) (κ : Kind) (m : String) (σ : TypeScheme)
-  | instance (as : List TId) (ψs : List Monotype) (TC : String) (τ : Monotype) (M : Term true)
+  | instance (as : List TId) (ψs : List Monotype) (TC : String) (τ : Monotype) (M : Term)
 deriving BEq
 
 variable {TC} in
