@@ -53,6 +53,7 @@ deriving Inhabited
 structure InferState where Γ : Context deriving Inhabited
 
 abbrev InferM := EStateM InferError InferState
+def fresh : InferM UniVar := sorry
 def getType (χ : TermVar) : InferM TypeScheme := do
   let { Γ } ← get
   let σ ← (getType' Γ χ).getDM (throw $ .panic "variable not defined")
@@ -73,6 +74,14 @@ def split (item : ContextItem) : InferM (Context × Context) := do
   if let (after, _::before) := Γ.splitAt index then
     return (before, after)
   else panic! "malfunction in core `List.idxOf`"
+def before (item : ContextItem) : InferM Unit := do
+  let (before, _after) ← split item
+  set ({ Γ := before } : InferState)
+def withItem (item : ContextItem) (m : InferM a) : InferM a := do
+  push item
+  let x ← m
+  before item
+  return x
 
 def kind (σ : TypeScheme) (κ : Kind) : InferM Unit := do 
   let { Γ .. } <- get
@@ -92,20 +101,12 @@ mutual
 partial def check (e : Term) (σ : TypeScheme) : InferM (e.Typing σ) := do
   match σ with
   | .quant α κ σ =>
-    let item : ContextItem := (.typevar α κ)
-    push item
-    let t ← check e σ
-    let (before, _after) ← split item
-    set ({ Γ := before } : InferState)
+    let t ← withItem (.typevar α κ) do check e σ
     return t.schemeI
   -- TODO: I am deeply inconfident in this rule.
   | .qual $ .qual ψ γ =>
     kind ψ .constr
-    let item : ContextItem := (.constraint ψ)
-    push item
-    let t ← check e γ
-    let (before, _after) ← split item
-    set ({ Γ := before } : InferState)
+    let t ← withItem (.constraint ψ) do check e γ
     return .qualI (fun _ => t)
   | σ =>
     let ⟨σ', t⟩ ← infer e
@@ -127,18 +128,24 @@ partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
     match σ? with
     | .none => 
       let ⟨σ, t⟩ ← infer e
-      let item : ContextItem := .termvar χ σ
-      push item
-      let ⟨σ', t'⟩ ← infer e'
-      let (before, after) ← split item
+      let ⟨σ', t'⟩ ← withItem (.termvar χ σ) do infer e'
       return ⟨σ', t.let (b := false) t'⟩
     | .some σ => 
       let t ← check e σ
-      let item : ContextItem := .termvar χ σ
-      push item
-      let ⟨σ', t'⟩ ← infer e'
-      let (before, after) ← split item
+      let ⟨σ', t'⟩ ← withItem (.termvar χ σ) do infer e'
       return ⟨σ', t.let (b := true) t'⟩
+  | .app e₁ e₂ => throw $ .panic "unimplemented"
+  | .lam χ e =>
+    let a ← fresh
+    let b ← fresh
+    let τa := Monotype.uvar a
+    let τb := Monotype.uvar b
+    push <| .xunivar a .star
+    push <| .xunivar b .star
+    let t ← withItem (.termvar χ τa) do check e τb
+    return ⟨Monotype.arr τa τb, t.lam⟩
+  | .label l => return ⟨Monotype.floor (.label l), .label⟩
+  | .elim e₁ e₂ => throw $ .panic "unimplemented"
   | _ => throw $ .panic "unimplemented"
 
 -- TODO: How do we produce a typing derivation for inferApp?
