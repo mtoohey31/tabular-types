@@ -16,12 +16,12 @@ nonterminal InstanceEnvironmentEntryConstrs, γᵢψs :=
   | sepBy(γᵢψ, ", ") : mk
 
 nosubst
-nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") InstanceEnvironmentEntry, γᵢ :=
+nonterminal InstanceEnvironmentEntry, γᵢ :=
   | "(" "∀ " γᵢas ". " γᵢψs " ⇒ " TC τ ")" " ⇝ " «F⊗⊕ω».E "; " sepBy(«F⊗⊕ω».Eₛ, ", ") : mk (tex noelab := s!"\\lottsym\{(} \\lottsym\{∀} \\, {γᵢas} \\lottsym\{.} \\, {γᵢψs} \\, \\lottsym\{⇒} \\, {TC} \\, {τ} \\lottsym\{)}")
 
 nosubst
-nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") InstanceEnvironment, Γᵢ (tex := "Γ_{I}") :=
-  | "ε"        : empty (tex := "\\epsilon")
+nonterminal InstanceEnvironment, Γᵢ (tex := "Γ_{I}") :=
+  | "ε"        : empty (tex := "\\lottsym{\\epsilon}")
   | Γᵢ ", " γᵢ : ext
 
 end TabularTypeInterpreter

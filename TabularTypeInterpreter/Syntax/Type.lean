@@ -4,29 +4,29 @@ import TabularTypeInterpreter.Syntax.Kind
 
 namespace TabularTypeInterpreter
 
-nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") Commutativity, u :=
+nonterminal Commutativity, u :=
   | "C" : comm (tex := "\\mathfrak{c}")
   | "N" : non (tex := "\\mathfrak{n}")
 
 locally_nameless
-metavar (tex pre := "\\sourcepre", post := "\\sourcepost") TypeVar, a
+metavar TypeVar, a
 
-metavar (tex pre := "\\sourcepre", post := "\\sourcepost") Label, ℓ
+metavar Label, ℓ
 
-nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") ProdOrSum, Ξ :=
+nonterminal ProdOrSum, Ξ :=
   | "Π" : prod
   | "Σ" : sum
 
-metavar (tex pre := "\\sourcepre", post := "\\sourcepost") TypeClass, TC
+metavar TypeClass, TC
 
 variable (TC : Unit) -- To silence warning about TC deprecation.
 
 mutual
 
-nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") TypeLambda, «λτ» :=
+nonterminal TypeLambda, «λτ» :=
   | "(" "λ " a " : " κ ". " τ ")" : mk (bind a in τ)
 
-nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") Monotype, τ, ϕ, ρ, ψ, ξ, μ :=
+nonterminal Monotype, τ, ϕ, ρ, ψ, ξ, μ :=
   | a                                                  : var
   | ϕ τ                                                : app
   | τ₀ " → " τ₁                                        : arr
@@ -49,11 +49,11 @@ nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") Monotype, τ, ϕ,
 
 end
 
-nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") QualifiedType, γ :=
+nonterminal QualifiedType, γ :=
   | τ         : mono
   | ψ " ⇒ " γ : qual
 
-nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") TypeScheme, σ :=
+nonterminal TypeScheme, σ :=
   | γ                     : qual
   | "∀ " a " : " κ ". " σ : quant (bind a)
 

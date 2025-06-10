@@ -6,7 +6,7 @@ namespace TabularTypeInterpreter
 
 open «F⊗⊕ω»
 
-judgement_syntax Γᵢ "; " Γc " ⊢ " pgm " : " σ " ⇝ " E : Program.TypingAndElaboration (tex noelab := s!"{Γᵢ} \\lottsym\{;} \\, {Γc} \\, \\lottsym\{⊢} \\, {pgm} \\, \\lottsym\{:} \\, {σ}")
+judgement_syntax Γᵢ "; " Γc " ⊢ " pgm " : " σ " ⇝ " E : Program.TypingAndElaboration (tex := s!"{Γᵢ} \\lottsym\{;} \\, {Γc} \\, \\lottsym\{⊢} \\, {pgm} \\, \\pgmtypingsym \\, {σ} \\, \\lottsym\{⇝} \\, {E}") (tex noelab := s!"{Γᵢ} \\lottsym\{;} \\, {Γc} \\, \\lottsym\{⊢} \\, {pgm} \\, \\pgmtypingsym \\, {σ}")
 
 judgement Program.TypingAndElaboration where
 

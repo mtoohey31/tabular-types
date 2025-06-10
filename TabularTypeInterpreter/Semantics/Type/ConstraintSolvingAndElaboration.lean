@@ -13,7 +13,7 @@ open «F⊗⊕ω»
 
 syntax (name := constraintSolving) Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment "; " Lott.Symbol.TabularTypeInterpreter.ClassEnvironment "; " Lott.Symbol.TabularTypeInterpreter.TypeEnvironment " ⊨ " Lott.Symbol.TabularTypeInterpreter.Monotype : Lott.Judgement
 
-judgement_syntax Γᵢ "; " Γc "; " Γ " ⊨ " ψ " ⇝ " E : Monotype.ConstraintSolvingAndElaboration (tex noelab := s!"{Γᵢ} \\lottsym\{;} \\, {Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊨} \\, {ψ}")
+judgement_syntax Γᵢ "; " Γc "; " Γ " ⊨ " ψ " ⇝ " E : Monotype.ConstraintSolvingAndElaboration (tex := s!"{Γᵢ} \\lottsym\{;} \\, {Γc} \\lottsym\{;} \\, {Γ} \\, \\solvingsym \\, {ψ} \\, \\lottsym\{⇝} \\, {E}") (tex noelab := s!"{Γᵢ} \\lottsym\{;} \\, {Γc} \\lottsym\{;} \\, {Γ} \\, \\solvingsym \\, {ψ}")
 
 macro_rules
   | `([[$Γᵢ:Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment; $Γc:Lott.Symbol.TabularTypeInterpreter.ClassEnvironment; $Γ:Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ⊨ $ψ:Lott.Symbol.TabularTypeInterpreter.Monotype]]) =>
@@ -28,7 +28,7 @@ def constraintSolvingTexElab : Lott.TexElab := fun profile ref stx => do
   let Γc ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.ClassEnvironment profile ref Γc
   let Γ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeEnvironment profile ref Γ
   let ψ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.Monotype profile ref ψ
-  return s!"{Γᵢ} \\lottsym\{;} \\, {Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊨} \\, {ψ}"
+  return s!"{Γᵢ} \\lottsym\{;} \\, {Γc} \\lottsym\{;} \\, {Γ} \\, \\solvingsym \\, {ψ}"
 
 open TypeScheme
 

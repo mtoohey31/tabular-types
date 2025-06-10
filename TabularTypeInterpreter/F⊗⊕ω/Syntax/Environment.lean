@@ -10,7 +10,7 @@ nonterminal EnvironmentTripleComma, «,,,» :=
 
 nosubst
 nonterminal (tex pre := "\\targetpre", post := "\\targetpost") Environment, Δ :=
-  | "ε"                                      : empty (tex := "\\epsilon")
+  | "ε"                                      : empty (tex := "\\lottsym{\\epsilon}")
   | Δ ", " a " : " K                         : typeExt (id a)
   | Δ «,,» aK:sepBy(a " : " K, ",, ")        : multiTypeExt notex (id a) (expand := return .mkCApp `TabularTypeInterpreter.«F⊗⊕ω».Environment.multiTypeExt #[Δ, aK])
   | Δ ", " x " : " A                         : termExt (id x)

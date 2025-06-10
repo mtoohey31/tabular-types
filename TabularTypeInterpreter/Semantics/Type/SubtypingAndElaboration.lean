@@ -4,7 +4,7 @@ namespace TabularTypeInterpreter
 
 open «F⊗⊕ω»
 
-judgement_syntax μ₀ " ≤ " μ₁ : Monotype.CommutativityPartialOrdering
+judgement_syntax μ₀ " ≤ " μ₁ : Monotype.CommutativityPartialOrdering (tex := s!"{μ₀} \\, \\partialordsym \\, {μ₁}")
 
 judgement Monotype.CommutativityPartialOrdering where
 
@@ -16,7 +16,7 @@ N ≤ μ
 
 syntax (name := subtyping) Lott.Symbol.TabularTypeInterpreter.ClassEnvironment "; " Lott.Symbol.TabularTypeInterpreter.TypeEnvironment " ⊢ " Lott.Symbol.TabularTypeInterpreter.TypeScheme " <: " Lott.Symbol.TabularTypeInterpreter.TypeScheme : Lott.Judgement
 
-judgement_syntax Γc "; " Γ " ⊢ " σ₀ " <: " σ₁ " ⇝ " F : TypeScheme.SubtypingAndElaboration (tex noelab := s!"{Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {σ₀} \\, \\lottsym\{<:} \\, {σ₁}")
+judgement_syntax Γc "; " Γ " ⊢ " σ₀ " <: " σ₁ " ⇝ " F : TypeScheme.SubtypingAndElaboration (tex := s!"{Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {σ₀} \\, \\subtypingsym \\, {σ₁} \\, \\lottsym\{⇝} \\, {F}") (tex noelab := s!"{Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {σ₀} \\, \\subtypingsym \\, {σ₁}")
 
 macro_rules
   | `([[$Γc:Lott.Symbol.TabularTypeInterpreter.ClassEnvironment; $Γ:Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ⊢ $σ₀:Lott.Symbol.TabularTypeInterpreter.TypeScheme <: $σ₁:Lott.Symbol.TabularTypeInterpreter.TypeScheme]]) =>
@@ -31,7 +31,7 @@ def subtypingTexElab : Lott.TexElab := fun profile ref stx => do
   let Γ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeEnvironment profile ref Γ
   let σ₀ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeScheme profile ref σ₀
   let σ₁ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeScheme profile ref σ₁
-  return s!"{Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {σ₀} \\, \\lottsym\{<:} \\, {σ₁}"
+  return s!"{Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {σ₀} \\, \\subtypingsym \\, {σ₁}"
 
 judgement TypeScheme.SubtypingAndElaboration where
 

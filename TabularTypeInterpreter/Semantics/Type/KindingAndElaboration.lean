@@ -27,7 +27,7 @@ open «F⊗⊕ω»
 
 syntax (name := kinding) Lott.Symbol.TabularTypeInterpreter.ClassEnvironment "; " Lott.Symbol.TabularTypeInterpreter.TypeEnvironment " ⊢ " Lott.Symbol.TabularTypeInterpreter.TypeScheme " : " Lott.Symbol.TabularTypeInterpreter.Kind : Lott.Judgement
 
-judgement_syntax Γc "; " Γ " ⊢ " σ " : " κ " ⇝ " A : TypeScheme.KindingAndElaboration (tex noelab := s!"{Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {σ} \\, \\lottsym\{:} \\, {κ}")
+judgement_syntax Γc "; " Γ " ⊢ " σ " : " κ " ⇝ " A : TypeScheme.KindingAndElaboration (tex := s!"{Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {σ} \\, \\kindingsym \\, {κ} \\, \\lottsym\{⇝} \\, {A}") (tex noelab := s!"{Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {σ} \\, \\kindingsym \\, {κ}")
 
 macro_rules
   | `([[$Γc:Lott.Symbol.TabularTypeInterpreter.ClassEnvironment; $Γ:Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ⊢ $σ:Lott.Symbol.TabularTypeInterpreter.TypeScheme : $κ:Lott.Symbol.TabularTypeInterpreter.Kind]]) =>
@@ -42,7 +42,7 @@ def kindingTexElab : Lott.TexElab := fun profile ref stx => do
   let Γ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeEnvironment profile ref Γ
   let σ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeScheme profile ref σ
   let κ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.Kind profile ref κ
-  return s!"{Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {σ} \\, \\lottsym\{:} \\, {κ}"
+  return s!"{Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {σ} \\, \\kindingsym \\, {κ}"
 
 judgement TypeScheme.KindingAndElaboration where
 

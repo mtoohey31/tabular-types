@@ -14,8 +14,8 @@ nonterminal TypeEnvironmentConstrEntry, ψx :=
   | ψ " ⇝ " «F⊗⊕ω».x : mk (id x) (tex noelab := ψ)
 
 nosubst
-nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") TypeEnvironment, Γ :=
-  | "ε"                               : empty (tex := "\\epsilon")
+nonterminal TypeEnvironment, Γ :=
+  | "ε"                               : empty (tex := "\\lottsym{\\epsilon}")
   | Γ ", " a " : " κ                  : typeExt (id a)
   | Γ «,,» aκ:sepBy(a " : " κ, ",, ") : multiTypeExt notex (id a) (expand := return .mkCApp `TabularTypeInterpreter.TypeEnvironment.multiTypeExt #[Γ, aκ])
   | Γ ", " x " : " σ                  : termExt (id x)

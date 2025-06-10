@@ -1,19 +1,19 @@
-\lottjudgement{Constr In}{\sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, \sourcepre Γ \sourcepost}{
+\lottjudgement{Constr In}{ψ \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, Γ}{
 \lottinferencerule{head}{
 \\\\
-}{\sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, \sourcepre \sourcepre Γ \sourcepost \lottsym{,} \, \sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \sourcepost}
+}{ψ \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, Γ \lottsym{,} \, ψ \, \lottsym{⇝} \, \targetpre x \targetpost}
 \lottinferencerulesep
 \lottinferencerule{typeExt}{
-\lotthypothesis{\sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, \sourcepre Γ \sourcepost}
-}{\sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, \sourcepre \sourcepre Γ \sourcepost \lottsym{,} \, \sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \sourcepost}
+\lotthypothesis{ψ \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, Γ}
+}{ψ \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, Γ \lottsym{,} \, a \, \lottsym{:} \, κ}
 \lottinferencerulesep
 \lottinferencerule{termExt}{
-\lotthypothesis{\sourcepre x \sourcepost \, \lottsym{≠} \, \sourcepre x' \sourcepost}\\
-\lotthypothesis{\sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, \sourcepre Γ \sourcepost}
-}{\sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, \sourcepre \sourcepre Γ \sourcepost \lottsym{,} \, \sourcepre x' \sourcepost \, \lottsym{:} \, \sourcepre σ \sourcepost \sourcepost}
+\lotthypothesis{x \, \lottsym{≠} \, x'}\\
+\lotthypothesis{ψ \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, Γ}
+}{ψ \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, Γ \lottsym{,} \, x' \, \lottsym{:} \, σ}
 \lottinferencerulesep
 \lottinferencerule{constrExt}{
-\lotthypothesis{\sourcepre x \sourcepost \, \lottsym{≠} \, \sourcepre x' \sourcepost}\\
-\lotthypothesis{\sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, \sourcepre Γ \sourcepost}
-}{\sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, \sourcepre \sourcepre Γ \sourcepost \lottsym{,} \, \sourcepre ψ' \sourcepost \, \lottsym{⇝} \, \targetpre x' \targetpost \sourcepost}
+\lotthypothesis{x \, \lottsym{≠} \, x'}\\
+\lotthypothesis{ψ \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, Γ}
+}{ψ \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, Γ \lottsym{,} \, ψ' \, \lottsym{⇝} \, \targetpre x' \targetpost}
 }

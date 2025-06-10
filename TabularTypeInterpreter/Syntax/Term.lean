@@ -3,7 +3,7 @@ import TabularTypeInterpreter.Syntax.ClassEnvironment
 
 namespace TabularTypeInterpreter
 
-nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") Term, M, «N» :=
+nonterminal Term, M, «N» :=
   | x                                   : var
   | m                                   : member nosubst
   | "λ " x ". " M                       : lam (bind x in M)
@@ -15,7 +15,7 @@ nonterminal (tex pre := "\\sourcepre", post := "\\sourcepost") Term, M, «N» :=
   | "[" M " ▹ " «N» "]"                 : sum
   | M "/" «N»                           : unlabel
   | "prj " M                            : prj
-  | M " ++ " «N»                        : concat (tex := s!"{M} \\doubleplus {«N»}")
+  | M " ++ " «N»                        : concat (tex := s!"{M} \\lottsym\{\\doubleplus} {«N»}")
   | "inj " M                            : inj
   | M " ▿ " «N»                         : elim
   | "ind " «λτ» ρ "; " M "; " «N»       : ind (tex := s!"\\lottkw\{ind} \\, {«λτ»} \\, {ρ} \\, {M} \\, {«N»}")

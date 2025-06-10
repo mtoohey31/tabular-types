@@ -1,84 +1,84 @@
-\lottjudgement{Kinding And Elaboration}{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre σ \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost}{
+\lottjudgement{Kinding And Elaboration}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, σ \, \kindingsym \, κ}{
 \lottinferencerule{var}{
-\lotthypothesis{\sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \, \lottsym{∈} \, \sourcepre Γ \sourcepost}
-}{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre \sourcepre a \sourcepost \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost}
+\lotthypothesis{a \, \lottsym{:} \, κ \, \lottsym{∈} \, Γ}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, a \, \kindingsym \, κ}
 \lottinferencerulesep
 \lottinferencerule{app}{
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre ϕ \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \sourcepre κ₀ \sourcepost \, \lottsym{↦} \, \sourcepre κ₁ \sourcepost \sourcepost}\\
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre τ \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre κ₀ \sourcepost}
-}{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre \sourcepre ϕ \sourcepost \, \sourcepre τ \sourcepost \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre κ₁ \sourcepost}
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ϕ \, \kindingsym \, κ₀ \, \lottsym{↦} \, κ₁}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ \, \kindingsym \, κ₀}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ϕ \, τ \, \kindingsym \, κ₁}
 \lottinferencerulesep
 \lottinferencerule{arr}{
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre τ₀ \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \star \sourcepost}\\
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre τ₁ \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \star \sourcepost}
-}{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre \sourcepre τ₀ \sourcepost \, \lottsym{→} \, \sourcepre τ₁ \sourcepost \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \star \sourcepost}
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ₀ \, \kindingsym \, \star}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ₁ \, \kindingsym \, \star}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ₀ \, \lottsym{→} \, τ₁ \, \kindingsym \, \star}
 \lottinferencerulesep
 \lottinferencerule{qual}{
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre ψ \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{C} \sourcepost}\\
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre γ \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost}\\
-\lotthypothesis{\lottsym{⊢} \, \sourcepre κ \sourcepost \, \lottsym{⇝} \, \targetpre \star \targetpost}
-}{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre ψ \sourcepost \, \lottsym{⇒} \, \sourcepre γ \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost}
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ψ \, \kindingsym \, \lottkw{C}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, γ \, \kindingsym \, κ}\\
+\lotthypothesis{\lottsym{⊢} \, κ \, \lottsym{⇝} \, \targetpre \lottsym{\star} \targetpost}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ψ \, \lottsym{⇒} \, γ \, \kindingsym \, κ}
 \lottinferencerulesep
 \lottinferencerule{scheme}{
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre \sourcepre Γ \sourcepost \lottsym{,} \, \sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ₀ \sourcepost \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre σ \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre κ₁ \sourcepost}
-}{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \lottsym{∀} \, \sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ₀ \sourcepost \lottsym{.} \, \sourcepre σ \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre κ₁ \sourcepost}
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \lottsym{,} \, a \, \lottsym{:} \, κ₀ \, \lottsym{⊢} \, σ \, \kindingsym \, κ₁}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottsym{∀} \, a \, \lottsym{:} \, κ₀ \lottsym{.} \, σ \, \kindingsym \, κ₁}
 \lottinferencerulesep
 \lottinferencerule{label}{
 \\\\
-}{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre \sourcepre ℓ \sourcepost \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{L} \sourcepost}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ℓ \, \kindingsym \, \lottkw{L}}
 \lottinferencerulesep
 \lottinferencerule{floor}{
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre ξ \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{L} \sourcepost}
-}{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre \lottsym{⌊} \sourcepre ξ \sourcepost \lottsym{⌋} \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \star \sourcepost}
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ξ \, \kindingsym \, \lottkw{L}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottsym{⌊} ξ \lottsym{⌋} \, \kindingsym \, \star}
 \lottinferencerulesep
 \lottinferencerule{comm}{
 \\\\
-}{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre \sourcepre u \sourcepost \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{U} \sourcepost}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, u \, \kindingsym \, \lottkw{U}}
 \lottinferencerulesep
 \lottinferencerule{row}{
-\lotthypothesis{\lottjudgementcomprehension{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre {ξ}_{i} \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{L} \sourcepost}}\\
-\lotthypothesis{\lottkw{unique} \lottsym{(} \lottsepbycomprehension{\sourcepre {ξ}_{i} \sourcepost} \lottsym{)}}\\
-\lotthypothesis{\lottjudgementcomprehension{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre {τ}_{i} \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost}}
-}{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre \lottsym{⟨} \lottsepbycomprehension{\sourcepre {ξ}_{i} \sourcepost \, \lottsym{▹} \, \sourcepre {τ}_{i} \sourcepost} \lottsym{⟩} \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{R}^{\sourcepre κ \sourcepost} \sourcepost}
+\lotthypothesis{\lottjudgementcomprehension{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, {ξ}_{i} \, \kindingsym \, \lottkw{L}}}\\
+\lotthypothesis{\lottkw{unique} \lottsym{(} \lottsepbycomprehension{{ξ}_{i}} \lottsym{)}}\\
+\lotthypothesis{\lottjudgementcomprehension{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, {τ}_{i} \, \kindingsym \, κ}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottsym{⟨} \lottsepbycomprehension{{ξ}_{i} \, \lottsym{▹} \, {τ}_{i}} \lottsym{⟩} \, \kindingsym \, \lottkw{R}^{κ}}
 \lottinferencerulesep
 \lottinferencerule{prodOrSum}{
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre μ \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{U} \sourcepost}\\
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre ρ \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{R}^{\sourcepre \star \sourcepost} \sourcepost}
-}{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre {\sourcepre \lottsym{Ξ} \sourcepost}_{\sourcepre μ \sourcepost} \, \sourcepre ρ \sourcepost \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \star \sourcepost}
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, μ \, \kindingsym \, \lottkw{U}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ \, \kindingsym \, \lottkw{R}^{\star}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, {\lottsym{Ξ}}_{μ} \, ρ \, \kindingsym \, \star}
 \lottinferencerulesep
 \lottinferencerule{lift}{
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre \sourcepre Γ \sourcepost \lottsym{,} \, \sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ₀ \sourcepost \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre \sourcepre τ \sourcepost \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre κ₁ \sourcepost}\\
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre ρ \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{R}^{\sourcepre κ₀ \sourcepost} \sourcepost}
-}{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre \lottkw{Lift} \, \sourcepre \lottsym{(} \lottsym{λ} \, \sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ₀ \sourcepost \lottsym{.} \, \sourcepre τ \sourcepost \lottsym{)} \sourcepost \, \sourcepre ρ \sourcepost \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{R}^{\sourcepre κ₁ \sourcepost} \sourcepost}
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \lottsym{,} \, a \, \lottsym{:} \, κ₀ \, \lottsym{⊢} \, τ \, \kindingsym \, κ₁}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ \, \kindingsym \, \lottkw{R}^{κ₀}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottkw{Lift} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ₀ \lottsym{.} \, τ \lottsym{)} \, ρ \, \kindingsym \, \lottkw{R}^{κ₁}}
 \lottinferencerulesep
 \lottinferencerule{contain}{
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre μ \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{U} \sourcepost}\\
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre ρ₀ \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{R}^{\sourcepre κ \sourcepost} \sourcepost}\\
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre ρ₁ \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{R}^{\sourcepre κ \sourcepost} \sourcepost}
-}{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre \sourcepre ρ₀ \sourcepost \, \lottsym{≲}_{\sourcepre μ \sourcepost} \, \sourcepre ρ₁ \sourcepost \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{C} \sourcepost}
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, μ \, \kindingsym \, \lottkw{U}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \kindingsym \, \lottkw{R}^{κ}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₁ \, \kindingsym \, \lottkw{R}^{κ}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \lottsym{≲}_{μ} \, ρ₁ \, \kindingsym \, \lottkw{C}}
 \lottinferencerulesep
 \lottinferencerule{concat}{
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre μ \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{U} \sourcepost}\\
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre ρ₀ \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{R}^{\sourcepre κ \sourcepost} \sourcepost}\\
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre ρ₁ \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{R}^{\sourcepre κ \sourcepost} \sourcepost}\\
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre ρ₂ \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{R}^{\sourcepre κ \sourcepost} \sourcepost}
-}{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre \sourcepre ρ₀ \sourcepost \, \lottsym{⊙}_{\sourcepre μ \sourcepost} \, \sourcepre ρ₁ \sourcepost \, \lottsym{\sim} \, \sourcepre ρ₂ \sourcepost \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{C} \sourcepost}
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, μ \, \kindingsym \, \lottkw{U}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \kindingsym \, \lottkw{R}^{κ}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₁ \, \kindingsym \, \lottkw{R}^{κ}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₂ \, \kindingsym \, \lottkw{R}^{κ}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \lottsym{⊙}_{μ} \, ρ₁ \, \lottsym{\sim} \, ρ₂ \, \kindingsym \, \lottkw{C}}
 \lottinferencerulesep
 \lottinferencerule{tc}{
-\lotthypothesis{\sourcepre \lottsym{(} \lottsepbycomprehension{\sourcepre {TCₛ}_{i} \sourcepost \, \sourcepre a \sourcepost} \, \lottsym{⇒} \, \sourcepre TC \sourcepost \, \sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \lottsym{)} \, \lottsym{↦} \, \sourcepre m \sourcepost \, \lottsym{:} \, \sourcepre σ \sourcepost \sourcepost \, \lottsym{∈} \, \sourcepre Γ_{C} \sourcepost}\\
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre τ \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost}
-}{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre \sourcepre TC \sourcepost \, \sourcepre τ \sourcepost \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{C} \sourcepost}
+\lotthypothesis{\lottsym{(} \lottsepbycomprehension{{TCₛ}_{i} \, a} \, \lottsym{⇒} \, TC \, a \, \lottsym{:} \, κ \lottsym{)} \, \lottsym{↦} \, m \, \lottsym{:} \, σ \, \lottsym{∈} \, Γ_{C}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ \, \kindingsym \, κ}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, TC \, τ \, \kindingsym \, \lottkw{C}}
 \lottinferencerulesep
 \lottinferencerule{all}{
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre \sourcepre Γ \sourcepost \lottsym{,} \, \sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre \sourcepre ψ \sourcepost \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{C} \sourcepost}\\
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre ρ \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{R}^{\sourcepre κ \sourcepost} \sourcepost}
-}{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre \lottkw{All} \, \sourcepre \lottsym{(} \lottsym{λ} \, \sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \lottsym{.} \, \sourcepre ψ \sourcepost \lottsym{)} \sourcepost \, \sourcepre ρ \sourcepost \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{C} \sourcepost}
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \lottsym{,} \, a \, \lottsym{:} \, κ \, \lottsym{⊢} \, ψ \, \kindingsym \, \lottkw{C}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ \, \kindingsym \, \lottkw{R}^{κ}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottkw{All} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, ψ \lottsym{)} \, ρ \, \kindingsym \, \lottkw{C}}
 \lottinferencerulesep
 \lottinferencerule{ind}{
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre ρ \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{R}^{\sourcepre κ \sourcepost} \sourcepost}
-}{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre \lottkw{Ind} \, \sourcepre ρ \sourcepost \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{C} \sourcepost}
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ \, \kindingsym \, \lottkw{R}^{κ}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottkw{Ind} \, ρ \, \kindingsym \, \lottkw{C}}
 \lottinferencerulesep
 \lottinferencerule{split}{
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre \sourcepre \lottsym{(} \sourcepre \lottkw{Lift} \, \sourcepre \lottsym{(} \lottsym{λ} \, \sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \lottsym{.} \, \sourcepre τ \sourcepost \lottsym{)} \sourcepost \, \sourcepre ρ₀ \sourcepost \sourcepost \lottsym{)} \sourcepost \, \lottsym{⊙}_{\sourcepre \sourcepre \mathfrak{c} \sourcepost \sourcepost} \, \sourcepre ρ₁ \sourcepost \, \lottsym{\sim} \, \sourcepre ρ₂ \sourcepost \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{C} \sourcepost}
-}{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre \lottkw{Split} \, \sourcepre \lottsym{(} \lottsym{λ} \, \sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \lottsym{.} \, \sourcepre τ \sourcepost \lottsym{)} \sourcepost \, \sourcepre ρ₀ \sourcepost \, \sourcepre ρ₁ \sourcepost \, \sourcepre ρ₂ \sourcepost \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{C} \sourcepost}
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottsym{(} \lottkw{Lift} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ₀ \lottsym{)} \, \lottsym{⊙}_{\mathfrak{c}} \, ρ₁ \, \lottsym{\sim} \, ρ₂ \, \kindingsym \, \lottkw{C}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottkw{Split} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ₀ \, ρ₁ \, ρ₂ \, \kindingsym \, \lottkw{C}}
 }

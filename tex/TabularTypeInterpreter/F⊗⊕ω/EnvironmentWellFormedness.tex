@@ -1,7 +1,7 @@
 \lottjudgement{Environment Well Formedness}{\lottsym{⊢} \, \targetpre Δ \targetpost}{
 \lottinferencerule{empty}{
 \\\\
-}{\lottsym{⊢} \, \targetpre \epsilon \targetpost}
+}{\lottsym{⊢} \, \targetpre \lottsym{\epsilon} \targetpost}
 \lottinferencerulesep
 \lottinferencerule{typeVarExt}{
 \lotthypothesis{\lottsym{⊢} \, \targetpre Δ \targetpost}\\
@@ -11,6 +11,6 @@
 \lottinferencerule{termVarExt}{
 \lotthypothesis{\lottsym{⊢} \, \targetpre Δ \targetpost}\\
 \lotthypothesis{\targetpre x \targetpost \, \lottsym{∉} \, \lottkw{dom} \lottsym{(} \targetpre Δ \targetpost \lottsym{)}}\\
-\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{:} \, \targetpre \star \targetpost}
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{:} \, \targetpre \lottsym{\star} \targetpost}
 }{\lottsym{⊢} \, \targetpre \targetpre Δ \targetpost \lottsym{,} \, \targetpre x \targetpost \, \lottsym{:} \, \targetpre A \targetpost \targetpost}
 }

@@ -1,43 +1,45 @@
 \lottnonterminal{Monotype}{
-\sourcepre\lottalias{τ}\sourcepost
+\lottalias{τ}
 \lottaliassep
-\sourcepre\lottalias{ϕ}\sourcepost
+\lottalias{ϕ}
 \lottaliassep
-\sourcepre\lottalias{ρ}\sourcepost
+\lottalias{ρ}
 \lottaliassep
-\sourcepre\lottalias{ψ}\sourcepost
+\lottalias{ψ}
 \lottaliassep
-\sourcepre\lottalias{ξ}\sourcepost
+\lottalias{ξ}
 \lottaliassep
-\sourcepre\lottalias{μ}\sourcepost
+\lottalias{μ}
 }{
-\lottproduction{\sourcepre \sourcepre a \sourcepost \sourcepost}
+\lottproduction{a}
 \lottproductionsep
-\lottproduction{\sourcepre \sourcepre ϕ \sourcepost \, \sourcepre τ \sourcepost \sourcepost}
+\lottproduction{ϕ \, τ}
 \lottproductionsep
-\lottproduction{\sourcepre \sourcepre τ₀ \sourcepost \, \lottsym{→} \, \sourcepre τ₁ \sourcepost \sourcepost}
+\lottproduction{τ₀ \, \lottsym{→} \, τ₁}
 \lottproductionsep
-\lottproduction{\sourcepre \sourcepre ℓ \sourcepost \sourcepost}
+\lottproduction{ℓ}
 \lottproductionsep
-\lottproduction{\sourcepre \lottsym{⌊} \sourcepre ξ \sourcepost \lottsym{⌋} \sourcepost}
+\lottproduction{\lottsym{⌊} ξ \lottsym{⌋}}
 \lottproductionsep
-\lottproduction{\sourcepre \sourcepre u \sourcepost \sourcepost}
+\lottproduction{u}
 \lottproductionsep
-\lottproduction{\sourcepre \lottsym{⟨} \lottsepbycomprehension{\sourcepre {ξ}_{i} \sourcepost \, \lottsym{▹} \, \sourcepre {τ}_{i} \sourcepost} \lottsym{⟩} \sourcepost}
+\lottproduction{\lottsym{⟨} \lottsepbycomprehension{{ξ}_{i} \, \lottsym{▹} \, {τ}_{i}} \lottsym{⟩}}
 \lottproductionsep
-\lottproduction{\sourcepre {\sourcepre Ξ \sourcepost}_{\sourcepre μ \sourcepost} \, \sourcepre ρ \sourcepost \sourcepost}
-\lottproductionsep
-\lottproductionlinebreak
-\lottproduction{\sourcepre \sourcepre ρ₀ \sourcepost \, \lottsym{≲}_{\sourcepre μ \sourcepost} \, \sourcepre ρ₁ \sourcepost \sourcepost}
-\lottproductionsep
-\lottproduction{\sourcepre \sourcepre ρ₀ \sourcepost \, \lottsym{⊙}_{\sourcepre μ \sourcepost} \, \sourcepre ρ₁ \sourcepost \, \lottsym{\sim} \, \sourcepre ρ₂ \sourcepost \sourcepost}
-\lottproductionsep
-\lottproduction{\sourcepre \sourcepre TC \sourcepost \, \sourcepre τ \sourcepost \sourcepost}
+\lottproduction{{Ξ}_{μ} \, ρ}
 \lottproductionsep
 \lottproductionlinebreak
-\lottproduction{\sourcepre \lottkw{Lift} \, \sourcepre \lottsym{(} \lottsym{λ} \, \sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \lottsym{.} \, \sourcepre τ \sourcepost \lottsym{)} \sourcepost \, \sourcepre ρ \sourcepost \sourcepost}
+\lottproduction{\lottkw{Lift} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ}
 \lottproductionsep
-\lottproduction{\sourcepre \lottkw{All} \, \sourcepre \lottsym{(} \lottsym{λ} \, \sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \lottsym{.} \, \sourcepre τ \sourcepost \lottsym{)} \sourcepost \, \sourcepre ρ \sourcepost \sourcepost}
+\lottproduction{ρ₀ \, \lottsym{≲}_{μ} \, ρ₁}
 \lottproductionsep
-\lottproduction{\sourcepre \lottkw{Split} \, \sourcepre \lottsym{(} \lottsym{λ} \, \sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \lottsym{.} \, \sourcepre τ \sourcepost \lottsym{)} \sourcepost \, \sourcepre ρ₀ \sourcepost \, \sourcepre ρ₁ \sourcepost \, \sourcepre ρ₂ \sourcepost \sourcepost}
+\lottproduction{ρ₀ \, \lottsym{⊙}_{μ} \, ρ₁ \, \lottsym{\sim} \, ρ₂}
+\lottproductionsep
+\lottproduction{TC \, τ}
+\lottproductionsep
+\lottproductionlinebreak
+\lottproduction{\lottkw{All} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ}
+\lottproductionsep
+\lottproduction{\lottkw{Ind} \, ρ}
+\lottproductionsep
+\lottproduction{\lottkw{Split} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ₀ \, ρ₁ \, ρ₂}
 }

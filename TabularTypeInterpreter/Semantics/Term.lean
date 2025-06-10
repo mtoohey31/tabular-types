@@ -23,7 +23,7 @@ abbrev ℓᵣ := 1
 
 syntax (name := typing) Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment "; " Lott.Symbol.TabularTypeInterpreter.ClassEnvironment "; " Lott.Symbol.TabularTypeInterpreter.TypeEnvironment " ⊢ " Lott.Symbol.TabularTypeInterpreter.Term " : " Lott.Symbol.TabularTypeInterpreter.TypeScheme : Lott.Judgement
 
-judgement_syntax Γᵢ "; " Γc "; " Γ " ⊢ " M " : " σ " ⇝ " E : Term.TypingAndElaboration (tex noelab := s!"{Γᵢ} \\lottsym\{;} \\, {Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {M} \\, \\lottsym\{:} \\, {σ}")
+judgement_syntax Γᵢ "; " Γc "; " Γ " ⊢ " M " : " σ " ⇝ " E : Term.TypingAndElaboration (tex := s!"{Γᵢ} \\lottsym\{;} \\, {Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {M} \\, \\typingsym \\, {σ} \\, \\lottsym\{⇝} \\, {E}") (tex noelab := s!"{Γᵢ} \\lottsym\{;} \\, {Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {M} \\, \\typingsym \\, {σ}")
 
 macro_rules
   | `([[$Γᵢ:Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment; $Γc:Lott.Symbol.TabularTypeInterpreter.ClassEnvironment; $Γ:Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ⊢ $M:Lott.Symbol.TabularTypeInterpreter.Term : $σ:Lott.Symbol.TabularTypeInterpreter.TypeScheme]]) =>
@@ -39,7 +39,7 @@ def typingTexElab : Lott.TexElab := fun profile ref stx => do
   let Γ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeEnvironment profile ref Γ
   let M ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.Term profile ref M
   let σ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeScheme profile ref σ
-  return s!"{Γᵢ} \\lottsym\{;} \\, {Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {M} \\, \\lottsym\{:} \\, {σ}"
+  return s!"{Γᵢ} \\lottsym\{;} \\, {Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {M} \\, \\typingsym \\, {σ}"
 
 open TypeScheme
 

@@ -4,7 +4,7 @@ namespace TabularTypeInterpreter
 
 open «F⊗⊕ω»
 
-judgement_syntax Γc "; " Γ " ⊢ " ρ₀ " ≡" "(" μ ") " ρ₁ " ⇝ " Fₚ ", " Fₛ : Monotype.RowEquivalenceAndElaboration (tex := s!"{Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {ρ₀} \\, \\lottsym\{≡}_\{{μ}} \\, {ρ₁} \\, \\lottsym\{⇝} \\, {Fₚ} \\, \\lottsym\{,} \\, {Fₛ}") (tex noelab := s!"{Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {ρ₀} \\, \\lottsym\{≡}_\{{μ}} \\, {ρ₁}")
+judgement_syntax Γc "; " Γ " ⊢ " ρ₀ " ≡" "(" μ ") " ρ₁ " ⇝ " Fₚ ", " Fₛ : Monotype.RowEquivalenceAndElaboration (tex := s!"{Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {ρ₀} \\, \\rowequivsym_\{{μ}} \\, {ρ₁} \\, \\lottsym\{⇝} \\, {Fₚ} \\, \\lottsym\{,} \\, {Fₛ}") (tex noelab := s!"{Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {ρ₀} \\, \\rowequivsym_\{{μ}} \\, {ρ₁}")
 
 judgement Monotype.RowEquivalenceAndElaboration where
 
@@ -68,6 +68,6 @@ def rowEquivalenceTexElab : Lott.TexElab := fun profile ref stx => do
   let ρ₀ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.Monotype profile ref ρ₀
   let μ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.Monotype profile ref μ
   let ρ₁ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeScheme profile ref ρ₁
-  return s!"{Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {ρ₀} \\, \\lottsym\{≡}_\{{μ}} \\, {ρ₁}"
+  return s!"{Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {ρ₀} \\, \\rowequivsym_\{{μ}} \\, {ρ₁}"
 
 end TabularTypeInterpreter
