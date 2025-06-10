@@ -147,12 +147,18 @@ partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
   | .label l => return ⟨Monotype.floor (.label l), .label⟩
   | .unlabel e₁ e₂ =>
     -- TODO: I think forcing the kind information to be none is a mistake here, but that's what the typing tree expects. I assume it's a mistake there.
-    if let ⟨Monotype.app (.prodOrSum Ξ μ) (.row (.cons ξ τ .nil) none), t₁⟩ ← infer e₁ then
-      let t₂ ← check e₂ (ξ.floor)
-      return ⟨τ, t₁.unlabel⟩
-    else throw $ .panic "expected a singleton product or sum"
+    let ⟨Monotype.app (.prodOrSum Ξ μ) (.row (.cons ξ τ .nil) none), t₁⟩ ← infer e₁
+      | throw $ .panic "expected a singleton product or sum"
+    let t₂ ← check e₂ (ξ.floor)
+    return ⟨τ, t₁.unlabel⟩
   | .prod labeledTerms => throw $ .panic "unimplemented"
-  | .sum ξ τ => throw $ .panic "unimplemented"
+  | .sum e₁ e₂ =>
+    let ⟨.qual $ .mono ξ, _⟩ ← infer e₁
+      | throw $ .panic "expected a monotype for the label"
+    kind ξ .label
+    let ⟨.qual $ .mono τ, t⟩ ← infer e₂
+      | throw $ .panic "expected a monotype in the row"
+    return ⟨(Monotype.prodOrSum .sum (.comm .non)).app (.row (.cons ξ τ .nil) none), t.sum⟩
   -- NOTE: the rest of the rules use constraints, so we should get some scaffolding setup soon.
   | _ => throw $ .panic "unimplemented"
 
