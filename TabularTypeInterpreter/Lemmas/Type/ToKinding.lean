@@ -213,16 +213,6 @@ theorem TypeScheme.SubtypingAndElaboration.to_Kinding (σse : [[Γc; Γ ⊢ σ�
       concatke,
       .concat μke ρ₃ke ρ₄ke ρ₅ke κe (.contain μke ρ₃ke ρ₅ke κe) (.contain μke ρ₄ke ρ₅ke κe)
     ⟩
-  | tc _ σop₀₁se _ TCₛse TCτ₀ke τ₀₁ih =>
-    let ⟨_, _, _, τ₀ke, τ₁ke⟩ := τ₀₁ih Γcw Γwe
-    let .tc γcin τ₀ke' := TCτ₀ke
-    cases τ₀ke.deterministic τ₀ke' |>.left
-    exact ⟨_, _, _, TCτ₀ke, .tc γcin τ₁ke⟩
-  | tcRow ρ₀₁ee σop₀₁se _ TCₛse TCτ₀ke =>
-    let ⟨_, _, _, ρ₀ke, ρ₁ke⟩ := ρ₀₁ee.to_Kinding Γcw Γwe
-    let .tc γcin ρ₀ke' := TCτ₀ke
-    cases ρ₀ke.deterministic ρ₀ke' |>.left
-    exact ⟨_, _, _, TCτ₀ke, .tc γcin ρ₁ke⟩
   | allRow I ρ₀₁ee allke ψke κe =>
     let ⟨_, _, _, ρ₀ke, ρ₁ke⟩ := ρ₀₁ee.to_Kinding Γcw Γwe
     let .all _ _ _ ρ₀ke' := allke
