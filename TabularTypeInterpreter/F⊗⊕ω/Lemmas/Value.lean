@@ -57,20 +57,20 @@ theorem canonical_form_of_arr (VtyAarrB : [[ε ⊢ V : A → B]]) (lc: [[(A → 
   .case typeLam K E =>
     have ⟨T, Eeq⟩ := TypeEq_forall_of_scheme VtyAarrB
     have ⟨U, mredArr, mredForall⟩ := Eeq.common_reduct_of .empty lc
-    have := mredForall.inv_forall; rcases this
-    have := mredArr.inv_arr; rcases this
+    have := mredForall.preserve_shape_forall; rcases this
+    have := mredArr.preserve_shape_arr; rcases this
     simp_all
   .case prodIntro E isV =>
     have ⟨T, Eeq⟩ := TypeEq_prod_of_prodIntro VtyAarrB
     have ⟨U, mredArr, mredProd⟩ := Eeq.common_reduct_of .empty lc
-    have := mredProd.inv_prod; rcases this
-    have := mredArr.inv_arr; rcases this
+    have := mredProd.preserve_shape_prod; rcases this
+    have := mredArr.preserve_shape_arr; rcases this
     simp_all
   .case sumIntro n E isV =>
     have ⟨T, Eeq⟩ := TypeEq_sum_of_sumIntro VtyAarrB
     have ⟨U, mredArr, mredSum⟩ := Eeq.common_reduct_of .empty lc
-    have := mredSum.inv_sum; rcases this
-    have := mredArr.inv_arr; rcases this
+    have := mredSum.preserve_shape_sum; rcases this
+    have := mredArr.preserve_shape_arr; rcases this
     simp_all
 
 theorem canonical_form_of_forall (Vty : [[ε ⊢ V : ∀ a? : K. A]]) (lc: [[∀ a? : K. A]].TypeVarLocallyClosed)
@@ -80,20 +80,20 @@ theorem canonical_form_of_forall (Vty : [[ε ⊢ V : ∀ a? : K. A]]) (lc: [[∀
   . case lam T E =>
     have ⟨T', Eeq⟩ := TypeEq_arr_of_lam Vty
     have ⟨U, mredForall, mredArr⟩ := Eeq.common_reduct_of .empty lc
-    have := mredArr.inv_arr; rcases this
-    have := mredForall.inv_forall; rcases this
+    have := mredArr.preserve_shape_arr; rcases this
+    have := mredForall.preserve_shape_forall; rcases this
     simp_all
   . case prodIntro E isV =>
     have ⟨T, Eeq⟩ := TypeEq_prod_of_prodIntro Vty
     have ⟨U, mredForall, mredProd⟩ := Eeq.common_reduct_of .empty lc
-    have := mredProd.inv_prod; rcases this
-    have := mredForall.inv_forall; rcases this
+    have := mredProd.preserve_shape_prod; rcases this
+    have := mredForall.preserve_shape_forall; rcases this
     simp_all
   . case sumIntro n E isV =>
     have ⟨T, Eeq⟩ := TypeEq_sum_of_sumIntro Vty
     have ⟨U, mredForall, mredSum⟩ := Eeq.common_reduct_of .empty lc
-    have := mredSum.inv_sum; rcases this
-    have := mredForall.inv_forall; rcases this
+    have := mredSum.preserve_shape_sum; rcases this
+    have := mredForall.preserve_shape_forall; rcases this
     simp_all
 
 local instance : Inhabited Term where
@@ -106,14 +106,14 @@ theorem canonical_form_of_prod (Vty : [[ε ⊢ V : ⊗ {</ A@i // i in [:n] />}]
   . case lam T E =>
     have ⟨T', Eeq⟩ := TypeEq_arr_of_lam Vty
     have ⟨U, mredProd, mredArr⟩ := Eeq.common_reduct_of .empty lc
-    have := mredArr.inv_arr; rcases this
-    have := mredProd.inv_prod; rcases this
+    have := mredArr.preserve_shape_arr; rcases this
+    have := mredProd.preserve_shape_prod; rcases this
     simp_all
   . case typeLam K E =>
     have ⟨T, Eeq⟩ := TypeEq_forall_of_scheme Vty
     have ⟨U, mredProd, mredForall⟩ := Eeq.common_reduct_of .empty lc
-    have := mredForall.inv_forall; rcases this
-    have := mredProd.inv_prod; rcases this
+    have := mredForall.preserve_shape_forall; rcases this
+    have := mredProd.preserve_shape_prod; rcases this
     simp_all
   . case prodIntro E isV =>
     rw [← Std.Range.map_get!_eq (as := E)] at Vty
@@ -129,8 +129,8 @@ theorem canonical_form_of_prod (Vty : [[ε ⊢ V : ⊗ {</ A@i // i in [:n] />}]
   . case sumIntro n E isV =>
     have ⟨T, Eeq⟩ := TypeEq_sum_of_sumIntro Vty
     have ⟨U, mredProd, mredSum⟩ := Eeq.common_reduct_of .empty lc
-    have := mredSum.inv_sum; rcases this
-    have := mredProd.inv_prod; rcases this
+    have := mredSum.preserve_shape_sum; rcases this
+    have := mredProd.preserve_shape_prod; rcases this
     simp_all
 
 theorem canonical_form_of_sum (Vty : [[ε ⊢ V : ⊕ {</ A@i // i in [:n'] />}]]) (lc: [[⊕ {</ A@i // i in [:n'] />}]].TypeVarLocallyClosed)
@@ -140,20 +140,20 @@ theorem canonical_form_of_sum (Vty : [[ε ⊢ V : ⊕ {</ A@i // i in [:n'] />}]
   . case lam T E =>
     have ⟨T', Eeq⟩ := TypeEq_arr_of_lam Vty
     have ⟨U, mredSum, mredArr⟩ := Eeq.common_reduct_of .empty lc
-    have := mredArr.inv_arr; rcases this
-    have := mredSum.inv_sum; rcases this
+    have := mredArr.preserve_shape_arr; rcases this
+    have := mredSum.preserve_shape_sum; rcases this
     simp_all
   . case typeLam K E =>
     have ⟨T, Eeq⟩ := TypeEq_forall_of_scheme Vty
     have ⟨U, mredSum, mredForall⟩ := Eeq.common_reduct_of .empty lc
-    have := mredForall.inv_forall; rcases this
-    have := mredSum.inv_sum; rcases this
+    have := mredForall.preserve_shape_forall; rcases this
+    have := mredSum.preserve_shape_sum; rcases this
     simp_all
   . case prodIntro E isV =>
     have ⟨T, Eeq⟩ := TypeEq_prod_of_prodIntro Vty
     have ⟨U, mredSum, mredProd⟩ := Eeq.common_reduct_of .empty lc
-    have := mredProd.inv_prod; rcases this
-    have := mredSum.inv_sum; rcases this
+    have := mredProd.preserve_shape_prod; rcases this
+    have := mredSum.preserve_shape_sum; rcases this
     simp_all
   . case sumIntro n E isV =>
     have ⟨nin, _⟩ := Vty.inv_sum

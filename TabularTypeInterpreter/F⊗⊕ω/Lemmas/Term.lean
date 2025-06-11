@@ -744,7 +744,7 @@ theorem inv_arr' (Ety: [[Δ ⊢ λ x? : T. E : C ]]) (eqC: [[ Δ ⊢ C ≡ A →
       have TB'lc := Tlc.arr B'lc
       And.intro wf (And.intro AkiStar TB'lc)
     )
-    have ⟨eTA, eB'B⟩ := this TB'lc wf |>.inv_arr wf TB'lc
+    have ⟨eTA, eB'B⟩ := this TB'lc wf |>.inj_arr wf TB'lc
     refine ⟨eTA.TypeEquivalence_of wf, ?_⟩
     refine ⟨I ++ Δ.termVarDom, λ x xnin => ?_⟩
     refine .equiv (EtyB' x (by simp_all)) ?_
@@ -778,7 +778,7 @@ theorem inv_forall' (Ety: [[Δ ⊢ Λ a? : K. E : T ]]) (eqT: [[ Δ ⊢ T ≡ �
       )
       And.intro wf A'lc
     )
-    have ⟨eqKK', I', eA'A⟩ := this A'lc.forall wf |>.inv_forall wf A'lc.forall
+    have ⟨eqKK', I', eA'A⟩ := this A'lc.forall wf |>.inj_forall wf A'lc.forall
     refine ⟨eqKK', ?_⟩
     refine ⟨I ++ I' ++ Δ.typeVarDom, λ a anin => ?_⟩
     refine .equiv (EtyA' a (by simp_all)) ?_
@@ -800,7 +800,7 @@ theorem inv_prod' (Ety: [[ Δ ⊢ (</ E@i // i in [:n] />) : T ]]) (eqT: [[ Δ �
       refine .prod (.list λ T Tin => ?_)
       have ⟨i, iltn, Teq⟩ := Std.Range.mem_of_mem_map Tin; subst Teq
       exact EtyA i iltn |>.TypeVarLocallyClosed_of
-    ) wf |>.sym.inv_prod wf Alc |>.inv_list wf Alc'
+    ) wf |>.sym.inj_prod wf Alc |>.inj_list wf Alc'
     subst n'
     refine ⟨rfl, λ x xin => ?_⟩
     simp_all
@@ -840,7 +840,7 @@ theorem inv_sum' (Ety: [[ Δ ⊢ ι n E : T ]]) (eqT: [[ Δ ⊢ T ≡ ⊕ {</ A@
       refine .sum (.list λ T Tin => ?_)
       have ⟨i, iltn, Teq⟩ := Std.Range.mem_of_mem_map Tin; subst Teq
       exact A'kiStar i iltn |>.TypeVarLocallyClosed_of
-    ) wf |>.sym.inv_sum wf Alc |>.inv_list wf Alc'
+    ) wf |>.sym.inj_sum wf Alc |>.inj_list wf Alc'
     subst n_
     exact ⟨nin, .equiv EtyA' <| eAA' n nin |>.sym.TypeEquivalence_of wf⟩
   . case equiv.refl _ _ _ eqA'B' _ ih => exact ih (eqA'B'.trans eqT) rfl
