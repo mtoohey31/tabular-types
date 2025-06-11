@@ -1163,7 +1163,7 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γcw : [[⊢c �
             exact .prodElim (j := 3) (.var Δxₑwf .head)
               ⟨by simp_arith, by simp_arith, Nat.mod_one _⟩
           · case tail mem'''' => nomatch mem''''
-  | allRow I ρ₀₁ee allke ψke κe' =>
+  | all I ρ₀₁ee allke ψke κe' =>
     rename_i ψ B' K
     rcases σ₀ke.deterministic allke with ⟨rfl, rfl⟩
     let .all I' ψke' κ'e ρ₀ke := allke

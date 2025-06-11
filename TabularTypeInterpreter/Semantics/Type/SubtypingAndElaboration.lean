@@ -139,7 +139,7 @@ notex for noelab Fₑ := Λ a : K ↦ *. Λ aₜ : *. λ xₗ : (⊕ (a$1 ⟦A�
 Γc; Γ ⊢ All (λ a : κ. ψ) ρ₀ : C
 notex for noelab ∀ a ∉ I, Γc; Γ, a : κ ⊢ ψ^a : C ⇝ B^a
 notex for noelab ⊢ κ ⇝ K
-──────────────────────────────────────────────────────────────────── allRow (I : List TypeVarId)
+──────────────────────────────────────────────────────────────────── all (I : List TypeVarId)
 Γc; Γ ⊢ All (λ a : κ. ψ) ρ₀ <: All (λ a : κ. ψ) ρ₁ ⇝ Fₚ [λ a : K. B]
 
 Γc; Γ ⊢ (Lift (λ a : κ. τ) ρ₀) ⊙(C) ρ₁ ~ ρ₂ <: (Lift (λ a : κ. τ) ρ₃) ⊙(C) ρ₄ ~ ρ₅ ⇝ F
