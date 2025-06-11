@@ -93,9 +93,9 @@
 }{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, M \, \lottsym{▿} \, N \, \typingsym \, \lottsym{(} {\lottsym{Σ}}_{μ} \, ρ₂ \lottsym{)} \, \lottsym{→} \, τ \, \lottsym{⇝} \, \targetpre \targetpre \lottsym{(} \targetpre \targetpre \targetpre \targetpre \lottsym{(} \targetpre \lottsym{π}_{1} \, \targetpre F \targetpost \targetpost \lottsym{)} \targetpost \, \lottsym{[} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre \lottsym{\star} \targetpost \lottsym{.} \, \targetpre \targetpre a \targetpost \targetpost \targetpost \lottsym{]} \targetpost \, \lottsym{[} \targetpre A \targetpost \lottsym{]} \targetpost \, \targetpre E₀ \targetpost \targetpost \lottsym{)} \targetpost \, \targetpre E₁ \targetpost \targetpost}
 \lottinferencerulesep
 \lottinferencerule{sub}{
-\lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, M \, \typingsym \, τ₀ \, \lottsym{⇝} \, \targetpre E \targetpost}\\
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ₀ \, \subtypingsym \, τ₁ \, \lottsym{⇝} \, \targetpre F \targetpost}
-}{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, M \, \typingsym \, τ₁ \, \lottsym{⇝} \, \targetpre \targetpre F \targetpost \, \targetpre E \targetpost \targetpost}
+\lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, M \, \typingsym \, σ₀ \, \lottsym{⇝} \, \targetpre E \targetpost}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, σ₀ \, \subtypingsym \, σ₁ \, \lottsym{⇝} \, \targetpre F \targetpost}
+}{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, M \, \typingsym \, σ₁ \, \lottsym{⇝} \, \targetpre \targetpre F \targetpost \, \targetpre E \targetpost \targetpost}
 \lottinferencerulesep
 \lottinferencerule{member}{
 \lotthypothesis{\lottsym{(} \lottsepbycomprehension{{TCₛ}_{i} \, a \, \lottsym{⇝} \, \targetpre {Aₛ}_{i} \targetpost} \, \lottsym{⇒} \, TC \, a \, \lottsym{:} \, κ \lottsym{)} \, \lottsym{↦} \, m \, \lottsym{:} \, σ \, \lottsym{⇝} \, \targetpre A \targetpost \, \lottsym{∈} \, Γ_{C}}\\

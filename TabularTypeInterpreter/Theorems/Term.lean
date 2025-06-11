@@ -123,11 +123,11 @@ theorem to_Kinding (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (Γᵢw : [[Γc �
     let ⟨κeq, _⟩ := ρ₀ke.deterministic ρ₀ke'
     cases Kind.row.inj κeq
     exact ⟨_, .arr (.sum μke ρ₂ke) τke⟩
-  | sub _ τ₀₁ee ih =>
-    let ⟨_, τ₀ke⟩ := ih Γᵢw Γcw Γwe
-    let ⟨_, _, _, τ₀ke', τ₁ke⟩ := τ₀₁ee.to_Kinding Γcw Γwe
-    rcases τ₀ke.deterministic τ₀ke' with ⟨rfl, _⟩
-    exact ⟨_, τ₁ke⟩
+  | sub _ σ₀₁se ih =>
+    let ⟨_, σ₀ke⟩ := ih Γᵢw Γcw Γwe
+    let ⟨_, _, _, σ₀ke', σ₁ke⟩ := σ₀₁se.to_Kinding Γcw Γwe
+    rcases σ₀ke.deterministic σ₀ke' with ⟨rfl, _⟩
+    exact ⟨_, σ₁ke⟩
   | member γcin TCτce =>
     rename TypeEnvironment => Γ
     rename Kind => κ
@@ -384,12 +384,12 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
       .arr
         (.arr (.sum <| .listAppId <| ρ₁ke.soundness Γcw Γwe <| .row .star) .refl) <| .arr
           (.sum <| .listAppId <| ρ₂ke.soundness Γcw Γwe <| .row .star) .refl
-  | sub Mte τse ih =>
-    let ⟨_, τ₀ke⟩ := Mte.to_Kinding Γᵢw Γcw Γwe
-    let ⟨_, _, _, τ₀ke', τ₁ke⟩ := τse.to_Kinding Γcw Γwe
-    rcases τ₀ke.deterministic τ₀ke' with ⟨rfl, rfl⟩
-    rcases σke.deterministic τ₁ke with ⟨_, rfl⟩
-    exact .app (τse.soundness Γcw Γwe τ₀ke τ₁ke .star) (ih τ₀ke Γᵢw Γcw Γwe)
+  | sub Mte σse ih =>
+    let ⟨_, σ₀ke⟩ := Mte.to_Kinding Γᵢw Γcw Γwe
+    let ⟨_, _, _, σ₀ke', σ₁ke⟩ := σse.to_Kinding Γcw Γwe
+    rcases σ₀ke.deterministic σ₀ke' with ⟨rfl, rfl⟩
+    rcases σke.deterministic σ₁ke with ⟨_, rfl⟩
+    exact .app (σse.soundness Γcw Γwe σ₀ke σ₁ke .star) (ih σ₀ke Γᵢw Γcw Γwe)
   | member γcin TCce =>
     rename_i A' _ _ _ _ _ _
     let ⟨_, TCke@(.tc γcin' τke)⟩ := TCce.to_Kinding Γᵢw Γcw Γwe

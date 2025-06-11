@@ -92,9 +92,9 @@
 }{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, M \, \lottsym{▿} \, N \, \typingsym \, \lottsym{(} {\lottsym{Σ}}_{μ} \, ρ₂ \lottsym{)} \, \lottsym{→} \, τ}
 \lottinferencerulesep
 \lottinferencerule{sub}{
-\lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, M \, \typingsym \, τ₀}\\
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ₀ \, \subtypingsym \, τ₁}
-}{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, M \, \typingsym \, τ₁}
+\lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, M \, \typingsym \, σ₀}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, σ₀ \, \subtypingsym \, σ₁}
+}{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, M \, \typingsym \, σ₁}
 \lottinferencerulesep
 \lottinferencerule{member}{
 \lotthypothesis{\lottsym{(} \lottsepbycomprehension{{TCₛ}_{i} \, a} \, \lottsym{⇒} \, TC \, a \, \lottsym{:} \, κ \lottsym{)} \, \lottsym{↦} \, m \, \lottsym{:} \, σ \, \lottsym{∈} \, Γ_{C}}\\
