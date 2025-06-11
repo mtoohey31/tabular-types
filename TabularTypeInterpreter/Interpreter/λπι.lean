@@ -55,7 +55,13 @@ inductive Term where
 instance : Inhabited Term where
   default := .prodIntro []
 
-def Term.id := lam (.mk 0) <| var (.mk 0)
+namespace Term
+
+def id := lam (.mk 0) <| var (.mk 0)
+
+def unit := prodIntro []
+
+end Term
 
 inductive Value.Is : Term → Prop where
   | lam : Is (.lam i E)
@@ -188,6 +194,10 @@ def subst (E F : Term) (i : Id) : Term := match E with
   | range => range
   | str s => str s
   | throw => throw
+
+def multiSubst (E : Term) : List (Term × Id) → Term
+  | [] => E
+  | (F, i) :: Fis => E.subst F i |>.multiSubst Fis
 
 inductive eval.Error where
   | freeVar (i : Id)

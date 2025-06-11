@@ -60,6 +60,10 @@ decreasing_by
     · assumption
   )
 
+def multiSubst (τ : Monotype) : List (Monotype × TId) → Monotype
+| [] => τ
+| (τ', i) :: iτ's => τ.subst τ' i |>.multiSubst iτ's
+
 inductive CommutativityPartialOrdering : Monotype → Monotype → Prop where
   | non : CommutativityPartialOrdering (comm .non) μ
   | comm : CommutativityPartialOrdering μ (comm .comm)
@@ -110,11 +114,303 @@ def sumElab : RowEquivalence ρ₀ μ ρ₁ → ElabM «λπι».Term
 
 end RowEquivalence
 
-opaque ConstraintSolution : Monotype → Type
+structure Instance where
+  tids : List TId
+  prereqs : List Monotype
+  mids : List MId
+  name : String
+  target : Monotype
+  memberElab : «λπι».Term
+  superclassElab : List «λπι».Term
 
-opaque ConstraintSolution.elab : ConstraintSolution τ → ElabM «λπι».Term
+inductive ConstraintSolution : Monotype → Type where
+  | local : «λπι».Id → ConstraintSolution ψ
+  | containTrans : ConstraintSolution (contain ρ₀ μ ρ₁) → ConstraintSolution (contain ρ₁ μ ρ₂) →
+    ConstraintSolution (contain ρ₀ μ ρ₂)
+  | containConcat : ConstraintSolution (concat ρ₀ μ ρ₁ ρ₂) →
+    ConstraintSolution (concat ρ₃ μ ρ₄ ρ₅) → ConstraintSolution (contain ρ₀ μ ρ₃) →
+    ConstraintSolution (contain ρ₁ μ ρ₄) → ConstraintSolution (contain ρ₂ μ ρ₅)
+  | concatConcrete : ConstraintSolution (concat (row (.ofList ξτs₀) (.someIf b₀ κ)) (comm .non)
+      (row (.ofList ξτs₁) (.someIf b₁ κ)) (row (.ofList (ξτs₀ ++ ξτs₁)) (.someIf b₁ κ)))
+  | concatEmptyL : ConstraintSolution (concat (row .nil (some κ)) (comm .non) ρ ρ)
+  | concatEmptyR : ConstraintSolution (concat ρ (comm .non) (row .nil (some κ)) ρ)
+  | concatAssocL : ConstraintSolution (concat ρ₀ μ ρ₁ ρ₃) → ConstraintSolution (concat ρ₁ μ ρ₂ ρ₄) →
+    ConstraintSolution (concat ρ₀ μ ρ₄ ρ₅) → ConstraintSolution (concat ρ₃ μ ρ₂ ρ₅)
+  | concatAssocR : ConstraintSolution (concat ρ₀ μ ρ₁ ρ₃) → ConstraintSolution (concat ρ₁ μ ρ₂ ρ₄) →
+    ConstraintSolution (concat ρ₃ μ ρ₂ ρ₅) → ConstraintSolution (concat ρ₀ μ ρ₄ ρ₅)
+  | concatSwap : ConstraintSolution (concat ρ₀ (comm .comm) ρ₁ ρ₂) →
+    ConstraintSolution (concat ρ₁ (comm .comm) ρ₀ ρ₂)
+  | concatContainL : ConstraintSolution (concat ρ₀ μ ρ₁ ρ₂) → ConstraintSolution (contain ρ₀ μ ρ₂)
+  | concatContainR : ConstraintSolution (concat ρ₀ μ ρ₁ ρ₂) → ConstraintSolution (contain ρ₁ μ ρ₂)
+  | containDecay : ConstraintSolution (contain ρ₀ μ₀ ρ₁) → CommutativityPartialOrdering μ₀ μ₁ →
+    ConstraintSolution (contain ρ₀ μ₁ ρ₁)
+  | concatDecay : ConstraintSolution (concat ρ₀ μ₀ ρ₁ ρ₂) → CommutativityPartialOrdering μ₀ μ₁ →
+    ConstraintSolution (concat ρ₀ μ₁ ρ₁ ρ₂)
+  | liftContain : ConstraintSolution (contain ρ₀ μ ρ₁) →
+    ConstraintSolution (contain ((lift.app ϕ).app ρ₀) μ ((lift.app ϕ).app ρ₁))
+  | liftConcat : ConstraintSolution (concat ρ₀ μ ρ₁ ρ₂) →
+    ConstraintSolution (concat ((lift.app ϕ).app ρ₀) μ ((lift.app ϕ).app ρ₁) ((lift.app ϕ).app ρ₂))
+  | tcInst : (inst : Instance) → (τ's : List Monotype) →
+    (∀ ψ ∈ inst.prereqs, ConstraintSolution (ψ.multiSubst (τ's.zip inst.tids))) →
+    ConstraintSolution ((tc inst.name).app (inst.target.multiSubst (τ's.zip inst.tids)))
+  | tcSuper : ConstraintSolution ((tc s₀).app τ) → Nat → ConstraintSolution ((tc s₁).app τ)
+  | allEmpty : ConstraintSolution (all.app (row .nil (some .constr)))
+  | allSingletonIntro : ConstraintSolution (ϕ.app τ) →
+    ConstraintSolution ((all.app ϕ).app (row (.cons ξ τ .nil) κ?))
+  | allSingletonElim : ConstraintSolution ((all.app ϕ).app (row (.cons ξ τ .nil) κ?)) →
+    ConstraintSolution (ϕ.app τ)
+  | allContain : ConstraintSolution (contain ρ₀ (comm .comm) ρ₁) →
+    ConstraintSolution ((all.app ϕ).app ρ₁) → ConstraintSolution ((all.app ϕ).app ρ₀)
+  | allConcat : ConstraintSolution (concat ρ₀ (comm .comm) ρ₁ ρ₂) →
+    ConstraintSolution ((all.app ϕ).app ρ₀) → ConstraintSolution ((all.app ϕ).app ρ₁) →
+    ConstraintSolution ((all.app ϕ).app ρ₂)
+  | ind : ConstraintSolution (row (.ofList ξτs) κ?)
+  | splitEmpty : ConstraintSolution ((((split.app ϕ).app (row .nil (some κ))).app
+      (row .nil (some star))).app (row .nil (some star)))
+  | splitSingletonMatch : ConstraintSolution ((((split.app ϕ).app
+      (row (.cons ξ τ .nil) (some κ))).app (row .nil (some star))).app
+      (row (.cons ξ (ϕ.app τ) .nil) (some star)))
+  | splitSingletonRest : ConstraintSolution ((((split.app ϕ).app (row .nil (some κ))).app
+      (row (.cons ξ τ .nil) (some star))).app (row (.cons ξ τ .nil) (some star)))
+  | splitPiecewise : ConstraintSolution ((((split.app ϕ).app ρ₀).app ρ₁).app ρ₂) →
+    ConstraintSolution ((((split.app ϕ).app ρ₃).app ρ₄).app ρ₅) →
+    ConstraintSolution (concat ((lift.app ϕ).app ρ₀) (comm .comm) ((lift.app ϕ).app ρ₃)
+      ((lift.app ϕ).app ρ₆)) →
+    ConstraintSolution (concat ρ₁ (comm .comm) ρ₄ ρ₇) →
+    ConstraintSolution (concat ρ₂ (comm .comm) ρ₅ ρ₈) →
+    ConstraintSolution (concat ((lift.app ϕ).app ρ₆) (comm .comm) ρ₇ ρ₈) →
+    ConstraintSolution ((((split.app ϕ).app ρ₆).app ρ₇).app ρ₈)
+  | splitConcat : ConstraintSolution ((((split.app ϕ).app ρ₀).app ρ₁).app ρ₂) →
+    ConstraintSolution (concat ((lift.app ϕ).app ρ₀) (comm .comm) ρ₁ ρ₂)
 
-opaque ConstraintSolution.local : «λπι».Id → ConstraintSolution τ := sorry
+def _root_.Nat.map : Nat → (Nat → α) → List α
+  | 0, _ => []
+  | n + 1, f => f n :: n.map f
+
+def _root_.Nat.mapM [Monad m] : Nat → (Nat → m α) → m (List α)
+  | 0, _ => return []
+  | n + 1, f => return (← f n) :: (← n.mapM f)
+
+variable (TC)
+
+def ConstraintSolution.elab : ConstraintSolution τ → ElabM «λπι».Term
+  | «local» i => return .var i
+  | containTrans contain₀₁ce contain₁₂ce => do
+    let E ← contain₀₁ce.elab
+    let F ← contain₁₂ce.elab
+    let i₀ ← freshId
+    let i₁ ← freshId
+    return .prodIntro [
+      .lam i₀ <| (E.prodElim 0).app <| (F.prodElim 0).app <| .var i₀,
+      .lam i₁ <| (F.prodElim 1).app <| (E.prodElim 1).app <| .var i₁,
+    ]
+  | containConcat concat₂ce concat₅ce containₗce containᵣce => do
+    let E₂ ← concat₂ce.elab
+    let E₅ ← concat₅ce.elab
+    let Fₗ ← containₗce.elab
+    let Fᵣ ← containᵣce.elab
+    let i₀ ← freshId
+    let i₁ ← freshId
+    let i₂ ← freshId
+    return .prodIntro [
+      .lam i₀ <|
+        ((E₂.prodElim 0).app ((Fₗ.prodElim 0).app (((E₅.prodElim 2).prodElim 0).app (.var i₀)))).app
+            <| (Fᵣ.prodElim 0).app <| ((E₅.prodElim 3).prodElim 0).app <| .var i₀,
+      ((E₂.prodElim 1).app
+        (.lam i₁ (((E₅.prodElim 2).prodElim 1).app ((Fₗ.prodElim 1).app (.var i₁))))).app <|
+        .lam i₂ <| ((E₅.prodElim 2).prodElim 1).app <| (Fₗ.prodElim 1).app <| .var i₂,
+    ]
+  | .concatConcrete (ξτs₀ := ξτs₀) (ξτs₁ := ξτs₁) => concatConcrete ξτs₀.length ξτs₁.length
+  | concatEmptyL => do
+    let i₀ ← freshId
+    let i₁ ← freshId
+    let i₂ ← freshId
+    let i₃ ← freshId
+    let i₄ ← freshId
+    let i₅ ← freshId
+    return .prodIntro [
+      .lam i₀ <| .lam i₁ <| .var i₁,
+      .lam i₂ <| .lam i₃ <| .var i₃,
+      .prodIntro [
+        .lam i₄ .unit,
+        .lam i₅ <| .sumElim (.var i₅) [],
+      ],
+      .prodIntro [.id, .id],
+    ]
+  | concatEmptyR => do
+    let i₀ ← freshId
+    let i₁ ← freshId
+    let i₂ ← freshId
+    let i₃ ← freshId
+    let i₄ ← freshId
+    let i₅ ← freshId
+    return .prodIntro [
+      .lam i₀ <| .lam i₁ <| .var i₀,
+      .lam i₂ <| .lam i₃ <| .var i₂,
+      .prodIntro [.id, .id],
+      .prodIntro [
+        .lam i₄ .unit,
+        .lam i₅ <| .sumElim (.var i₅) [],
+      ],
+    ]
+  | concatAssocL concat₀₁ce concat₁₂ce concat₀₄ce => do
+    let E₀₁ ← concat₀₁ce.elab
+    let E₁₂ ← concat₁₂ce.elab
+    let E₀₄ ← concat₀₄ce.elab
+    let i₀ ← freshId
+    let i₁ ← freshId
+    let i₂ ← freshId
+    let i₃ ← freshId
+    let i₄ ← freshId
+    let i₅ ← freshId
+    let i₆ ← freshId
+    let i₇ ← freshId
+    let i₈ ← freshId
+    let i₉ ← freshId
+    return .prodIntro [
+      .lam i₀ <| .lam i₁ <|
+        ((E₀₄.prodElim 0).app (((E₀₁.prodElim 2).prodElim 0).app (.var i₀))).app <|
+        ((E₁₂.prodElim 0).app (((E₀₁.prodElim 3).prodElim 0).app (.var i₀))).app <| .var i₁,
+      .lam i₂ <| .lam i₃ <|
+        ((E₀₄.prodElim 1).app
+          (.lam i₄ (.app (.var i₂) (((E₀₁.prodElim 2).prodElim 1).app (.var i₄))))).app <|
+        ((E₁₂.prodElim 1).app
+          (.lam i₅ (.app (.var i₂) (((E₀₁.prodElim 3).prodElim 1).app (.var i₅))))).app <| .var i₃,
+      .prodIntro [
+        .lam i₆ <| ((E₀₁.prodElim 0).app (((E₀₄.prodElim 2).prodElim 0).app (.var i₆))).app <|
+          ((E₁₂.prodElim 2).prodElim 0).app <| ((E₀₄.prodElim 3).prodElim 0).app <| .var i₆,
+        E₀₁.prodElim 1 |>.app ((E₀₄.prodElim 2).prodElim 1) |>.app <| .lam i₇ <|
+        ((E₀₄.prodElim 3).prodElim 1).app <| ((E₁₂.prodElim 2).prodElim 1).app <| .var i₇,
+      ],
+      .prodIntro [
+        .lam i₈ <| ((E₁₂.prodElim 3).prodElim 0).app <|
+          ((E₀₄.prodElim 3).prodElim 0).app <| .var i₈,
+        .lam i₉ <| ((E₀₄.prodElim 3).prodElim 1).app <|
+          ((E₁₂.prodElim 3).prodElim 1).app <| .var i₉,
+      ],
+    ]
+  | concatAssocR concat₀₁ce concat₁₂ce concat₃₂ce => do
+    let E₀₁ ← concat₀₁ce.elab
+    let E₁₂ ← concat₁₂ce.elab
+    let E₃₂ ← concat₃₂ce.elab
+    let i₀ ← freshId
+    let i₁ ← freshId
+    let i₂ ← freshId
+    let i₃ ← freshId
+    let i₄ ← freshId
+    let i₅ ← freshId
+    let i₆ ← freshId
+    let i₇ ← freshId
+    let i₈ ← freshId
+    let i₉ ← freshId
+    return .prodIntro [
+      .lam i₀ <| .lam i₁ <|
+        ((E₃₂.prodElim 0).app (((E₁₂.prodElim 3).prodElim 0).app (.var i₁))).app <|
+        ((E₀₁.prodElim 0).app (.var i₀)).app <| ((E₁₂.prodElim 2).prodElim 0).app <| .var i₁,
+      .lam i₂ <| .lam i₃ <|
+        ((E₃₂.prodElim 1).app
+          (((E₀₁.prodElim 1).app (.var i₂)).app
+            (.lam i₄ (.app (.var i₃) (.app ((E₁₂.prodElim 2).prodElim 1) (.var i₄)))))).app <|
+        .lam i₅ <| .app (.var i₃) <| ((E₁₂.prodElim 3).prodElim 1).app <| .var i₅,
+      .prodIntro [
+        .lam i₆ <| ((E₀₁.prodElim 2).prodElim 0).app <|
+          ((E₃₂.prodElim 2).prodElim 0).app <| .var i₆,
+        .lam i₇ <| ((E₃₂.prodElim 2).prodElim 1).app <|
+          ((E₀₁.prodElim 2).prodElim 1).app <| .var i₇,
+      ],
+      .prodIntro [
+        .lam i₈ <|
+          ((E₁₂.prodElim 0).app
+            (.app ((E₀₁.prodElim 3).prodElim 0)
+              (.app ((E₃₂.prodElim 2).prodElim 0) (.var i₈)))).app <|
+          ((E₃₂.prodElim 3).prodElim 0).app <| .var i₈,
+        ((E₁₂.prodElim 1).app
+          (.lam i₉ (.app ((E₃₂.prodElim 2).prodElim 1)
+            (.app ((E₀₁.prodElim 3).prodElim 1) (.var i₉))))).app <|
+          (E₃₂.prodElim 3).prodElim 1,
+      ],
+    ]
+  | concatSwap concatce => do
+    let E ← concatce.elab
+    let i₀ ← freshId
+    let i₁ ← freshId
+    let i₂ ← freshId
+    let i₃ ← freshId
+    return .prodIntro [
+      .lam i₀ <| .lam i₁ <| ((E.prodElim 0).app (.var i₁)).app (.var i₀),
+      .lam i₂ <| .lam i₃ <| ((E.prodElim 1).app (.var i₃)).app (.var i₂),
+      E.prodElim 3,
+      E.prodElim 2,
+    ]
+  | concatContainL concatce => return .prodElim 2 <| ← concatce.elab
+  | concatContainR concatce => return .prodElim 3 <| ← concatce.elab
+  | containDecay containce _ => containce.elab
+  | concatDecay concatce _ => concatce.elab
+  | liftContain containce => containce.elab
+  | liftConcat concatce => concatce.elab
+  | tcInst { prereqs, mids, memberElab, superclassElab, .. } τ's ψsce => do
+    let Fs ← prereqs.mapMemM fun _ mem => ψsce _ mem |>.elab
+    return .prodIntro <| (memberElab.multiSubst (Fs.zip (mids.map (fun | { val } => { val })))) ::
+      superclassElab.map fun Eₛ => Eₛ.multiSubst <| Fs.zip <| mids.map fun | { val } => { val }
+  | tcSuper tcτce n => return .prodElim n.succ <| ← tcτce.elab
+  | allEmpty => return .unit
+  | allSingletonIntro ϕτce => return .prodIntro [← ϕτce.elab]
+  | allSingletonElim allce => return .prodElim 0 <| ← allce.elab
+  | allContain containce allce => do
+    let F ← containce.elab
+    let E ← allce.elab
+    return F.prodElim 0 |>.app E
+  | allConcat concatce all₀ce all₁ce => do
+    let F ← concatce.elab
+    let E₀ ← all₀ce.elab
+    let E₁ ← all₁ce.elab
+    return F.prodElim 0 |>.app E₀ |>.app E₁
+  | ind (ξτs := ξτs) => do
+    let i₀ ← freshId
+    let i₁ ← freshId
+    return .lam i₀ <| .lam i₁ <| ← ξτs.length.foldM (init := .var i₁) fun i _ acc => do
+      let Eₗ ← concatConcrete i 1
+      let Eᵣ ← concatConcrete (i + 1) (ξτs.length - i - 1)
+      return «λπι».Term.var i₀ |>.app Eₗ |>.app Eᵣ |>.app .unit |>.app acc
+  | splitEmpty => concatConcrete 0 0
+  | splitSingletonMatch => concatConcrete 1 0
+  | splitSingletonRest => concatConcrete 0 1
+  | splitPiecewise _ _ _ _ _ concatce => concatce.elab
+  | splitConcat splitce => splitce.elab
+where
+  concatConcrete (m n : Nat) : ElabM «λπι».Term := do
+    let i₀ ← freshId
+    let i₁ ← freshId
+    let i₂ ← freshId
+    let i₃ ← freshId
+    let i₄ ← freshId
+    let i₅ ← freshId
+    let i₆ ← freshId
+    let i₇ ← freshId
+    let i₈ ← freshId
+    return .prodIntro [
+      .lam i₀ <| .lam i₁ <| .prodIntro <| m.map (.prodElim · (.var i₀)) ++
+        n.map (.prodElim · (.var i₁)),
+      .lam i₂ <| .lam i₃ <| .lam i₄ <| .sumElim (.var i₄) <|
+        (← m.mapM (fun j => do
+          let i ← freshId
+          return .lam i <| .app (.var i₂) <| .sumIntro j (.var i))) ++
+        (← n.mapM (fun j => do
+          let i ← freshId
+          return .lam i <| .app (.var i₃) <| .sumIntro j (.var i))),
+      .prodIntro [
+        .lam i₅ <| .prodIntro <| m.map (.prodElim · (.var i₅)),
+        .lam i₆ <| .sumElim (.var i₆) <| ← m.mapM fun j => do
+          let i ← freshId
+          return .lam i <| .sumIntro j (.var i),
+      ],
+      .prodIntro [
+        .lam i₇ <| .prodIntro <| n.map fun j => .prodElim (m + j) (.var i₇),
+        .lam i₈ <| .sumElim (.var i₈) <| ← n.mapM fun j => do
+          let i ← freshId
+          return .lam i <| .sumIntro (m + j) (.var i),
+      ],
+    ]
 
 end Monotype
 
@@ -158,9 +454,7 @@ inductive Subtyping : TypeScheme → TypeScheme → Type where
     Subtyping (contain ρ₀ μ ρ₁) (contain ρ₂ μ ρ₃)
   | concat : RowEquivalence ρ₀ μ ρ₃ → RowEquivalence ρ₁ μ ρ₄ → RowEquivalence ρ₂ μ ρ₅ →
     Subtyping (concat ρ₀ μ ρ₁ ρ₂) (concat ρ₃ μ ρ₄ ρ₅)
-  | tc {supers : List String} : (∀ s ∈ supers, Subtyping ((tc s).app τ₀) ((tc s).app τ₁)) →
-    Subtyping (subst σ τ₀ i) (subst σ τ₁ i) → Subtyping ((tc s).app τ₀) ((tc s).app τ₁)
-  | allRow : RowEquivalence ρ₀ (comm .comm) ρ₁ → Subtyping ((all.app ϕ).app ρ₀) ((all.app ϕ).app ρ₁)
+  | all : RowEquivalence ρ₀ (comm .comm) ρ₁ → Subtyping ((all.app ϕ).app ρ₀) ((all.app ϕ).app ρ₁)
   | split : Subtyping (concat ((lift.app ϕ).app ρ₀) μ ρ₁ ρ₂) (concat ((lift.app ϕ).app ρ₃) μ ρ₄ ρ₅) →
     Subtyping ((((split.app ϕ).app ρ₀).app ρ₁).app ρ₂)
       ((((split.app (uvars := false) ϕ).app ρ₃).app ρ₄).app ρ₅)
@@ -212,12 +506,7 @@ def Subtyping.elab : Subtyping σ₀ σ₁ → ElabM «λπι».Term
       ← contain.elab ρ₀₃re ρ₂₅re i₀,
       ← contain.elab ρ₁₄re ρ₂₅re i₀
     ]
-  | tc superst memberst (supers := supers) => do
-    let i ← freshId
-    return .lam i <| .prodIntro <| List.cons ((← memberst.elab).app (.prodElim 0 (.var i))) <|
-      ← supers.mapMemIdxM fun j _ mem =>
-        return (← superst _ mem |>.elab).app <| .prodElim (j + 1) <| .var i
-  | allRow ρ₀₁re => ρ₀₁re.prodElab
+  | all ρ₀₁re => ρ₀₁re.prodElab
   | split concatst => concatst.elab
 where
   contain.elab {μ ρ₀ ρ₁ ρ₂ ρ₃} (ρ₀₂re : RowEquivalence ρ₀ μ ρ₂) (ρ₁₃re : RowEquivalence ρ₁ μ ρ₃)
@@ -316,7 +605,7 @@ def Typing.elab : Typing M σ → ReaderT (HashMap String (Thunk «λπι».Term
   | schemeE Mty' => Mty'.elab
   | .let (i := i) M'ty Nty => return (← Nty.elab).lam i |>.app <| ← M'ty.elab
   | annot M'ty => M'ty.elab
-  | label => return .prodIntro []
+  | label => return .unit
   | prod Nsty (MNs := MNs) (ξτs := ξτs) =>
     return .prodIntro <| ← MNs.zip ξτs |>.mapMemM (Nsty · · |>.elab)
   | sum Nty => Nty.elab <&> .sumIntro 0
