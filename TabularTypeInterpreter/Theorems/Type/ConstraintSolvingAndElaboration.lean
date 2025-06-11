@@ -21,9 +21,10 @@ theorem to_Kinding (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]])
     rcases ρ₀ke.deterministic ρ₀ke' with ⟨κeq, rfl⟩
     cases κeq
     exact ⟨_, .contain μke ρ₀ke ρ₂ke κe⟩
-  | containDecay _ _ μ₁ke ih =>
-    let ⟨_, .contain _ ρ₀ke ρ₁ke κe⟩ := ih Γᵢw Γcw Γwe
-    exact ⟨_, .contain μ₁ke ρ₀ke ρ₁ke κe⟩
+  | containConcat _ _ _ _ _ _ ρ₂ke ρ₅ke κe concat₂ih =>
+    let ⟨_, concat₂ke⟩ := concat₂ih Γᵢw Γcw Γwe
+    let .concat μke .. := concat₂ke
+    exact ⟨_, .contain μke ρ₂ke ρ₅ke κe⟩
   | concatConcrete ξτ₀ke ξτ₁ke ξτ₀₁ke κe => exact ⟨
       _,
       .concat .comm ξτ₀ke ξτ₁ke ξτ₀₁ke κe (.contain .comm ξτ₀ke ξτ₀₁ke κe)
@@ -39,6 +40,12 @@ theorem to_Kinding (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]])
       .concat .comm ρke .empty_row ρke κe (.contain .comm ρke ρke κe)
         (.contain .comm .empty_row ρke κe)
     ⟩
+  | concatAssocL _ _ _ _ _ ρ₂ke ρ₃ke ρ₅ke κe concat₀₁ih =>
+    let ⟨_, .concat μke ..⟩ := concat₀₁ih Γᵢw Γcw Γwe
+    exact ⟨_, .concat μke ρ₃ke ρ₂ke ρ₅ke κe (.contain μke ρ₃ke ρ₅ke κe) (.contain μke ρ₂ke ρ₅ke κe)⟩
+  | concatAssocR _ _ _ ρ₀ke _ _ ρ₄ke ρ₅ke κe concat₀₁ih =>
+    let ⟨_, .concat μke ..⟩ := concat₀₁ih Γᵢw Γcw Γwe
+    exact ⟨_, .concat μke ρ₀ke ρ₄ke ρ₅ke κe (.contain μke ρ₀ke ρ₅ke κe) (.contain μke ρ₄ke ρ₅ke κe)⟩
   | concatSwap _ ρ₀ke ρ₁ke κe ih =>
     let ⟨_, .concat _ ρ₀ke' ρ₁ke' ρ₂ke κe' contain₀₂ke contain₁₂ke⟩ := ih Γᵢw Γcw Γwe
     cases ρ₀ke.deterministic ρ₀ke' |>.left
@@ -46,18 +53,15 @@ theorem to_Kinding (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]])
       _,
       .concat .comm ρ₁ke ρ₀ke ρ₂ke κe (.contain .comm ρ₁ke ρ₂ke κe) (.contain .comm ρ₀ke ρ₂ke κe)
     ⟩
-  | concatAssocL _ _ _ _ _ ρ₂ke ρ₃ke ρ₅ke κe concat₀₁ih =>
-    let ⟨_, .concat μke ..⟩ := concat₀₁ih Γᵢw Γcw Γwe
-    exact ⟨_, .concat μke ρ₃ke ρ₂ke ρ₅ke κe (.contain μke ρ₃ke ρ₅ke κe) (.contain μke ρ₂ke ρ₅ke κe)⟩
-  | concatAssocR _ _ _ ρ₀ke _ _ ρ₄ke ρ₅ke κe concat₀₁ih =>
-    let ⟨_, .concat μke ..⟩ := concat₀₁ih Γᵢw Γcw Γwe
-    exact ⟨_, .concat μke ρ₀ke ρ₄ke ρ₅ke κe (.contain μke ρ₀ke ρ₅ke κe) (.contain μke ρ₄ke ρ₅ke κe)⟩
   | concatContainL _ ih =>
     let ⟨_, .concat μke ρ₀ke _ ρ₂ke κe ..⟩ := ih Γᵢw Γcw Γwe
     exact ⟨_, .contain μke ρ₀ke ρ₂ke κe⟩
   | concatContainR _ ih =>
     let ⟨_, .concat μke _ ρ₁ke ρ₂ke κe ..⟩ := ih Γᵢw Γcw Γwe
     exact ⟨_, .contain μke ρ₁ke ρ₂ke κe⟩
+  | containDecay _ _ μ₁ke ih =>
+    let ⟨_, .contain _ ρ₀ke ρ₁ke κe⟩ := ih Γᵢw Γcw Γwe
+    exact ⟨_, .contain μ₁ke ρ₀ke ρ₁ke κe⟩
   | concatDecay _ _ μ₁ke ih =>
     let ⟨_, .concat _ ρ₀ke ρ₁ke ρ₂ke κe ..⟩ := ih Γᵢw Γcw Γwe
     exact ⟨
@@ -351,10 +355,177 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
           exact this
         · rw [A₀lc.TypeVar_open_id]
           exact .var Δaxwf .head
-  | containDecay containce _ _ ih =>
-    let ⟨_, .contain μ₀ke ..⟩ := containce.to_Kinding Γᵢw Γcw Γwe
-    let .contain _ ρ₀ke ρ₁ke κe := ψke
-    exact ih (.contain μ₀ke ρ₀ke ρ₁ke κe) Γᵢw Γcw Γwe
+  | containConcat _ concat₅ce _ _ ρ₀ke ρ₁ke ρ₂ke ρ₅ke κe concat₂ih concat₅ih containₗih containᵣih =>
+    rename «F⊗⊕ω».Kind => K
+    let .contain μke ρ₂ke' ρ₅ke' κe' := ψke
+    rcases ρ₂ke.deterministic ρ₂ke' with ⟨κeq, rfl⟩
+    cases κeq
+    rcases ρ₅ke.deterministic ρ₅ke' with ⟨κeq, rfl⟩
+    cases κeq
+    cases κe.deterministic κe'
+    let ⟨_, concat₅ke⟩ := concat₅ce.to_Kinding Γᵢw Γcw Γwe
+    let .concat _ ρ₃ke ρ₄ke ρ₅ke' κe' .. := concat₅ke
+    rcases ρ₅ke.deterministic ρ₅ke' with ⟨κeq, rfl⟩
+    cases κeq
+    cases κe.deterministic κe'
+    let E₂ty := concat₂ih
+      (.concat μke ρ₀ke ρ₁ke ρ₂ke κe (.contain μke ρ₀ke ρ₂ke κe) (.contain μke ρ₁ke ρ₂ke κe)) Γᵢw
+      Γcw Γwe
+    let E₂tlc := E₂ty.TermTypeVarLocallyClosed_of
+    let E₂lc := E₂ty.TermVarLocallyClosed_of
+    let E₅ty := concat₅ih
+      (.concat μke ρ₃ke ρ₄ke ρ₅ke κe (.contain μke ρ₃ke ρ₅ke κe) (.contain μke ρ₄ke ρ₅ke κe)) Γᵢw
+      Γcw Γwe
+    let E₅tlc := E₅ty.TermTypeVarLocallyClosed_of
+    let E₅lc := E₅ty.TermVarLocallyClosed_of
+    let Fₗty := containₗih (.contain μke ρ₀ke ρ₃ke κe) Γᵢw Γcw Γwe
+    let Fₗtlc := Fₗty.TermTypeVarLocallyClosed_of
+    let Fₗlc := Fₗty.TermVarLocallyClosed_of
+    let Fᵣty := containᵣih (.contain μke ρ₁ke ρ₄ke κe) Γᵢw Γcw Γwe
+    let Fᵣtlc := Fᵣty.TermTypeVarLocallyClosed_of
+    let Fᵣlc := Fᵣty.TermVarLocallyClosed_of
+    rw [← Range.map_get!_eq (as := [_, _, _, _])] at E₂ty E₅ty
+    rw [← Range.map_get!_eq (as := [_, _])] at Fₗty Fᵣty
+    let A₀ki := ρ₀ke.soundness Γcw Γwe κe.row
+    let A₀lc := A₀ki.TypeVarLocallyClosed_of
+    let A₁ki := ρ₁ke.soundness Γcw Γwe κe.row
+    let A₁lc := A₁ki.TypeVarLocallyClosed_of
+    let A₂lc := ρ₂ke.soundness Γcw Γwe κe.row |>.TypeVarLocallyClosed_of
+    let A₃lc := ρ₃ke.soundness Γcw Γwe κe.row |>.TypeVarLocallyClosed_of
+    let A₄lc := ρ₄ke.soundness Γcw Γwe κe.row |>.TypeVarLocallyClosed_of
+    let A₅ki := ρ₅ke.soundness Γcw Γwe κe.row
+    let A₅lc := A₅ki.TypeVarLocallyClosed_of
+    let Δwf := Γwe.soundness Γcw
+    apply Typing.pair
+    · apply Typing.typeLam Δ.typeVarDom
+      intro a anin
+      let Δawf := Δwf.typeVarExt anin (K := [[(K ↦ *)]])
+      simp [«F⊗⊕ω».Term.TypeVar_open, Type.TypeVar_open]
+      rw [A₂lc.TypeVar_open_id, A₅lc.TypeVar_open_id, E₂tlc.TypeVar_open_id, E₅tlc.TypeVar_open_id,
+          Fₗtlc.TypeVar_open_id, Fᵣtlc.TypeVar_open_id]
+      apply Typing.lam Δ.termVarDom
+      intro x xnin
+      let A₅ki' := A₅ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)
+      let Δaxwf := Δawf.termVarExt xnin <| .prod <| .listApp (.var .head) A₅ki'
+      simp [«F⊗⊕ω».Term.TermVar_open]
+      rw [E₂lc.TermVar_open_id, E₅lc.TermVar_open_id, Fₗlc.TermVar_open_id, Fᵣlc.TermVar_open_id]
+      apply Typing.app
+      · apply Typing.app
+        · let πty := E₂ty.prodElim ⟨Nat.le.refl, Nat.le.refl.step.step.step, Nat.mod_one _⟩
+            |>.weakening Δaxwf (Δ' := .termExt (.typeExt .empty ..) ..) (Δ'' := .empty)
+          simp at πty
+          let πty' := πty.typeApp <| .var <| .termVarExt .head
+          simp [Type.Type_open] at πty'
+          rw [A₀lc.Type_open_id, A₁lc.Type_open_id, A₂lc.Type_open_id] at πty'
+          exact πty'
+        · apply Typing.app
+          · let πty := Fₗty.prodElim ⟨Nat.le.refl, Nat.le.refl.step, Nat.mod_one _⟩
+              |>.weakening Δaxwf (Δ' := .termExt (.typeExt .empty ..) ..) (Δ'' := .empty)
+            simp at πty
+            let πty' := πty.typeApp <| .var <| .termVarExt .head
+            simp [Type.Type_open] at πty'
+            rw [A₀lc.Type_open_id, A₃lc.Type_open_id] at πty'
+            exact πty'
+          · apply Typing.app _ <| .var Δaxwf .head
+            let πty := E₅ty.prodElim ⟨Nat.le.refl.step.step, Nat.le.refl.step, Nat.mod_one _⟩
+              |>.weakening Δaxwf (Δ' := .termExt (.typeExt .empty ..) ..) (Δ'' := .empty)
+            simp at πty
+            rw [← Range.map_get!_eq (as := [_, _])] at πty
+            let πty' := πty.prodElim ⟨Nat.le.refl, Nat.le.refl.step, Nat.mod_one _⟩
+            simp at πty'
+            let πty'' := πty'.typeApp <| .var <| .termVarExt .head
+            simp [Type.Type_open] at πty''
+            rw [A₃lc.Type_open_id, A₅lc.Type_open_id] at πty''
+            exact πty''
+      · apply Typing.app
+        · let πty := Fᵣty.prodElim ⟨Nat.le.refl, Nat.le.refl.step, Nat.mod_one _⟩
+            |>.weakening Δaxwf (Δ' := .termExt (.typeExt .empty ..) ..) (Δ'' := .empty)
+          simp at πty
+          let πty' := πty.typeApp <| .var <| .termVarExt .head
+          simp [Type.Type_open] at πty'
+          rw [A₁lc.Type_open_id, A₄lc.Type_open_id] at πty'
+          exact πty'
+        · apply Typing.app _ <| .var Δaxwf .head
+          let πty := E₅ty.prodElim ⟨Nat.le.refl.step.step.step, Nat.le.refl, Nat.mod_one _⟩
+            |>.weakening Δaxwf (Δ' := .termExt (.typeExt .empty ..) ..) (Δ'' := .empty)
+          simp at πty
+          rw [← Range.map_get!_eq (as := [_, _])] at πty
+          let πty' := πty.prodElim ⟨Nat.le.refl, Nat.le.refl.step, Nat.mod_one _⟩
+          simp at πty'
+          let πty'' := πty'.typeApp <| .var <| .termVarExt .head
+          simp [Type.Type_open] at πty''
+          rw [A₄lc.Type_open_id, A₅lc.Type_open_id] at πty''
+          exact πty''
+    · apply Typing.typeLam Δ.typeVarDom
+      intro a anin
+      let Δawf := Δwf.typeVarExt anin (K := [[(K ↦ *)]])
+      simp [«F⊗⊕ω».Term.TypeVar_open, Type.TypeVar_open]
+      rw [A₀lc.TypeVar_open_id, A₁lc.TypeVar_open_id, A₂lc.TypeVar_open_id, A₅lc.TypeVar_open_id,
+          E₂tlc.TypeVar_open_id, E₅tlc.TypeVar_open_id, Fₗtlc.TypeVar_open_id, Fᵣtlc.TypeVar_open_id]
+      apply Typing.app
+      · apply Typing.app
+        · let πty := E₂ty.prodElim ⟨Nat.le.refl.step, Nat.le.refl.step.step, Nat.mod_one _⟩
+            |>.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)
+          simp at πty
+          let πty' := πty.typeApp <| .var <| .head
+          simp [Type.Type_open] at πty'
+          rw [A₀lc.weaken (n := 1).Type_open_id, A₁lc.weaken (n := 1).Type_open_id,
+              A₂lc.weaken (n := 1).Type_open_id] at πty'
+          let A₅ki' := A₅ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)
+          let πty'' := πty'.typeApp <| .sum <| .listApp (.var .head) A₅ki'
+          simp [Type.Type_open] at πty''
+          rw [A₀lc.Type_open_id, A₁lc.Type_open_id, A₂lc.Type_open_id] at πty''
+          exact πty''
+        · apply Typing.lam Δ.termVarDom
+          intro x xnin
+          let A₀ki' := A₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)
+          let Δaxwf := Δawf.termVarExt xnin <| .sum <| .listApp (.var .head) A₀ki'
+          simp [«F⊗⊕ω».Term.TermVar_open]
+          rw [E₅lc.TermVar_open_id, Fₗlc.TermVar_open_id]
+          apply Typing.app
+          · let πty := E₅ty.prodElim ⟨Nat.le.refl.step.step, Nat.le.refl.step, Nat.mod_one _⟩
+              |>.weakening Δaxwf (Δ' := .termExt (.typeExt .empty ..) ..) (Δ'' := .empty)
+            simp at πty
+            rw [← Range.map_get!_eq (as := [_, _])] at πty
+            let πty' := πty.prodElim ⟨Nat.le.refl.step, Nat.le.refl, Nat.mod_one _⟩
+            simp at πty'
+            let πty'' := πty'.typeApp <| .var <| .termVarExt .head
+            simp [Type.Type_open] at πty''
+            rw [A₃lc.Type_open_id, A₅lc.Type_open_id] at πty''
+            exact πty''
+          · apply Typing.app _ <| .var Δaxwf .head
+            let πty := Fₗty.prodElim ⟨Nat.le.refl.step, Nat.le.refl, Nat.mod_one _⟩
+              |>.weakening Δaxwf (Δ' := .termExt (.typeExt .empty ..) ..) (Δ'' := .empty)
+            simp at πty
+            let πty' := πty.typeApp <| .var <| .termVarExt .head
+            simp [Type.Type_open] at πty'
+            rw [A₀lc.Type_open_id, A₃lc.Type_open_id] at πty'
+            exact πty'
+      · apply Typing.lam Δ.termVarDom
+        intro x xnin
+        let A₁ki' := A₁ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)
+        let Δaxwf := Δawf.termVarExt xnin <| .sum <| .listApp (.var .head) A₁ki'
+        simp [«F⊗⊕ω».Term.TermVar_open]
+        rw [E₅lc.TermVar_open_id, Fᵣlc.TermVar_open_id]
+        apply Typing.app
+        · let πty := E₅ty.prodElim ⟨Nat.le.refl.step.step.step, Nat.le.refl, Nat.mod_one _⟩
+            |>.weakening Δaxwf (Δ' := .termExt (.typeExt .empty ..) ..) (Δ'' := .empty)
+          simp at πty
+          rw [← Range.map_get!_eq (as := [_, _])] at πty
+          let πty' := πty.prodElim ⟨Nat.le.refl.step, Nat.le.refl, Nat.mod_one _⟩
+          simp at πty'
+          let πty'' := πty'.typeApp <| .var <| .termVarExt .head
+          simp [Type.Type_open] at πty''
+          rw [A₄lc.Type_open_id, A₅lc.Type_open_id] at πty''
+          exact πty''
+        · apply Typing.app _ <| .var Δaxwf .head
+          let πty := Fᵣty.prodElim ⟨Nat.le.refl.step, Nat.le.refl, Nat.mod_one _⟩
+            |>.weakening Δaxwf (Δ' := .termExt (.typeExt .empty ..) ..) (Δ'' := .empty)
+          simp at πty
+          let πty' := πty.typeApp <| .var <| .termVarExt .head
+          simp [Type.Type_open] at πty'
+          rw [A₁lc.Type_open_id, A₄lc.Type_open_id] at πty'
+          exact πty'
   | concatConcrete ξτ₀ke ξτ₁ke ξτ₀₁ke κe τ₀ke τ₁ke =>
     rename_i m ξ₀ τ₀ _ _ A₀ n ξ₁ τ₁ _ A₁ A₂ K B₀ B₁ _
     let .concat _ ξτ₀ke' ξτ₁ke' ξτ₀₁ke' κe' contain₀ke contain₁ke := ψke
@@ -981,114 +1152,6 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
         let Δaxwf := Δwf.typeVarExt anin (K := [[(K ↦ *)]]) |>.termVarExt xnin .never
         exact .explode (.var Δaxwf .head) <| .sum <| .listApp (.var (.termVarExt .head)) <|
           Aki.weakening Δaxwf (Δ' := .termExt (.typeExt .empty ..) ..) (Δ'' := .empty)
-  | concatSwap concatce ρ₀ke ρ₁ke κe ih =>
-    rename «F⊗⊕ω».Kind => K
-    let .concat .comm ρ₁ke' ρ₀ke' ρ₂ke κe' contain₁₂ke contain₀₂ke := ψke
-    rcases ρ₀ke.deterministic ρ₀ke' with ⟨κeq, rfl⟩
-    cases κeq
-    rcases ρ₁ke.deterministic ρ₁ke' with ⟨_, rfl⟩
-    cases κe.deterministic κe'
-    let .contain .comm ρ₁ke'' ρ₂ke' κe'' := contain₁₂ke
-    rcases ρ₁ke.deterministic ρ₁ke'' with ⟨κeq, rfl⟩
-    cases κeq
-    rcases ρ₂ke.deterministic ρ₂ke' with ⟨_, rfl⟩
-    cases κe.deterministic κe''
-    let .contain .comm ρ₀ke'' ρ₂ke'' κe''' := contain₀₂ke
-    rcases ρ₀ke.deterministic ρ₀ke'' with ⟨κeq, rfl⟩
-    cases κeq
-    rcases ρ₂ke.deterministic ρ₂ke'' with ⟨_, rfl⟩
-    cases κe.deterministic κe'''
-    let Ety := ih
-      (.concat .comm ρ₀ke ρ₁ke ρ₂ke κe (.contain .comm ρ₀ke ρ₂ke κe) (.contain .comm ρ₁ke ρ₂ke κe))
-      Γᵢw Γcw Γwe
-    rw [← Range.map_get!_eq (as := [_, _, _, _])] at Ety
-    let Δwf := Γwe.soundness Γcw
-    let A₀ki := ρ₀ke.soundness Γcw Γwe κe.row
-    let A₀lc := A₀ki.TypeVarLocallyClosed_of
-    let A₁ki := ρ₁ke.soundness Γcw Γwe κe.row
-    let A₁lc := A₁ki.TypeVarLocallyClosed_of
-    let A₂ki := ρ₂ke.soundness Γcw Γwe κe.row
-    let A₂lc := A₂ki.TypeVarLocallyClosed_of
-    apply Typing.quadruple
-    · apply Typing.typeLam Δ.typeVarDom
-      intro a anin
-      simp [«F⊗⊕ω».Term.TypeVar_open, «F⊗⊕ω».Type.TypeVar_open]
-      rw [A₀lc.TypeVar_open_id, A₁lc.TypeVar_open_id, A₂lc.TypeVar_open_id,
-          Ety.TermTypeVarLocallyClosed_of.TypeVar_open_id]
-      let Δawf := Δwf.typeVarExt anin (K := [[(K ↦ *)]])
-      apply Typing.lam Δ.termVarDom
-      intro xₗ xₗnin
-      simp [«F⊗⊕ω».Term.TermVar_open]
-      rw [Ety.TermVarLocallyClosed_of.weaken (n := 1).TermVar_open_id]
-      let Δaxₗwf := Δawf.termVarExt xₗnin <| .prod <| .listApp (.var .head) <|
-        A₁ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)
-      apply Typing.lam <| xₗ :: Δ.termVarDom
-      intro xᵣ xᵣnin
-      let xne := List.ne_of_not_mem_cons xᵣnin
-      simp [«F⊗⊕ω».Term.TermVar_open]
-      let Δaxₗᵣwf := Δaxₗwf.termVarExt xᵣnin <| .prod <| .listApp (.var (.termVarExt .head)) <|
-        A₀ki.weakening Δaxₗwf (Δ' := .termExt (.typeExt .empty ..) ..) (Δ'' := .empty)
-      rw [Ety.TermVarLocallyClosed_of.TermVar_open_id]
-      let πty := Ety.prodElim ⟨Nat.le.refl, Nat.le.refl.step.step.step, Nat.mod_one _⟩
-      simp at πty
-      let πty' := πty.weakening Δaxₗᵣwf (Δ' := .termExt (.termExt (.typeExt .empty ..) ..) ..)
-        (Δ'' := .empty)
-      have := πty'.typeApp (B := .var a) <| .var <| .termVarExt <| .termVarExt .head
-      simp [Type.Type_open] at this
-      rw [A₀lc.Type_open_id, A₁lc.Type_open_id, A₂lc.Type_open_id] at this
-      exact this.app (.var Δaxₗᵣwf .head) |>.app <| .var Δaxₗᵣwf <| .termVarExt .head xne.symm
-    · apply Typing.typeLam Δ.typeVarDom
-      intro a anin
-      simp [«F⊗⊕ω».Term.TypeVar_open, «F⊗⊕ω».Type.TypeVar_open]
-      rw [A₀lc.weaken (n := 1).TypeVar_open_id, A₁lc.weaken (n := 1).TypeVar_open_id,
-          A₂lc.weaken (n := 1).TypeVar_open_id,
-          Ety.TermTypeVarLocallyClosed_of.weaken (n := 1).TypeVar_open_id]
-      let Δawf := Δwf.typeVarExt anin (K := [[(K ↦ *)]])
-      apply Typing.typeLam <| a :: Δ.typeVarDom
-      intro aₜ aₜnin
-      let ane := List.ne_of_not_mem_cons aₜnin
-      simp [«F⊗⊕ω».Term.TypeVar_open, «F⊗⊕ω».Type.TypeVar_open]
-      rw [A₀lc.TypeVar_open_id, A₁lc.TypeVar_open_id, A₂lc.TypeVar_open_id,
-          Ety.TermTypeVarLocallyClosed_of.TypeVar_open_id]
-      let Δaaₜwf := Δawf.typeVarExt aₜnin (K := .star)
-      apply Typing.lam Δ.termVarDom
-      intro xₗ xₗnin
-      simp [«F⊗⊕ω».Term.TermVar_open]
-      rw [Ety.TermVarLocallyClosed_of.weaken (n := 1).TermVar_open_id]
-      let Δaaₜxₗwf := Δaaₜwf.termVarExt xₗnin <| .arr
-        (.sum (.listApp (.var (.typeVarExt .head ane.symm))
-          (A₁ki.weakening Δaaₜwf (Δ' := .typeExt (.typeExt .empty ..) ..) (Δ'' := .empty)))) <|
-        .var .head
-      apply Typing.lam <| xₗ :: Δ.termVarDom
-      intro xᵣ xᵣnin
-      let xne := List.ne_of_not_mem_cons xᵣnin
-      simp [«F⊗⊕ω».Term.TermVar_open]
-      let Δaaₜxₗᵣwf := Δaaₜxₗwf.termVarExt xᵣnin <| .arr
-        (.sum (.listApp (.var (.termVarExt (.typeVarExt .head ane.symm)))
-          (A₀ki.weakening Δaaₜxₗwf (Δ' := .termExt (.typeExt (.typeExt .empty ..) ..) ..)
-            (Δ'' := .empty)))) <|
-        .var <| .termVarExt .head
-      rw [Ety.TermVarLocallyClosed_of.TermVar_open_id]
-      let πty := Ety.prodElim ⟨Nat.le.refl.step, Nat.le.refl.step.step, Nat.mod_one _⟩
-      simp at πty
-      let πty' :=
-        πty.weakening Δaaₜxₗᵣwf (Δ' := .termExt (.termExt (.typeExt (.typeExt .empty ..) ..) ..) ..)
-        (Δ'' := .empty)
-      have := πty'.typeApp (B := .var a) <| .var <| .termVarExt <| .termVarExt <|
-        .typeVarExt .head ane.symm
-      simp [Type.Type_open] at this
-      rw [A₀lc.weaken (n := 1).Type_open_id, A₁lc.weaken (n := 1).Type_open_id,
-          A₂lc.weaken (n := 1).Type_open_id] at this
-      have := this.typeApp (B := .var aₜ) <| .var <| .termVarExt <| .termVarExt .head
-      simp [Type.Type_open] at this
-      rw [A₀lc.Type_open_id, A₁lc.Type_open_id, A₂lc.Type_open_id] at this
-      exact this.app (.var Δaaₜxₗᵣwf .head) |>.app <| .var Δaaₜxₗᵣwf <| .termVarExt .head xne.symm
-    · let πty := Ety.prodElim ⟨Nat.le.refl.step.step.step, Nat.le.refl, Nat.mod_one _⟩
-      simp at πty
-      exact πty
-    · let πty := Ety.prodElim ⟨Nat.le.refl.step.step, Nat.le.refl.step, Nat.mod_one _⟩
-      simp at πty
-      exact πty
   | concatAssocL _ concat₁₂ce _ ρ₀ke ρ₁ke ρ₂ke ρ₃ke ρ₅ke κe concat₀₁ih concat₁₂ih concat₀₄ih =>
     rename_i A₅ K _ _
     let .concat μke ρ₃ke' ρ₂ke' ρ₅ke' κe' contain₃₅ke contain₂₅ke := ψke
@@ -1970,6 +2033,134 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
           simp [Type.Type_open] at this
           rw [A₂lc.Type_open_id, A₅lc.Type_open_id] at this
           exact this
+  | concatContainL concatce ih =>
+    let ⟨_, concatke@(.concat _ _ _ _ _ containke _)⟩ := concatce.to_Kinding Γᵢw Γcw Γwe
+    rcases ψke.deterministic containke with ⟨_, rfl⟩
+    let Ety := ih concatke Γᵢw Γcw Γwe
+    rw [← Range.map_get!_eq (as := [_, _, _, _])] at Ety
+    let πty := Ety.prodElim ⟨Nat.le.refl.step.step, Nat.le.refl.step, Nat.mod_one _⟩
+    simp at πty
+    exact πty
+  | concatContainR concatce ih =>
+    let ⟨_, concatke@(.concat _ _ _ _ _ _ containke)⟩ := concatce.to_Kinding Γᵢw Γcw Γwe
+    rcases ψke.deterministic containke with ⟨_, rfl⟩
+    let Ety := ih concatke Γᵢw Γcw Γwe
+    rw [← Range.map_get!_eq (as := [_, _, _, _])] at Ety
+    let πty := Ety.prodElim ⟨Nat.le.refl.step.step.step, Nat.le.refl, Nat.mod_one _⟩
+    simp at πty
+    exact πty
+  | concatSwap concatce ρ₀ke ρ₁ke κe ih =>
+    rename «F⊗⊕ω».Kind => K
+    let .concat .comm ρ₁ke' ρ₀ke' ρ₂ke κe' contain₁₂ke contain₀₂ke := ψke
+    rcases ρ₀ke.deterministic ρ₀ke' with ⟨κeq, rfl⟩
+    cases κeq
+    rcases ρ₁ke.deterministic ρ₁ke' with ⟨_, rfl⟩
+    cases κe.deterministic κe'
+    let .contain .comm ρ₁ke'' ρ₂ke' κe'' := contain₁₂ke
+    rcases ρ₁ke.deterministic ρ₁ke'' with ⟨κeq, rfl⟩
+    cases κeq
+    rcases ρ₂ke.deterministic ρ₂ke' with ⟨_, rfl⟩
+    cases κe.deterministic κe''
+    let .contain .comm ρ₀ke'' ρ₂ke'' κe''' := contain₀₂ke
+    rcases ρ₀ke.deterministic ρ₀ke'' with ⟨κeq, rfl⟩
+    cases κeq
+    rcases ρ₂ke.deterministic ρ₂ke'' with ⟨_, rfl⟩
+    cases κe.deterministic κe'''
+    let Ety := ih
+      (.concat .comm ρ₀ke ρ₁ke ρ₂ke κe (.contain .comm ρ₀ke ρ₂ke κe) (.contain .comm ρ₁ke ρ₂ke κe))
+      Γᵢw Γcw Γwe
+    rw [← Range.map_get!_eq (as := [_, _, _, _])] at Ety
+    let Δwf := Γwe.soundness Γcw
+    let A₀ki := ρ₀ke.soundness Γcw Γwe κe.row
+    let A₀lc := A₀ki.TypeVarLocallyClosed_of
+    let A₁ki := ρ₁ke.soundness Γcw Γwe κe.row
+    let A₁lc := A₁ki.TypeVarLocallyClosed_of
+    let A₂ki := ρ₂ke.soundness Γcw Γwe κe.row
+    let A₂lc := A₂ki.TypeVarLocallyClosed_of
+    apply Typing.quadruple
+    · apply Typing.typeLam Δ.typeVarDom
+      intro a anin
+      simp [«F⊗⊕ω».Term.TypeVar_open, «F⊗⊕ω».Type.TypeVar_open]
+      rw [A₀lc.TypeVar_open_id, A₁lc.TypeVar_open_id, A₂lc.TypeVar_open_id,
+          Ety.TermTypeVarLocallyClosed_of.TypeVar_open_id]
+      let Δawf := Δwf.typeVarExt anin (K := [[(K ↦ *)]])
+      apply Typing.lam Δ.termVarDom
+      intro xₗ xₗnin
+      simp [«F⊗⊕ω».Term.TermVar_open]
+      rw [Ety.TermVarLocallyClosed_of.weaken (n := 1).TermVar_open_id]
+      let Δaxₗwf := Δawf.termVarExt xₗnin <| .prod <| .listApp (.var .head) <|
+        A₁ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)
+      apply Typing.lam <| xₗ :: Δ.termVarDom
+      intro xᵣ xᵣnin
+      let xne := List.ne_of_not_mem_cons xᵣnin
+      simp [«F⊗⊕ω».Term.TermVar_open]
+      let Δaxₗᵣwf := Δaxₗwf.termVarExt xᵣnin <| .prod <| .listApp (.var (.termVarExt .head)) <|
+        A₀ki.weakening Δaxₗwf (Δ' := .termExt (.typeExt .empty ..) ..) (Δ'' := .empty)
+      rw [Ety.TermVarLocallyClosed_of.TermVar_open_id]
+      let πty := Ety.prodElim ⟨Nat.le.refl, Nat.le.refl.step.step.step, Nat.mod_one _⟩
+      simp at πty
+      let πty' := πty.weakening Δaxₗᵣwf (Δ' := .termExt (.termExt (.typeExt .empty ..) ..) ..)
+        (Δ'' := .empty)
+      have := πty'.typeApp (B := .var a) <| .var <| .termVarExt <| .termVarExt .head
+      simp [Type.Type_open] at this
+      rw [A₀lc.Type_open_id, A₁lc.Type_open_id, A₂lc.Type_open_id] at this
+      exact this.app (.var Δaxₗᵣwf .head) |>.app <| .var Δaxₗᵣwf <| .termVarExt .head xne.symm
+    · apply Typing.typeLam Δ.typeVarDom
+      intro a anin
+      simp [«F⊗⊕ω».Term.TypeVar_open, «F⊗⊕ω».Type.TypeVar_open]
+      rw [A₀lc.weaken (n := 1).TypeVar_open_id, A₁lc.weaken (n := 1).TypeVar_open_id,
+          A₂lc.weaken (n := 1).TypeVar_open_id,
+          Ety.TermTypeVarLocallyClosed_of.weaken (n := 1).TypeVar_open_id]
+      let Δawf := Δwf.typeVarExt anin (K := [[(K ↦ *)]])
+      apply Typing.typeLam <| a :: Δ.typeVarDom
+      intro aₜ aₜnin
+      let ane := List.ne_of_not_mem_cons aₜnin
+      simp [«F⊗⊕ω».Term.TypeVar_open, «F⊗⊕ω».Type.TypeVar_open]
+      rw [A₀lc.TypeVar_open_id, A₁lc.TypeVar_open_id, A₂lc.TypeVar_open_id,
+          Ety.TermTypeVarLocallyClosed_of.TypeVar_open_id]
+      let Δaaₜwf := Δawf.typeVarExt aₜnin (K := .star)
+      apply Typing.lam Δ.termVarDom
+      intro xₗ xₗnin
+      simp [«F⊗⊕ω».Term.TermVar_open]
+      rw [Ety.TermVarLocallyClosed_of.weaken (n := 1).TermVar_open_id]
+      let Δaaₜxₗwf := Δaaₜwf.termVarExt xₗnin <| .arr
+        (.sum (.listApp (.var (.typeVarExt .head ane.symm))
+          (A₁ki.weakening Δaaₜwf (Δ' := .typeExt (.typeExt .empty ..) ..) (Δ'' := .empty)))) <|
+        .var .head
+      apply Typing.lam <| xₗ :: Δ.termVarDom
+      intro xᵣ xᵣnin
+      let xne := List.ne_of_not_mem_cons xᵣnin
+      simp [«F⊗⊕ω».Term.TermVar_open]
+      let Δaaₜxₗᵣwf := Δaaₜxₗwf.termVarExt xᵣnin <| .arr
+        (.sum (.listApp (.var (.termVarExt (.typeVarExt .head ane.symm)))
+          (A₀ki.weakening Δaaₜxₗwf (Δ' := .termExt (.typeExt (.typeExt .empty ..) ..) ..)
+            (Δ'' := .empty)))) <|
+        .var <| .termVarExt .head
+      rw [Ety.TermVarLocallyClosed_of.TermVar_open_id]
+      let πty := Ety.prodElim ⟨Nat.le.refl.step, Nat.le.refl.step.step, Nat.mod_one _⟩
+      simp at πty
+      let πty' :=
+        πty.weakening Δaaₜxₗᵣwf (Δ' := .termExt (.termExt (.typeExt (.typeExt .empty ..) ..) ..) ..)
+        (Δ'' := .empty)
+      have := πty'.typeApp (B := .var a) <| .var <| .termVarExt <| .termVarExt <|
+        .typeVarExt .head ane.symm
+      simp [Type.Type_open] at this
+      rw [A₀lc.weaken (n := 1).Type_open_id, A₁lc.weaken (n := 1).Type_open_id,
+          A₂lc.weaken (n := 1).Type_open_id] at this
+      have := this.typeApp (B := .var aₜ) <| .var <| .termVarExt <| .termVarExt .head
+      simp [Type.Type_open] at this
+      rw [A₀lc.Type_open_id, A₁lc.Type_open_id, A₂lc.Type_open_id] at this
+      exact this.app (.var Δaaₜxₗᵣwf .head) |>.app <| .var Δaaₜxₗᵣwf <| .termVarExt .head xne.symm
+    · let πty := Ety.prodElim ⟨Nat.le.refl.step.step.step, Nat.le.refl, Nat.mod_one _⟩
+      simp at πty
+      exact πty
+    · let πty := Ety.prodElim ⟨Nat.le.refl.step.step, Nat.le.refl.step, Nat.mod_one _⟩
+      simp at πty
+      exact πty
+  | containDecay containce _ _ ih =>
+    let ⟨_, .contain μ₀ke ..⟩ := containce.to_Kinding Γᵢw Γcw Γwe
+    let .contain _ ρ₀ke ρ₁ke κe := ψke
+    exact ih (.contain μ₀ke ρ₀ke ρ₁ke κe) Γᵢw Γcw Γwe
   | concatDecay concatce _ _ ih =>
     let .concat _ ρ₀ke ρ₁ke ρ₂ke κe contain₀₂ke contain₁₂ke := ψke
     let ⟨A, concatke⟩ := concatce.to_Kinding Γᵢw Γcw Γwe
@@ -2006,22 +2197,6 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
     rcases ρ₂ke.deterministic ρ₂ke''''' with ⟨_, rfl⟩
     cases κe.deterministic κe'''''
     exact Ety
-  | concatContainL concatce ih =>
-    let ⟨_, concatke@(.concat _ _ _ _ _ containke _)⟩ := concatce.to_Kinding Γᵢw Γcw Γwe
-    rcases ψke.deterministic containke with ⟨_, rfl⟩
-    let Ety := ih concatke Γᵢw Γcw Γwe
-    rw [← Range.map_get!_eq (as := [_, _, _, _])] at Ety
-    let πty := Ety.prodElim ⟨Nat.le.refl.step.step, Nat.le.refl.step, Nat.mod_one _⟩
-    simp at πty
-    exact πty
-  | concatContainR concatce ih =>
-    let ⟨_, concatke@(.concat _ _ _ _ _ _ containke)⟩ := concatce.to_Kinding Γᵢw Γcw Γwe
-    rcases ψke.deterministic containke with ⟨_, rfl⟩
-    let Ety := ih concatke Γᵢw Γcw Γwe
-    rw [← Range.map_get!_eq (as := [_, _, _, _])] at Ety
-    let πty := Ety.prodElim ⟨Nat.le.refl.step.step.step, Nat.le.refl, Nat.mod_one _⟩
-    simp at πty
-    exact πty
   | liftContain I containce ρ₀ke τke κ₀e κ₁e ih =>
     rename_i Γ _ _ _ _ _ _ _ A' K₀ K₁
     let .contain _ lift₀ke lift₁ke κ₁e' .. := ψke
