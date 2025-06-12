@@ -669,7 +669,9 @@ def term (greedy unlabel := true) (allowFree := false) : TermM (Term true) := wi
       if allowFree then
         throwUnexpected
 
+      let st ← get
       let (_, termStartPos, termStopPos) ← withCapture <| go false false true
+      set st
       let ((σ, vt), _, stopPos) ← ~*> char ':' **> withCapture typeScheme
       setPosition termStartPos
       let (M, _, termStopPos') ← withCapture <| TermM.includeTypeVars vt <|
@@ -737,8 +739,8 @@ macro "#parse_term " input:str " to " expected:term : command =>
   nil <| app (var 3) (var 3)
 #parse_term "let xs = nil in xs xs" to «let» 3 none nil <| app (var 3) (var 3)
 #parse_term "(λ x : d. x) : ∀ d : *. d → d" to annot
-  (annot (lam 5 (var 5)) (Monotype.arr (uvars := true) (.var 5) (.uvar 2)))
-  (.quant 5 .star (Monotype.arr (uvars := true) (.var 5) (.var 5)))
+  (annot (lam 3 (var 3)) (Monotype.arr (uvars := true) (.var 3) (.uvar 0)))
+  (.quant 3 .star (Monotype.arr (uvars := true) (.var 3) (.var 3)))
 #parse_term "''" to label ""
 #parse_term "'asdf'" to label "asdf"
 #parse_term "{}" to prod .nil
