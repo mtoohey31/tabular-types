@@ -556,7 +556,7 @@ inductive Typing : Term → TypeScheme → Type where
   | concat : Typing M ((prodOrSum .prod μ).app ρ₀) → Typing N ((prodOrSum .prod μ).app ρ₁) →
     ConstraintSolution (.concat ρ₀ μ ρ₁ ρ₂) → Typing (M.concat N) ((prodOrSum .prod μ).app ρ₂)
   | inj : Typing M ((prodOrSum .sum μ).app ρ₀) → ConstraintSolution (contain ρ₀ μ ρ₁) →
-    Typing (prj M) ((prodOrSum .sum μ).app ρ₁)
+    Typing (inj M) ((prodOrSum .sum μ).app ρ₁)
   | elim : Typing M (((prodOrSum .prod μ).app ρ₀).arr τ) →
     Typing N (((prodOrSum .prod μ).app ρ₁).arr τ) → ConstraintSolution (.concat ρ₀ μ ρ₁ ρ₂) →
     Typing (M.elim N) (((prodOrSum .prod μ).app ρ₂).arr τ)

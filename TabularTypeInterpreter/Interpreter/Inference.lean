@@ -96,6 +96,9 @@ def wellFormedContext : InferM Unit := sorry
 def subtype (σ₀ σ₁ : TypeScheme) : InferM (σ₀.Subtyping σ₁) := sorry
 def instantiateLeft (ᾱ : UniVar) (σ : TypeScheme) : InferM Unit := sorry
 def instantiateRight (σ : TypeScheme) (ᾱ : UniVar) : InferM Unit := sorry
+def constraint (ψ : Monotype) : InferM (ψ.ConstraintSolution) := do
+  kind ψ .constr
+  sorry
 
 mutual
 partial def check (e : Term) (σ : TypeScheme) : InferM (e.Typing σ) := do
@@ -159,7 +162,40 @@ partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
     let ⟨.qual $ .mono τ, t⟩ ← infer e₂
       | throw $ .panic "expected a monotype in the row"
     return ⟨(Monotype.prodOrSum .sum (.comm .non)).app (.row (.cons ξ τ .nil) none), t.sum⟩
-  -- NOTE: the rest of the rules use constraints, so we should get some scaffolding setup soon.
+  | .prj e =>
+    let ⟨Monotype.app (.prodOrSum .prod μ) ρ, t⟩ ← infer e
+      | throw $ .panic "projection out of non-record term"
+    let rx ← fresh
+    push <| .xunivar rx (.row .star)
+    let c ← constraint <| .contain (.uvar rx) μ ρ
+    return ⟨Monotype.app (.prodOrSum .prod μ) (.uvar rx), t.prj c⟩ 
+  | .inj e =>
+    let ⟨Monotype.app (.prodOrSum .sum μ) ρ, t⟩ ← infer e
+      | throw $ .panic "injection of non-variant term"
+    let rx ← fresh
+    push <| .xunivar rx (.row .star)
+    let c ← constraint <| .contain ρ μ (.uvar rx)
+    return ⟨Monotype.app (.prodOrSum .sum μ) (.uvar rx), t.inj c⟩ 
+  | .concat m n =>
+    let ⟨Monotype.app (.prodOrSum .prod μₘ) ρₘ, tₘ⟩ ← infer m
+      | throw $ .panic "concatenation of non-record term"
+    let ⟨Monotype.app (.prodOrSum .prod μₙ) ρₙ, tₙ⟩ ← infer n
+      | throw $ .panic "concatenation of non-record term"
+    -- TODO: generate μ as a single thing by proving μₘ = μₙ
+    let rx ← fresh;
+    push <| .xunivar rx (.row .star)
+    let c ← constraint <| .concat ρₘ μ ρₙ (.uvar rx)
+    return ⟨Monotype.app (.prodOrSum .prod μ) (.uvar rx), .concat tₘ tₙ c⟩
+  | .elim m n =>
+    let ⟨Monotype.arr (.app (.prodOrSum .sum μₘ) ρₘ) τₘ, tₘ⟩ ← infer m
+      | throw $ .panic "concatenation of non-record term"
+    let ⟨Monotype.arr (.app (.prodOrSum .sum μₙ) ρₙ) τₙ, tₙ⟩ ← infer m
+      | throw $ .panic "concatenation of non-record term"
+    -- TODO: generate μ as a single thing by proving μₘ = μₙ; similarly τ for τₘ = τₙ
+    let rx ← fresh;
+    push <| .xunivar rx (.row .star)
+    let c ← constraint <| (.concat ρₘ μ ρₙ (.uvar rx))
+    return ⟨Monotype.arr (.app (.prodOrSum .sum μ) (.uvar rx)) τ, .elim tₘ tₙ c⟩
   | _ => throw $ .panic "unimplemented"
 
 -- TODO: How do we produce a typing derivation for inferApp?
