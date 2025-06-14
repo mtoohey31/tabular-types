@@ -549,7 +549,7 @@ inductive Typing : Term → TypeScheme → Type where
       ((prodOrSum .prod (comm .non)).app (row (.ofList ξτs) none))
   | sum {τ : Monotype} : Typing N τ →
     Typing (sum M N) ((prodOrSum .sum (comm .non)).app (row (.cons ξ τ .nil) none))
-  | unlabel : Typing M ((prodOrSum Ξ μ).app (row (.cons ξ τ .nil) none)) →
+  | unlabel : Typing M ((prodOrSum Ξ μ).app (row (.cons ξ τ .nil) κ?)) →
     Typing (unlabel M N) τ
   | prj : Typing M ((prodOrSum .prod μ).app ρ₀) → ConstraintSolution (contain ρ₁ μ ρ₀) →
     Typing (prj M) ((prodOrSum .prod μ).app ρ₁)

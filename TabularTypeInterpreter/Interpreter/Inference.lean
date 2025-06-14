@@ -127,7 +127,6 @@ partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
     let t ← check e σ
     return ⟨σ, t.annot⟩
   | .let χ σ? e e' =>
-    -- HACK: Had to duplicate code here since the b:=false and b:=true branches have special type checking requirements.
     match σ? with
     | .none => 
       let ⟨σ, t⟩ ← infer e
@@ -149,8 +148,7 @@ partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
     return ⟨Monotype.arr τa τb, t.lam⟩
   | .label l => return ⟨Monotype.floor (.label l), .label⟩
   | .unlabel e₁ e₂ =>
-    -- TODO: I think forcing the kind information to be none is a mistake here, but that's what the typing tree expects. I assume it's a mistake there.
-    let ⟨Monotype.app (.prodOrSum Ξ μ) (.row (.cons ξ τ .nil) none), t₁⟩ ← infer e₁
+    let ⟨Monotype.app (.prodOrSum Ξ μ) (.row (.cons ξ τ .nil) _), t₁⟩ ← infer e₁
       | throw $ .panic "expected a singleton product or sum"
     let t₂ ← check e₂ (ξ.floor)
     return ⟨τ, t₁.unlabel⟩
