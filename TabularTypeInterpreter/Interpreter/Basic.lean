@@ -16,7 +16,7 @@ inductive Kind where
   | comm
   | row : Kind → Kind
   | constr
-deriving Inhabited, BEq
+deriving Inhabited, BEq, DecidableEq
 
 namespace Kind
 
@@ -38,7 +38,7 @@ open Kind
 inductive Comm where
   | comm
   | non
-deriving Inhabited, BEq
+deriving Inhabited, BEq, DecidableEq
 
 instance : ToString Comm where
   toString
@@ -48,7 +48,7 @@ instance : ToString Comm where
 inductive ProdOrSum where
   | prod
   | sum
-deriving Inhabited, BEq
+deriving Inhabited, BEq, DecidableEq
 
 instance : ToString ProdOrSum where
   toString
@@ -81,12 +81,12 @@ inductive Monotype where
   | int : Monotype
   | str : Monotype
   | alias : String → Monotype
-deriving BEq
+deriving BEq, DecidableEq
 
 inductive MonotypePairList where
   | nil : MonotypePairList
   | cons (head₀ head₁ : Monotype) (tail : MonotypePairList) : MonotypePairList
-deriving BEq
+deriving BEq, DecidableEq
 
 end
 
@@ -225,7 +225,7 @@ end Monotype
 inductive QualifiedType where
   | mono : Monotype → QualifiedType
   | qual : Monotype → QualifiedType → QualifiedType
-deriving Inhabited, BEq
+deriving Inhabited, BEq, DecidableEq
 
 namespace QualifiedType
 
@@ -246,7 +246,7 @@ open QualifiedType
 inductive TypeScheme where
   | qual : QualifiedType → TypeScheme
   | quant : TId → Kind → TypeScheme → TypeScheme
-deriving Inhabited, BEq
+deriving Inhabited, BEq, DecidableEq
 
 namespace TypeScheme
 
@@ -380,6 +380,12 @@ theorem sizeOf_ofList : SizeOf.sizeOf ξτs = SizeOf.sizeOf (ofList ξτs) := by
     have := sizeOf_ofList (ξτs := tail)
     simp [SizeOf.sizeOf] at this
     rw [this]
+
+@[simp]
+theorem ofList_left_inv_toList : ofList (toList MNs) = MNs := by
+  match MNs with
+  | nil => rw [toList, ofList]
+  | cons head₀ head₁ tail => rw [toList, ofList, ofList_left_inv_toList]
 
 end TermPairList
 
