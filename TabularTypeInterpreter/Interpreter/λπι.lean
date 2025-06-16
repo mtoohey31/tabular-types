@@ -23,7 +23,7 @@ inductive Op where
   | le
   | gt
   | ge
-deriving BEq
+deriving BEq, DecidableEq
 
 instance : ToString Op where
   toString

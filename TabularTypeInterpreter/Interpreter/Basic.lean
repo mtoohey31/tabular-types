@@ -295,12 +295,12 @@ inductive Term where
   | str : String → Term
   | throw : Term
   | def : String → Term
-deriving BEq
+deriving BEq, DecidableEq
 
 inductive TermPairList where
   | nil : TermPairList
   | cons (head₀ head₁ : Term) (tail : TermPairList) : TermPairList
-deriving BEq
+deriving BEq, DecidableEq
 
 end
 
