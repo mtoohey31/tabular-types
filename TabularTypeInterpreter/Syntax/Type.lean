@@ -50,11 +50,11 @@ nonterminal Monotype, τ, ϕ, ρ, ψ, ξ, μ :=
 end
 
 nonterminal QualifiedType, γ :=
-  | τ         : mono
   | ψ " ⇒ " γ : qual
+  | τ         : mono
 
 nonterminal TypeScheme, σ :=
-  | γ                     : qual
   | "∀ " a " : " κ ". " σ : quant (bind a)
+  | γ                     : qual
 
 end TabularTypeInterpreter
