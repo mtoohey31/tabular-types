@@ -31,4 +31,21 @@ m ∉ dom(Γc)
 ───────────────────── term
 Γᵢ; Γc ⊢ M : σ ⇝ E
 
+syntax (name := pgmTyping) Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment "; " Lott.Symbol.TabularTypeInterpreter.ClassEnvironment " ⊢ " Lott.Symbol.TabularTypeInterpreter.Program " : " Lott.Symbol.TabularTypeInterpreter.TypeScheme : Lott.Judgement
+
+macro_rules
+  | `([[$Γᵢ:Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment; $Γc:Lott.Symbol.TabularTypeInterpreter.ClassEnvironment ⊢ $pgm:Lott.Symbol.TabularTypeInterpreter.Program : $σ:Lott.Symbol.TabularTypeInterpreter.TypeScheme]]) =>
+    `(Program.TypingAndElaboration [[$(.mk Γᵢ):Lott.Symbol]] [[$(.mk Γc):Lott.Symbol]] [[$(.mk pgm):Lott.Symbol]] [[$(.mk σ):Lott.Symbol]] _)
+
+@[lott_tex_elab pgmTyping]
+private
+def pgmTypingTexElab : Lott.TexElab := fun profile ref stx => do
+  let `(pgmTyping| $Γᵢ:Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment; $Γc:Lott.Symbol.TabularTypeInterpreter.ClassEnvironment ⊢ $pgm:Lott.Symbol.TabularTypeInterpreter.Program : $σ:Lott.Symbol.TabularTypeInterpreter.TypeScheme) := stx
+    | Lean.Elab.throwUnsupportedSyntax
+  let Γᵢ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment profile ref Γᵢ
+  let Γc ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.ClassEnvironment profile ref Γc
+  let pgm ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.Program profile ref pgm
+  let σ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeScheme profile ref σ
+  return s!"{Γᵢ} \\lottsym\{;} \\, {Γc} \\, \\lottsym\{⊢} \\, {pgm} \\, \\pgmtypingsym \\, {σ}"
+
 end TabularTypeInterpreter
