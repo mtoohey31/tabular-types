@@ -7,7 +7,6 @@
 }{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \targetpre \lottsym{(} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre A \targetpost \targetpost \lottsym{)} \targetpost \, \targetpre B \targetpost \targetpost \, \lottsym{≡ᵢ} \, \targetpre \targetpre A \targetpost\left[\targetpre B \targetpost/\targetpre a \targetpost\right] \targetpost}
 \lottinferencerulesep
 \lottinferencerule{lamListApp}{
-\lotthypothesis{\lottkw{lc}\lottsym{(}\targetpre A \targetpost\lottsym{)}}
 }{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \targetpre A \targetpost \, \lottsym{⟦} \targetpre \lottsym{\{} \lottsepbycomprehension{\targetpre {B}_{i} \targetpost} \lottsym{\}} \targetpost \lottsym{⟧} \targetpost \, \lottsym{≡ᵢ} \, \targetpre \lottsym{\{} \lottsepbycomprehension{\targetpre \targetpre A \targetpost \, \targetpre {B}_{i} \targetpost \targetpost} \lottsym{\}} \targetpost}
 \lottinferencerulesep
 \lottinferencerule{listAppId}{
@@ -42,7 +41,6 @@
 }{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \targetpre A₁ \targetpost \, \lottsym{⟦} \targetpre B₁ \targetpost \lottsym{⟧} \targetpost \, \lottsym{≡ᵢ} \, \targetpre \targetpre A₂ \targetpost \, \lottsym{⟦} \targetpre B₂ \targetpost \lottsym{⟧} \targetpost}
 \lottinferencerulesep
 \lottinferencerule{listAppComp}{
-\lotthypothesis{\lottkw{lc}\lottsym{(}\targetpre A₀ \targetpost\lottsym{)}}
 }{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \targetpre A₀ \targetpost \, \lottsym{⟦} \targetpre \targetpre \lottsym{(} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre A₁ \targetpost \targetpost \lottsym{)} \targetpost \, \lottsym{⟦} \targetpre B \targetpost \lottsym{⟧} \targetpost \lottsym{⟧} \targetpost \, \lottsym{≡ᵢ} \, \targetpre \targetpre \lottsym{(} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre \targetpre A₀ \targetpost \, \targetpre A₁ \targetpost \targetpost \targetpost \lottsym{)} \targetpost \, \lottsym{⟦} \targetpre B \targetpost \lottsym{⟧} \targetpost}
 \lottinferencerulesep
 \lottinferencerule{prod}{
