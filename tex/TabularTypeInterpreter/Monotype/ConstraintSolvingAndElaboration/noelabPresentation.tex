@@ -8,12 +8,18 @@
 \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₁ \, \lottsym{≲}_{μ} \, ρ₂}
 }{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{≲}_{μ} \, ρ₂}
 \lottinferencerulesep
-\lottinferencerule{containConcat}{
-\lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{⊙}_{μ} \, ρ₁ \, \lottsym{\sim} \, ρ₂}\\
-\lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₃ \, \lottsym{⊙}_{μ} \, ρ₄ \, \lottsym{\sim} \, ρ₅}\\
-\lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{≲}_{μ} \, ρ₃}\\
-\lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₁ \, \lottsym{≲}_{μ} \, ρ₄}
-}{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₂ \, \lottsym{≲}_{μ} \, ρ₅}
+% \lottinferencerule{containConcat}{
+% \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{⊙}_{μ} \, ρ₁ \, \lottsym{\sim} \, ρ₂}\\
+% \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₃ \, \lottsym{⊙}_{μ} \, ρ₄ \, \lottsym{\sim} \, ρ₅}\\
+% \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{≲}_{μ} \, ρ₃}\\
+% \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₁ \, \lottsym{≲}_{μ} \, ρ₄}
+% }{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₂ \, \lottsym{≲}_{μ} \, ρ₅}
+% \lottinferencerulesep
+\lottinferencerule{containDecay}{
+\lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{≲}_{μ₀} \, ρ₁}\\
+\lotthypothesis{μ₀ \, \partialordsym \, μ₁}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, μ₁ \, \kindingsym \, \lottkw{U}}
+}{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{≲}_{μ₁} \, ρ₁}
 \lottinferencerulesep
 \lottinferencerule{concatConcrete}{
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{{ξ₀}_{i} \, \lottsym{▹} \, {τ₀}_{i}}{i}{[:m]} \lottsym{,} \, \lottsepbycomprehensionpatcollection{{ξ₁}_{j} \, \lottsym{▹} \, {τ₁}_{j}}{j}{[:n]} \lottsym{⟩} \, \kindingsym \, \lottkw{R}^{κ}}
@@ -51,17 +57,12 @@
 \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{⊙}_{μ} \, ρ₁ \, \lottsym{\sim} \, ρ₂}
 }{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₁ \, \lottsym{≲}_{μ} \, ρ₂}
 \lottinferencerulesep
-\lottinferencerule{containDecay}{
-\lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{≲}_{μ₀} \, ρ₁}\\
-\lotthypothesis{μ₀ \, \partialordsym \, μ₁}\\
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, μ₁ \, \kindingsym \, \lottkw{U}}
-}{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{≲}_{μ₁} \, ρ₁}
-\lottinferencerulesep
 \lottinferencerule{concatDecay}{
 \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{⊙}_{μ₀} \, ρ₁ \, \lottsym{\sim} \, ρ₂}\\
 \lotthypothesis{μ₀ \, \partialordsym \, μ₁}\\
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, μ₁ \, \kindingsym \, \lottkw{U}}
-}{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{⊙}_{μ₁} \, ρ₁ \, \lottsym{\sim} \, ρ₂}
+}{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{⊙}_{μ₁} \, ρ₁ \, \lottsym{\sim} \, ρ₂}\\
+\text{\color{ibmpurple}\textbf{\textit{\underline{Lift}}}\hspace{400pt} }\\
 \lottinferencerulesep
 \lottinferencerule{liftContain}{
 \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{≲}_{μ} \, ρ₁}\\
@@ -74,6 +75,8 @@
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \kindingsym \, \lottkw{R}^{κ₀}}\\
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \lottsym{,} \, a \, \lottsym{:} \, κ₀ \, \lottsym{⊢} \, τ \, \kindingsym \, κ₁}
 }{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottsym{(} \lottkw{Lift} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ₀ \lottsym{.} \, τ \lottsym{)} \, ρ₀ \lottsym{)} \, \lottsym{⊙}_{μ} \, \lottsym{(} \lottkw{Lift} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ₀ \lottsym{.} \, τ \lottsym{)} \, ρ₁ \lottsym{)} \, \lottsym{\sim} \, \lottsym{(} \lottkw{Lift} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ₀ \lottsym{.} \, τ \lottsym{)} \, ρ₂ \lottsym{)}}
+\\
+\text{\color{ibmpurple}\textbf{\textit{\underline{Type classes}}}\hspace{400pt} }\\
 \lottinferencerulesep
 \lottinferencerule{TCInst}{
 \lotthypothesis{\lottsym{(} \lottsym{∀} \, \lottsepbycomprehension{{a}_{k} \, \lottsym{:} \, {κ}_{k}} \lottsym{.} \, \lottsepbycomprehension{{ψ}_{j}} \, \lottsym{⇒} \, TC \, τ₀ \lottsym{)} \, \lottsym{∈} \, Γ_{I}}\\
@@ -86,6 +89,8 @@
 \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, TC \, τ}\\
 \lotthypothesis{i \, \lottsym{∈} \, \lottsym{[} \lottsym{:} n \lottsym{]}}
 }{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, {TCₛ}_{i} \, τ}
+\\
+\text{\color{ibmpurple}\textbf{\underline{\textit{All}}}\hspace{400pt} }\\
 \lottinferencerulesep
 \lottinferencerule{allEmpty}{
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \lottsym{,} \, a \, \lottsym{:} \, κ \, \lottsym{⊢} \, ψ \, \kindingsym \, \lottkw{C}}
@@ -119,6 +124,8 @@
 \lotthypothesis{\lottjudgementcomprehensionpatcollection{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{{ℓ}_{j} \, \lottsym{▹} \, {τ}_{j}}{j}{[:i+1]} \lottsym{⟩} \, \lottsym{⊙}_{\mathfrak{n}} \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{{ℓ}_{k} \, \lottsym{▹} \, {τ}_{k}}{k}{[i+1:n]} \lottsym{⟩} \, \lottsym{\sim} \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{{ℓ}_{l} \, \lottsym{▹} \, {τ}_{l}}{l}{[:n]} \lottsym{⟩}}{i}{[:n]}}
 }{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottkw{Ind} \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{{ℓ}_{i} \, \lottsym{▹} \, {τ}_{i}}{i}{[:n]} \lottsym{⟩}}
 \lottinferencerulesep
+\\
+\text{\color{ibmpurple}\textbf{\underline{\textit{Split}}}\hspace{400pt} }\\
 \lottinferencerule{splitEmpty}{
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \lottsym{,} \, a \, \lottsym{:} \, κ \, \lottsym{⊢} \, τ \, \kindingsym \, \lottsym{\star}}
 }{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottkw{Split} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, \lottsym{⟨}  \lottsym{⟩} \, \lottsym{⟨}  \lottsym{⟩} \, \lottsym{⟨}  \lottsym{⟩}}
@@ -136,15 +143,15 @@
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ξ \, \kindingsym \, \lottkw{L}}
 }{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottkw{Split} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ₀ \lottsym{)} \, \lottsym{⟨}  \lottsym{⟩} \, \lottsym{⟨} ξ \, \lottsym{▹} \, τ₁ \lottsym{⟩} \, \lottsym{⟨} ξ \, \lottsym{▹} \, τ₁ \lottsym{⟩}}
 \lottinferencerulesep
-\lottinferencerule{splitPiecewise}{
-\lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottkw{Split} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ₀ \, ρ₁ \, ρ₂}\\
-\lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottkw{Split} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ₃ \, ρ₄ \, ρ₅}\\
-\lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottsym{(} \lottkw{Lift} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ₀ \lottsym{)} \, \lottsym{⊙}_{\mathfrak{c}} \, \lottsym{(} \lottkw{Lift} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ₃ \lottsym{)} \, \lottsym{\sim} \, \lottsym{(} \lottkw{Lift} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ₆ \lottsym{)}}\\
-\lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₁ \, \lottsym{⊙}_{\mathfrak{c}} \, ρ₄ \, \lottsym{\sim} \, ρ₇}\\
-\lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₂ \, \lottsym{⊙}_{\mathfrak{c}} \, ρ₅ \, \lottsym{\sim} \, ρ₈}
-}{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottkw{Split} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ₆ \, ρ₇ \, ρ₈}
-\lottinferencerulesep
 \lottinferencerule{splitConcat}{
 \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottkw{Split} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ₀ \, ρ₁ \, ρ₂}
 }{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottsym{(} \lottkw{Lift} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ₀ \lottsym{)} \, \lottsym{⊙}_{\mathfrak{c}} \, ρ₁ \, \lottsym{\sim} \, ρ₂}
+% \lottinferencerulesep
+% \lottinferencerule{splitPiecewise}{
+% \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottkw{Split} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ₀ \, ρ₁ \, ρ₂}\\
+% \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottkw{Split} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ₃ \, ρ₄ \, ρ₅}\\
+% \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottsym{(} \lottkw{Lift} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ₀ \lottsym{)} \, \lottsym{⊙}_{\mathfrak{c}} \, \lottsym{(} \lottkw{Lift} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ₃ \lottsym{)} \, \lottsym{\sim} \, \lottsym{(} \lottkw{Lift} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ₆ \lottsym{)}}\\
+% \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₁ \, \lottsym{⊙}_{\mathfrak{c}} \, ρ₄ \, \lottsym{\sim} \, ρ₇}\\
+% \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₂ \, \lottsym{⊙}_{\mathfrak{c}} \, ρ₅ \, \lottsym{\sim} \, ρ₈}
+% }{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottkw{Split} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ₆ \, ρ₇ \, ρ₈}
 }
