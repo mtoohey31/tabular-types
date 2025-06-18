@@ -38,20 +38,18 @@ function count_language() {
         base_dir=""
     fi
 
-    for classification in "${CLASSIFICATIONS[@]}"; do
-        echo -ne "\n[${language}] ${classification}\t"
+    local outputs=()
 
+    for classification in "${CLASSIFICATIONS[@]}"; do
         local files=()
         append_files files "$ROOT_DIR" "$base_dir" "$classification"
 
         if [[ ${#files[@]} -gt 0 ]]; then
-            tokei "${files[@]}" -o json | jq -j "$JQ_REPORT"
-            echo -ne "\tDefinitions "
-            rg -q --stats --json "^def |^judgement |^nonterminal " "${files[@]}" | jq -j ".data.stats.matches" || true
-            echo -ne "\tTheorems  "
-            rg -q --stats --json "^theorem|^lemma" "${files[@]}" | jq -j ".data.stats.matches" || true
-        else
-            echo "No files found for ${classification}"
+            local lines definitions theorems
+            lines=$(tokei "${files[@]}" -o json | jq '.Lean | pick(.blanks, .code, .comments) + {total: (.blanks + .code + .comments)}')
+            definitions=$(rg -q --stats --json "^def |^judgement |^nonterminal " "${files[@]}" | jq -j ".data.stats.matches") || true
+            theorems=$(rg -q --stats --json "^theorem |^lemma " "${files[@]}" | jq -j ".data.stats.matches") || true
+            outputs+=("{\"${classification}\": {\"lines\": $lines, \"definitions\": $definitions, \"theorems\": $theorems}}")
         fi
     done
 
@@ -84,18 +82,20 @@ function count_language() {
         fi
     done
 
-    echo -ne "\n[${language}] Others\t"
     if [[ ${#filtered_files[@]} -gt 0 ]]; then
-        tokei "${filtered_files[@]}" -o json | jq -j "$JQ_REPORT"
-        echo -ne "\tDefinitions "
-        rg -q --stats --json "^def |^judgement |^nonterminal " "${filtered_files[@]}" | jq -j ".data.stats.matches" || true
-        echo -ne "\tTheorems  "
-        rg -q --stats --json "^theorem|^lemma" "${filtered_files[@]}" | jq -j ".data.stats.matches" || true
-    else
-        echo "No other files found"
+        local lines definitions theorems
+        lines=$(tokei "${filtered_files[@]}" -o json | jq '.Lean | pick(.blanks, .code, .comments) + {total: (.blanks + .code + .comments)}')
+        definitions=$(rg -q --stats --json "^def |^judgement |^nonterminal " "${filtered_files[@]}" | jq -j ".data.stats.matches") || true
+        theorems=$(rg -q --stats --json "^theorem |^lemma " "${filtered_files[@]}" | jq -j ".data.stats.matches") || true
+        outputs+=("{\"Others\": {\"lines\": $lines, \"definitions\": $definitions, \"theorems\": $theorems}}")
     fi
+
+    echo "${outputs[@]}" | jq -cs add
 }
 
+outputs=()
 for language in "${LANGUAGES[@]}"; do
-    count_language "${language}"
+    outputs+=("{\"${language}\": $(count_language "${language}")}")
 done
+
+echo "${outputs[@]}" | jq -s add
