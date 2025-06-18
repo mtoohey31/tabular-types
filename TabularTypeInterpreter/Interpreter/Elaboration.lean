@@ -460,6 +460,8 @@ inductive Subtyping : TypeScheme → TypeScheme → Type where
       ((((split.app (uvars := false) ϕ).app ρ₃).app ρ₄).app ρ₅)
   | aliasₗ : Subtyping («alias» (uvars := false) s) σ
   | aliasᵣ : Subtyping σ («alias» (uvars := false) s)
+  | list {τ₀ τ₁ : Monotype} : Subtyping τ₀ τ₁ →
+    Subtyping (list (uvars := false).app τ₀) (list (uvars := false).app τ₁)
 
 def Subtyping.elab : Subtyping σ₀ σ₁ → ElabM «λπι».Term
   | refl | decay _ | aliasₗ | aliasᵣ => return .id
@@ -508,6 +510,14 @@ def Subtyping.elab : Subtyping σ₀ σ₁ → ElabM «λπι».Term
     ]
   | all ρ₀₁re => ρ₀₁re.prodElab
   | split concatst => concatst.elab
+  | list τ₀₁st => do
+    let E ← τ₀₁st.elab
+    let i ← freshId
+    let iₐ ← freshId
+    let iₓ ← freshId
+    return .lam i <|
+      .app (.app (.app .fold (.lam iₐ (.lam iₓ (.cons (.var iₓ) (.var iₐ))))) .nil) <|
+      .app (.app (.app .fold (.lam iₐ (.lam iₓ (.cons (E.app (.var iₓ)) (.var iₐ))))) .nil) <| .var i
 where
   contain.elab {μ ρ₀ ρ₁ ρ₂ ρ₃} (ρ₀₂re : RowEquivalence ρ₀ μ ρ₂) (ρ₁₃re : RowEquivalence ρ₁ μ ρ₃)
     (i : «λπι».Id) : ElabM «λπι».Term := do
