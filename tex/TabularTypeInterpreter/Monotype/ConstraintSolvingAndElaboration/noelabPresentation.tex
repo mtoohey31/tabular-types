@@ -1,4 +1,5 @@
 \lottjudgement{Constraint Solving And Elaboration}{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ψ}{
+\text{\color{ibmpurple}{\textit{\underline{Local}}}\hspace{70pt} \textit{\underline{Row}} \hspace{300pt}}\\
 \lottinferencerule{local}{
 \lotthypothesis{ψ \, \lottsym{∈} \, Γ}
 }{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ψ}
@@ -8,13 +9,6 @@
 \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₁ \, \lottsym{≲}_{μ} \, ρ₂}
 }{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{≲}_{μ} \, ρ₂}
 \lottinferencerulesep
-% \lottinferencerule{containConcat}{
-% \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{⊙}_{μ} \, ρ₁ \, \lottsym{\sim} \, ρ₂}\\
-% \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₃ \, \lottsym{⊙}_{μ} \, ρ₄ \, \lottsym{\sim} \, ρ₅}\\
-% \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{≲}_{μ} \, ρ₃}\\
-% \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₁ \, \lottsym{≲}_{μ} \, ρ₄}
-% }{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₂ \, \lottsym{≲}_{μ} \, ρ₅}
-% \lottinferencerulesep
 \lottinferencerule{containDecay}{
 \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{≲}_{μ₀} \, ρ₁}\\
 \lotthypothesis{μ₀ \, \partialordsym \, μ₁}\\
@@ -48,6 +42,13 @@
 \lottinferencerule{concatSwap}{
 \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{⊙}_{\mathfrak{c}} \, ρ₁ \, \lottsym{\sim} \, ρ₂}
 }{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₁ \, \lottsym{⊙}_{\mathfrak{c}} \, ρ₀ \, \lottsym{\sim} \, ρ₂}
+\lottinferencerulesep
+\lottinferencerule{containConcat}{
+\lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{⊙}_{μ} \, ρ₁ \, \lottsym{\sim} \, ρ₂}\\
+\lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₃ \, \lottsym{⊙}_{μ} \, ρ₄ \, \lottsym{\sim} \, ρ₅}\\
+\lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{≲}_{μ} \, ρ₃}\\
+\lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₁ \, \lottsym{≲}_{μ} \, ρ₄}
+}{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₂ \, \lottsym{≲}_{μ} \, ρ₅}
 \lottinferencerulesep
 \lottinferencerule{concatContainL}{
 \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{⊙}_{μ} \, ρ₁ \, \lottsym{\sim} \, ρ₂}
