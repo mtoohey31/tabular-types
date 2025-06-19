@@ -8,6 +8,9 @@ judgement_syntax μ₀ " ≤ " μ₁ : Monotype.CommutativityPartialOrdering (te
 
 judgement Monotype.CommutativityPartialOrdering where
 
+───── refl
+μ ≤ μ
+
 ───── «N»
 N ≤ μ
 
