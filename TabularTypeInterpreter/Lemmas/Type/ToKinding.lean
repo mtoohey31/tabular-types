@@ -31,8 +31,8 @@ theorem Monotype.RowEquivalenceAndElaboration.to_Kinding (ρee : [[Γc; Γ ⊢ �
     let ⟨_, _, _, ρ₁ke', ρ₂ke⟩ := ρ₁₂ee.to_Kinding Γcw Γwe
     cases ρ₁ke.deterministic ρ₁ke' |>.left
     exact ⟨_, _, _, ρ₀ke, ρ₂ke⟩
-  | liftL _ liftke@(.lift I τ₁ke κ₀e ξτ₀ke) _ (τ₁ := τ₁) =>
-    let ⟨⟨_, ξke⟩, uni, ⟨_, _, eq, κeq, h, _, τ₀ke⟩⟩ := ξτ₀ke.row_inversion
+  | liftL _ liftke@(.lift I τ'ke κ₀e ξτke) _ (τ' := τ') =>
+    let ⟨⟨_, ξke⟩, uni, ⟨_, _, eq, κeq, h, _, τke⟩⟩ := ξτke.row_inversion
     cases eq
     cases κeq
     exact ⟨
@@ -42,18 +42,18 @@ theorem Monotype.RowEquivalenceAndElaboration.to_Kinding (ρee : [[Γc; Γ ⊢ �
       liftke,
       .row ξke uni (fun i imem => by
         rename «Type» => A
-        let ⟨a, anin⟩ := τ₁.freeTypeVars ++ ↑A.freeTypeVars ++ Γ.typeVarDom ++ I |>.exists_fresh
-        let ⟨aninτ₁AΓ, aninI⟩ := List.not_mem_append'.mp anin
-        let ⟨aninτ₁A, aninΓ⟩ := List.not_mem_append'.mp aninτ₁AΓ
-        let ⟨aninτ₁, aninA⟩ := List.not_mem_append'.mp aninτ₁A
-        have := τ₁ke a aninI
+        let ⟨a, anin⟩ := τ'.freeTypeVars ++ ↑A.freeTypeVars ++ Γ.typeVarDom ++ I |>.exists_fresh
+        let ⟨aninτ'AΓ, aninI⟩ := List.not_mem_append'.mp anin
+        let ⟨aninτ'A, aninΓ⟩ := List.not_mem_append'.mp aninτ'AΓ
+        let ⟨aninτ', aninA⟩ := List.not_mem_append'.mp aninτ'A
+        have := τ'ke a aninI
         rw [← QualifiedType.Monotype_open, ← TypeScheme.Monotype_open]
         rw [← QualifiedType.TypeVar_open, ← TypeScheme.TypeVar_open] at this
-        exact this.Monotype_open_preservation Γcw (Γwe.typeExt aninΓ κ₀e) nofun aninτ₁ aninA
-          (τ₀ke i imem) (Γ' := .empty)) h
+        exact this.Monotype_open_preservation Γcw (Γwe.typeExt aninΓ κ₀e) nofun aninτ' aninA
+          (τke i imem) (Γ' := .empty)) h
     ⟩
-  | liftR _ liftke@(.lift I τ₁ke κ₀e ξτ₀ke) _ (τ₁ := τ₁) =>
-    let ⟨⟨_, ξke⟩, uni, ⟨_, _, eq, κeq, h, _, τ₀ke⟩⟩ := ξτ₀ke.row_inversion
+  | liftR _ liftke@(.lift I τ'ke κ₀e ξτke) _ (τ' := τ') =>
+    let ⟨⟨_, ξke⟩, uni, ⟨_, _, eq, κeq, h, _, τke⟩⟩ := ξτke.row_inversion
     cases eq
     cases κeq
     exact ⟨
@@ -62,15 +62,15 @@ theorem Monotype.RowEquivalenceAndElaboration.to_Kinding (ρee : [[Γc; Γ ⊢ �
       _,
       .row ξke uni (fun i imem => by
         rename «Type» => A
-        let ⟨a, anin⟩ := τ₁.freeTypeVars ++ ↑A.freeTypeVars ++ Γ.typeVarDom ++ I |>.exists_fresh
-        let ⟨aninτ₁AΓ, aninI⟩ := List.not_mem_append'.mp anin
-        let ⟨aninτ₁A, aninΓ⟩ := List.not_mem_append'.mp aninτ₁AΓ
-        let ⟨aninτ₁, aninA⟩ := List.not_mem_append'.mp aninτ₁A
-        have := τ₁ke a aninI
+        let ⟨a, anin⟩ := τ'.freeTypeVars ++ ↑A.freeTypeVars ++ Γ.typeVarDom ++ I |>.exists_fresh
+        let ⟨aninτ'AΓ, aninI⟩ := List.not_mem_append'.mp anin
+        let ⟨aninτ'A, aninΓ⟩ := List.not_mem_append'.mp aninτ'AΓ
+        let ⟨aninτ', aninA⟩ := List.not_mem_append'.mp aninτ'A
+        have := τ'ke a aninI
         rw [← QualifiedType.Monotype_open, ← TypeScheme.Monotype_open]
         rw [← QualifiedType.TypeVar_open, ← TypeScheme.TypeVar_open] at this
-        exact this.Monotype_open_preservation Γcw (Γwe.typeExt aninΓ κ₀e) nofun aninτ₁ aninA
-          (τ₀ke i imem) (Γ' := .empty)) h,
+        exact this.Monotype_open_preservation Γcw (Γwe.typeExt aninΓ κ₀e) nofun aninτ' aninA
+          (τke i imem) (Γ' := .empty)) h,
       liftke
     ⟩
 

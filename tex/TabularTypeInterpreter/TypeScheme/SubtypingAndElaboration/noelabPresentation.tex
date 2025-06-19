@@ -27,9 +27,9 @@
 }{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottsym{∀} \, a \, \lottsym{:} \, κ₀ \lottsym{.} \, σ₀ \, \subtypingsym \, \lottsym{∀} \, a \, \lottsym{:} \, κ₀ \lottsym{.} \, σ₁}
 \lottinferencerulesep
 \lottinferencerule{prodOrSum}{
-\lotthypothesis{\lottjudgementcomprehension{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, {τ₀}_{i} \, \subtypingsym \, {τ₁}_{i}}}\\
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, {\lottsym{Ξ}}_{μ} \, \lottsym{⟨} \lottsepbycomprehension{{ξ}_{i} \, \lottsym{▹} \, {τ₀}_{i}} \lottsym{⟩} \, \kindingsym \, \lottsym{\star}}
-}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, {\lottsym{Ξ}}_{μ} \, \lottsym{⟨} \lottsepbycomprehension{{ξ}_{i} \, \lottsym{▹} \, {τ₀}_{i}} \lottsym{⟩} \, \subtypingsym \, {\lottsym{Ξ}}_{μ} \, \lottsym{⟨} \lottsepbycomprehension{{ξ}_{i} \, \lottsym{▹} \, {τ₁}_{i}} \lottsym{⟩}}
+\lotthypothesis{\lottjudgementcomprehension{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ_{i} \, \subtypingsym \, τ'_{i}}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, {\lottsym{Ξ}}_{μ} \, \lottsym{⟨} \lottsepbycomprehension{ξ_{i} \, \lottsym{▹} \, τ_{i}} \lottsym{⟩} \, \kindingsym \, \lottsym{\star}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, {\lottsym{Ξ}}_{μ} \, \lottsym{⟨} \lottsepbycomprehension{ξ_{i} \, \lottsym{▹} \, τ_{i}} \lottsym{⟩} \, \subtypingsym \, {\lottsym{Ξ}}_{μ} \, \lottsym{⟨} \lottsepbycomprehension{ξ_{i} \, \lottsym{▹} \, τ'_{i}} \lottsym{⟩}}
 \lottinferencerulesep
 \lottinferencerule{prodOrSumRow}{
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \rowequivsym_{μ} \, ρ₁}\\

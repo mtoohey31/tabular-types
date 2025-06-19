@@ -38,19 +38,19 @@ notex for noelab Fₛ := Λ a : K ↦ *. λ x : ⊕ (a$0 ⟦{</ A@i // i in [:n]
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── comm
 Γc; Γ ⊢ ⟨</ ξ@i ▹ τ@i // i in [:n] /> </ : κ // b notex />⟩ ≡(C) ⟨</ ξ@i ▹ τ@i // (tex := "i \\in p") i in p_ /> </ : κ // b notex />⟩ ⇝ Fₚ, Fₛ
 
-Γc; Γ ⊢ Lift (λ a : κ₀. τ₁) ⟨</ ξ@i ▹ τ₀@i // i in [:n] notex /> </ : κ₀ // b notex />⟩ : R κ₁ ⇝ A
+Γc; Γ ⊢ Lift (λ a : κ₀. τ') ⟨</ ξ@i ▹ τ@i // i in [:n] notex /> </ : κ₀ // b notex />⟩ : R κ₁ ⇝ A
 notex for noelab ⊢ κ₁ ⇝ K
 notex for noelab Fₚ := Λ a' : K ↦ *. λ x : ⊗ (a'$0 ⟦A⟧). x$0
 notex for noelab Fₛ := Λ a' : K ↦ *. λ x : ⊕ (a'$0 ⟦A⟧). x$0
-─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── liftL (μ)
-Γc; Γ ⊢ Lift (λ a : κ₀. τ₁) ⟨</ ξ@i ▹ τ₀@i // i in [:n] notex /> </ : κ₀ // b notex />⟩ ≡(μ) ⟨</ ξ@i ▹ τ₁^^τ₀@i/a // i in [:n] notex /> </ : κ₁ // b notex />⟩ ⇝ Fₚ, Fₛ
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── liftL (μ)
+Γc; Γ ⊢ Lift (λ a : κ₀. τ') ⟨</ ξ@i ▹ τ@i // i in [:n] notex /> </ : κ₀ // b notex />⟩ ≡(μ) ⟨</ ξ@i ▹ τ'^^τ@i/a // i in [:n] notex /> </ : κ₁ // b notex />⟩ ⇝ Fₚ, Fₛ
 
-Γc; Γ ⊢ Lift (λ a : κ₀. τ₁) ⟨</ ξ@i ▹ τ₀@i // i in [:n] notex /> </ : κ₀ // b notex />⟩ : R κ₁ ⇝ A
+Γc; Γ ⊢ Lift (λ a : κ₀. τ') ⟨</ ξ@i ▹ τ@i // i in [:n] notex /> </ : κ₀ // b notex />⟩ : R κ₁ ⇝ A
 notex for noelab ⊢ κ₁ ⇝ K
 notex for noelab Fₚ := Λ a' : K ↦ *. λ x : ⊗ (a'$0 ⟦A⟧). x$0
 notex for noelab Fₛ := Λ a' : K ↦ *. λ x : ⊕ (a'$0 ⟦A⟧). x$0
-─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── liftR (μ)
-Γc; Γ ⊢ ⟨</ ξ@i ▹ τ₁^^τ₀@i/a // i in [:n] notex /> </ : κ₁ // b notex />⟩ ≡(μ) Lift (λ a : κ₀. τ₁) ⟨</ ξ@i ▹ τ₀@i // i in [:n] notex /> </ : κ₀ // b notex />⟩ ⇝ Fₚ, Fₛ
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── liftR (μ)
+Γc; Γ ⊢ ⟨</ ξ@i ▹ τ'^^τ@i/a // i in [:n] notex /> </ : κ₁ // b notex />⟩ ≡(μ) Lift (λ a : κ₀. τ') ⟨</ ξ@i ▹ τ@i // i in [:n] notex /> </ : κ₀ // b notex />⟩ ⇝ Fₚ, Fₛ
 
 syntax (name := rowEquivalence) Lott.Symbol.TabularTypeInterpreter.ClassEnvironment "; " Lott.Symbol.TabularTypeInterpreter.TypeEnvironment " ⊢ " Lott.Symbol.TabularTypeInterpreter.Monotype " ≡" "(" Lott.Symbol.TabularTypeInterpreter.Monotype ") " Lott.Symbol.TabularTypeInterpreter.Monotype : Lott.Judgement
 

@@ -24,25 +24,25 @@
 \lottinferencerulesep
 \lottinferencerule{prodIntro}{
 \lotthypothesis{\lottsym{⊢} \, \targetpre Δ \targetpost}\\
-\lotthypothesis{\lottjudgementcomprehension{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre {E}_{i} \targetpost \, \lottsym{:} \, \targetpre {A}_{i} \targetpost}}
-}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \lottsym{(} \lottsepbycomprehension{\targetpre {E}_{i} \targetpost} \lottsym{)} \targetpost \, \lottsym{:} \, \targetpre \lottsym{⊗} \, \targetpre \lottsym{\{} \lottsepbycomprehension{\targetpre {A}_{i} \targetpost} \lottsym{\}} \targetpost \targetpost}
+\lotthypothesis{\lottjudgementcomprehension{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre E_{i} \targetpost \, \lottsym{:} \, \targetpre A_{i} \targetpost}}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \lottsym{(} \lottsepbycomprehension{\targetpre E_{i} \targetpost} \lottsym{)} \targetpost \, \lottsym{:} \, \targetpre \lottsym{⊗} \, \targetpre \lottsym{\{} \lottsepbycomprehension{\targetpre A_{i} \targetpost} \lottsym{\}} \targetpost \targetpost}
 \lottinferencerulesep
 \lottinferencerule{prodElim}{
-\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre E \targetpost \, \lottsym{:} \, \targetpre \lottsym{⊗} \, \targetpre \lottsym{\{} \lottsepbycomprehensionpatcollection{\targetpre {A}_{i} \targetpost}{i}{[:n]} \lottsym{\}} \targetpost \targetpost}\\
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre E \targetpost \, \lottsym{:} \, \targetpre \lottsym{⊗} \, \targetpre \lottsym{\{} \lottsepbycomprehensionpatcollection{\targetpre A_{i} \targetpost}{i}{[:n]} \lottsym{\}} \targetpost \targetpost}\\
 \lotthypothesis{j \, \lottsym{∈} \, \lottsym{[} \lottsym{:} n \lottsym{]}}
-}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \lottsym{π}_{j} \, \targetpre E \targetpost \targetpost \, \lottsym{:} \, \targetpre {A}_{j} \targetpost}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \lottsym{π}_{j} \, \targetpre E \targetpost \targetpost \, \lottsym{:} \, \targetpre A_{j} \targetpost}
 \lottinferencerulesep
 \lottinferencerule{sumIntro}{
 \lotthypothesis{j \, \lottsym{∈} \, \lottsym{[} \lottsym{:} n \lottsym{]}}\\
-\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre E \targetpost \, \lottsym{:} \, \targetpre {A}_{j} \targetpost}\\
-\lotthypothesis{\lottjudgementcomprehensionpatcollection{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre {A}_{i} \targetpost \, \lottsym{:} \, \targetpre \lottsym{\star} \targetpost}{i}{[:n]}}
-}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \lottsym{ι}_{j} \, \targetpre E \targetpost \targetpost \, \lottsym{:} \, \targetpre \lottsym{⊕} \, \targetpre \lottsym{\{} \lottsepbycomprehensionpatcollection{\targetpre {A}_{i} \targetpost}{i}{[:n]} \lottsym{\}} \targetpost \targetpost}
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre E \targetpost \, \lottsym{:} \, \targetpre A_{j} \targetpost}\\
+\lotthypothesis{\lottjudgementcomprehensionpatcollection{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A_{i} \targetpost \, \lottsym{:} \, \targetpre \lottsym{\star} \targetpost}{i}{[:n]}}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \lottsym{ι}_{j} \, \targetpre E \targetpost \targetpost \, \lottsym{:} \, \targetpre \lottsym{⊕} \, \targetpre \lottsym{\{} \lottsepbycomprehensionpatcollection{\targetpre A_{i} \targetpost}{i}{[:n]} \lottsym{\}} \targetpost \targetpost}
 \lottinferencerulesep
 \lottinferencerule{sumElim}{
-\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre E \targetpost \, \lottsym{:} \, \targetpre \lottsym{⊕} \, \targetpre \lottsym{\{} \lottsepbycomprehension{\targetpre {A}_{i} \targetpost} \lottsym{\}} \targetpost \targetpost}\\
-\lotthypothesis{\lottjudgementcomprehension{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre {F}_{i} \targetpost \, \lottsym{:} \, \targetpre \targetpre {A}_{i} \targetpost \, \lottsym{→} \, \targetpre B \targetpost \targetpost}}\\
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre E \targetpost \, \lottsym{:} \, \targetpre \lottsym{⊕} \, \targetpre \lottsym{\{} \lottsepbycomprehension{\targetpre A_{i} \targetpost} \lottsym{\}} \targetpost \targetpost}\\
+\lotthypothesis{\lottjudgementcomprehension{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre F_{i} \targetpost \, \lottsym{:} \, \targetpre \targetpre A_{i} \targetpost \, \lottsym{→} \, \targetpre B \targetpost \targetpost}}\\
 \lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre B \targetpost \, \lottsym{:} \, \targetpre \lottsym{\star} \targetpost}
-}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \lottkw{case} \, \targetpre E \targetpost \, \lottsym{\{} \lottsepbycomprehension{\targetpre {F}_{i} \targetpost} \lottsym{\}} \targetpost \, \lottsym{:} \, \targetpre B \targetpost}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \lottkw{case} \, \targetpre E \targetpost \, \lottsym{\{} \lottsepbycomprehension{\targetpre F_{i} \targetpost} \lottsym{\}} \targetpost \, \lottsym{:} \, \targetpre B \targetpost}
 \lottinferencerulesep
 \lottinferencerule{equiv}{
 \lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre E \targetpost \, \lottsym{:} \, \targetpre A \targetpost}\\

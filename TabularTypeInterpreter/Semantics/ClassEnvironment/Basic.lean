@@ -41,17 +41,17 @@ judgement ClassEnvironment.In where
 ─────────── head
 γc ∈ Γc, γc
 
-(</ TCₛ@i a ⇝ Aₛ@i // i in [:n] notex /> ⇒ TC a : κ) ↦ m : σ ⇝ A ∈ Γc
-TC ≠ TC'
+(</ TC'@i a ⇝ A'@i // i in [:n] notex /> ⇒ TC a : κ) ↦ m : σ ⇝ A ∈ Γc
+TC ≠ TC''
 m ≠ m'
-───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── ext {TC}
-(</ TCₛ@i a ⇝ Aₛ@i // i in [:n] notex /> ⇒ TC a : κ) ↦ m : σ ⇝ A ∈ Γc, (</ TC'ₛ@i a' ⇝ Aₛ'@i // i in [:n'] notex /> ⇒ TC' a' : κ') ↦ m' : σ' ⇝ A'
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── ext {TC}
+(</ TC'@i a ⇝ A'@i // i in [:n] notex /> ⇒ TC a : κ) ↦ m : σ ⇝ A ∈ Γc, (</ TC'''@i a' ⇝ A'''@i // i in [:n'] notex /> ⇒ TC'' a' : κ') ↦ m' : σ' ⇝ A''
 
 judgement_syntax TC " : " κ " ⇝ " A " ∈ " Γc : ClassEnvironment.TCIn (tex noelab := s!"{TC} \\, \\lottsym\{:} \\, {κ} \\, \\lottsym\{∈} \\, {Γc}")
 
 judgement ClassEnvironment.TCIn := fun TC κ A Γc =>
-  ∃ TCₛ Aₛ n m σ A', A = [[⊗ {A', </ Aₛ@i // i in [:n] />}]] ∧
-    [[(</ TCₛ@i a ⇝ Aₛ@i // i in [:n] /> ⇒ TC a : κ) ↦ m : σ ⇝ A' ∈ Γc]]
+  ∃ TC' A' n m σ A'', A = [[⊗ {A', </ A''@i // i in [:n] />}]] ∧
+    [[(</ TC'@i a ⇝ A''@i // i in [:n] /> ⇒ TC a : κ) ↦ m : σ ⇝ A' ∈ Γc]]
 
 judgement_syntax TC " ∉ " "dom" "(" Γc ")" : ClassEnvironment.TCNotInDom
 

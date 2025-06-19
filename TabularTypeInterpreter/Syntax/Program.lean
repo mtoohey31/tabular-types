@@ -4,7 +4,7 @@ namespace TabularTypeInterpreter
 
 nosubst
 nonterminal Program, pgm :=
-  | "class " sepBy(TCₛ a, ", ") " ⇒ " TC a " : " κ " where " "{" m " : " σ "}" "; " pgm : cls (bind a)
+  | "class " sepBy(TC' a, ", ") " ⇒ " TC a " : " κ " where " "{" m " : " σ "}" "; " pgm : cls (bind a)
   | "instance " sepBy(ψ, ", ") " ⇒ " TC τ " where " "{" m " = " M "}" "; " pgm          : inst
   | M                                                                                   : term
 

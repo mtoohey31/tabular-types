@@ -5,12 +5,12 @@ namespace TabularTypeInterpreter
 metavar Member, m
 
 nosubst
-nonterminal ClassEnvironmentEntrySuper, γcₛ :=
-  | TCₛ a " ⇝ " «F⊗⊕ω».Aₛ : mk (bind a) (tex noelab := s!"{TCₛ} \\, {a}")
+nonterminal ClassEnvironmentEntrySuper, γc' :=
+  | TC' a " ⇝ " «F⊗⊕ω».A' : mk (bind a) (tex noelab := s!"{TC'} \\, {a}")
 
 nosubst
 nonterminal ClassEnvironmentEntry, γc :=
-  | "(" TCₛaAₛ:sepBy(γcₛ, ", ") " ⇒ " TC a " : " κ ")" " ↦ " m " : " σ " ⇝ " «F⊗⊕ω».A : mk (bind a) (tex noelab := s!"\\lottsym\{(} {TCₛaAₛ} \\, \\lottsym\{⇒} \\, {TC} \\, {a} \\, \\lottsym\{:} \\, {κ} \\lottsym\{)} \\, \\lottsym\{↦} \\, {m} \\, \\lottsym\{:} \\, {σ}")
+  | "(" TC'aA':sepBy(γc', ", ") " ⇒ " TC a " : " κ ")" " ↦ " m " : " σ " ⇝ " «F⊗⊕ω».A : mk (bind a) (tex noelab := s!"\\lottsym\{(} {TC'aA'} \\, \\lottsym\{⇒} \\, {TC} \\, {a} \\, \\lottsym\{:} \\, {κ} \\lottsym\{)} \\, \\lottsym\{↦} \\, {m} \\, \\lottsym\{:} \\, {σ}")
 
 nosubst
 nonterminal ClassEnvironment, Γc (tex := "Γ_{C}") :=

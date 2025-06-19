@@ -387,10 +387,10 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
     simp [Range.map, Range.toList, A] at this
     exact this
   | .qual (.mono (.typeClass _ τ)),
-    .tc inΓc τke (κ := κ') (A := A') (Aₛ := Aₛ) (B := B) (n := n) => by
+    .tc inΓc τke (κ := κ') (A := A') (A' := A''') (B := B) (n := n) => by
     let .constr := κe
     apply Kinding.prod
-    let A'' i := if i = 0 then A'.Type_open B else (Aₛ (i - 1)).Type_open B
+    let A'' i := if i = 0 then A'.Type_open B else (A''' (i - 1)).Type_open B
     have := Kinding.list (Δ := Δ) (n := n + 1) (A := A'') (K := .star) ?h
     rw [Range.map, Range.toList, if_pos (Nat.zero_lt_succ _), List.map] at this
     simp only at this
@@ -402,7 +402,7 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
     dsimp only [A'']
     let ⟨K', κ'e⟩ := κ'.Elaboration_total
     let Bk := τke.soundness Γcw Γwe κ'e
-    let ⟨_, κ'e', _, A'k, _, Aₛk⟩ := Γcw.In_inversion inΓc
+    let ⟨_, κ'e', _, A'k, _, A'''k⟩ := Γcw.In_inversion inΓc
     cases κ'e.deterministic κ'e'
     split
     · case isTrue h =>
@@ -413,15 +413,15 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
        (Γwe.soundness Γcw |>.typeVarExt <| Γwe.TypeVarNotInDom_preservation aninΓ)
         |>.Type_open_preservation aninA' Bk
     · case isFalse h =>
-      let ⟨a, anin⟩ := Γ.typeVarDom ++ ↑(Aₛ (i - 1)).freeTypeVars |>.exists_fresh
-      let ⟨aninΓ, aninAₛ⟩ := List.not_mem_append'.mp anin
+      let ⟨a, anin⟩ := Γ.typeVarDom ++ ↑(A''' (i - 1)).freeTypeVars |>.exists_fresh
+      let ⟨aninΓ, aninA'''⟩ := List.not_mem_append'.mp anin
       rw [Nat.add_comm] at iltnsucc
       have : i - 1 < n := Nat.sub_lt_left_of_lt_add (Nat.pos_of_ne_zero h) iltnsucc
       rw [← Δ.empty_append] at Γwe Bk ⊢
-      exact Aₛk a (i - 1) ⟨Nat.zero_le _, this, Nat.mod_one _⟩ |>.weakening (Δ := .empty)
+      exact A'''k a (i - 1) ⟨Nat.zero_le _, this, Nat.mod_one _⟩ |>.weakening (Δ := .empty)
         (Δ'' := .typeExt .empty ..)
         (Γwe.soundness Γcw |>.typeVarExt <| Γwe.TypeVarNotInDom_preservation aninΓ)
-        |>.Type_open_preservation aninAₛ Bk
+        |>.Type_open_preservation aninA''' Bk
   | .qual (.mono (.all (.mk κ ψ) ρ)), .all I ψke κe' ρke =>
     let .constr := κe
     let Aopki : «F⊗⊕ω».Kinding .. := .lam (I := Γ.typeVarDom ++ I) fun a anin =>

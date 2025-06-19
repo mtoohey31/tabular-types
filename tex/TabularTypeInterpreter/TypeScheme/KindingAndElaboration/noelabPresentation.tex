@@ -9,9 +9,9 @@
 }{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ϕ \, τ \, \kindingsym \, κ₁}
 \lottinferencerulesep
 \lottinferencerule{arr}{
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ₀ \, \kindingsym \, \star}\\
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ₁ \, \kindingsym \, \star}
-}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ₀ \, \lottsym{→} \, τ₁ \, \kindingsym \, \star}
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ₀ \, \kindingsym \, \lottsym{\star}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ₁ \, \kindingsym \, \lottsym{\star}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ₀ \, \lottsym{→} \, τ₁ \, \kindingsym \, \lottsym{\star}}
 \lottinferencerulesep
 \lottinferencerule{qual}{
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ψ \, \kindingsym \, \lottkw{C}}\\
@@ -28,21 +28,21 @@
 \lottinferencerulesep
 \lottinferencerule{floor}{
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ξ \, \kindingsym \, \lottkw{L}}
-}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottsym{⌊} ξ \lottsym{⌋} \, \kindingsym \, \star}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottsym{⌊} ξ \lottsym{⌋} \, \kindingsym \, \lottsym{\star}}
 \lottinferencerulesep
 \lottinferencerule{comm}{
 }{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, u \, \kindingsym \, \lottkw{U}}
 \lottinferencerulesep
 \lottinferencerule{row}{
-\lotthypothesis{\lottjudgementcomprehension{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, {ξ}_{i} \, \kindingsym \, \lottkw{L}}}\\
-\lotthypothesis{\lottkw{unique} \lottsym{(} \lottsepbycomprehension{{ξ}_{i}} \lottsym{)}}\\
-\lotthypothesis{\lottjudgementcomprehension{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, {τ}_{i} \, \kindingsym \, κ}}
-}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottsym{⟨} \lottsepbycomprehension{{ξ}_{i} \, \lottsym{▹} \, {τ}_{i}} \lottsym{⟩} \, \kindingsym \, \lottkw{R}^{κ}}
+\lotthypothesis{\lottjudgementcomprehension{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ξ_{i} \, \kindingsym \, \lottkw{L}}}\\
+\lotthypothesis{\lottkw{unique} \lottsym{(} \lottsepbycomprehension{ξ_{i}} \lottsym{)}}\\
+\lotthypothesis{\lottjudgementcomprehension{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ_{i} \, \kindingsym \, κ}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottsym{⟨} \lottsepbycomprehension{ξ_{i} \, \lottsym{▹} \, τ_{i}} \lottsym{⟩} \, \kindingsym \, \lottkw{R}^{κ}}
 \lottinferencerulesep
 \lottinferencerule{prodOrSum}{
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, μ \, \kindingsym \, \lottkw{U}}\\
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ \, \kindingsym \, \lottkw{R}^{\star}}
-}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, {\lottsym{Ξ}}_{μ} \, ρ \, \kindingsym \, \star}
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ \, \kindingsym \, \lottkw{R}^{\lottsym{\star}}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, {\lottsym{Ξ}}_{μ} \, ρ \, \kindingsym \, \lottsym{\star}}
 \lottinferencerulesep
 \lottinferencerule{lift}{
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \lottsym{,} \, a \, \lottsym{:} \, κ₀ \, \lottsym{⊢} \, τ \, \kindingsym \, κ₁}\\
@@ -63,7 +63,7 @@
 }{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \lottsym{⊙}_{μ} \, ρ₁ \, \lottsym{\sim} \, ρ₂ \, \kindingsym \, \lottkw{C}}
 \lottinferencerulesep
 \lottinferencerule{tc}{
-\lotthypothesis{\lottsym{(} \lottsepbycomprehension{{TCₛ}_{i} \, a} \, \lottsym{⇒} \, TC \, a \, \lottsym{:} \, κ \lottsym{)} \, \lottsym{↦} \, m \, \lottsym{:} \, σ \, \lottsym{∈} \, Γ_{C}}\\
+\lotthypothesis{\lottsym{(} \lottsepbycomprehension{TC'_{i} \, a} \, \lottsym{⇒} \, TC \, a \, \lottsym{:} \, κ \lottsym{)} \, \lottsym{↦} \, m \, \lottsym{:} \, σ \, \lottsym{∈} \, Γ_{C}}\\
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ \, \kindingsym \, κ}
 }{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, TC \, τ \, \kindingsym \, \lottkw{C}}
 \lottinferencerulesep

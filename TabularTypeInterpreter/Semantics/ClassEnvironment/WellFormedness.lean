@@ -15,9 +15,9 @@ m ∉ dom(Γc)
 ⊢ κ ⇝ K
 ∀ a, Γc; ε, a : κ ⊢ σ^a : * ⇝ A^a
 ∀ a, ε, a : K ⊢ A^a : *
-</ ∀ a, Γc; ε, a : κ ⊢ TCₛ@i a : C ⇝ Aₛ@i^a // i in [:n] notex />
-</ ∀ a, ε, a : K ⊢ Aₛ@i^a : * // i in [:n] notex />
+</ ∀ a, Γc; ε, a : κ ⊢ TC'@i a : C ⇝ A'@i^a // i in [:n] notex />
+</ ∀ a, ε, a : K ⊢ A'@i^a : * // i in [:n] notex />
 ─────────────────────────────────────────────────────────────────────── ext {TC}
-⊢c Γc, (</ TCₛ@i a ⇝ Aₛ@i // i in [:n] notex /> ⇒ TC a : κ) ↦ m : σ ⇝ A
+⊢c Γc, (</ TC'@i a ⇝ A'@i // i in [:n] notex /> ⇒ TC a : κ) ↦ m : σ ⇝ A
 
 end TabularTypeInterpreter

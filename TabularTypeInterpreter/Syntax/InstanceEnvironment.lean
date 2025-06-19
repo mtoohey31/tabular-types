@@ -17,7 +17,7 @@ nonterminal InstanceEnvironmentEntryConstrs, γᵢψs :=
 
 nosubst
 nonterminal InstanceEnvironmentEntry, γᵢ :=
-  | "(" "∀ " γᵢas ". " γᵢψs " ⇒ " TC τ ")" " ⇝ " «F⊗⊕ω».E "; " sepBy(«F⊗⊕ω».Eₛ, ", ") : mk (tex noelab := s!"\\lottsym\{(} \\lottsym\{∀} \\, {γᵢas} \\lottsym\{.} \\, {γᵢψs} \\, \\lottsym\{⇒} \\, {TC} \\, {τ} \\lottsym\{)}")
+  | "(" "∀ " γᵢas ". " γᵢψs " ⇒ " TC τ ")" " ⇝ " «F⊗⊕ω».E "; " sepBy(«F⊗⊕ω».E', ", ") : mk (tex noelab := s!"\\lottsym\{(} \\lottsym\{∀} \\, {γᵢas} \\lottsym\{.} \\, {γᵢψs} \\, \\lottsym\{⇒} \\, {TC} \\, {τ} \\lottsym\{)}")
 
 nosubst
 nonterminal InstanceEnvironment, Γᵢ (tex := "Γ_{I}") :=

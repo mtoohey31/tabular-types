@@ -16,8 +16,8 @@
 }{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₂ \, \lottsym{≲}_{μ} \, ρ₅}
 \lottinferencerulesep
 \lottinferencerule{concatConcrete}{
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{{ξ₀}_{i} \, \lottsym{▹} \, {τ₀}_{i}}{i}{[:m]} \lottsym{,} \, \lottsepbycomprehensionpatcollection{{ξ₁}_{j} \, \lottsym{▹} \, {τ₁}_{j}}{j}{[:n]} \lottsym{⟩} \, \kindingsym \, \lottkw{R}^{κ}}
-}{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{{ξ₀}_{i} \, \lottsym{▹} \, {τ₀}_{i}}{i}{[:m]} \lottsym{⟩} \, \lottsym{⊙}_{\mathfrak{n}} \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{{ξ₁}_{j} \, \lottsym{▹} \, {τ₁}_{j}}{j}{[:n]} \lottsym{⟩} \, \lottsym{\sim} \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{{ξ₀}_{i} \, \lottsym{▹} \, {τ₀}_{i}}{i}{[:m]} \lottsym{,} \, \lottsepbycomprehensionpatcollection{{ξ₁}_{j} \, \lottsym{▹} \, {τ₁}_{j}}{j}{[:n]} \lottsym{⟩}}
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{ξ_{i} \, \lottsym{▹} \, τ_{i}}{i}{[:m]} \lottsym{,} \, \lottsepbycomprehensionpatcollection{ξ'_{j} \, \lottsym{▹} \, τ'_{j}}{j}{[:n]} \lottsym{⟩} \, \kindingsym \, \lottkw{R}^{κ}}
+}{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{ξ_{i} \, \lottsym{▹} \, τ_{i}}{i}{[:m]} \lottsym{⟩} \, \lottsym{⊙}_{\mathfrak{n}} \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{ξ'_{j} \, \lottsym{▹} \, τ'_{j}}{j}{[:n]} \lottsym{⟩} \, \lottsym{\sim} \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{ξ_{i} \, \lottsym{▹} \, τ_{i}}{i}{[:m]} \lottsym{,} \, \lottsepbycomprehensionpatcollection{ξ'_{j} \, \lottsym{▹} \, τ'_{j}}{j}{[:n]} \lottsym{⟩}}
 \lottinferencerulesep
 \lottinferencerule{concatEmptyL}{
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ \, \kindingsym \, \lottkw{R}^{κ}}
@@ -76,16 +76,16 @@
 }{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottsym{(} \lottkw{Lift} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ₀ \lottsym{.} \, τ \lottsym{)} \, ρ₀ \lottsym{)} \, \lottsym{⊙}_{μ} \, \lottsym{(} \lottkw{Lift} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ₀ \lottsym{.} \, τ \lottsym{)} \, ρ₁ \lottsym{)} \, \lottsym{\sim} \, \lottsym{(} \lottkw{Lift} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ₀ \lottsym{.} \, τ \lottsym{)} \, ρ₂ \lottsym{)}}
 \lottinferencerulesep
 \lottinferencerule{TCInst}{
-\lotthypothesis{\lottsym{(} \lottsym{∀} \, \lottsepbycomprehension{{a}_{k} \, \lottsym{:} \, {κ}_{k}} \lottsym{.} \, \lottsepbycomprehension{{ψ}_{j}} \, \lottsym{⇒} \, TC \, τ₀ \lottsym{)} \, \lottsym{∈} \, Γ_{I}}\\
-\lotthypothesis{\lottjudgementcomprehension{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, {τ₁}_{k} \, \kindingsym \, {κ}_{k}}}\\
-\lotthypothesis{\lottjudgementcomprehension{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, {ψ}_{j}\lottsepbycomprehension{\left[{τ₁}_{k}/{a}_{k}\right]}}}
-}{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, TC \, τ₀\lottsepbycomprehension{\left[{τ₁}_{k}/{a}_{k}\right]}}
+\lotthypothesis{\lottsym{(} \lottsym{∀} \, \lottsepbycomprehension{a_{k} \, \lottsym{:} \, κ_{k}} \lottsym{.} \, \lottsepbycomprehension{ψ_{j}} \, \lottsym{⇒} \, TC \, τ \lottsym{)} \, \lottsym{∈} \, Γ_{I}}\\
+\lotthypothesis{\lottjudgementcomprehension{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ'_{k} \, \kindingsym \, κ_{k}}}\\
+\lotthypothesis{\lottjudgementcomprehension{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ψ_{j}\lottsepbycomprehension{\left[{τ'}_{k}/{a}_{k}\right]}}}
+}{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, TC \, τ\lottsepbycomprehension{\left[{τ'}_{k}/{a}_{k}\right]}}
 \lottinferencerulesep
 \lottinferencerule{TCSuper}{
-\lotthypothesis{\lottsym{(} \lottsepbycomprehensionpatcollection{{TCₛ}_{j} \, a}{j}{[:n]} \, \lottsym{⇒} \, TC \, a \, \lottsym{:} \, κ \lottsym{)} \, \lottsym{↦} \, m \, \lottsym{:} \, σ \, \lottsym{∈} \, Γ_{C}}\\
+\lotthypothesis{\lottsym{(} \lottsepbycomprehensionpatcollection{TC'_{j} \, a}{j}{[:n]} \, \lottsym{⇒} \, TC \, a \, \lottsym{:} \, κ \lottsym{)} \, \lottsym{↦} \, m \, \lottsym{:} \, σ \, \lottsym{∈} \, Γ_{C}}\\
 \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, TC \, τ}\\
 \lotthypothesis{i \, \lottsym{∈} \, \lottsym{[} \lottsym{:} n \lottsym{]}}
-}{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, {TCₛ}_{i} \, τ}
+}{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, TC'_{i} \, τ}
 \lottinferencerulesep
 \lottinferencerule{allEmpty}{
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \lottsym{,} \, a \, \lottsym{:} \, κ \, \lottsym{⊢} \, ψ \, \kindingsym \, \lottkw{C}}
@@ -114,10 +114,10 @@
 }{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottkw{All} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, ψ \lottsym{)} \, ρ₂}
 \lottinferencerulesep
 \lottinferencerule{ind}{
-\lotthypothesis{\lottjudgementcomprehensionpatcollection{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, {τ}_{i} \, \kindingsym \, κ}{i}{[:n]}}\\
-\lotthypothesis{\lottjudgementcomprehensionpatcollection{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{{ℓ}_{j} \, \lottsym{▹} \, {τ}_{j}}{j}{[:i]} \lottsym{⟩} \, \lottsym{⊙}_{\mathfrak{n}} \, \lottsym{⟨} {ℓ}_{i} \, \lottsym{▹} \, {τ}_{i} \lottsym{⟩} \, \lottsym{\sim} \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{{ℓ}_{k} \, \lottsym{▹} \, {τ}_{k}}{k}{[:i+1]} \lottsym{⟩}}{i}{[:n]}}\\
-\lotthypothesis{\lottjudgementcomprehensionpatcollection{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{{ℓ}_{j} \, \lottsym{▹} \, {τ}_{j}}{j}{[:i+1]} \lottsym{⟩} \, \lottsym{⊙}_{\mathfrak{n}} \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{{ℓ}_{k} \, \lottsym{▹} \, {τ}_{k}}{k}{[i+1:n]} \lottsym{⟩} \, \lottsym{\sim} \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{{ℓ}_{l} \, \lottsym{▹} \, {τ}_{l}}{l}{[:n]} \lottsym{⟩}}{i}{[:n]}}
-}{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottkw{Ind} \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{{ℓ}_{i} \, \lottsym{▹} \, {τ}_{i}}{i}{[:n]} \lottsym{⟩}}
+\lotthypothesis{\lottjudgementcomprehensionpatcollection{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ_{i} \, \kindingsym \, κ}{i}{[:n]}}\\
+\lotthypothesis{\lottjudgementcomprehensionpatcollection{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{ℓ_{j} \, \lottsym{▹} \, τ_{j}}{j}{[:i]} \lottsym{⟩} \, \lottsym{⊙}_{\mathfrak{n}} \, \lottsym{⟨} ℓ_{i} \, \lottsym{▹} \, τ_{i} \lottsym{⟩} \, \lottsym{\sim} \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{ℓ_{k} \, \lottsym{▹} \, τ_{k}}{k}{[:i+1]} \lottsym{⟩}}{i}{[:n]}}\\
+\lotthypothesis{\lottjudgementcomprehensionpatcollection{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{ℓ_{j} \, \lottsym{▹} \, τ_{j}}{j}{[:i+1]} \lottsym{⟩} \, \lottsym{⊙}_{\mathfrak{n}} \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{ℓ_{k} \, \lottsym{▹} \, τ_{k}}{k}{[i+1:n]} \lottsym{⟩} \, \lottsym{\sim} \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{ℓ_{l} \, \lottsym{▹} \, τ_{l}}{l}{[:n]} \lottsym{⟩}}{i}{[:n]}}
+}{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottkw{Ind} \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{ℓ_{i} \, \lottsym{▹} \, τ_{i}}{i}{[:n]} \lottsym{⟩}}
 \lottinferencerulesep
 \lottinferencerule{splitEmpty}{
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \lottsym{,} \, a \, \lottsym{:} \, κ \, \lottsym{⊢} \, τ \, \kindingsym \, \lottsym{\star}}

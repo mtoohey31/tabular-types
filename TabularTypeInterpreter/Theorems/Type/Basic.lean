@@ -335,23 +335,23 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (�
           simp only [Function.comp]
           exact .lam (.app (.var_bound Nat.one_pos) <| A'slc' i mem') <| .sumIntro .var
     ⟩
-  | liftL μ liftke@(.lift I τ₁ke κ₀e ξτ₀ke) κe' (τ₀ := τ₀) (τ₁ := τ₁) =>
+  | liftL μ liftke@(.lift I τ'ke κ₀e ξτke) κe' (τ := τ) (τ' := τ') =>
     rename_i A' _ _
     let ⟨κeq, Aeq⟩ := liftke.deterministic ρ₀ke
     cases κeq
     cases Aeq
     cases κe.deterministic κe'
-    let ⟨⟨_, ξke⟩, uni, ⟨A'', _, eq₀, eq₁, h, _, τ₀ke⟩⟩ := ξτ₀ke.row_inversion
+    let ⟨⟨_, ξke⟩, uni, ⟨A'', _, eq₀, eq₁, h, _, τke⟩⟩ := ξτke.row_inversion
     cases eq₀
     cases eq₁
     let ξτopke := TypeScheme.KindingAndElaboration.row ξke uni (fun i imem =>
-      let σ := TypeScheme.qual (QualifiedType.mono τ₁)
+      let σ := TypeScheme.qual (QualifiedType.mono τ')
       let ⟨a, anin⟩ := σ.freeTypeVars ++ ↑A'.freeTypeVars ++ Γ.typeVarDom ++ I |>.exists_fresh
       let ⟨aninσA'Γ, aninI⟩ := List.not_mem_append'.mp anin
       let ⟨aninσA', aninΓ⟩ := List.not_mem_append'.mp aninσA'Γ
       let ⟨aninσ, aninA'⟩ := List.not_mem_append'.mp aninσA'
-      τ₁ke a aninI |>.Monotype_open_preservation (Γ' := .empty) Γcw (Γwe.typeExt aninΓ κ₀e) nofun
-        aninσ aninA' <| τ₀ke i imem) h
+      τ'ke a aninI |>.Monotype_open_preservation (Γ' := .empty) Γcw (Γwe.typeExt aninΓ κ₀e) nofun
+        aninσ aninA' <| τke i imem) h
     let ⟨κeq, Aeq⟩ := ξτopke.deterministic ρ₁ke
     cases κeq
     cases Aeq
@@ -371,12 +371,12 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (�
         intro i imem
         simp only [Function.comp]
         let Δawf := Δwf.typeVarExt anin (K := [[(K ↦ *)]])
-        let A''ki := τ₀ke i imem |>.soundness Γcw Γwe κ₀e |>.weakening Δawf
+        let A''ki := τke i imem |>.soundness Γcw Γwe κ₀e |>.weakening Δawf
           (Δ' := .typeExt .empty ..) (Δ'' := .empty)
         rw [← A''ki.TypeVarLocallyClosed_of.TypeVar_open_id (a := a)] at A''ki
         apply TypeEquivalence.app .refl <| .trans (.lamApp A''ki) _
         let .list A'opslc := ρ₁ke.soundness Γcw Γwe κe.row |>.TypeVarLocallyClosed_of
-        let A''ilc := τ₀ke i imem |>.soundness Γcw Γwe κ₀e |>.TypeVarLocallyClosed_of
+        let A''ilc := τke i imem |>.soundness Γcw Γwe κ₀e |>.TypeVarLocallyClosed_of
         rw [A''ilc.TypeVar_open_id, A'opslc (A'.Type_open (A'' i)) (Range.mem_map_of_mem imem)
               |>.weaken (n := 1) |>.Type_open_drop (n := 1) Nat.one_pos |>.TypeVar_open_id,
             A''ilc.Type_open_TypeVar_open_eq]
@@ -393,12 +393,12 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (�
         intro i imem
         simp only [Function.comp]
         let Δawf := Δwf.typeVarExt anin (K := [[(K ↦ *)]])
-        let A''ki := τ₀ke i imem |>.soundness Γcw Γwe κ₀e |>.weakening Δawf
+        let A''ki := τke i imem |>.soundness Γcw Γwe κ₀e |>.weakening Δawf
           (Δ' := .typeExt .empty ..) (Δ'' := .empty)
         rw [← A''ki.TypeVarLocallyClosed_of.TypeVar_open_id (a := a)] at A''ki
         apply TypeEquivalence.app .refl <| .trans (.lamApp A''ki) _
         let .list A'opslc := ρ₁ke.soundness Γcw Γwe κe.row |>.TypeVarLocallyClosed_of
-        let A''ilc := τ₀ke i imem |>.soundness Γcw Γwe κ₀e |>.TypeVarLocallyClosed_of
+        let A''ilc := τke i imem |>.soundness Γcw Γwe κ₀e |>.TypeVarLocallyClosed_of
         rw [A''ilc.TypeVar_open_id, A'opslc (A'.Type_open (A'' i)) (Range.mem_map_of_mem imem)
               |>.weaken (n := 1) |>.Type_open_drop (n := 1) Nat.one_pos |>.TypeVar_open_id,
             A''ilc.Type_open_TypeVar_open_eq]
@@ -406,23 +406,23 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (�
       .prod_id Alc,
       .sum_id Alc
     ⟩
-  | liftR μ liftke@(.lift I τ₁ke κ₀e ξτ₀ke) κe' (τ₀ := τ₀) (τ₁ := τ₁) =>
+  | liftR μ liftke@(.lift I τ'ke κ₀e ξτke) κe' (τ := τ) (τ' := τ') =>
     rename_i A' _ _
     let ⟨κeq, Aeq⟩ := liftke.deterministic ρ₁ke
     cases κeq
     cases Aeq
     cases κe.deterministic κe'
-    let ⟨⟨_, ξke⟩, uni, ⟨A'', _, eq₀, eq₁, h, _, τ₀ke⟩⟩ := ξτ₀ke.row_inversion
+    let ⟨⟨_, ξke⟩, uni, ⟨A'', _, eq₀, eq₁, h, _, τke⟩⟩ := ξτke.row_inversion
     cases eq₀
     cases eq₁
     let ξτopke := TypeScheme.KindingAndElaboration.row ξke uni (fun i imem =>
-      let σ := TypeScheme.qual (QualifiedType.mono τ₁)
+      let σ := TypeScheme.qual (QualifiedType.mono τ')
       let ⟨a, anin⟩ := σ.freeTypeVars ++ ↑A'.freeTypeVars ++ Γ.typeVarDom ++ I |>.exists_fresh
       let ⟨aninσA'Γ, aninI⟩ := List.not_mem_append'.mp anin
       let ⟨aninσA', aninΓ⟩ := List.not_mem_append'.mp aninσA'Γ
       let ⟨aninσ, aninA'⟩ := List.not_mem_append'.mp aninσA'
-      τ₁ke a aninI |>.Monotype_open_preservation (Γ' := .empty) Γcw (Γwe.typeExt aninΓ κ₀e) nofun
-        aninσ aninA' <| τ₀ke i imem) h
+      τ'ke a aninI |>.Monotype_open_preservation (Γ' := .empty) Γcw (Γwe.typeExt aninΓ κ₀e) nofun
+        aninσ aninA' <| τke i imem) h
     let ⟨κeq, Aeq⟩ := ξτopke.deterministic ρ₀ke
     cases κeq
     cases Aeq
@@ -442,12 +442,12 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (�
         intro i imem
         simp only [Function.comp]
         let Δawf := Δwf.typeVarExt anin (K := [[(K ↦ *)]])
-        let A''ki := τ₀ke i imem |>.soundness Γcw Γwe κ₀e |>.weakening Δawf
+        let A''ki := τke i imem |>.soundness Γcw Γwe κ₀e |>.weakening Δawf
           (Δ' := .typeExt .empty ..) (Δ'' := .empty)
         rw [← A''ki.TypeVarLocallyClosed_of.TypeVar_open_id (a := a)] at A''ki
         apply TypeEquivalence.app .refl <| .trans (.lamApp A''ki) _
         let .list A'opslc := ρ₀ke.soundness Γcw Γwe κe.row |>.TypeVarLocallyClosed_of
-        let A''ilc := τ₀ke i imem |>.soundness Γcw Γwe κ₀e |>.TypeVarLocallyClosed_of
+        let A''ilc := τke i imem |>.soundness Γcw Γwe κ₀e |>.TypeVarLocallyClosed_of
         rw [A''ilc.TypeVar_open_id, A'opslc (A'.Type_open (A'' i)) (Range.mem_map_of_mem imem)
               |>.weaken (n := 1) |>.Type_open_drop (n := 1) Nat.one_pos |>.TypeVar_open_id,
             A''ilc.Type_open_TypeVar_open_eq]
@@ -464,12 +464,12 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (�
         intro i imem
         simp only [Function.comp]
         let Δawf := Δwf.typeVarExt anin (K := [[(K ↦ *)]])
-        let A''ki := τ₀ke i imem |>.soundness Γcw Γwe κ₀e |>.weakening Δawf
+        let A''ki := τke i imem |>.soundness Γcw Γwe κ₀e |>.weakening Δawf
           (Δ' := .typeExt .empty ..) (Δ'' := .empty)
         rw [← A''ki.TypeVarLocallyClosed_of.TypeVar_open_id (a := a)] at A''ki
         apply TypeEquivalence.app .refl <| .trans (.lamApp A''ki) _
         let .list A'opslc := ρ₀ke.soundness Γcw Γwe κe.row |>.TypeVarLocallyClosed_of
-        let A''ilc := τ₀ke i imem |>.soundness Γcw Γwe κ₀e |>.TypeVarLocallyClosed_of
+        let A''ilc := τke i imem |>.soundness Γcw Γwe κ₀e |>.TypeVarLocallyClosed_of
         rw [A''ilc.TypeVar_open_id, A'opslc (A'.Type_open (A'' i)) (Range.mem_map_of_mem imem)
               |>.weaken (n := 1) |>.Type_open_drop (n := 1) Nat.one_pos |>.TypeVar_open_id,
             A''ilc.Type_open_TypeVar_open_eq]
