@@ -911,8 +911,22 @@ theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ �
       have ⟨T2, A₁'B'T2, A₁''B''T2, T2lc⟩ := ih2 wf (.listApp (.lam A₁A₁'') BB'') Blc
       clear ih1 ih2
       cases A₁BA₁B'
-      . case refl => sorry
-      . case lamListApp => sorry
+      . case refl =>
+        let .listApp (.lam A₁lc) Blc := Blc
+        exact ⟨
+          .listApp (.lam K (T1.app A₁'')) B'',
+          listAppComp (I := I) (AA'.preserve_lc Alc) A₀'T1 A₁A₁'' BB'',
+          listApp (lam (I := Δ.typeVarDom) (by
+            intro _ anin
+            rw [TypeVar_open, TypeVar_open, T1lc.TypeVar_open_id,
+                AA₀'.preserve_lc Alc |>.TypeVar_open_id]
+            apply app _ refl
+            exact A₀''T1.weakening (Δ' := .typeExt .empty ..) <| wf.typeVarExt anin
+          )) refl,
+          .listApp (.lam (.app T1lc.weaken <| A₁lc.modus_ponens_open (λ a nin => A₁A₁'' a nin |>.preserve_lc)))
+            <| BB''.preserve_lc Blc
+        ⟩
+      . case lamListApp A₁' n B B' BB' A₁body A₁A₁' => sorry
       . case listAppId => sorry
       . case listApp A₁' B' A₁A₁' BB' =>
         cases A₁A₁'
