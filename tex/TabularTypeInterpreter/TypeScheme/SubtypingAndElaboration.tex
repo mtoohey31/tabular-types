@@ -41,12 +41,12 @@
 }{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, {\lottsym{Σ}}_{μ} \, \lottsym{⟨} \lottsepbycomprehension{ξ_{i} \, \lottsym{▹} \, τ_{i}} \lottsym{⟩} \, \subtypingsym \, {\lottsym{Σ}}_{μ} \, \lottsym{⟨} \lottsepbycomprehension{ξ_{i} \, \lottsym{▹} \, τ'_{i}} \lottsym{⟩} \, \lottsym{⇝} \, \targetpre \lottsym{λ} \, \targetpre x \targetpost \, \lottsym{:} \, \targetpre A \targetpost \lottsym{.} \, \targetpre \lottkw{case} \, \targetpre \targetpre x \targetpost \targetpost \, \lottsym{\{} \lottsepbycomprehension{\targetpre \lottsym{λ} \, \targetpre x' \targetpost \, \lottsym{:} \, \targetpre B_{i} \targetpost \lottsym{.} \, \targetpre \lottsym{ι}_{i} \, \targetpre \lottsym{(} \targetpre \targetpre F_{i} \targetpost \, \targetpre \targetpre x' \targetpost \targetpost \targetpost \lottsym{)} \targetpost \targetpost \targetpost} \lottsym{\}} \targetpost \targetpost}
 \lottinferencerulesep
 \lottinferencerule{prodRow}{
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \rowequivsym_{μ} \, ρ₁ \, \lottsym{⇝} \, \targetpre Fₚ \targetpost \, \lottsym{,} \, \targetpre Fₛ \targetpost}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \rowequivsym_{μ} \, ρ₁ \, \lottsym{⇝} \, \targetpre Fₚ \targetpost \lottsym{,} \, \targetpre Fₛ \targetpost}\\
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, {\lottsym{Π}}_{μ} \, ρ₀ \, \kindingsym \, \lottsym{\star}}
 }{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, {\lottsym{Π}}_{μ} \, ρ₀ \, \subtypingsym \, {\lottsym{Π}}_{μ} \, ρ₁ \, \lottsym{⇝} \, \targetpre \targetpre Fₚ \targetpost \, \lottsym{[} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre \lottsym{\star} \targetpost \lottsym{.} \, \targetpre \targetpre a \targetpost \targetpost \targetpost \lottsym{]} \targetpost}
 \lottinferencerulesep
 \lottinferencerule{sumRow}{
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \rowequivsym_{μ} \, ρ₁ \, \lottsym{⇝} \, \targetpre Fₚ \targetpost \, \lottsym{,} \, \targetpre Fₛ \targetpost}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \rowequivsym_{μ} \, ρ₁ \, \lottsym{⇝} \, \targetpre Fₚ \targetpost \lottsym{,} \, \targetpre Fₛ \targetpost}\\
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, {\lottsym{Σ}}_{μ} \, ρ₀ \, \kindingsym \, \lottsym{\star}}
 }{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, {\lottsym{Σ}}_{μ} \, ρ₀ \, \subtypingsym \, {\lottsym{Σ}}_{μ} \, ρ₁ \, \lottsym{⇝} \, \targetpre \targetpre Fₛ \targetpost \, \lottsym{[} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre \lottsym{\star} \targetpost \lottsym{.} \, \targetpre \targetpre a \targetpost \targetpost \targetpost \lottsym{]} \targetpost}
 \lottinferencerulesep
@@ -61,10 +61,10 @@
 }{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, {\lottsym{Σ}}_{\mathfrak{c}} \, \lottsym{⟨}  \lottsym{⟩} \, \subtypingsym \, σ \, \lottsym{⇝} \, \targetpre \lottsym{λ} \, \targetpre x \targetpost \, \lottsym{:} \, \targetpre \lottsym{⊕} \, \targetpre \lottsym{\{}  \lottsym{\}} \targetpost \targetpost \lottsym{.} \, \targetpre \lottkw{case} \, \targetpre \targetpre x \targetpost \targetpost \, \lottsym{\{}  \lottsym{\}} \targetpost \targetpost}
 \lottinferencerulesep
 \lottinferencerule{contain}{
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \rowequivsym_{μ} \, ρ₂ \, \lottsym{⇝} \, \targetpre F₀₂ₚ \targetpost \, \lottsym{,} \, \targetpre F₀₂ₛ \targetpost}\\
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₁ \, \rowequivsym_{μ} \, ρ₃ \, \lottsym{⇝} \, \targetpre F₁₃ₚ \targetpost \, \lottsym{,} \, \targetpre F₁₃ₛ \targetpost}\\
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₂ \, \rowequivsym_{μ} \, ρ₀ \, \lottsym{⇝} \, \targetpre F₂₀ₚ \targetpost \, \lottsym{,} \, \targetpre F₂₀ₛ \targetpost}\\
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₃ \, \rowequivsym_{μ} \, ρ₁ \, \lottsym{⇝} \, \targetpre F₃₁ₚ \targetpost \, \lottsym{,} \, \targetpre F₃₁ₛ \targetpost}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \rowequivsym_{μ} \, ρ₂ \, \lottsym{⇝} \, \targetpre F₀₂ₚ \targetpost \lottsym{,} \, \targetpre F₀₂ₛ \targetpost}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₁ \, \rowequivsym_{μ} \, ρ₃ \, \lottsym{⇝} \, \targetpre F₁₃ₚ \targetpost \lottsym{,} \, \targetpre F₁₃ₛ \targetpost}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₂ \, \rowequivsym_{μ} \, ρ₀ \, \lottsym{⇝} \, \targetpre F₂₀ₚ \targetpost \lottsym{,} \, \targetpre F₂₀ₛ \targetpost}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₃ \, \rowequivsym_{μ} \, ρ₁ \, \lottsym{⇝} \, \targetpre F₃₁ₚ \targetpost \lottsym{,} \, \targetpre F₃₁ₛ \targetpost}\\
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \lottsym{≲}_{μ} \, ρ₁ \, \kindingsym \, \lottkw{C} \, \lottsym{⇝} \, \targetpre A \targetpost}\\
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \kindingsym \, \lottkw{R}^{κ} \, \lottsym{⇝} \, \targetpre A₀ \targetpost}\\
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₁ \, \kindingsym \, \lottkw{R}^{κ} \, \lottsym{⇝} \, \targetpre A₁ \targetpost}\\
@@ -76,12 +76,12 @@
 }{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \lottsym{≲}_{μ} \, ρ₁ \, \subtypingsym \, ρ₂ \, \lottsym{≲}_{μ} \, ρ₃ \, \lottsym{⇝} \, \targetpre \lottsym{λ} \, \targetpre xₑ \targetpost \, \lottsym{:} \, \targetpre A \targetpost \lottsym{.} \, \targetpre \lottsym{(} \targetpre Fₚ \targetpost \lottsym{,} \, \targetpre Fᵢ \targetpost \lottsym{)} \targetpost \targetpost}
 \lottinferencerulesep
 \lottinferencerule{concat}{
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \rowequivsym_{μ} \, ρ₃ \, \lottsym{⇝} \, \targetpre F₀₃ₚ \targetpost \, \lottsym{,} \, \targetpre F₀₃ₛ \targetpost}\\
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₁ \, \rowequivsym_{μ} \, ρ₄ \, \lottsym{⇝} \, \targetpre F₁₄ₚ \targetpost \, \lottsym{,} \, \targetpre F₁₄ₛ \targetpost}\\
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₂ \, \rowequivsym_{μ} \, ρ₅ \, \lottsym{⇝} \, \targetpre F₂₅ₚ \targetpost \, \lottsym{,} \, \targetpre F₂₅ₛ \targetpost}\\
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₃ \, \rowequivsym_{μ} \, ρ₀ \, \lottsym{⇝} \, \targetpre F₃₀ₚ \targetpost \, \lottsym{,} \, \targetpre F₃₀ₛ \targetpost}\\
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₄ \, \rowequivsym_{μ} \, ρ₁ \, \lottsym{⇝} \, \targetpre F₄₁ₚ \targetpost \, \lottsym{,} \, \targetpre F₄₁ₛ \targetpost}\\
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₅ \, \rowequivsym_{μ} \, ρ₂ \, \lottsym{⇝} \, \targetpre F₅₂ₚ \targetpost \, \lottsym{,} \, \targetpre F₅₂ₛ \targetpost}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \rowequivsym_{μ} \, ρ₃ \, \lottsym{⇝} \, \targetpre F₀₃ₚ \targetpost \lottsym{,} \, \targetpre F₀₃ₛ \targetpost}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₁ \, \rowequivsym_{μ} \, ρ₄ \, \lottsym{⇝} \, \targetpre F₁₄ₚ \targetpost \lottsym{,} \, \targetpre F₁₄ₛ \targetpost}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₂ \, \rowequivsym_{μ} \, ρ₅ \, \lottsym{⇝} \, \targetpre F₂₅ₚ \targetpost \lottsym{,} \, \targetpre F₂₅ₛ \targetpost}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₃ \, \rowequivsym_{μ} \, ρ₀ \, \lottsym{⇝} \, \targetpre F₃₀ₚ \targetpost \lottsym{,} \, \targetpre F₃₀ₛ \targetpost}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₄ \, \rowequivsym_{μ} \, ρ₁ \, \lottsym{⇝} \, \targetpre F₄₁ₚ \targetpost \lottsym{,} \, \targetpre F₄₁ₛ \targetpost}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₅ \, \rowequivsym_{μ} \, ρ₂ \, \lottsym{⇝} \, \targetpre F₅₂ₚ \targetpost \lottsym{,} \, \targetpre F₅₂ₛ \targetpost}\\
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \lottsym{⊙}_{μ} \, ρ₁ \, \lottsym{\sim} \, ρ₂ \, \kindingsym \, \lottkw{C} \, \lottsym{⇝} \, \targetpre A \targetpost}\\
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \kindingsym \, \lottkw{R}^{κ} \, \lottsym{⇝} \, \targetpre A₀ \targetpost}\\
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₁ \, \kindingsym \, \lottkw{R}^{κ} \, \lottsym{⇝} \, \targetpre A₁ \targetpost}\\
@@ -98,7 +98,7 @@
 }{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \lottsym{⊙}_{μ} \, ρ₁ \, \lottsym{\sim} \, ρ₂ \, \subtypingsym \, ρ₃ \, \lottsym{⊙}_{μ} \, ρ₄ \, \lottsym{\sim} \, ρ₅ \, \lottsym{⇝} \, \targetpre \lottsym{λ} \, \targetpre xₑ \targetpost \, \lottsym{:} \, \targetpre A \targetpost \lottsym{.} \, \targetpre \lottsym{(} \targetpre Fₙ \targetpost \lottsym{,} \, \targetpre Fₑ \targetpost \lottsym{,} \, \targetpre \targetpre F₀₂₃₅ \targetpost \, \targetpre \lottsym{(} \targetpre \lottsym{π}_{2} \, \targetpre \targetpre xₑ \targetpost \targetpost \targetpost \lottsym{)} \targetpost \targetpost \lottsym{,} \, \targetpre \targetpre F₁₂₄₅ \targetpost \, \targetpre \lottsym{(} \targetpre \lottsym{π}_{3} \, \targetpre \targetpre xₑ \targetpost \targetpost \targetpost \lottsym{)} \targetpost \targetpost \lottsym{)} \targetpost \targetpost}
 \lottinferencerulesep
 \lottinferencerule{all}{
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \rowequivsym_{\mathfrak{c}} \, ρ₁ \, \lottsym{⇝} \, \targetpre Fₚ \targetpost \, \lottsym{,} \, \targetpre Fₛ \targetpost}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \rowequivsym_{\mathfrak{c}} \, ρ₁ \, \lottsym{⇝} \, \targetpre Fₚ \targetpost \lottsym{,} \, \targetpre Fₛ \targetpost}\\
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottkw{All} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, ψ \lottsym{)} \, ρ₀ \, \kindingsym \, \lottkw{C}}\\
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \lottsym{,} \, a \, \lottsym{:} \, κ \, \lottsym{⊢} \, ψ \, \kindingsym \, \lottkw{C} \, \lottsym{⇝} \, \targetpre \targetpre B \targetpost \targetpost}\\
 \lotthypothesis{\lottsym{⊢} \, κ \, \lottsym{⇝} \, \targetpre K \targetpost}
