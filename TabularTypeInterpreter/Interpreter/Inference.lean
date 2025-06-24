@@ -229,7 +229,36 @@ partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
     push <| .xunivar rx (.row .star)
     let c ← constraint <| (.concat ρₘ μ ρₙ (.uvar rx))
     return ⟨Monotype.arr (.app (.prodOrSum .sum μ) (.uvar rx)) τ, .elim tₘ tₙ c⟩
-  | _ => throw $ .panic "unimplemented"
+  | .member _ => throw $ .panic "unimplemented"
+  | .ind ϕ ρ l t rn ri rp M N => throw $ .panic "unimplemented"
+  | .splitₚ τ e => throw $ .panic "unimplemented"
+  | .splitₛ τ e₁ e₂ => throw $ .panic "unimplemented"
+  | .nil =>
+    return ⟨_, Term.Typing.nil⟩
+  | .cons e₁ e₂ =>
+    -- NOTE: Not sure if the order matters here, but this seems natural.
+    let ⟨.qual $ .mono τ₁, t₁⟩ ← infer e₁
+      | throw $ .panic "cons applied to non-monotype"
+    let t₂ ← check e₂ (Monotype.list.app τ₁)
+    return ⟨_, t₁.cons t₂⟩
+  | .fold =>
+    return ⟨_, Term.Typing.fold⟩
+  | .int n =>
+    return ⟨_, Term.Typing.int⟩
+  | .op _ e₁ e₂ =>
+    let t₁ ← check e₁ Monotype.int
+    let t₂ ← check e₂ Monotype.int
+    return ⟨_, t₁.op t₂⟩
+  | .range =>
+    return ⟨_, Term.Typing.range⟩
+  | .str s =>
+    return ⟨_, Term.Typing.str⟩
+  | .def s =>
+    let ex ← fresh
+    return ⟨_, Term.Typing.def (σ := Monotype.uvar ex)⟩
+  | .throw =>
+    let ex ← fresh
+    return ⟨_, Term.Typing.throw (σ := Monotype.uvar ex)⟩
 
 -- TODO: How do we produce a typing derivation for inferApp?
 partial def inferApp (σ : TypeScheme) (e : Term) : InferM TypeScheme := sorry
