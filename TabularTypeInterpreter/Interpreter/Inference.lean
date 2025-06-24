@@ -231,8 +231,23 @@ partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
     return ⟨Monotype.arr (.app (.prodOrSum .sum μ) (.uvar rx)) τ, .elim tₘ tₙ c⟩
   | .member _ => throw $ .panic "unimplemented"
   | .ind ϕ ρ l t rn ri rp M N => throw $ .panic "unimplemented"
-  | .splitₚ τ e => throw $ .panic "unimplemented"
-  | .splitₛ τ e₁ e₂ => throw $ .panic "unimplemented"
+  | .splitₚ ϕ e =>
+    let ⟨Monotype.app (.prodOrSum .prod (.comm .comm)) ρ, t⟩ ← infer e
+      | throw $ .panic "invalid splitₚ"
+    let ρ₁ := Monotype.uvar <| ← fresh
+    let ρ₂ := Monotype.uvar <| ← fresh
+    let c ← constraint (Monotype.split |>.app ϕ |>.app ρ₁ |>.app ρ₂ |>.app ρ)
+    return ⟨_, t.splitₚ c⟩
+  | .splitₛ ϕ e₁ e₂ =>
+    -- TODO: any way to only infer ρ₁ ? like, check the rest but infer ρ₁.
+    let ⟨Monotype.arr (.app (.prodOrSum .sum (.comm .comm)) (.app (.app .lift ϕ₁) ρ₁)) τ₁, t₁⟩ ← infer e₁
+      | throw $ .panic "invalid splitₛ"
+    let ⟨Monotype.arr (.app (.prodOrSum .sum (.comm .comm)) ρ₂) τ₂, t₂⟩ ← infer e₂
+      | throw $ .panic "invalid splitₛ"
+    -- TODO: check τ₁ = τ₂ && ϕ = ϕ₁
+    let ρ := Monotype.uvar <| ← fresh
+    let c ← constraint (Monotype.split |>.app ϕ₁ |>.app ρ₁ |>.app ρ₂ |>.app ρ)
+    return ⟨Monotype.prodOrSum .sum (.comm .comm) |>.app ρ |>.arr τ, t₁.splitₛ t₂ c⟩
   | .nil =>
     return ⟨_, Term.Typing.nil⟩
   | .cons e₁ e₂ =>
