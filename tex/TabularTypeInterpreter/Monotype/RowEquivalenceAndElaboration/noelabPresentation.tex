@@ -1,0 +1,24 @@
+\lottjudgement{Row Equivalence And Elaboration}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \rowequivsym_{μ} \, ρ₁}{
+\lottinferencerule{refl}{
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ \, \kindingsym \, \lottkw{R}^{κ}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ \, \rowequivsym_{μ} \, ρ}
+\lottinferencerulesep
+\lottinferencerule{trans}{
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \kindingsym \, \lottkw{R}^{κ}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \rowequivsym_{μ} \, ρ₁}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₁ \, \rowequivsym_{μ} \, ρ₂}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \rowequivsym_{μ} \, ρ₂}
+\lottinferencerulesep
+\lottinferencerule{comm}{
+\lotthypothesis{\lottsym{⊢}_\mathcal{T} \, p \, \lottkw{permutes} \, \lottsym{[} \lottsym{:} n \lottsym{]} \, \lottkw{for} \, ξ}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{ξ_{i} \, \lottsym{▹} \, τ_{i}}{i}{[:n]} \lottsym{⟩} \, \kindingsym \, \lottkw{R}^{κ}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottsym{⟨} \lottsepbycomprehensionpatcollection{ξ_{i} \, \lottsym{▹} \, τ_{i}}{i}{[:n]} \lottsym{⟩} \, \rowequivsym_{\mathfrak{c}} \, \lottsym{⟨} \lottsepbycomprehensioncustom{ξ_{i} \, \lottsym{▹} \, τ_{i}}{i \in p} \lottsym{⟩}}
+\lottinferencerulesep
+\lottinferencerule{liftL}{
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottkw{Lift} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ₀ \lottsym{.} \, τ' \lottsym{)} \, \lottsym{⟨} \lottsepbycomprehension{ξ_{i} \, \lottsym{▹} \, τ_{i}} \lottsym{⟩} \, \kindingsym \, \lottkw{R}^{κ₁}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottkw{Lift} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ₀ \lottsym{.} \, τ' \lottsym{)} \, \lottsym{⟨} \lottsepbycomprehension{ξ_{i} \, \lottsym{▹} \, τ_{i}} \lottsym{⟩} \, \rowequivsym_{μ} \, \lottsym{⟨} \lottsepbycomprehension{ξ_{i} \, \lottsym{▹} \, τ'\left[τ_{i}/a\right]} \lottsym{⟩}}
+\lottinferencerulesep
+\lottinferencerule{liftR}{
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottkw{Lift} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ₀ \lottsym{.} \, τ' \lottsym{)} \, \lottsym{⟨} \lottsepbycomprehension{ξ_{i} \, \lottsym{▹} \, τ_{i}} \lottsym{⟩} \, \kindingsym \, \lottkw{R}^{κ₁}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottsym{⟨} \lottsepbycomprehension{ξ_{i} \, \lottsym{▹} \, τ'\left[τ_{i}/a\right]} \lottsym{⟩} \, \rowequivsym_{μ} \, \lottkw{Lift} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ₀ \lottsym{.} \, τ' \lottsym{)} \, \lottsym{⟨} \lottsepbycomprehension{ξ_{i} \, \lottsym{▹} \, τ_{i}} \lottsym{⟩}}
+}
