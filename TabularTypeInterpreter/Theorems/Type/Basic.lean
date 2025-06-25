@@ -202,7 +202,7 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (�
           simp only [Term.TermVar_open, List.mapMem_eq_map, if_pos]
           rw [List.map_map, List.map_map, List.map_map, List.map_map, List.map_map,
               ← Range.map, ← Range.map]
-          apply Typing.equiv _ <| .prod <| .symm <| .lamListApp .var_free
+          apply Typing.equiv _ <| .prod <| .symm <| .listAppList .var_free
           simp only [Function.comp, Term.TypeVar_open, Term.TermVar_open, if_pos]
           apply Typing.prodIntro _
           · intro i imem
@@ -214,7 +214,7 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (�
             apply Typing.prodElim _
               (Range.mem_of_mem_toList <| perm.mem_iff.mp <| List.get!_mem imem.upper)
               (A := fun i => .app (.var (.free a)) ((B' (p'.get! i)).TypeVar_open a))
-            apply Typing.equiv _ <| .prod <| .lamListApp .var_free
+            apply Typing.equiv _ <| .prod <| .listAppList .var_free
             rw [Range.map, Range.map_eq_of_eq_of_mem <| by
               intro i imem
               show (A' i).TypeVar_open a = (B' (p'.get! i)).TypeVar_open a
@@ -270,14 +270,14 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (�
           rw [← Range.map_get!_eq (as := p'), length_eq', Range.map, List.zip_eq_zipWith,
               Range.map, List.zipWith_map_right, List.zipWith_self, List.map_map, List.map_map,
               List.map_map, List.map_map, List.map_map, ← Range.map, ← Range.map, ← Range.map]
-          apply Typing.sumElim <| .equiv (.var Δaxwf .head) <| .sum <| .lamListApp .var_free
+          apply Typing.sumElim <| .equiv (.var Δaxwf .head) <| .sum <| .listAppList .var_free
           · intro i imem
             simp only [Function.comp, Type.TypeVar_open, Term.TypeVar_open, Term.TermVar_open,
                        if_pos]
             rw [if_neg nofun]
             exact .lam (I := x :: Δa.termVarDom) fun x' x'nin => by
               simp only [Term.TermVar_open, if_pos]
-              apply Typing.equiv _ <| .sum <| .symm <| .lamListApp .var_free
+              apply Typing.equiv _ <| .sum <| .symm <| .listAppList .var_free
               let iltplen := imem.upper
               rw [← length_eq'] at iltplen
               apply Typing.sumIntro <| Range.mem_of_mem_toList <| perm'.mem_iff.mp <|
@@ -363,11 +363,11 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (�
         simp only [Type.TypeVar_open, if_pos]
         rw [List.mapMem_eq_map, List.mapMem_eq_map, Range.map, List.map_map, List.map_map,
             ← Range.map, ← Range.map]
-        apply TypeEquivalence.arr .refl <| .prod <| .trans _ <| .symm <| .lamListApp .var_free
+        apply TypeEquivalence.arr .refl <| .prod <| .trans _ <| .symm <| .listAppList .var_free
         let .listApp A'lc _ := Alc
         rw [← A'lc.TypeVar_open_id (a := a), Type.TypeVar_open] at A'lc
-        apply TypeEquivalence.trans (.listApp .refl <| .lamListApp A'lc) <|
-          .trans (.lamListApp .var_free) <| .list _
+        apply TypeEquivalence.trans (.listApp .refl <| .listAppList A'lc) <|
+          .trans (.listAppList .var_free) <| .list _
         intro i imem
         simp only [Function.comp]
         let Δawf := Δwf.typeVarExt anin (K := [[(K ↦ *)]])
@@ -385,11 +385,11 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (�
         simp only [Type.TypeVar_open, if_pos]
         rw [List.mapMem_eq_map, List.mapMem_eq_map, Range.map, List.map_map, List.map_map,
             ← Range.map, ← Range.map]
-        apply TypeEquivalence.arr .refl <| .sum <| .trans _ <| .symm <| .lamListApp .var_free
+        apply TypeEquivalence.arr .refl <| .sum <| .trans _ <| .symm <| .listAppList .var_free
         let .listApp A'lc r := Alc
         rw [← A'lc.TypeVar_open_id (a := a), Type.TypeVar_open] at A'lc
-        apply TypeEquivalence.trans (.listApp .refl <| .lamListApp A'lc) <|
-          .trans (.lamListApp .var_free) <| .list _
+        apply TypeEquivalence.trans (.listApp .refl <| .listAppList A'lc) <|
+          .trans (.listAppList .var_free) <| .list _
         intro i imem
         simp only [Function.comp]
         let Δawf := Δwf.typeVarExt anin (K := [[(K ↦ *)]])
@@ -434,11 +434,11 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (�
         simp only [Type.TypeVar_open, if_pos]
         rw [List.mapMem_eq_map, List.mapMem_eq_map, Range.map, List.map_map, List.map_map,
             ← Range.map, ← Range.map]
-        apply TypeEquivalence.arr (.prod <| .trans _ <| .symm <| .lamListApp .var_free) .refl
+        apply TypeEquivalence.arr (.prod <| .trans _ <| .symm <| .listAppList .var_free) .refl
         let .listApp A'lc r := Alc
         rw [← A'lc.TypeVar_open_id (a := a), Type.TypeVar_open] at A'lc
-        apply TypeEquivalence.trans (.listApp .refl <| .lamListApp A'lc) <|
-          .trans (.lamListApp .var_free) <| .list _
+        apply TypeEquivalence.trans (.listApp .refl <| .listAppList A'lc) <|
+          .trans (.listAppList .var_free) <| .list _
         intro i imem
         simp only [Function.comp]
         let Δawf := Δwf.typeVarExt anin (K := [[(K ↦ *)]])
@@ -456,11 +456,11 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (�
         simp only [Type.TypeVar_open, if_pos]
         rw [List.mapMem_eq_map, List.mapMem_eq_map, Range.map, List.map_map, List.map_map,
             ← Range.map, ← Range.map]
-        apply TypeEquivalence.arr (.sum <| .trans _ <| .symm <| .lamListApp .var_free) .refl
+        apply TypeEquivalence.arr (.sum <| .trans _ <| .symm <| .listAppList .var_free) .refl
         let .listApp A'lc r := Alc
         rw [← A'lc.TypeVar_open_id (a := a), Type.TypeVar_open] at A'lc
-        apply TypeEquivalence.trans (.listApp .refl <| .lamListApp A'lc) <|
-          .trans (.lamListApp .var_free) <| .list _
+        apply TypeEquivalence.trans (.listApp .refl <| .listAppList A'lc) <|
+          .trans (.listAppList .var_free) <| .list _
         intro i imem
         simp only [Function.comp]
         let Δawf := Δwf.typeVarExt anin (K := [[(K ↦ *)]])

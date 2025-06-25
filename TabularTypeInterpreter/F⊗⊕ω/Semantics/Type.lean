@@ -96,7 +96,7 @@ judgement TypeEquivalence where
 Δ ⊢ (λ a : K. A) B ≡ A^^B/a
 
 notex lc_ A   -- NOTE this is for preserve_lc when n = 0
-───────────────────────────────────────────────────────────────── lamListApp
+───────────────────────────────────────────────────────────────── listAppList
 Δ ⊢ A ⟦{ </ B@i // i in [:n] notex /> }⟧ ≡ { </ A B@i // i in [:n] notex /> }
 
 Δ ⊢ A: L K
@@ -176,7 +176,7 @@ judgement TypeEquivalenceI where
 Δ ⊢ (λ a : K. A) B ≡ᵢ A^^B/a
 
 notex lc_ A   -- NOTE this is for preserve_lc when n = 0
-───────────────────────────────────────────────────────────────── lamListApp
+───────────────────────────────────────────────────────────────── listAppList
 Δ ⊢ A ⟦{ </ B@i // i in [:n] notex /> }⟧ ≡ᵢ { </ A B@i // i in [:n] notex /> }
 
 Δ ⊢ A: L K
@@ -275,7 +275,7 @@ judgement ParallelReduction where
 Δ ⊢ A ≡> A'
 </ Δ ⊢ B@i ≡> B'@i // i in [:n] notex />
 notex lc_ A   -- NOTE this is for preserve_lc when n = 0
-──────────────────────────────────────────────────────────────────────────────── lamListApp
+──────────────────────────────────────────────────────────────────────────────── listAppList
 Δ ⊢ A ⟦{ </ B@i // i in [:n] notex /> }⟧ ≡> { </ A' B'@i // i in [:n] notex /> }
 
 Δ ⊢ A: L K

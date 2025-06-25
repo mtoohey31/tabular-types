@@ -8,7 +8,7 @@
 \lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre B \targetpost \Rrightarrow \targetpre B' \targetpost}
 }{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \targetpre \lottsym{(} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre A \targetpost \targetpost \lottsym{)} \targetpost \, \targetpre B \targetpost \targetpost \Rrightarrow \targetpre \targetpre A' \targetpost\left[\targetpre B' \targetpost/\targetpre a \targetpost\right] \targetpost}
 \lottinferencerulesep
-\lottinferencerule{lamListApp}{
+\lottinferencerule{listAppList}{
 \lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \Rrightarrow \targetpre A' \targetpost}\\
 \lotthypothesis{\lottjudgementcomprehension{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre B_{i} \targetpost \Rrightarrow \targetpre B'_{i} \targetpost}}
 }{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \targetpre A \targetpost \, \lottsym{⟦} \targetpre \lottsym{\{} \lottsepbycomprehension{\targetpre B_{i} \targetpost} \lottsym{\}} \targetpost \lottsym{⟧} \targetpost \Rrightarrow \targetpre \lottsym{\{} \lottsepbycomprehension{\targetpre \targetpre A' \targetpost \, \targetpre B'_{i} \targetpost \targetpost} \lottsym{\}} \targetpost}

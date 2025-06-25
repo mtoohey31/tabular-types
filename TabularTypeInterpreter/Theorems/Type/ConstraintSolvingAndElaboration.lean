@@ -592,7 +592,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
         .prod <| .listApp (.var (.termVarExt .head)) <| A₁ki.weakening Δaxₗwf
         (Δ' := .termExt (.typeExt .empty ..) ..) (Δ'' := .empty)
       cases A₂eq
-      apply Typing.equiv _ <| .prod <| .symm <| .lamListApp .var_free
+      apply Typing.equiv _ <| .prod <| .symm <| .listAppList .var_free
       rw [Range.map_eq_of_eq_of_mem'' (by
         intro _ _
         rw [Function.comp, Function.comp, Function.comp, «F⊗⊕ω».Term.TypeVar_open,
@@ -621,7 +621,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
         rw [if_pos imem.upper] at ττ'ike
         rw [ττ'ike.deterministic τike |>.right]
         exact .prodElim (.equiv (.var Δaxₗᵣwf (.termVarExt .head xne.symm)) <| .prod <|
-          .lamListApp .var_free) imem
+          .listAppList .var_free) imem
       | .inr ⟨j, jmem, eq⟩ =>
         cases eq
         cases A₁eq
@@ -641,7 +641,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
         dsimp [ττ'] at ττ'ike
         rw [if_neg <| Nat.not_lt_of_le jmem.lower] at ττ'ike
         rw [ττ'ike.deterministic τ'ike |>.right]
-        exact .prodElim (.equiv (.var Δaxₗᵣwf .head) <| .prod <| .lamListApp .var_free) imem
+        exact .prodElim (.equiv (.var Δaxₗᵣwf .head) <| .prod <| .listAppList .var_free) imem
     · apply Typing.typeLam Δ.typeVarDom
       intro a anin
       simp [«F⊗⊕ω».Term.TypeVar_open, Type.TypeVar_open]
@@ -708,7 +708,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
           (A₂ki.weakening Δaaₜxₗxᵣwf
             (Δ' := .termExt (.termExt (.typeExt (.typeExt .empty ..) ..) ..) ..) (Δ'' := .empty))
       cases A₂eq
-      apply Typing.sumElim (.equiv (.var Δaaₜxₗxᵣxwf .head) <| .sum <| .lamListApp .var_free) _ <|
+      apply Typing.sumElim (.equiv (.var Δaaₜxₗxᵣxwf .head) <| .sum <| .listAppList .var_free) _ <|
         .var <| .termVarExt <| .termVarExt <| .termVarExt .head
       intro i mem
       dsimp [F]
@@ -734,7 +734,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
         apply Typing.app <| .var Δaaₜxₗxᵣxxwf
           (.termVarExt (.termVarExt (.termVarExt .head xₗnexᵣ) xₗnex) xₗnex')
         cases A₀eq
-        apply Typing.equiv _ <| .sum <| .symm <| .lamListApp .var_free
+        apply Typing.equiv _ <| .sum <| .symm <| .listAppList .var_free
         let τike' := τke' i mem'
         rw [← τike'.deterministic ττ'ike |>.right] at Δaaₜxₗxᵣxxwf ⊢
         apply Typing.sumIntro mem' <| .var Δaaₜxₗxᵣxxwf .head
@@ -768,7 +768,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
             (Δ'' := .empty)
         apply Typing.app <| .var Δaaₜxₗxᵣxxwf (.termVarExt (.termVarExt .head xᵣnex) xᵣnex')
         cases A₁eq
-        apply Typing.equiv _ <| .sum <| .symm <| .lamListApp .var_free
+        apply Typing.equiv _ <| .sum <| .symm <| .listAppList .var_free
         let τ'ike' := τ'ke' (i - m) mem'
         rw [← τ'ike'.deterministic ττ'ike |>.right] at Δaaₜxₗxᵣxxwf ⊢
         apply Typing.sumIntro mem' <| .var Δaaₜxₗxᵣxxwf .head
@@ -798,7 +798,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
           rw [Function.comp, Function.comp, «F⊗⊕ω».Term.TypeVar_open, «F⊗⊕ω».Term.TypeVar_open,
               «F⊗⊕ω».Term.TermVar_open, «F⊗⊕ω».Term.TermVar_open, if_pos rfl]
         )]
-        apply Typing.equiv _ <| .prod <| .symm <| .lamListApp .var_free
+        apply Typing.equiv _ <| .prod <| .symm <| .listAppList .var_free
         apply Typing.prodIntro Δaxwf
         intro i mem
         let τike := τke' i mem
@@ -808,7 +808,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
         rw [τike.deterministic ττ'ike |>.right]
         apply Typing.prodElim (n := m + n) _ ⟨mem.lower, Nat.lt_add_right n mem.upper, mem.step⟩
         cases A₂eq
-        exact .equiv (.var Δaxwf .head) <| .prod <| .lamListApp .var_free
+        exact .equiv (.var Δaxwf .head) <| .prod <| .listAppList .var_free
       · apply Typing.typeLam Δ.typeVarDom
         intro a anin
         simp [«F⊗⊕ω».Term.TypeVar_open, Type.TypeVar_open]
@@ -822,7 +822,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
           .listApp (.var .head) <| A₀ki.weakening Δawf (Δ' := .typeExt .empty ..)
           (Δ'' := .empty)
         cases A₀eq
-        apply Typing.sumElim (.equiv (.var Δaxwf .head) (.sum <| .lamListApp .var_free)) _ <|
+        apply Typing.sumElim (.equiv (.var Δaxwf .head) (.sum <| .listAppList .var_free)) _ <|
           .sum <| .listApp (.var (.termVarExt .head)) <| ξττ'ke.soundness Γcw Γwe κe.row
             |>.weakening Δaxwf (Δ' := .termExt (.typeExt .empty ..) ..) (Δ'' := .empty)
         intro i mem
@@ -844,7 +844,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
           ττ'ike.soundness Γcw Γwe κe |>.weakening Δaxwf
           (Δ' := .termExt (.typeExt .empty ..) ..) (Δ'' := .empty)
         cases A₂eq
-        apply Typing.equiv _ <| .sum <| .symm <| .lamListApp .var_free
+        apply Typing.equiv _ <| .sum <| .symm <| .listAppList .var_free
         apply Typing.sumIntro mem' <| .var Δaxxwf .head
         intro j mem''
         exact .app (.var (.termVarExt (.termVarExt .head))) <|
@@ -869,7 +869,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
           rw [Function.comp, Function.comp, «F⊗⊕ω».Term.TypeVar_open, «F⊗⊕ω».Term.TypeVar_open,
               «F⊗⊕ω».Term.TermVar_open, «F⊗⊕ω».Term.TermVar_open, if_pos rfl]
         )]
-        apply Typing.equiv _ <| .prod <| .symm <| .lamListApp .var_free
+        apply Typing.equiv _ <| .prod <| .symm <| .listAppList .var_free
         apply Typing.prodIntro Δaxwf
         intro i mem
         let τ'ike := τ'ke' i mem
@@ -889,7 +889,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
           Nat.mod_one _
         ⟩
         cases A₂eq
-        exact .equiv (.var Δaxwf .head) <| .prod <| .lamListApp .var_free
+        exact .equiv (.var Δaxwf .head) <| .prod <| .listAppList .var_free
       · apply Typing.typeLam Δ.typeVarDom
         intro a anin
         simp [«F⊗⊕ω».Term.TypeVar_open, Type.TypeVar_open]
@@ -903,7 +903,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
           .listApp (.var .head) <| A₁ki.weakening Δawf (Δ' := .typeExt .empty ..)
           (Δ'' := .empty)
         cases A₁eq
-        apply Typing.sumElim (.equiv (.var Δaxwf .head) (.sum <| .lamListApp .var_free)) _ <|
+        apply Typing.sumElim (.equiv (.var Δaxwf .head) (.sum <| .listAppList .var_free)) _ <|
           .sum <| .listApp (.var (.termVarExt .head)) <| ξττ'ke.soundness Γcw Γwe κe.row
             |>.weakening Δaxwf (Δ' := .termExt (.typeExt .empty ..) ..) (Δ'' := .empty)
         intro i mem
@@ -930,7 +930,7 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
           ττ'ike.soundness Γcw Γwe κe |>.weakening Δaxwf
           (Δ' := .termExt (.typeExt .empty ..) ..) (Δ'' := .empty)
         cases A₂eq
-        apply Typing.equiv _ <| .sum <| .symm <| .lamListApp .var_free
+        apply Typing.equiv _ <| .sum <| .symm <| .listAppList .var_free
         apply Typing.sumIntro mem' <| .var Δaxxwf .head
         intro j mem''
         exact .app (.var (.termVarExt (.termVarExt .head))) <|

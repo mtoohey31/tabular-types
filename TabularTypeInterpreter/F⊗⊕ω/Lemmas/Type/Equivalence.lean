@@ -14,11 +14,11 @@ theorem ParallelReduction.TypeEquivalence_of (h: [[ Δ ⊢ A ≡> B ]]) (wf: [[ 
     refine .trans (.app (.lam (I ++ Δ.typeVarDom) ?_) ih2) (.lamApp ?_)
     . exact λa nin => ih1 a (by simp_all) (wf.typeVarExt (by simp_all [TypeVarNotInDom, TypeVarInDom]))
     . exact BB'.preservation wf kinding
-  . case lamListApp Δ A A' n B B' AA' BB' Alc ih1 ih2 =>
+  . case listAppList Δ A A' n B B' AA' BB' Alc ih1 ih2 =>
     simp_all [Std.Range.mem_toList_of_mem]
     have A'lc := AA'.preserve_lc Alc
     refine .trans (.listApp ih1 (.list ih2))
-              (.trans (.lamListApp A'lc) (.list λi iltn => .refl))
+              (.trans (.listAppList A'lc) (.list λi iltn => .refl))
   . case listAppId AkiLK _ ih =>
     simp_all; exact .trans (.listAppId AkiLK) ih
   . case lam I Δ _ _ _ _ ih =>
@@ -53,7 +53,7 @@ theorem ParallelReduction_of (h: [[ Δ ⊢ A ≡ᵢ B ]]) : [[ Δ ⊢ A ≡> B ]
   case lamApp Abody Blc kinding => exact .lamApp (I := []) kinding (λ _ _ => .refl) .refl
   case lam I _ ih => exact .lam (I := I) ih
   case scheme I _ ih => exact .scheme (I := I) ih
-  case lamListApp Alc => exact .lamListApp .refl (λ i iltn => .refl) Alc
+  case listAppList Alc => exact .listAppList .refl (λ i iltn => .refl) Alc
   case listAppComp A₀lc => exact .listAppComp (I := []) A₀lc .refl (λa nin => .refl) .refl
   all_goals aesop (add safe constructors ParallelReduction)
 
@@ -93,10 +93,10 @@ theorem subst_rename' {a': TypeVarId}
       rw [← append_type_assoc] at wf ⊢
       refine wf.strengthen_type (by simp_all [typeVarDom, typeVarDom_append])
     exact BkiK'.subst' wf' (.var .head)
-  . case lamListApp A n B Alc =>
+  . case listAppList A n B Alc =>
     unfold Function.comp
     simp_all [Type.TypeVar_subst]
-    exact .lamListApp (Alc.TypeVar_subst a'lc)
+    exact .listAppList (Alc.TypeVar_subst a'lc)
   . case listAppId A K' AkiLK =>
     refine .listAppId ?_
     have AkiLK': [[((Δ, a': K , a : K) , Δ') ⊢ A : L K']] := by
@@ -176,7 +176,7 @@ open «Type» TypeVarLocallyClosed in
 theorem preserve_lc (h: [[ Δ ⊢ A ≡ᵢ B ]]) (Alc: A.TypeVarLocallyClosed): B.TypeVarLocallyClosed := by
   induction h
   case lamApp => match Alc with | .app (.lam _) _ => apply Type_open_dec <;> simp_all
-  case lamListApp =>
+  case listAppList =>
     match Alc with
     | .listApp Alc (.list Blc) =>
       refine .list λ T Tin => ?_
@@ -199,7 +199,7 @@ theorem preserve_lc_rev (h: [[ Δ ⊢ A ≡ᵢ B ]]) (Blc: B.TypeVarLocallyClose
     apply TypeVar_close_inc (a := a) at Abody
     rw [TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars (by simp_all)] at Abody
     exact Abody.lam.app Blc
-  case lamListApp A Δ n B Alc =>
+  case listAppList A Δ n B Alc =>
     match Blc with
     | .list ABlc =>
       refine .listApp Alc (.list ?_)
@@ -344,7 +344,7 @@ theorem TypeEquivalence.preserve_lc (h: [[ Δ ⊢ A ≡ B ]]): (A.TypeVarLocally
       apply TypeVar_close_inc (a := a) at Abody
       rw [TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars (by simp_all)] at Abody
       exact Abody.lam.app Blc
-  case lamListApp A Δ n B Alc =>
+  case listAppList A Δ n B Alc =>
     refine ⟨λ (.listApp Alc (.list Blc)) => .list λ T Tin => ?_, λ (.list ABlc) => .listApp Alc (.list ?_)⟩
     . have ⟨i, iltn, Teq⟩ := Std.Range.mem_of_mem_map Tin; subst Teq
       exact Alc.app <| Blc _ (Std.Range.mem_map_of_mem iltn)
@@ -388,7 +388,7 @@ theorem TypeEquivalence.TypeEquivalenceS_of (h: [[Δ ⊢ A ≡ B]]) (Alc: A.Type
   induction h
   . case refl => exact .base .refl
   . case lamApp BkiK => exact .base (.lamApp BkiK)
-  . case lamListApp Alc_ => exact .base (.lamListApp Alc_)
+  . case listAppList Alc_ => exact .base (.listAppList Alc_)
   . case listAppId Alc_ => exact .base (.listAppId Alc_)
   . case lam Δ K A B I h ih =>
     have ⟨a, nin⟩ := I ++ Δ.typeVarDom ++ A.freeTypeVars ++ B.freeTypeVars |>.exists_fresh
@@ -525,7 +525,7 @@ theorem listAppEmptyL (Alc : A.TypeVarLocallyClosed) : [[Δ ⊢ A ⟦{ }⟧ ≡ 
     show _ = [[A B@i]]
     nomatch mem
   )]
-  exact lamListApp Alc
+  exact listAppList Alc
 
 theorem listAppEmptyR (Alc : A.TypeVarLocallyClosed) : [[Δ ⊢ { } ≡ A ⟦{ }⟧]] := by
   let B (i : Nat) := [[{ }]]
@@ -540,7 +540,7 @@ theorem listAppEmptyR (Alc : A.TypeVarLocallyClosed) : [[Δ ⊢ { } ≡ A ⟦{ }
     show _ = B i
     nomatch mem
   )]
-  exact symm <| lamListApp Alc
+  exact symm <| listAppList Alc
 
 theorem listAppSingletonL (Alc : A.TypeVarLocallyClosed) : [[Δ ⊢ A ⟦{B}⟧ ≡ {A B}]] := by
   let B' (i : Nat) := B
@@ -559,7 +559,7 @@ theorem listAppSingletonL (Alc : A.TypeVarLocallyClosed) : [[Δ ⊢ A ⟦{B}⟧ 
     dsimp [B']
     rw [List.get!_cons_zero]
   )]
-  exact lamListApp Alc
+  exact listAppList Alc
 
 theorem listAppSingletonR (Alc: A.TypeVarLocallyClosed) : [[Δ ⊢ {A B} ≡ A ⟦{B}⟧]] := by
   let B' (i : Nat) := B
@@ -578,7 +578,7 @@ theorem listAppSingletonR (Alc: A.TypeVarLocallyClosed) : [[Δ ⊢ {A B} ≡ A �
     dsimp [B']
     rw [List.get!_cons_zero]
   )]
-  exact symm <| lamListApp Alc
+  exact symm <| listAppList Alc
 
 theorem listSingleton (AequB : [[Δ ⊢ A ≡ B]]) : [[Δ ⊢ {A} ≡ {B}]] := by
   let A' (i : Nat) := A
