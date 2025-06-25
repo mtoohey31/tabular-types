@@ -140,6 +140,10 @@
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, μ₁ \, \kindingsym \, \lottkw{U}}
 }{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{≲}_{μ₁} \, ρ₁ \, \lottsym{⇝} \, \targetpre E \targetpost}
 \lottinferencerulesep
+\lottinferencerule{splitConcat}{
+\lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottkw{Split} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ₀ \, ρ₁ \, ρ₂ \, \lottsym{⇝} \, \targetpre E \targetpost}
+}{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottsym{(} \lottkw{Lift} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ₀ \lottsym{)} \, \lottsym{⊙}_{\mathfrak{c}} \, ρ₁ \, \lottsym{\sim} \, ρ₂ \, \lottsym{⇝} \, \targetpre E \targetpost}
+\lottinferencerulesep
 \lottinferencerule{concatDecay}{
 \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{⊙}_{μ₀} \, ρ₁ \, \lottsym{\sim} \, ρ₂ \, \lottsym{⇝} \, \targetpre E \targetpost}\\
 \lotthypothesis{μ₀ \, \partialordsym \, μ₁}\\
@@ -252,8 +256,4 @@
 \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₂ \, \lottsym{⊙}_{\mathfrak{c}} \, ρ₅ \, \lottsym{\sim} \, ρ₈}\\
 \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottsym{(} \lottkw{Lift} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ₆ \lottsym{)} \, \lottsym{⊙}_{\mathfrak{c}} \, ρ₇ \, \lottsym{\sim} \, ρ₈ \, \lottsym{⇝} \, \targetpre E \targetpost}
 }{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottkw{Split} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ₆ \, ρ₇ \, ρ₈ \, \lottsym{⇝} \, \targetpre E \targetpost}
-\lottinferencerulesep
-\lottinferencerule{splitConcat}{
-\lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottkw{Split} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ₀ \, ρ₁ \, ρ₂ \, \lottsym{⇝} \, \targetpre E \targetpost}
-}{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, \lottsym{(} \lottkw{Lift} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ₀ \lottsym{)} \, \lottsym{⊙}_{\mathfrak{c}} \, ρ₁ \, \lottsym{\sim} \, ρ₂ \, \lottsym{⇝} \, \targetpre E \targetpost}
 }
