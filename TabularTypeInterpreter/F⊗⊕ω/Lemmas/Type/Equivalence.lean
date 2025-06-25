@@ -9,6 +9,7 @@ open Environment in
 theorem ParallelReduction.TypeEquivalence_of (h: [[ Δ ⊢ A ≡> B ]]) (wf: [[ ⊢ Δ ]]) : [[ Δ ⊢ A ≡ B ]] := by
   induction h
   . case refl => exact .refl
+  · case eta Alc AA' ih => exact .trans (.eta Alc) <| ih wf
   . case lamApp Δ _ _ I _ _ _ kinding AA' BB' ih1 ih2 =>
     simp_all
     refine .trans (.app (.lam (I ++ Δ.typeVarDom) ?_) ih2) (.lamApp ?_)
@@ -81,6 +82,7 @@ theorem subst_rename' {a': TypeVarId}
   have a'lc: [[ (a') ]].TypeVarLocallyClosed := by constructor
   generalize Δ_eq: [[ (Δ, a: K, Δ') ]] = Δ_ at h
   induction h generalizing Δ Δ' <;> (try simp_all [Type.TypeVar_subst]) <;> subst Δ_eq <;> try simp_all [Membership.mem]; aesop (add unsafe constructors TypeEquivalenceI)
+  · case eta Alc => exact .eta <| Alc.TypeVar_subst .var_free
   . case lamApp B K' A BkiK' =>
     rw [a'lc.Type_open_TypeVar_subst_dist]
     refine .lamApp ?_
@@ -190,6 +192,7 @@ theorem preserve_lc (h: [[ Δ ⊢ A ≡ᵢ B ]]) (Alc: A.TypeVarLocallyClosed): 
 open «Type» TypeVarLocallyClosed in
 theorem preserve_lc_rev (h: [[ Δ ⊢ A ≡ᵢ B ]]) (Blc: B.TypeVarLocallyClosed): A.TypeVarLocallyClosed := by
   induction h
+  case eta => exact .lam <| .app Blc.weaken <| .var_bound Nat.le.refl
   case lamApp Δ B K A BkiK =>
     rename' Blc => ABlc
     have Blc := BkiK.TypeVarLocallyClosed_of
@@ -334,6 +337,7 @@ end TypeEquivalenceS
 open «Type» TypeVarLocallyClosed Environment in
 theorem TypeEquivalence.preserve_lc (h: [[ Δ ⊢ A ≡ B ]]): (A.TypeVarLocallyClosed → B.TypeVarLocallyClosed) ∧ (B.TypeVarLocallyClosed → A.TypeVarLocallyClosed) := by
   induction h
+  case eta Alc => exact ⟨λ _ => Alc, λ _ => .lam <| .app Alc.weaken <| .var_bound Nat.le.refl⟩
   case lamApp Δ B K A BkiK =>
     refine ⟨λ (.app (.lam _) _) => ?_, λ A'B'lc => ?_⟩
     . apply Type_open_dec <;> simp_all
@@ -387,6 +391,7 @@ open Environment in
 theorem TypeEquivalence.TypeEquivalenceS_of (h: [[Δ ⊢ A ≡ B]]) (Alc: A.TypeVarLocallyClosed) (wf: [[ ⊢ Δ ]]) : [[Δ ⊢ A ≡ₛ B]] := by
   induction h
   . case refl => exact .base .refl
+  · case eta A'lc => exact .base <| .eta A'lc
   . case lamApp BkiK => exact .base (.lamApp BkiK)
   . case lamListApp Alc_ => exact .base (.lamListApp Alc_)
   . case listAppId Alc_ => exact .base (.listAppId Alc_)

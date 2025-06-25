@@ -91,6 +91,10 @@ judgement TypeEquivalence where
 ───────── refl
 Δ ⊢ A ≡ A
 
+lc_ A
+────────────────────── eta
+Δ ⊢ λ a : K. A a$0 ≡ A
+
 Δ ⊢ B: K
 ─────────────────────────── lamApp
 Δ ⊢ (λ a : K. A) B ≡ A^^B/a
@@ -170,6 +174,10 @@ judgement TypeEquivalenceI where
 
 ────────── refl
 Δ ⊢ A ≡ᵢ A
+
+lc_ A
+─────────────────────── eta
+Δ ⊢ λ a : K. A a$0 ≡ᵢ A
 
 Δ ⊢ B: K
 ─────────────────────────── lamApp
@@ -265,6 +273,11 @@ judgement ParallelReduction where
 
 ───────── refl
 Δ ⊢ A ≡> A
+
+lc_ A
+Δ ⊢ A ≡> A'
+──────────────────────── eta
+Δ ⊢ λ a : K. A a$0 ≡> A'
 
 Δ ⊢ B : K
 ∀ a ∉ (I: List _), Δ, a : K ⊢ A^a ≡> A'^a

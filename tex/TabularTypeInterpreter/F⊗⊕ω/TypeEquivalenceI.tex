@@ -2,6 +2,10 @@
 \lottinferencerule{refl}{
 }{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{≡ᵢ} \, \targetpre A \targetpost}
 \lottinferencerulesep
+\lottinferencerule{eta}{
+\lotthypothesis{\lottkw{lc}\lottsym{(}\targetpre A \targetpost\lottsym{)}}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre \targetpre A \targetpost \, \targetpre \targetpre a \targetpost \targetpost \targetpost \targetpost \, \lottsym{≡ᵢ} \, \targetpre A \targetpost}
+\lottinferencerulesep
 \lottinferencerule{lamApp}{
 \lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre B \targetpost \, \lottsym{:} \, \targetpre K \targetpost}
 }{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \targetpre \lottsym{(} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre A \targetpost \targetpost \lottsym{)} \targetpost \, \targetpre B \targetpost \targetpost \, \lottsym{≡ᵢ} \, \targetpre \targetpre A \targetpost\left[\targetpre B \targetpost/\targetpre a \targetpost\right] \targetpost}
