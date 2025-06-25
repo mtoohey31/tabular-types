@@ -567,9 +567,9 @@ inductive Typing : Term → TypeScheme → Type where
     ConstraintSolution (.concat ρ₀ μ ρ₁ ρ₂) → Typing (M.concat N) ((prodOrSum .prod μ).app ρ₂)
   | inj : Typing M ((prodOrSum .sum μ).app ρ₀) → ConstraintSolution (contain ρ₀ μ ρ₁) →
     Typing (inj M) ((prodOrSum .sum μ).app ρ₁)
-  | elim : Typing M (((prodOrSum .prod μ).app ρ₀).arr τ) →
-    Typing N (((prodOrSum .prod μ).app ρ₁).arr τ) → ConstraintSolution (.concat ρ₀ μ ρ₁ ρ₂) →
-    Typing (M.elim N) (((prodOrSum .prod μ).app ρ₂).arr τ)
+  | elim : Typing M (((prodOrSum .sum μ).app ρ₀).arr τ) →
+    Typing N (((prodOrSum .sum μ).app ρ₁).arr τ) → ConstraintSolution (.concat ρ₀ μ ρ₁ ρ₂) →
+    Typing (M.elim N) (((prodOrSum .sum μ).app ρ₂).arr τ)
   | sub : Typing M σ₀ → Subtyping σ₀ σ₁ → Typing M σ₁
   | member : ConstraintSolution ((tc s).app τ) → Typing (member m) σ
   | ind : Typing M (quant iₗ .label (quant iₜ κ (quant iₚ κ.row (quant iᵢ κ.row (quant iₙ κ.row
@@ -591,7 +591,7 @@ inductive Typing : Term → TypeScheme → Type where
     Typing (M.splitₛ ϕ N) (((prodOrSum .sum (comm .comm)).app ρ₂).arr τ)
   | nil : Typing nil (list.app τ)
   | cons {τ : Monotype} : Typing M τ → Typing N (list.app τ) → Typing (cons M N) (list.app τ)
-  | fold : Typing fold (quant i star (quant iₐ star (qual (mono (arr (arr
+  | fold : Typing fold (quant i .star (quant iₐ .star (qual (mono (arr (arr
       (.var iₐ) (arr (.var i) (.var iₐ))) (arr (.var iₐ) ((list.app (.var i)).arr (.var iₐ))))))))
   | int : Typing (int i) Monotype.int
   | op : Typing M Monotype.int → Typing N Monotype.int →

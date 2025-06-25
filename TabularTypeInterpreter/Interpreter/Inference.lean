@@ -53,7 +53,14 @@ deriving Inhabited
 structure InferState where Γ : Context deriving Inhabited
 
 abbrev InferM := EStateM InferError InferState
+def push (item : ContextItem) : InferM Unit := do
+  let { Γ } <- get
+  set ({ Γ := item::Γ } : InferState)
 def fresh : InferM UniVar := sorry
+def freshType (κ : Kind): InferM Monotype := do
+  let x ← fresh
+  push $ .xunivar x κ
+  return .uvar x
 def getType (χ : TermVar) : InferM TypeScheme := do
   let { Γ } ← get
   let σ ← (getType' Γ χ).getDM (throw $ .panic "variable not defined")
@@ -64,9 +71,6 @@ def getType (χ : TermVar) : InferM TypeScheme := do
     | .cons (.termvar χ' σ) Γ' => if χ == χ' then .some σ else getType' Γ' χ
     | .cons _ Γ' => getType' Γ' χ
 
-def push (item : ContextItem) : InferM Unit := do
-  let { Γ } <- get
-  set ({ Γ := item::Γ } : InferState)
 /-- split the context into (before, after) based on the item's position. -/
 def split (item : ContextItem) : InferM (Context × Context) := do
   let { Γ } ← get
@@ -210,46 +214,45 @@ partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
     let c ← constraint <| .contain ρ μ (.uvar rx)
     return ⟨Monotype.app (.prodOrSum .sum μ) (.uvar rx), t.inj c⟩ 
   | .concat m n =>
-    let ⟨Monotype.app (.prodOrSum .prod μₘ) ρₘ, tₘ⟩ ← infer m
-      | throw $ .panic "concatenation of non-record term"
-    let ⟨Monotype.app (.prodOrSum .prod μₙ) ρₙ, tₙ⟩ ← infer n
-      | throw $ .panic "concatenation of non-record term"
-    -- TODO: generate μ as a single thing by proving μₘ = μₙ
-    let rx ← fresh;
-    push <| .xunivar rx (.row .star)
-    let c ← constraint <| .concat ρₘ μ ρₙ (.uvar rx)
-    return ⟨Monotype.app (.prodOrSum .prod μ) (.uvar rx), .concat tₘ tₙ c⟩
+    let μ ← freshType .comm
+    let ρₘ ← freshType (.row .star)
+    let tₘ ← check m (Monotype.prodOrSum .prod μ |>.app ρₘ)
+    let ρₙ ← freshType (.row .star)
+    let tₙ ← check n (Monotype.prodOrSum .prod μ |>.app ρₙ)
+    let ρ ← freshType (.row .star)
+    let c ← constraint <| .concat ρₘ μ ρₙ ρ
+    return ⟨_, .concat tₘ tₙ c⟩
   | .elim m n =>
-    let ⟨Monotype.arr (.app (.prodOrSum .sum μₘ) ρₘ) τₘ, tₘ⟩ ← infer m
-      | throw $ .panic "concatenation of non-record term"
-    let ⟨Monotype.arr (.app (.prodOrSum .sum μₙ) ρₙ) τₙ, tₙ⟩ ← infer m
-      | throw $ .panic "concatenation of non-record term"
-    -- TODO: generate μ as a single thing by proving μₘ = μₙ; similarly τ for τₘ = τₙ
-    let rx ← fresh;
-    push <| .xunivar rx (.row .star)
-    let c ← constraint <| (.concat ρₘ μ ρₙ (.uvar rx))
-    return ⟨Monotype.arr (.app (.prodOrSum .sum μ) (.uvar rx)) τ, .elim tₘ tₙ c⟩
+    let μ ← freshType .comm
+    let τ ← freshType .star
+    let ρₘ ← freshType (.row .star)
+    let tₘ ← check m (Monotype.prodOrSum .sum μ |>.app ρₘ |>.arr τ)
+    let ρₙ ← freshType (.row .star)
+    let tₙ ← check n (Monotype.prodOrSum .sum μ |>.app ρₙ |>.arr τ)
+    let ρ ← freshType (.row .star)
+    let c ← constraint <| (.concat ρₘ μ ρₙ ρ)
+    return ⟨_, tₘ.elim tₙ c⟩
   | .member _ => throw $ .panic "unimplemented"
   | .ind ϕ ρ l t rn ri rp M N => throw $ .panic "unimplemented"
   | .splitₚ ϕ e =>
     let ⟨Monotype.app (.prodOrSum .prod (.comm .comm)) ρ, t⟩ ← infer e
       | throw $ .panic "invalid splitₚ"
-    let ρ₁ := Monotype.uvar <| ← fresh
-    let ρ₂ := Monotype.uvar <| ← fresh
+    let ρ₁ ← freshType (.row .star)
+    let ρ₂ ← freshType (.row .star)
     let c ← constraint (Monotype.split |>.app ϕ |>.app ρ₁ |>.app ρ₂ |>.app ρ)
     return ⟨_, t.splitₚ c⟩
   | .splitₛ ϕ e₁ e₂ =>
-    -- TODO: any way to only infer ρ₁ ? like, check the rest but infer ρ₁.
-    let ⟨Monotype.arr (.app (.prodOrSum .sum (.comm .comm)) (.app (.app .lift ϕ₁) ρ₁)) τ₁, t₁⟩ ← infer e₁
-      | throw $ .panic "invalid splitₛ"
-    let ⟨Monotype.arr (.app (.prodOrSum .sum (.comm .comm)) ρ₂) τ₂, t₂⟩ ← infer e₂
-      | throw $ .panic "invalid splitₛ"
-    -- TODO: check τ₁ = τ₂ && ϕ = ϕ₁
-    let ρ := Monotype.uvar <| ← fresh
-    let c ← constraint (Monotype.split |>.app ϕ₁ |>.app ρ₁ |>.app ρ₂ |>.app ρ)
-    return ⟨Monotype.prodOrSum .sum (.comm .comm) |>.app ρ |>.arr τ, t₁.splitₛ t₂ c⟩
+    let τ ← freshType .star
+    let ρ₁ ← freshType (.row .star)
+    let t₁ ← check e₁ <| Monotype.arr (.app (.prodOrSum .sum (.comm .comm)) (.app (.app .lift ϕ) ρ₁)) τ
+    let ρ₂ ← freshType (.row .star)
+    let t₂ ← check e₂ <| Monotype.prodOrSum .sum (.comm .comm) |>.app ρ₂ |>.arr τ
+    let ρ₃ ← freshType (.row .star)
+    let c ← constraint (Monotype.split |>.app ϕ |>.app ρ₁ |>.app ρ₂ |>.app ρ₃)
+    return ⟨_, t₁.splitₛ t₂ c⟩
   | .nil =>
-    return ⟨_, Term.Typing.nil⟩
+    let τ ← freshType .star
+    return ⟨_, Term.Typing.nil (τ := τ)⟩
   | .cons e₁ e₂ =>
     -- NOTE: Not sure if the order matters here, but this seems natural.
     let ⟨.qual $ .mono τ₁, t₁⟩ ← infer e₁
