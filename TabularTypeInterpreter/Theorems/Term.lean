@@ -128,7 +128,7 @@ theorem to_Kinding (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (Γᵢw : [[Γc �
     let ⟨_, _, _, σ₀ke', σ₁ke⟩ := σ₀₁se.to_Kinding Γcw Γwe
     rcases σ₀ke.deterministic σ₀ke' with ⟨rfl, _⟩
     exact ⟨_, σ₁ke⟩
-  | member γcin TCτce =>
+  | method γcin TCτce =>
     rename TypeEnvironment => Γ
     rename Kind => κ
     rename TypeScheme => σ'
@@ -390,7 +390,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     rcases σ₀ke.deterministic σ₀ke' with ⟨rfl, rfl⟩
     rcases σke.deterministic σ₁ke with ⟨_, rfl⟩
     exact .app (σse.soundness Γcw Γwe σ₀ke σ₁ke .star) (ih σ₀ke Γᵢw Γcw Γwe)
-  | member γcin TCce =>
+  | method γcin TCce =>
     rename_i A' _ _ _ _ _ _
     let ⟨_, TCke@(.tc γcin' τke)⟩ := TCce.to_Kinding Γᵢw Γcw Γwe
     rcases ClassEnvironmentEntry.mk.inj <| γcin.deterministic γcin' rfl

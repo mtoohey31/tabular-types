@@ -2,7 +2,7 @@ import TabularTypeInterpreter.Syntax.Type
 
 namespace TabularTypeInterpreter
 
-metavar Member, m
+metavar Method, m
 
 nosubst
 nonterminal ClassEnvironmentEntrySuper, γc' :=

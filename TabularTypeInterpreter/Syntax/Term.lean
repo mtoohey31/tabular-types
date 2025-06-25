@@ -5,7 +5,7 @@ namespace TabularTypeInterpreter
 
 nonterminal Term, M, «N» :=
   | x                                   : var
-  | m                                   : member nosubst
+  | m                                   : method nosubst
   | "λ " x ". " M                       : lam (bind x in M)
   | M «N»                               : app
   | "let " x " : " σ " = " M " in " «N» : «let» (bind x in «N»)

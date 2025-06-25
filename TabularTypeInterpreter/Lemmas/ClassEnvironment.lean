@@ -13,10 +13,10 @@ theorem TCDom_append : (append Γc Γc').TCDom = Γc'.TCDom ++ Γc.TCDom := by
   | empty => rw [append, TCDom, List.nil_append]
   | ext .. => rw [append, TCDom, TCDom_append, TCDom, List.cons_append]
 
-theorem memberDom_append : (append Γc Γc').memberDom = Γc'.memberDom ++ Γc.memberDom := by
+theorem methodDom_append : (append Γc Γc').methodDom = Γc'.methodDom ++ Γc.methodDom := by
   match Γc' with
-  | empty => rw [append, memberDom, List.nil_append]
-  | ext .. => rw [append, memberDom, memberDom_append, memberDom, List.cons_append]
+  | empty => rw [append, methodDom, List.nil_append]
+  | ext .. => rw [append, methodDom, methodDom_append, methodDom, List.cons_append]
 
 namespace In
 
@@ -25,10 +25,10 @@ theorem ne_of_TCNotInDom {TC} (γcin : [[γc ∈ Γc]]) (TCnin : [[TC ∉ dom(Γ
   | .head => List.ne_of_not_mem_cons TCnin
   | .ext γcin' .. => γcin'.ne_of_TCNotInDom <| List.not_mem_of_not_mem_cons TCnin
 
-theorem ne_of_MemberNotInDom (γcin : [[γc ∈ Γc]]) (mnin : [[m ∉ dom(Γc)]]) : m ≠ γc.4 :=
+theorem ne_of_MethodNotInDom (γcin : [[γc ∈ Γc]]) (mnin : [[m ∉ dom(Γc)]]) : m ≠ γc.4 :=
   match γcin with
   | .head => List.ne_of_not_mem_cons mnin
-  | .ext γcin' .. => γcin'.ne_of_MemberNotInDom <| List.not_mem_of_not_mem_cons mnin
+  | .ext γcin' .. => γcin'.ne_of_MethodNotInDom <| List.not_mem_of_not_mem_cons mnin
 
 theorem deterministic (γc₀in : [[γc₀ ∈ Γc]]) (γc₁in : [[γc₁ ∈ Γc]]) (eq : γc₀.2 = γc₁.2)
   : γc₀ = γc₁ := by
@@ -72,9 +72,9 @@ theorem WellFormedness.In_append_inl (ΓcΓc'w : [[⊢c Γc, Γc']]) (γcin : [[
     rw [← Range.map_get!_eq (as := TCₛAₛ)] at this ⊢
     rw [TCNotInDom, TCDom_append] at TCnin
     let ⟨_, TCninΓc⟩ := List.not_mem_append'.mp TCnin
-    rw [MemberNotInDom, memberDom_append] at mnin
+    rw [MethodNotInDom, methodDom_append] at mnin
     let ⟨_, mninΓc⟩ := List.not_mem_append'.mp mnin
-    exact this.ext (γcin.ne_of_TCNotInDom TCninΓc).symm (γcin.ne_of_MemberNotInDom mninΓc).symm
+    exact this.ext (γcin.ne_of_TCNotInDom TCninΓc).symm (γcin.ne_of_MethodNotInDom mninΓc).symm
 
 end ClassEnvironment
 

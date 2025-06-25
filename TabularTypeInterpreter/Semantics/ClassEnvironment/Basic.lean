@@ -20,9 +20,9 @@ def TCDom : ClassEnvironment → List TypeClass
   | ext Γc (.mk _ TC ..) => TC :: Γc.TCDom
 
 termonly
-def memberDom : ClassEnvironment → List Member
+def methodDom : ClassEnvironment → List Method
   | empty => []
-  | ext Γc (.mk _ _ _ m ..) => m :: Γc.memberDom
+  | ext Γc (.mk _ _ _ m ..) => m :: Γc.methodDom
 
 end ClassEnvironment
 
@@ -30,9 +30,9 @@ judgement_syntax TC " ≠ " TC' : TypeClass.Ne
 
 judgement TypeClass.Ne := _root_.Ne (α := TypeClass)
 
-judgement_syntax m " ≠ " m' : Member.Ne
+judgement_syntax m " ≠ " m' : Method.Ne
 
-judgement Member.Ne := _root_.Ne (α := Member)
+judgement Method.Ne := _root_.Ne (α := Method)
 
 judgement_syntax γc " ∈ " Γc : ClassEnvironment.In
 
@@ -57,8 +57,8 @@ judgement_syntax TC " ∉ " "dom" "(" Γc ")" : ClassEnvironment.TCNotInDom
 
 judgement ClassEnvironment.TCNotInDom := fun TC (Γc : ClassEnvironment) => TC ∉ Γc.TCDom
 
-judgement_syntax m " ∉ " "dom" "(" Γc ")" : ClassEnvironment.MemberNotInDom
+judgement_syntax m " ∉ " "dom" "(" Γc ")" : ClassEnvironment.MethodNotInDom
 
-judgement ClassEnvironment.MemberNotInDom := fun m (Γc : ClassEnvironment) => m ∉ Γc.memberDom
+judgement ClassEnvironment.MethodNotInDom := fun m (Γc : ClassEnvironment) => m ∉ Γc.methodDom
 
 end TabularTypeInterpreter

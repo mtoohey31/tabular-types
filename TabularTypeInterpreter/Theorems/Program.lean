@@ -10,7 +10,7 @@ open Std
 instance : Inhabited TypeClass where
   default := .zero
 in
-instance : Inhabited Member where
+instance : Inhabited Method where
   default := .zero
 in
 instance : Inhabited TypeScheme where
