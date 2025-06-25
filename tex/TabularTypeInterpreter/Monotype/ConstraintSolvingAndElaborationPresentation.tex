@@ -1,4 +1,10 @@
 \lottjudgement{Constraint Solving And Elaboration}{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ψ \, \lottsym{⇝} \, \targetpre E \targetpost}{
+\lottinferencerule{TCInst}{
+\lotthypothesis{\lottsym{(} \lottsym{∀} \, \lottsepbycomprehension{a_{k} \, \lottsym{:} \, κ_{k}} \lottsym{.} \, \lottsepbycomprehension{ψ_{j} \, \lottsym{⇝} \, \targetpre x_{j} \targetpost} \, \lottsym{⇒} \, TC \, τ \lottsym{)} \, \lottsym{⇝} \, \targetpre E \targetpost \lottsym{;} \, \lottsepbycomprehension{\targetpre E'_{i} \targetpost} \, \lottsym{∈} \, Γ_{I}}\\
+\lotthypothesis{\lottjudgementcomprehension{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ'_{k} \, \kindingsym \, κ_{k} \, \lottsym{⇝} \, \targetpre B_{k} \targetpost}}\\
+\lotthypothesis{\lottjudgementcomprehension{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ψ_{j}\lottsepbycomprehension{\left[{τ'}_{k}/{a}_{k}\right]} \, \lottsym{⇝} \, \targetpre F_{j} \targetpost}}
+}{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, TC \, τ\lottsepbycomprehension{\left[{τ'}_{k}/{a}_{k}\right]} \, \lottsym{⇝} \, \targetpre \lottsym{(} \targetpre \targetpre \targetpre E \targetpost\lottsepbycomprehension{\left[{\targetpre B \targetpost}_{k}/{\targetpre a \targetpost}_{k}\right]} \targetpost\lottsepbycomprehension{\left[{\targetpre F \targetpost}_{j}/{\targetpre x \targetpost}_{j}\right]} \targetpost \lottsym{,} \, \lottsepbycomprehension{\targetpre \targetpre \targetpre E'_{i} \targetpost\lottsepbycomprehension{\left[{\targetpre B \targetpost}_{k}/{\targetpre a \targetpost}_{k}\right]} \targetpost\lottsepbycomprehension{\left[{\targetpre F \targetpost}_{j}/{\targetpre x \targetpost}_{j}\right]} \targetpost} \lottsym{)} \targetpost}
+\lottinferencerulesep
 \lottinferencerule{local}{
 \lotthypothesis{ψ \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{∈} \, Γ}
 }{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ψ \, \lottsym{⇝} \, \targetpre \targetpre x \targetpost \targetpost}
@@ -139,12 +145,6 @@
 \lotthypothesis{μ₀ \, \partialordsym \, μ₁}\\
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, μ₁ \, \kindingsym \, \lottkw{U}}
 }{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{⊙}_{μ₁} \, ρ₁ \, \lottsym{\sim} \, ρ₂ \, \lottsym{⇝} \, \targetpre E \targetpost}
-\lottinferencerulesep
-\lottinferencerule{TCInst}{
-\lotthypothesis{\lottsym{(} \lottsym{∀} \, \lottsepbycomprehension{a_{k} \, \lottsym{:} \, κ_{k}} \lottsym{.} \, \lottsepbycomprehension{ψ_{j} \, \lottsym{⇝} \, \targetpre x_{j} \targetpost} \, \lottsym{⇒} \, TC \, τ \lottsym{)} \, \lottsym{⇝} \, \targetpre E \targetpost \lottsym{;} \, \lottsepbycomprehension{\targetpre E'_{i} \targetpost} \, \lottsym{∈} \, Γ_{I}}\\
-\lotthypothesis{\lottjudgementcomprehension{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ'_{k} \, \kindingsym \, κ_{k} \, \lottsym{⇝} \, \targetpre B_{k} \targetpost}}\\
-\lotthypothesis{\lottjudgementcomprehension{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ψ_{j}\lottsepbycomprehension{\left[{τ'}_{k}/{a}_{k}\right]} \, \lottsym{⇝} \, \targetpre F_{j} \targetpost}}
-}{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, TC \, τ\lottsepbycomprehension{\left[{τ'}_{k}/{a}_{k}\right]} \, \lottsym{⇝} \, \targetpre \lottsym{(} \targetpre \targetpre \targetpre E \targetpost\lottsepbycomprehension{\left[{\targetpre B \targetpost}_{k}/{\targetpre a \targetpost}_{k}\right]} \targetpost\lottsepbycomprehension{\left[{\targetpre F \targetpost}_{j}/{\targetpre x \targetpost}_{j}\right]} \targetpost \lottsym{,} \, \lottsepbycomprehension{\targetpre \targetpre \targetpre E'_{i} \targetpost\lottsepbycomprehension{\left[{\targetpre B \targetpost}_{k}/{\targetpre a \targetpost}_{k}\right]} \targetpost\lottsepbycomprehension{\left[{\targetpre F \targetpost}_{j}/{\targetpre x \targetpost}_{j}\right]} \targetpost} \lottsym{)} \targetpost}
 \lottinferencerulesep
 \lottinferencerule{liftContain}{
 \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{≲}_{μ} \, ρ₁ \, \lottsym{⇝} \, \targetpre E \targetpost}\\
