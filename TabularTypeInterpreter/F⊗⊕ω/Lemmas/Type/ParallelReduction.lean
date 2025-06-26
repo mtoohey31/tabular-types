@@ -303,6 +303,104 @@ theorem weakening (red: [[ Δ ⊢ A ≡> B ]]) (wf: [[ ⊢ Δ, Δ' ]]) : [[ Δ, 
     apply ih
     cases wf; assumption
 
+open «Type» in
+theorem TypeVar_drop_of_not_mem_freeTypeVars (Apr : [[Δ, a : K, Δ' ⊢ A ≡> B]])
+  (aninA : a ∉ A.freeTypeVars) : [[Δ, Δ' ⊢ A ≡> B]] := by
+  match Apr with
+  | refl => exact refl
+  | eta A'lc A'pr =>
+    simp [freeTypeVars] at aninA
+    exact eta A'lc <| A'pr.TypeVar_drop_of_not_mem_freeTypeVars aninA
+  | lamApp B'ki A'pr B'pr (I := I) =>
+    simp [freeTypeVars] at aninA
+    let ⟨aninA', aninB'⟩ := aninA
+    apply lamApp (I := a :: I) (B'ki.TypeVar_drop_of_not_mem_freeTypeVars aninB') _ <|
+      B'pr.TypeVar_drop_of_not_mem_freeTypeVars aninB'
+    intro a' a'nin
+    let ⟨ane, a'ninI⟩ := List.not_mem_cons.mp a'nin
+    specialize A'pr a' a'ninI
+    rw [← Environment.append] at A'pr ⊢
+    exact TypeVar_drop_of_not_mem_freeTypeVars A'pr <|
+      not_mem_freeTypeVars_TypeVar_open_intro aninA' ane.symm
+  | lamListApp A'pr B'pr A'lc =>
+    simp [freeTypeVars] at aninA
+    let ⟨aninA', aninB'⟩ := aninA
+    apply lamListApp (A'pr.TypeVar_drop_of_not_mem_freeTypeVars aninA') _ A'lc
+    intro i mem
+    specialize B'pr i mem
+    apply TypeVar_drop_of_not_mem_freeTypeVars B'pr
+    apply aninB'
+    exact Std.Range.mem_toList_of_mem mem
+  | listAppId A'ki A'pr =>
+    simp [freeTypeVars] at aninA
+    exact listAppId (A'ki.TypeVar_drop_of_not_mem_freeTypeVars aninA)
+      (A'pr.TypeVar_drop_of_not_mem_freeTypeVars aninA)
+  | lam A'pr (I := I) =>
+    simp [freeTypeVars] at aninA
+    apply lam (I := a :: I)
+    intro a' a'nin
+    let ⟨ane, a'ninI⟩ := List.not_mem_cons.mp a'nin
+    specialize A'pr a' a'ninI
+    rw [← Environment.append] at A'pr ⊢
+    exact A'pr.TypeVar_drop_of_not_mem_freeTypeVars <|
+      not_mem_freeTypeVars_TypeVar_open_intro aninA ane.symm
+  | app A'pr B'pr =>
+    simp [freeTypeVars] at aninA
+    let ⟨aninA', aninB'⟩ := aninA
+    exact app (A'pr.TypeVar_drop_of_not_mem_freeTypeVars aninA')
+      (B'pr.TypeVar_drop_of_not_mem_freeTypeVars aninB')
+  | scheme A'pr (I := I) =>
+    simp [freeTypeVars] at aninA
+    apply scheme (I := a :: I)
+    intro a' a'nin
+    let ⟨ane, a'ninI⟩ := List.not_mem_cons.mp a'nin
+    specialize A'pr a' a'ninI
+    rw [← Environment.append] at A'pr ⊢
+    exact A'pr.TypeVar_drop_of_not_mem_freeTypeVars <|
+      not_mem_freeTypeVars_TypeVar_open_intro aninA ane.symm
+  | arr A'pr B'pr =>
+    simp [freeTypeVars] at aninA
+    let ⟨aninA', aninB'⟩ := aninA
+    exact arr (A'pr.TypeVar_drop_of_not_mem_freeTypeVars aninA')
+      (B'pr.TypeVar_drop_of_not_mem_freeTypeVars aninB')
+  | list A'pr =>
+    simp [freeTypeVars] at aninA
+    apply list
+    intro i mem
+    specialize A'pr i mem
+    apply TypeVar_drop_of_not_mem_freeTypeVars A'pr
+    apply aninA
+    exact Std.Range.mem_toList_of_mem mem
+  | listApp A'pr B'pr =>
+    simp [freeTypeVars] at aninA
+    let ⟨aninA', aninB'⟩ := aninA
+    exact listApp (A'pr.TypeVar_drop_of_not_mem_freeTypeVars aninA')
+      (B'pr.TypeVar_drop_of_not_mem_freeTypeVars aninB')
+  | listAppComp A₀lc A₀pr A₁pr B'pr (I := I) =>
+    simp [freeTypeVars] at aninA
+    let ⟨aninA₀, aninA₁, aninB'⟩ := aninA
+    apply listAppComp (I := a :: I) A₀lc (A₀pr.TypeVar_drop_of_not_mem_freeTypeVars aninA₀) _ <|
+      B'pr.TypeVar_drop_of_not_mem_freeTypeVars aninB'
+    intro a' a'nin
+    let ⟨ane, a'ninI⟩ := List.not_mem_cons.mp a'nin
+    specialize A₁pr a' a'ninI
+    rw [← Environment.append] at A₁pr ⊢
+    exact A₁pr.TypeVar_drop_of_not_mem_freeTypeVars <|
+      not_mem_freeTypeVars_TypeVar_open_intro aninA₁ ane.symm
+  | prod A'pr =>
+    rw [freeTypeVars] at aninA
+    exact prod <| A'pr.TypeVar_drop_of_not_mem_freeTypeVars aninA
+  | sum A'pr =>
+    rw [freeTypeVars] at aninA
+    exact sum <| A'pr.TypeVar_drop_of_not_mem_freeTypeVars aninA
+termination_by sizeOf A
+decreasing_by
+  all_goals simp_arith
+  · apply Nat.le_add_right_of_le
+    apply Nat.le_trans _ (Nat.le_add_left ..)
+    exact Nat.le_of_lt <| List.sizeOf_lt_of_mem <| Std.Range.mem_map_of_mem mem
+  · exact Nat.le_of_lt <| List.sizeOf_lt_of_mem <| Std.Range.mem_map_of_mem mem
+
 theorem subst_in {A B T: «Type»} (red: [[ Δ ⊢ A ≡> B ]]) (lcA: A.TypeVarLocallyClosed 0) (lcT: T.TypeVarLocallyClosed 0): ParallelReduction Δ (T.TypeVar_subst a A) (T.TypeVar_subst a B) := by
   rw [<- Type.TypeVarLocallyClosed.aux_iff] at lcT
   induction lcT generalizing Δ <;> simp_all [«Type».TypeVar_subst] <;> try aesop (rule_sets := [pred])
@@ -543,14 +641,15 @@ theorem forall_intro_ex a (fresh: a ∉ A.freeTypeVars ++ B.freeTypeVars ++ Δ.t
 theorem preservation (red: [[ Δ ⊢ A ≡> B ]]) (wf: [[ ⊢ Δ ]]) (k: [[ Δ ⊢ A: K ]]): [[ Δ ⊢ B: K ]] := by
   induction red generalizing K
   case refl => simp_all
-  case eta A'lc _ ih =>
+  case eta A' _ _ _ A'lc _ ih =>
     apply ih wf
     let .lam I A'appki := k
-    let ⟨a, anin⟩ := I.exists_fresh
-    specialize A'appki a anin
+    let ⟨a, anin⟩ := A'.freeTypeVars ++ I |>.exists_fresh
+    let ⟨aninA', aninI⟩ := List.not_mem_append'.mp anin
+    specialize A'appki a aninI
     rw [Type.TypeVar_open, Type.TypeVar_open, if_pos rfl, A'lc.TypeVar_open_id] at A'appki
     let .app A'ki (.var .head) := A'appki
-    sorry -- TODO: Need to drop type var from A'ki, could do that by picking a so its not in A'
+    exact Kinding.TypeVar_drop_of_not_mem_freeTypeVars A'ki aninA' (Δ' := .empty)
   case lamApp Δ B KB I A A' B' kindB redA redB ihA ihB =>
     cases k; case app _ _ k =>
     cases k; case lam I' _ kindA =>
@@ -679,8 +778,12 @@ theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ �
         let aninA'''' := not_mem_freeTypeVars_TypeVar_open_drop aninA''''op
         cases TypeVar_open_inj_of_not_mem_freeTypeVars aninB' aninA'''' B''eq
         let .var .head := aki
-        apply ih wf (.lam (I := I') _) A'lc
-        sorry -- TODO: use A'''A'''' and theorem to drop shadowed variable.
+        apply ih wf (.lam (I := a :: I') _) A'lc
+        intro a'' a''nin
+        let ⟨ane, a''ninI'⟩ := List.not_mem_cons.mp a''nin
+        specialize A'''A'''' a'' a''ninI'
+        exact TypeVar_drop_of_not_mem_freeTypeVars (Δ' := .typeExt .empty ..) A'''A'''' <|
+          not_mem_freeTypeVars_TypeVar_open_intro aninA' ane.symm
       · case app A''' B''' A'A''' aB''' =>
         let .refl := aB'''
         have : B'.TypeVar_open a = TypeVar_open (A'''.app (.var (.bound 0))) a := by
@@ -689,8 +792,8 @@ theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ �
         cases TypeVar_open_inj_of_not_mem_freeTypeVars aninB' (by
           rw [freeTypeVars, freeTypeVars, List.append_nil]
           exact A'A'''.preserve_not_mem_freeTypeVars _ aninA') this
-        let ⟨T, A''T, A'''T, Tlc⟩ := ih (C := A''') wf sorry A'lc
-        -- TODO: use A'A''' and theorem to drop not_mem_freeTypeVars variable.
+        let ⟨T, A''T, A'''T, Tlc⟩ := ih (C := A''') wf
+          (A'A'''.TypeVar_drop_of_not_mem_freeTypeVars aninA' (Δ' := .empty)) A'lc
         exact ⟨_, A''T, .eta (A'A'''.preserve_lc A'lc) A'''T, Tlc⟩
   . case lamApp Δ B K I A A' B' k redA redB ihA ihB =>
     -- Assume [[ Δ, a: K ⊢ A^a ≡> A'^a ]] [[ Δ ⊢ B ≡> B' ]]
@@ -1074,6 +1177,10 @@ theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ �
             cases A₁''B''T2
             apply listApp (eta (AA₀'.preserve_lc Alc) A₀''T1)
             sorry
+            sorry
+            sorry
+            sorry
+            sorry
         all_goals nomatch A₁'''eq
       . case listApp A₁' B' A₁A₁' BB' =>
         cases A₁A₁'
@@ -1083,17 +1190,17 @@ theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ �
           -- cases A₁''B''T2
       . case listAppComp =>
       sorry
-  -- . case listAppComp => sorry
-  -- . case prod Δ A B AB ih =>
-  --   cases lc; case prod Alc =>
-  --   have ⟨C, eqC, AC⟩ := red2.inv_prod; subst eqC; clear red2
-  --   have ⟨T, BT, CT, Tlc⟩ := ih wf AC Alc
-  --   exact ⟨[[ ⊗T ]], .prod BT, .prod CT, .prod Tlc⟩
-  -- . case sum Δ A B AB ih =>
-  --   cases lc; case sum Alc =>
-  --   have ⟨C, eqC, AC⟩ := red2.inv_sum; subst eqC; clear red2
-  --   have ⟨T, BT, CT, Tlc⟩ := ih wf AC Alc
-  --   exact ⟨[[ ⊕T ]], .sum BT, .sum CT, .sum Tlc⟩
+  . case listAppComp => sorry
+  . case prod Δ A B AB ih =>
+    cases lc; case prod Alc =>
+    have ⟨C, eqC, AC⟩ := red2.inv_prod; subst eqC; clear red2
+    have ⟨T, BT, CT, Tlc⟩ := ih wf AC Alc
+    exact ⟨[[ ⊗T ]], .prod BT, .prod CT, .prod Tlc⟩
+  . case sum Δ A B AB ih =>
+    cases lc; case sum Alc =>
+    have ⟨C, eqC, AC⟩ := red2.inv_sum; subst eqC; clear red2
+    have ⟨T, BT, CT, Tlc⟩ := ih wf AC Alc
+    exact ⟨[[ ⊕T ]], .sum BT, .sum CT, .sum Tlc⟩
 
 end ParallelReduction
 

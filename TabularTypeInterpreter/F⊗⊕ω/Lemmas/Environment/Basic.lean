@@ -311,6 +311,10 @@ theorem TermVar_drop : [[ a: K ∈ Δ, x: T, Δ' ]] → [[ a: K ∈ Δ, Δ' ]] :
   induction Δ' <;>
     aesop (add norm Environment.append, unsafe constructors TypeVarInEnvironment, safe cases TypeVarInEnvironment)
 
+theorem TypeVar_drop : [[a : K ∈ Δ, a' : K', Δ']] → a ≠ a' → [[a : K ∈ Δ, Δ']] := by
+  induction Δ' <;>
+    aesop (add norm Environment.append, unsafe constructors TypeVarInEnvironment, safe cases TypeVarInEnvironment)
+
 end TypeVarInEnvironment
 
 namespace TermVarInEnvironment

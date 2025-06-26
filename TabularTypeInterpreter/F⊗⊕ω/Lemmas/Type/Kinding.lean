@@ -128,7 +128,64 @@ theorem TermVar_drop (kT: [[ Δ, x: T', Δ'' ⊢ T: K ]]): [[ Δ, Δ'' ⊢ T: K 
     simp_all [append]
   all_goals aesop (add safe constructors Kinding) (config := { enableSimp := false })
 
--- def substAuxCondition Δ_ :=
+open «Type» in
+theorem TypeVar_drop_of_not_mem_freeTypeVars (Aki : [[Δ, a : K, Δ' ⊢ A : K']])
+  (aninA : a ∉ A.freeTypeVars) : [[Δ, Δ' ⊢ A : K']] := by
+  match Aki with
+  | var aK'in =>
+    rw [freeTypeVars] at aninA
+    exact var <| aK'in.TypeVar_drop <| Ne.symm <| List.not_mem_singleton.mp aninA
+  | lam I A'ki =>
+    apply lam <| a :: I
+    intro a' a'nin
+    let ⟨ane, a'ninI⟩ := List.not_mem_cons.mp a'nin
+    specialize A'ki a' a'ninI
+    rw [← Environment.append] at A'ki ⊢
+    rw [freeTypeVars] at aninA
+    exact TypeVar_drop_of_not_mem_freeTypeVars A'ki <|
+      not_mem_freeTypeVars_TypeVar_open_intro aninA ane.symm
+  | app A'ki Bki =>
+    rw [freeTypeVars] at aninA
+    let ⟨aninA', aninB⟩ := List.not_mem_append'.mp aninA
+    exact app (TypeVar_drop_of_not_mem_freeTypeVars A'ki aninA')
+      (TypeVar_drop_of_not_mem_freeTypeVars Bki aninB)
+  | scheme I A'ki =>
+    apply scheme <| a :: I
+    intro a' a'nin
+    let ⟨ane, a'ninI⟩ := List.not_mem_cons.mp a'nin
+    specialize A'ki a' a'ninI
+    rw [← Environment.append] at A'ki ⊢
+    rw [freeTypeVars] at aninA
+    exact TypeVar_drop_of_not_mem_freeTypeVars A'ki <|
+      not_mem_freeTypeVars_TypeVar_open_intro aninA ane.symm
+  | arr A'ki Bki =>
+    rw [freeTypeVars] at aninA
+    let ⟨aninA', aninB⟩ := List.not_mem_append'.mp aninA
+    exact arr (TypeVar_drop_of_not_mem_freeTypeVars A'ki aninA')
+      (TypeVar_drop_of_not_mem_freeTypeVars Bki aninB)
+  | list A'ki (A := A') =>
+    rw [freeTypeVars, List.mapMem_eq_map] at aninA
+    apply list
+    intro i mem
+    apply TypeVar_drop_of_not_mem_freeTypeVars <| A'ki i mem
+    apply List.not_mem_flatten.mp aninA
+    rw [List.map_map, ← Std.Range.map]
+    exact Std.Range.mem_map_of_mem mem
+  | listApp A'ki Bki =>
+    rw [freeTypeVars] at aninA
+    let ⟨aninA', aninB⟩ := List.not_mem_append'.mp aninA
+    exact listApp (TypeVar_drop_of_not_mem_freeTypeVars A'ki aninA')
+      (TypeVar_drop_of_not_mem_freeTypeVars Bki aninB)
+  | prod A'ki =>
+    rw [freeTypeVars] at aninA
+    exact prod <| TypeVar_drop_of_not_mem_freeTypeVars A'ki aninA
+  | sum A'ki =>
+    rw [freeTypeVars] at aninA
+    exact sum <| TypeVar_drop_of_not_mem_freeTypeVars A'ki aninA
+termination_by sizeOf A
+decreasing_by
+  all_goals simp_arith
+  exact Nat.le_of_lt <| List.sizeOf_lt_of_mem <| Std.Range.mem_map_of_mem mem
 
 -- NOTE we could use a weaker wf: wfτ
 theorem substAux (kT: [[ Δ, a: K, Δ' ⊢ T: K' ]]) (h1: a ∉ Δ'.typeVarDom) (h2: ∀a ∈ Δ'.typeVarDom, a ∉ Δ.typeVarDom) (kA: [[ Δ ⊢ A: K ]]): [[ (Δ , Δ'[A/a]) ⊢ T[A/a] : K' ]] := by
