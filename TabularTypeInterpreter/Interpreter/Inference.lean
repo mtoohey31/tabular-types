@@ -47,10 +47,15 @@ instance : BEq ContextItem where beq
 
 abbrev Context := List ContextItem
 
+namespace Forrest
+end Forrest
+
 inductive InferError where
 | panic (message : String)
 deriving Inhabited
-structure InferState where Γ : Context deriving Inhabited
+structure InferState where 
+  Γ : Context
+deriving Inhabited
 
 abbrev InferM := EStateM InferError InferState
 def push (item : ContextItem) : InferM Unit := do
@@ -97,7 +102,42 @@ def kind (σ : TypeScheme) (κ : Kind) : InferM Unit := do
 
 def wellFormedContext : InferM Unit := sorry
 
-def subtype (σ₀ σ₁ : TypeScheme) : InferM (σ₀.Subtyping σ₁) := sorry
+partial def subtype (σ₀ σ₁ : TypeScheme) : InferM (σ₀.Subtyping σ₁) := do
+  if h : σ₀ = σ₁ then
+    return by
+      rewrite [h]
+      exact .refl
+  else match σ₀, σ₁ with
+  | Monotype.arr τ₀ τ₁, Monotype.arr τ₂ τ₃ =>
+    let sₗ ← subtype τ₂ τ₀
+    let sᵣ ← subtype τ₁ τ₃
+    return sₗ.arr sᵣ
+  | QualifiedType.qual ψ₀ γ₀, QualifiedType.qual ψ₁ γ₁ =>
+    let sψ ← subtype ψ₁ ψ₀
+    let sγ ← subtype γ₀ γ₁
+    return sψ.qual sγ
+  | .quant i₀ κ₀ σ₀, .quant i₁ κ₁ σ₁ =>
+    if h : κ₀ = κ₁ then
+      let s ← subtype σ₀ (σ₁.subst (.var i₀) i₁)
+      return by
+        rewrite [h]
+        exact s.scheme
+    else throw $ .panic "Subtype of non-compatible scheme quantifiers"
+  | Monotype.app (.prodOrSum Ξ₀ μ₀) ρ₀, Monotype.app (.prodOrSum Ξ₁ μ₁) ρ₁ =>
+    if hρ : ρ₀ = ρ₁ then
+      if hΞ : Ξ₀ = Ξ₁ then
+        let s : μ₀.CommutativityPartialOrdering μ₁ := sorry
+        return by
+          rewrite [hρ, hΞ]
+          exact .decay s
+      else throw $ .panic "Subtype of different row constructors."
+    else throw $ .panic "Subtype of different rows."
+  | Monotype.app (.prodOrSum .sum (.comm .comm)) (.row .nil (.some .star)), σ =>
+    return .never
+  | Monotype.app .list τ₀, Monotype.app .list τ₁ =>
+    let s ← subtype τ₀ τ₁
+    return s.list
+  | _, _ => throw $ .panic "unimplemented"
 def instantiateLeft (ᾱ : UniVar) (σ : TypeScheme) : InferM Unit := sorry
 def instantiateRight (σ : TypeScheme) (ᾱ : UniVar) : InferM Unit := sorry
 def constraint (ψ : Monotype) : InferM (ψ.ConstraintSolution) := do
