@@ -55,19 +55,24 @@ inductive InferError where
 deriving Inhabited
 structure InferState where 
   Γ : Context
+  gen : StdGen
 deriving Inhabited
 
 abbrev InferM := EStateM InferError InferState
 def push (item : ContextItem) : InferM Unit := do
-  let { Γ } <- get
-  set ({ Γ := item::Γ } : InferState)
-def fresh : InferM UniVar := sorry
+  let state@{ Γ .. } <- get
+  set { state with Γ := item::Γ }
+def fresh : InferM UniVar := do
+  let state@{ gen .. } ← get
+  let (n, gen) := RandomGen.next gen
+  set { state with gen }
+  return n
 def freshType (κ : Kind): InferM Monotype := do
   let x ← fresh
   push $ .xunivar x κ
   return .uvar x
 def getType (χ : TermVar) : InferM TypeScheme := do
-  let { Γ } ← get
+  let { Γ .. } ← get
   let σ ← (getType' Γ χ).getDM (throw $ .panic "variable not defined")
   return σ
   where getType' (Γ : Context) (χ : TermVar) : Option TypeScheme :=
@@ -78,14 +83,15 @@ def getType (χ : TermVar) : InferM TypeScheme := do
 
 /-- split the context into (before, after) based on the item's position. -/
 def split (item : ContextItem) : InferM (Context × Context) := do
-  let { Γ } ← get
+  let { Γ .. } ← get
   let index ← Γ.idxOf? item |>.getDM (throw $ .panic s!"I was trying to find {item} in the context but it wasn't there; I could have sworn I put it there though!")
   if let (after, _::before) := Γ.splitAt index then
     return (before, after)
   else panic! "malfunction in core `List.idxOf`"
 def before (item : ContextItem) : InferM Unit := do
+  let state ← get
   let (before, _after) ← split item
-  set ({ Γ := before } : InferState)
+  set { state with Γ := before }
 def withItem (item : ContextItem) (m : InferM a) : InferM a := do
   push item
   let x ← m
@@ -98,9 +104,7 @@ def kind (σ : TypeScheme) (κ : Kind) : InferM Unit := do
   | .qual $ .mono $ .var α₀ =>
     if Γ.any (match · with | .typevar α _ => α == α₀ | _ => false) then return
     else throw $ .panic "TODO need descriptive text here"
-  | _ => throw $ .panic "TODO unimplemented variant"
-
-def wellFormedContext : InferM Unit := sorry
+  | _ => sorry
 
 partial def subtype (σ₀ σ₁ : TypeScheme) : InferM (σ₀.Subtyping σ₁) := do
   if h : σ₀ = σ₁ then
@@ -137,7 +141,7 @@ partial def subtype (σ₀ σ₁ : TypeScheme) : InferM (σ₀.Subtyping σ₁) 
   | Monotype.app .list τ₀, Monotype.app .list τ₁ =>
     let s ← subtype τ₀ τ₁
     return s.list
-  | _, _ => throw $ .panic "unimplemented"
+  | _, _ => sorry
 def instantiateLeft (ᾱ : UniVar) (σ : TypeScheme) : InferM Unit := sorry
 def instantiateRight (σ : TypeScheme) (ᾱ : UniVar) : InferM Unit := sorry
 def constraint (ψ : Monotype) : InferM (ψ.ConstraintSolution) := do
@@ -164,7 +168,7 @@ partial def check (e : Term) (σ : TypeScheme) : InferM (e.Typing σ) := do
 partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
   match e with
   | .var χ =>
-    let { Γ } ← get
+    let { Γ .. } ← get
     let σ ← getType χ
     return ⟨σ, .var⟩
   | .annot e σ =>
