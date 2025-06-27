@@ -1,0 +1,54 @@
+\lottjudgement{Small Step}{\targetpre A \targetpost \, \lottsym{->} \, \targetpre B \targetpost}{
+\lottinferencerule{listAppList}{
+}{\targetpre \targetpre W₀ \targetpost \, \targetpre \lottsym{\{} \lottsepbycomprehensionpatcollection{\targetpre W₁_{i} \targetpost}{i}{[:n]} \lottsym{\}} \targetpost \targetpost \, \lottsym{->} \, \targetpre \lottsym{\{} \lottsepbycomprehensionpatcollection{\targetpre \targetpre W₀ \targetpost \, \targetpre W₁_{i} \targetpost \targetpost}{i}{[:n]} \lottsym{\}} \targetpost}
+\lottinferencerulesep
+\lottinferencerule{listAppId}{
+}{\targetpre \targetpre \lottsym{(} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre \targetpre a \targetpost \targetpost \targetpost \lottsym{)} \targetpost \, \lottsym{⟦} \targetpre W \targetpost \lottsym{⟧} \targetpost \, \lottsym{->} \, \targetpre W \targetpost}
+\lottinferencerulesep
+\lottinferencerule{listAppComp}{
+}{\targetpre \targetpre W₀ \targetpost \, \lottsym{⟦} \targetpre \targetpre \lottsym{(} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre W₁ \targetpost \targetpost \lottsym{)} \targetpost \, \lottsym{⟦} \targetpre W₂ \targetpost \lottsym{⟧} \targetpost \lottsym{⟧} \targetpost \, \lottsym{->} \, \targetpre \targetpre \lottsym{(} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre \targetpre W₀ \targetpost \, \targetpre W₁ \targetpost \targetpost \targetpost \lottsym{)} \targetpost \, \lottsym{⟦} \targetpre W₂ \targetpost \lottsym{⟧} \targetpost}
+\lottinferencerulesep
+\lottinferencerule{lam}{
+\lotthypothesis{\targetpre A \targetpost \, \lottsym{->} \, \targetpre A' \targetpost}
+}{\targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre A \targetpost \targetpost \, \lottsym{->} \, \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre A' \targetpost \targetpost}
+\lottinferencerulesep
+\lottinferencerule{appl}{
+\lotthypothesis{\targetpre A \targetpost \, \lottsym{->} \, \targetpre A' \targetpost}
+}{\targetpre \targetpre A \targetpost \, \targetpre B \targetpost \targetpost \, \lottsym{->} \, \targetpre \targetpre A' \targetpost \, \targetpre B \targetpost \targetpost}
+\lottinferencerulesep
+\lottinferencerule{appr}{
+\lotthypothesis{\targetpre A \targetpost \, \lottsym{->} \, \targetpre A' \targetpost}
+}{\targetpre \targetpre W \targetpost \, \targetpre A \targetpost \targetpost \, \lottsym{->} \, \targetpre \targetpre W \targetpost \, \targetpre A' \targetpost \targetpost}
+\lottinferencerulesep
+\lottinferencerule{forall}{
+\lotthypothesis{\targetpre A \targetpost \, \lottsym{->} \, \targetpre A' \targetpost}
+}{\targetpre \lottsym{∀} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre A \targetpost \targetpost \, \lottsym{->} \, \targetpre \lottsym{∀} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre A' \targetpost \targetpost}
+\lottinferencerulesep
+\lottinferencerule{arrl}{
+\lotthypothesis{\targetpre A \targetpost \, \lottsym{->} \, \targetpre A' \targetpost}
+}{\targetpre \targetpre A \targetpost \, \lottsym{→} \, \targetpre B \targetpost \targetpost \, \lottsym{->} \, \targetpre \targetpre A' \targetpost \, \lottsym{→} \, \targetpre B \targetpost \targetpost}
+\lottinferencerulesep
+\lottinferencerule{arrr}{
+\lotthypothesis{\targetpre A \targetpost \, \lottsym{->} \, \targetpre A' \targetpost}
+}{\targetpre \targetpre W \targetpost \, \lottsym{→} \, \targetpre A \targetpost \targetpost \, \lottsym{->} \, \targetpre \targetpre W \targetpost \, \lottsym{→} \, \targetpre A' \targetpost \targetpost}
+\lottinferencerulesep
+\lottinferencerule{list}{
+\lotthypothesis{\targetpre A \targetpost \, \lottsym{->} \, \targetpre A' \targetpost}
+}{\targetpre \lottsym{\{} \lottsepbycomprehensionpatcollection{\targetpre W_{i} \targetpost}{i}{[:m]} \lottsym{,} \, \targetpre A \targetpost \lottsym{,} \, \lottsepbycomprehensionpatcollection{\targetpre B_{j} \targetpost}{j}{[:n]} \lottsym{\}} \targetpost \, \lottsym{->} \, \targetpre \lottsym{\{} \lottsepbycomprehensionpatcollection{\targetpre W_{i} \targetpost}{i}{[:m]} \lottsym{,} \, \targetpre A' \targetpost \lottsym{,} \, \lottsepbycomprehensionpatcollection{\targetpre B_{j} \targetpost}{j}{[:n]} \lottsym{\}} \targetpost}
+\lottinferencerulesep
+\lottinferencerule{listAppl}{
+\lotthypothesis{\targetpre A \targetpost \, \lottsym{->} \, \targetpre A' \targetpost}
+}{\targetpre \targetpre A \targetpost \, \lottsym{⟦} \targetpre B \targetpost \lottsym{⟧} \targetpost \, \lottsym{->} \, \targetpre \targetpre A' \targetpost \, \lottsym{⟦} \targetpre B \targetpost \lottsym{⟧} \targetpost}
+\lottinferencerulesep
+\lottinferencerule{listAppr}{
+\lotthypothesis{\targetpre A \targetpost \, \lottsym{->} \, \targetpre A' \targetpost}
+}{\targetpre \targetpre W \targetpost \, \lottsym{⟦} \targetpre A \targetpost \lottsym{⟧} \targetpost \, \lottsym{->} \, \targetpre \targetpre W \targetpost \, \lottsym{⟦} \targetpre A' \targetpost \lottsym{⟧} \targetpost}
+\lottinferencerulesep
+\lottinferencerule{prod}{
+\lotthypothesis{\targetpre A \targetpost \, \lottsym{->} \, \targetpre A' \targetpost}
+}{\targetpre \lottsym{⊗} \, \targetpre A \targetpost \targetpost \, \lottsym{->} \, \targetpre \lottsym{⊗} \, \targetpre A' \targetpost \targetpost}
+\lottinferencerulesep
+\lottinferencerule{sum}{
+\lotthypothesis{\targetpre A \targetpost \, \lottsym{->} \, \targetpre A' \targetpost}
+}{\targetpre \lottsym{⊕} \, \targetpre A \targetpost \targetpost \, \lottsym{->} \, \targetpre \lottsym{⊕} \, \targetpre A' \targetpost \targetpost}
+}
