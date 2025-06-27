@@ -291,10 +291,11 @@ notex lc_ A   -- NOTE this is for preserve_lc when n = 0
 ──────────────────────────────────────────────────────────────────────────────── lamListApp
 Δ ⊢ A ⟦{ </ B@i // i in [:n] notex /> }⟧ ≡> { </ A' B'@i // i in [:n] notex /> }
 
-Δ ⊢ A: L K
-Δ ⊢ A ≡> A'
-──────────────────────────── listAppId
-Δ ⊢ (λ a : K. a$0) ⟦A⟧ ≡> A'
+Δ ⊢ B : L K
+Δ ⊢ A ≡> λ a : K. a$0
+Δ ⊢ B ≡> B'
+───────────────────── listAppId
+Δ ⊢ A ⟦B⟧ ≡> B'
 
 ∀ a ∉ (I : List _), Δ, a : K ⊢ A^a ≡> B^a
 ─────────────────────────── lam
@@ -323,12 +324,11 @@ notex lc_ A   -- NOTE this is for preserve_lc when n = 0
 ───────────────────── listApp
 Δ ⊢ A₁ ⟦B₁⟧ ≡> A₂ ⟦B₂⟧
 
-notex lc_ A₀
-Δ ⊢ A₀ ≡> A₀'
-∀ a ∉ (I: List _), Δ, a : K ⊢ A₁^a ≡> A₁'^a
-Δ ⊢ B ≡> B'
-───────────────────────────────────────────────── listAppComp
-Δ ⊢ A₀ ⟦(λ a : K. A₁) ⟦B⟧⟧ ≡> (λ a : K. A₀' A₁') ⟦B'⟧
+notex lc_ A
+Δ ⊢ A ≡> A'
+Δ ⊢ B ≡> (λ a : K. B₀') ⟦B₁'⟧
+──────────────────────────────────── listAppComp
+Δ ⊢ A ⟦B⟧ ≡> (λ a : K. A' B₀') ⟦B₁'⟧
 
 Δ ⊢ A ≡> B
 ───────────── prod
