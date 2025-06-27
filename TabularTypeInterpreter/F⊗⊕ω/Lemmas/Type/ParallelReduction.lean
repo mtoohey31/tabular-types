@@ -871,23 +871,24 @@ theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ �
       . have ⟨i, iltn, Teq⟩ := Std.Range.mem_of_mem_map Tin; subst Teq
         have ⟨B'T2, B''T2, T2ilc⟩ := ih2 i iltn
         exact T1lc.app T2ilc
-    . case listAppId K _ _ BkiLK BB2 =>
-      sorry
-      -- subst B_eq
-      -- rename' C => B2
-      -- rw [AA'.inv_id]
-      -- have ⟨B2, B2eq, BB2⟩ := BB2.inv_list; rw [B2eq]; clear B2eq
-      -- have ⟨T, ih2⟩ := Std.Range.skolem <| λi iltn => ih2 i iltn wf (BB2 i iltn) (Bilc i iltn)
-      -- refine ⟨[[ { </ T@i // i in [:n] /> } ]], .list λi iltn => ?_, .list λi iltn => ?_, .list λT Tin => ?_⟩
-      -- . have ⟨B'T, B2T, T2ilc⟩ := ih2 i iltn
-      --   rw [ [[ T@i ]].expand_app_id ]
-      --   have B'kiK := BB' i iltn |>.preservation wf (BkiLK.inv_list i iltn)
-      --   exact .lamApp (I := []) B'kiK (λa nin => .refl) B'T
-      -- . have ⟨B'T, B2T, T2ilc⟩ := ih2 i iltn
-      --   exact B2T
-      -- . have ⟨i, iltn, Teq⟩ := Std.Range.mem_of_mem_map Tin; subst Teq
-      --   have ⟨B'T, B2T, T2ilc⟩ := ih2 i iltn
-      --   exact T2ilc
+    . case listAppId A2id BkiLK BB2 =>
+      subst B_eq
+      rename' C => B2
+      have ⟨B2, B2eq, BB2⟩ := BB2.inv_list; rw [B2eq]; clear B2eq
+      have ⟨T, ih2⟩ := Std.Range.skolem <| λi iltn => ih2 i iltn wf (BB2 i iltn) (Bilc i iltn)
+      refine ⟨[[ { </ T@i // i in [:n] /> } ]], .list λi iltn => ?_, .list λi iltn => ?_, .list λT Tin => ?_⟩
+      . have ⟨B'T, B2T, T2ilc⟩ := ih2 i iltn
+        -- rw [ [[ T@i ]].expand_app_id ]
+
+        let ⟨T1, q, r, T1lc⟩ := ih1 wf A2id Alc
+        sorry
+        -- have B'kiK := BB' i iltn |>.preservation wf (BkiLK.inv_list i iltn)
+        -- exact .lamApp (I := []) B'kiK (λa nin => .refl) B'T
+      . have ⟨B'T, B2T, T2ilc⟩ := ih2 i iltn
+        exact B2T
+      . have ⟨i, iltn, Teq⟩ := Std.Range.mem_of_mem_map Tin; subst Teq
+        have ⟨B'T, B2T, T2ilc⟩ := ih2 i iltn
+        exact T2ilc
     . case listApp A2 B2 AA2 BB2 =>
       subst B_eq
       have ⟨T1, A'T1, A2T1, T1lc⟩ := ih1 wf AA2 Alc
