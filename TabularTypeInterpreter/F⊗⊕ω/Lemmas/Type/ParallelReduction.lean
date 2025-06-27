@@ -1008,7 +1008,25 @@ theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ �
           rw [freeTypeVars, freeTypeVars, List.append_nil]
           exact aninA') this
         exact ⟨_, eta A'lc A'C, refl, A'C.preserve_lc A'lc⟩
-      · case lamApp => sorry
+      · case lamApp I A' A'' _ A'A'' aki aB' =>
+        let .var .head := aki
+        cases aB'
+        rw [← Type_open_var] at B'eq
+        let ⟨a', a'nin⟩ := a :: I |>.exists_fresh
+        let ⟨ane, a'ninI⟩ := List.not_mem_cons.mp a'nin
+        rw [freeTypeVars] at aninA'
+        let aninA'' := A'A'' a' a'ninI |>.preserve_not_mem_freeTypeVars _ <|
+          not_mem_freeTypeVars_TypeVar_open_intro aninA' ane.symm
+        cases TypeVar_open_inj_of_not_mem_freeTypeVars aninB
+          (not_mem_freeTypeVars_TypeVar_open_drop aninA'') B'eq
+        refine ⟨[[λ a'' : K. \a^T]], ?_, ?_, .lam Tlc.TypeVar_close_inc⟩
+        · apply lam (I := I)
+          intro a'' a''nin
+          rw (occs := .pos [2]) [Type_open_var]
+          rw [Type_open_TypeVar_close_eq_TypeVar_subst]
+          sorry
+          sorry
+        · sorry -- cases CT
       · case app A'' B'' A'A'' aB'' =>
         let .refl := aB''
         have : B.TypeVar_open a = TypeVar_open (A''.app (.var (.bound 0))) a := by
@@ -1018,7 +1036,24 @@ theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ �
         cases TypeVar_open_inj_of_not_mem_freeTypeVars aninB (by
           rw [freeTypeVars, freeTypeVars, List.append_nil]
           exact A'A''.preserve_not_mem_freeTypeVars _ aninA') this
-        -- refine ⟨_, eta (A'A''.preserve_lc A'lc) ?_, ?_, Tlc⟩
+        refine ⟨[[λ a'' : K. \a^T]], ?_, ?_, .lam Tlc.TypeVar_close_inc⟩
+        · apply lam (I := a :: Δ.typeVarDom)
+          intro a'' a''nin
+          let ⟨ane, a''ninΔ⟩ := List.not_mem_cons.mp a''nin
+          let a''awf := wf.typeVarExt a''ninΔ (K := K)
+            |>.typeVarExt (List.not_mem_cons.mpr ⟨ane.symm, aninΔ⟩) (K := K)
+          simp [TypeVar_open] at BT ⊢
+          rw [A'A''.preserve_lc A'lc |>.TypeVar_open_id] at BT ⊢
+          let aninC := A'C.preserve_not_mem_freeTypeVars _ aninA'
+          have : A''.app (.var (.free a'')) =
+            TypeVar_subst (A''.app (.var (.free a))) a (.var (.free a'')) := by
+            simp [Type.TypeVar_subst]
+            rw [Type.TypeVar_subst_id_of_not_mem_freeTypeVars <|
+                  A'A''.preserve_not_mem_freeTypeVars _ aninA']
+          rw [this, Type_open_var, Type_open_TypeVar_close_eq_TypeVar_subst Tlc]
+          apply subst_all a''awf refl _ (.var .head) (.app (A'A''.preserve_lc A'lc) .var_free)
+          exact BT.weakening' a''awf.EnvironmentTypeWellFormedness_of (Δ' := .typeExt .empty ..)
+            (Δ'' := .typeExt .empty ..)
         sorry
     · case lam I' C red2' =>
       -- have ⟨C', eqC, I', red2'⟩ := red2.inv_lam
