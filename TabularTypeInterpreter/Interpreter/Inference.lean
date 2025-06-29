@@ -11,6 +11,9 @@ abbrev TermVar := MId
 /-- unification variables -/
 abbrev UniVar := Nat
 
+/-- helper abbreviation -/
+abbrev Set := Std.HashSet
+
 /--
 The context under which the algorithm is evaluated. 
 Each type, term or existential variable can have at most a single declaration in the context.
@@ -46,9 +49,6 @@ instance : BEq ContextItem where beq
 | _, _ => false
 
 abbrev Context := List ContextItem
-
-namespace Forrest
-end Forrest
 
 inductive InferError where
 | panic (message : String)
@@ -106,6 +106,90 @@ def kind (σ : TypeScheme) (κ : Kind) : InferM Unit := do
     else throw $ .panic "TODO need descriptive text here"
   | _ => sorry
 
+namespace rowSolver
+inductive Node where
+| literal : MonotypePairList → Node
+| var : TypeVar → Node
+| uvar : UniVar → Node
+deriving Inhabited, BEq, Hashable
+namespace Node
+  /-- Convert a row monotype into a node. Assumes ρ has kind `(.row .star)`. -/
+  def fromMonotype (ρ : Monotype) : Node :=
+    match ρ with
+    | .row pairList _ => .literal pairList
+    | .var α => .var α
+    | .uvar x => .uvar x
+    | _ => panic! "invalid row found in context"
+end Node
+inductive EdgeComm where
+| literal : Comm → EdgeComm
+| var : TypeVar → EdgeComm
+| uvar : UniVar → EdgeComm
+deriving Inhabited, BEq, Hashable
+namespace EdgeComm
+  /-- Convert a commutativity monotype into an EdgeComm. Assumes μ has kind `.comm`. -/
+  def fromMonotype (μ : Monotype) : EdgeComm :=
+    match μ with
+    | .comm c => .literal c
+    | .var α => .var α
+    | .uvar x => .uvar x
+    | _ => panic! "invalid commutativity found in context"
+end EdgeComm
+
+inductive Edge where
+| concat (leftChild : Node) (μ : EdgeComm) (rightChild : Node) (parent : Node)
+| contain (child : Node) (μ : EdgeComm) (parent : Node)
+deriving Inhabited, BEq, Hashable
+structure RowGraph where
+  nodes : Set Node
+  edges : Set Edge
+deriving Inhabited
+namespace RowGraph
+  def empty : RowGraph := { nodes := Std.HashSet.empty, edges := Std.HashSet.empty }
+  /- get the set of direct parents for the given node -/
+  def parents (node : Node) (comm : EdgeComm) : ReaderM RowGraph (Set Node) := do
+    let graph ← read
+    return graph.edges.fold (fun acc val => match val with
+    -- TODO: μ can be a subtype of comm, or maybe the other way around
+      | .concat l μ r p => if (μ == comm) && (l == node || r == node) then acc.insert p else acc
+      | .contain c μ p => if (μ == comm) && c == node then acc.insert p else acc
+    ) Std.HashSet.empty
+  partial def generate (Γ : Context): RowGraph :=
+    match Γ with
+    | [] => RowGraph.empty
+    | .constraint (.contain c μ p) :: Γ =>
+      let graph := generate Γ
+      let (c, μ, p) := (Node.fromMonotype c, EdgeComm.fromMonotype μ, Node.fromMonotype p)
+      let nodes := graph.nodes.insert c |>.insert p
+      let edges := graph.edges.insert (.contain c μ p)
+      { graph with nodes, edges }
+    | .constraint (.concat l μ r p) :: Γ =>
+      let graph := generate Γ
+      let (l, μ, r, p) := (Node.fromMonotype l, EdgeComm.fromMonotype μ, Node.fromMonotype r, Node.fromMonotype p)
+      let nodes := graph.nodes.insert l |>.insert r |>.insert p
+      let edges := graph.edges.insert (.concat l μ r p)
+      { graph with nodes, edges }
+    | .constraint (Monotype.app (.app .all ϕ) ρ) :: Γ => sorry
+    | _ => sorry
+  partial def contains (c : Node) (μ : EdgeComm) (p : Node) : ReaderM RowGraph Bool := do
+    let graph ← read
+    return (graph.nodes.contains c)
+    && (graph.nodes.contains p)
+    && (
+      c == p || (← parents c μ).any (contains · μ p |>.run graph)
+    )
+  def concatenates (l : Node) (μ : EdgeComm) (r : Node) (p : Node) : ReaderM RowGraph Bool := do
+    let graph ← read
+    return (graph.nodes.contains l)
+    && (graph.nodes.contains r)
+    && (graph.nodes.contains p)
+    && (
+      -- TODO: forgot how this works
+      sorry
+    )
+end RowGraph
+end rowSolver
+
 partial def subtype (σ₀ σ₁ : TypeScheme) : InferM (σ₀.Subtyping σ₁) := do
   if h : σ₀ = σ₁ then
     return by
@@ -146,7 +230,9 @@ def instantiateLeft (ᾱ : UniVar) (σ : TypeScheme) : InferM Unit := sorry
 def instantiateRight (σ : TypeScheme) (ᾱ : UniVar) : InferM Unit := sorry
 def constraint (ψ : Monotype) : InferM (ψ.ConstraintSolution) := do
   kind ψ .constr
-  sorry
+  match ψ with
+  | .concat ρ₁ μ ρ₂ ρ₃ => sorry
+  | _ => sorry
 
 mutual
 partial def check (e : Term) (σ : TypeScheme) : InferM (e.Typing σ) := do

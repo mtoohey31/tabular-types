@@ -38,7 +38,7 @@ open Kind
 inductive Comm where
   | comm
   | non
-deriving Inhabited, BEq, DecidableEq
+deriving Inhabited, Hashable, BEq, DecidableEq
 
 instance : ToString Comm where
   toString
