@@ -788,6 +788,31 @@ theorem Equivalence_of : [[A -> B]] → [[Δ ⊢ A : K]] → [[Δ ⊢ A ≡ B]]
   | .prod A'st, .prod A'ki => .prod <| A'st.Equivalence_of A'ki
   | .sum A'st, .sum A'ki => .sum <| A'st.Equivalence_of A'ki
 
+-- Inversion
+
+-- the conclusion should be the reflexive closure of st but we can use this weaker version.
+theorem inv_arr (ArBst: [[ (A → B) -> T ]]): ∃ A' B', T = [[ (A' → B') ]] ∧ [[ A ->* A' ]] ∧ [[ B ->* B' ]] := by
+  cases ArBst <;> aesop (add unsafe constructors [MultiSmallStep, SmallStep])
+
+theorem inv_lam (Ast: [[ (λ a? : K. A) -> T ]]): ∃ A', T = [[λ a : K. A']] ∧ ∃I: List _, ∀a ∉ I, [[ A^a ->* A'^a ]] := by
+  cases Ast ; aesop (add unsafe tactic guessI, unsafe constructors [MultiSmallStep, SmallStep])
+
+theorem inv_forall (Ast: [[ (∀ a? : K. A) -> T ]]): ∃ A', T = [[∀ a : K. A']] ∧ ∃I: List _, ∀a ∉ I, [[ A^a ->* A'^a ]] := by
+  cases Ast ; aesop (add unsafe tactic guessI, unsafe constructors [MultiSmallStep, SmallStep])
+
+theorem inv_prod (Ast: [[ ⊗A -> T ]]): ∃ A', T = [[⊗A']] ∧ [[ A ->* A' ]] := by
+  cases Ast ; aesop (add unsafe constructors [MultiSmallStep, SmallStep])
+
+theorem inv_sum (Ast: [[ ⊕A -> T ]]): ∃ A', T = [[⊕A']] ∧ [[ A ->* A' ]] := by
+  cases Ast ; aesop (add unsafe constructors [MultiSmallStep, SmallStep])
+
+theorem inv_list (Ast: [[ { </ A@i // i in [:n] /> } -> T ]] ): ∃ B, T = [[{ </ B@i // i in [:n] /> }]] ∧ [[ </ A@i ->* B@i // i in [:n] /> ]] := by
+  generalize T_eq : [[{ </ A@i // i in [:n] /> } ]] = T_ at Ast
+  cases Ast <;> try cases T_eq
+  . case list n₀ A₀i A₁ A₁' n₂ A₂i A₀V A₁st =>
+    injection T_eq with eq
+    sorry   -- TODO make a messy sandwich
+
 end SmallStep
 
 namespace MultiSmallStep
@@ -796,6 +821,11 @@ theorem trans (A₀mst : [[A₀ ->* A₁]]) (A₁mst : [[A₁ ->* A₂]]) : [[A�
   induction A₀mst with
   | refl => exact A₁mst
   | step A₀st _ ih => exact step A₀st <| ih A₁mst
+
+theorem est_of (st : [[A ->* B]]) : [[A <->* B]] := by
+  induction st with
+  | refl => exact .refl
+  | step Ast _ ih => exact EqSmallStep.step Ast |>.trans ih
 
 open «Type» in
 theorem TypeVar_subst_var_preservation_of_not_mem_freeTypeVars {a' : TypeVarId} (Ast : [[A ->* B]])
@@ -852,6 +882,61 @@ theorem confluence (mst₀ : [[A ->* B₀]]) (mst₁ : [[A ->* B₁]]) : ∃ C, 
     | step st' mst₁' =>
       cases st.deterministic st'
       apply ih mst₁'
+
+-- Shape Preservation
+theorem preserve_shape_arr (ArBmst: [[ (A → B) ->* T ]]): ∃ A' B', T = [[ (A' → B') ]] ∧ [[ A ->* A' ]] ∧ [[ B ->* B' ]] := by
+  generalize ArBeq : [[ A → B ]] = ArB at ArBmst
+  induction ArBmst generalizing A B
+  . case refl ArB =>
+    exact ⟨A, B, ArBeq.symm, .refl, .refl⟩
+  . case step ArB A0rB0 ArB' ArBst Tmst ih =>
+    subst ArBeq
+    have ⟨A0, B0, A0rB0eq, Amst, Bmst⟩ := ArBst.inv_arr
+    specialize ih A0rB0eq.symm
+    aesop (add unsafe apply MultiSmallStep.trans)
+
+theorem preserve_shape_forall (Amst: [[ (∀ a? : K. A) ->* T ]]): ∃ A', T = [[∀ a? : K. A']] ∧ (∃I, ∀a ∉ (I: List _), [[ A^a ->* A'^a ]]) :=
+by
+  generalize LamAeq : [[(∀ a : K. A)]] = LamA at Amst
+  induction Amst generalizing A
+  . case refl => aesop (add unsafe tactic guessI, unsafe constructors [MultiSmallStep, SmallStep])
+  . case step T1 T2 T3 red mred ih =>
+    subst LamAeq
+    have ⟨A', eqT2, I, AA'⟩ := red.inv_forall
+    have ⟨A'', ih⟩ := ih eqT2.symm
+    exists A''
+    aesop (add unsafe tactic guessI, unsafe apply MultiSmallStep.trans)
+
+theorem preserve_shape_prod (Amst: [[ ⊗A ->* T ]]): ∃ A', T = [[⊗A']] ∧ [[ A ->* A' ]] :=
+by
+  generalize ProdAeq : [[(⊗A)]] = ProdA at Amst
+  induction Amst generalizing A
+  . case refl => aesop (add unsafe constructors [MultiSmallStep, SmallStep])
+  . case step T1 T2 T3 red mred ih =>
+    subst ProdAeq
+    have := red.inv_prod
+    aesop (add unsafe apply MultiSmallStep.trans)
+
+theorem preserve_shape_sum (Amst: [[ ⊕A ->* T ]]): ∃ A', T = [[⊕A']] ∧ [[ A ->* A' ]] :=
+by
+  generalize SumAeq : [[(⊕A)]] = SumA at Amst
+  induction Amst generalizing A
+  . case refl => aesop (add unsafe constructors [MultiSmallStep, SmallStep])
+  . case step T1 T2 T3 red mred ih =>
+    subst SumAeq
+    have := red.inv_sum
+    aesop (add unsafe apply MultiSmallStep.trans)
+
+theorem preserve_shape_list (Amst: [[ { </ A@i // i in [:n] /> } ->* T ]] ): ∃ B, T = [[{ </ B@i // i in [:n] /> }]] ∧ [[ </ A@i ->* B@i // i in [:n] /> ]] := by
+  generalize ListAeq : [[{ </ A@i // i in [:n] /> }]] = ListA at Amst
+  induction Amst generalizing A
+  . case refl => aesop (add unsafe constructors [MultiSmallStep, SmallStep])
+  . case step T1 T2 T3 red mred ih =>
+    subst ListAeq
+    have ⟨B, eqT2, AB⟩ := red.inv_list
+    have ⟨B', ih⟩ := ih eqT2.symm
+    exists B'
+    aesop (add unsafe apply MultiSmallStep.trans)
 
 end MultiSmallStep
 
@@ -1420,6 +1505,49 @@ theorem common_reduct (est : [[A <->* B]]) : ∃ C, [[A ->* C]] ∧ [[B ->* C]] 
     let ⟨C₁, A''mst₁, A'''mst⟩ := ih₁
     let ⟨C, C₀mst, C₁mst⟩ := A''mst₀.confluence A''mst₁
     exact ⟨_, A'mst.trans C₀mst, A'''mst.trans C₁mst⟩
+
+-- ====================
+
+
+-- Injectivity of Type Constructors.
+theorem inj_arr (ArBest: [[ (A → B) <->* (A' → B') ]]): [[ A <->* A' ]] ∧ [[ B <->* B' ]] := by
+  have ⟨T, ArB_Tmst, A'rB'_Tmst⟩ := ArBest.common_reduct
+  have ⟨A1, B1, Teq1, AA1, BB1⟩ := ArB_Tmst.preserve_shape_arr
+  have ⟨A2, B2, Teq2, A'A2, B'B2⟩ := A'rB'_Tmst.preserve_shape_arr
+  subst T; cases Teq2; case refl =>
+  refine ⟨AA1.est_of.trans A'A2.est_of.symm, BB1.est_of.trans B'B2.est_of.symm⟩
+
+theorem inj_forall (Aest: [[ (∀ a? : K. A) <->* (∀ a? : K'. A') ]]): K = K' ∧ ∃I: List _, ∀a ∉ I, [[ A^a <->* A'^a ]] := by
+  have ⟨T, AT, A'T⟩ := Aest.common_reduct
+  have ⟨A1, Teq1, I1, AA1⟩:= AT.preserve_shape_forall
+  have ⟨A2, Teq2, I2, A'A2⟩ := A'T.preserve_shape_forall
+  subst T; cases Teq2; case refl =>
+  exact ⟨rfl, I1 ++ I2, λa nin => AA1 a (by simp_all) |>.est_of.trans <| A'A2 a (by simp_all) |>.est_of.symm⟩
+
+theorem inj_prod (Aest: [[ ⊗A <->* ⊗A' ]]): [[ A <->* A' ]] := by
+  have ⟨T, AT, A'T⟩ := Aest.common_reduct
+  have ⟨A1, Teq1, AA1⟩:= AT.preserve_shape_prod
+  have ⟨A2, Teq2, A'A2⟩ := A'T.preserve_shape_prod
+  subst T; cases Teq2; case refl =>
+  exact AA1.est_of.trans A'A2.est_of.symm
+
+theorem inj_sum (Aest: [[ ⊕A <->* ⊕A' ]]): [[ A <->* A' ]] := by
+  have ⟨T, AT, A'T⟩ := Aest.common_reduct
+  have ⟨A1, Teq1, AA1⟩:= AT.preserve_shape_sum
+  have ⟨A2, Teq2, A'A2⟩ := A'T.preserve_shape_sum
+  subst T; cases Teq2; case refl =>
+  exact AA1.est_of.trans A'A2.est_of.symm
+
+theorem inj_list (Aest: [[ { </ A@i // i in [:n] /> } <->* { </ B@i // i in [:n'] /> } ]]): n = n' ∧ [[ </ A@i <->* B@i // i in [:n] /> ]] := by
+  have ⟨T, AT, BT⟩ := Aest.common_reduct
+  have ⟨A1, Teq1, AA1⟩ := AT.preserve_shape_list
+  have ⟨B1, Teq2, BB1⟩ := BT.preserve_shape_list
+  subst T
+  injection Teq2 with eq
+  have eqn'n := Std.Range.length_eq_of_mem_eq eq; subst eqn'n
+  have eqBA := Std.Range.eq_of_mem_of_map_eq eq; clear eq
+  simp_all
+  exact λ x xin => AA1 x xin |>.est_of.trans <| BB1 x xin |>.est_of.symm
 
 end EqSmallStep
 
