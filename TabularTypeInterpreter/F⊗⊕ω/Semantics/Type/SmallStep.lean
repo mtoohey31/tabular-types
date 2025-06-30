@@ -13,11 +13,13 @@ judgement_syntax "value " A : Type.IsValue
 
 judgement Type.IsValue where
 
-─────── var
+-- TODO: we have to disallow bound vars here, and then do opening in lam and forall
+
+─────── var -- {a : TypeVarId}
 value a
 
 value A
-──────────────── lam
+────────────────── lam
 value λ a : K. A
 
 value A
@@ -293,10 +295,75 @@ theorem TypeVar_open_drop : IsValue (A.TypeVar_open a n) → IsValue A := by
 theorem TypeVar_subst_var {a' : TypeVarId}
   : IsValue A → IsValue (A.TypeVar_subst a (.var a')) := by
   induction A using rec_uniform
-  case app => sorry
+  case app ih₀ ih₁ =>
+    intro v
+    rw [TypeVar_subst]
+    cases v with
+    | varApp B'v =>
+      rw [TypeVar_subst]
+      split <;> exact varApp <| ih₁ B'v
+    | appApp A'v B'v =>
+      let A'v' := ih₀ A'v
+      rw [TypeVar_subst] at A'v' ⊢
+      exact appApp A'v' <| ih₁ B'v
+    | forallApp A'v B'v =>
+      let A'v' := ih₀ A'v.forall
+      rw [TypeVar_subst] at A'v' ⊢
+      let .forall A'v'' := A'v'
+      exact forallApp A'v'' <| ih₁ B'v
   case list => sorry -- trivial but messy
-  case listApp => sorry
+  case listApp A' B' ih₀ ih₁ =>
+    intro v
+    rw [TypeVar_subst]
+    cases v with
+    | listAppVar ne A'v =>
+      rw [TypeVar_subst]
+      split
+      all_goals exact listAppVar (ne_preservation ne) <| ih₀ A'v
+    | listAppApp ne A'v B'v =>
+      let B'v' := ih₁ B'v
+      rw [TypeVar_subst] at B'v' ⊢
+      exact listAppApp (ne_preservation ne) (ih₀ A'v) B'v'
+    | listAppForall ne A'v B'v =>
+      let B'v' := ih₁ <| .forall B'v
+      rw [TypeVar_subst] at B'v' ⊢
+      let .forall B'v'' := B'v'
+      exact listAppForall (ne_preservation ne) (ih₀ A'v) B'v''
+    | listAppListApp ne ne' A'v B'v =>
+      rename_i A₁ B''
+      let B'v' := ih₁ B'v
+      rw [TypeVar_subst] at B'v' ⊢
+      apply listAppListApp (ne_preservation ne) _ (ih₀ A'v) B'v'
+      intro K A₁' eq
+      specialize ne' K
+      cases A₁
+      all_goals rw [TypeVar_subst] at eq
+      case var => split at eq <;> nomatch eq
+      case lam K A₁'' =>
+        rcases Type.lam.inj eq with ⟨rfl, eq'⟩
+        nomatch ne' A₁''
+      all_goals nomatch eq
   all_goals aesop (add simp [TypeVar_subst], unsafe cases IsValue, safe constructors IsValue)
+where
+  ne_preservation {A} (ne : ∀ K, A ≠ [[λ a : K. a$0]])
+    : ∀ K, A.TypeVar_subst a (.var (.free a')) ≠ [[λ a : K. a$0]] := by
+    intro K eq
+    specialize ne K
+    cases A
+    all_goals rw [TypeVar_subst] at eq
+    case var => split at eq <;> nomatch eq
+    case lam K A' =>
+      rcases Type.lam.inj eq with ⟨rfl, eq'⟩
+      cases A'
+      all_goals rw [TypeVar_subst] at eq'
+      case var =>
+        split at eq'
+        · case isTrue => nomatch eq'
+        · case isFalse =>
+          cases eq'
+          nomatch ne
+      all_goals nomatch eq'
+    all_goals nomatch eq
 
 theorem not_step (v : IsValue A) : ¬[[A -> B]] := by
   intro st
@@ -1115,6 +1182,7 @@ theorem of_EquivalenceI (equ : [[Δ ⊢ A ≡ᵢ B]]) (Aki : [[Δ ⊢ A : K]]) (
         exact A''mst.TypeVar_open_swap A'lc aninA' |>.EqSmallStep_of
       [[(λ a : K'. \a^A'') B'' <->* (\a^A'')^^B'']] := step <| .lamApp A''v.TypeVar_close_intro B''v
       [[(\a^A'')^^B'' <->* A'^^B']] := by
+        -- FALSE: Maybe? Gotta figure out how to reduce this cause the opening might break the order... but should still be the same group?
         apply symm
         apply Type_open _ B''mst.EqSmallStep_of (A'ki a aninI) aninA' B'ki
         apply MultiSmallStep.EqSmallStep_of
@@ -1286,6 +1354,8 @@ theorem of_EquivalenceI (equ : [[Δ ⊢ A ≡ᵢ B]]) (Aki : [[Δ ⊢ A : K]]) (
       · case pos h =>
         rcases h with ⟨A₁', B'', rfl⟩
         let ⟨a, anin⟩ := I.exists_fresh
+        -- FALSE: This calc is wrong because we're not guaranteed that A₁' and B'' actually
+        -- correspond to A₁ and B'.
         calc
           [[A₀ ⟦(λ a : K'. A₁) ⟦B'⟧⟧ <->* A₀' ⟦(λ a : K'. A₁') ⟦B''⟧⟧]] :=
             listApp A₀ki A₀'mst.EqSmallStep_of A₁B''mst.EqSmallStep_of
@@ -1294,6 +1364,15 @@ theorem of_EquivalenceI (equ : [[Δ ⊢ A ≡ᵢ B]]) (Aki : [[Δ ⊢ A : K]]) (
           [[(λ a : K'. A₀' A₁') ⟦B''⟧ <->* (λ a : K'. A₀ A₁) ⟦B'⟧]] := by
             apply symm
             apply listApp
+            apply Kinding.lam <| I ++ Δ.typeVarDom
+            intro a anin
+            let ⟨aninI, aninΔ⟩ := List.not_mem_append'.mp anin
+            rw [Type.TypeVar_open, A₀ki.TypeVarLocallyClosed_of.TypeVar_open_id]
+            exact .app
+              (A₀ki.weakening (Δwf.typeVarExt aninΔ) (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <|
+              A₁ki a aninI
+            sorry
+            sorry
       · case neg h =>
         sorry -- cases to check everything we might've turned into
   | prod equ' ih =>
