@@ -99,6 +99,11 @@ theorem TypeVar_open_comm (A : «Type»)
   : m ≠ n → (A.TypeVar_open a m).TypeVar_open a' n = (A.TypeVar_open a' n).TypeVar_open a m := by
   induction A using rec_uniform generalizing m n <;> aesop (add simp TypeVar_open)
 
+theorem TypeVar_open_TypeVar_subst_var_comm : a ≠ a'' →
+    TypeVar_open (TypeVar_subst A a (.var (.free a'))) a'' n =
+      TypeVar_subst (A.TypeVar_open a'' n) a (.var (.free a')) := by
+  induction A using rec_uniform generalizing n <;> aesop (add simp [TypeVar_open, TypeVar_subst])
+
 theorem TypeVar_open_TypeVar_multi_open_comm (mlen : m ≤ n)
   : TypeVar_multi_open (TypeVar_open A a n) a' m =
     TypeVar_open (TypeVar_multi_open A a' m) a n := by
