@@ -1040,12 +1040,69 @@ theorem inv_prod (Ast: [[ ⊗A -> T ]]): ∃ A', T = [[⊗A']] ∧ [[ A ->* A' ]
 theorem inv_sum (Ast: [[ ⊕A -> T ]]): ∃ A', T = [[⊕A']] ∧ [[ A ->* A' ]] := by
   cases Ast ; aesop (add unsafe constructors [MultiSmallStep, SmallStep])
 
+private
+theorem sandwich {f : Nat → α} (h : i < n) : [0:n].map (fun j => f j) =
+  [:i].map (fun j => f j) ++
+    f i :: [(i + 1) - (i + 1):n - (i + 1)].map (fun j => f (j + (i + 1))) := by
+  rw [← List.singleton_append, Range.map_shift (Nat.le_refl _)]
+  have : [f i] = List.map (fun j => f j) [i:i + 1] := by
+    rw [Range.toList, if_pos (Nat.lt_succ_self _), Range.toList,
+        if_neg (Nat.not_lt_of_le (Nat.le_refl _)), List.map, List.map]
+  rw [this]
+  rw [Range.map_append (Nat.le_succ _) (Nat.succ_le_of_lt h),
+      Range.map_append (Nat.zero_le _) (Nat.le_of_lt h)]
+
+private
+theorem sandwich' {α: Type} {nl nr : ℕ} {F1 F3: ℕ → α} {F2: α}:
+  let G i := if i < nl then F1 i else if i = nl then F2 else F3 (i - nl - 1)
+  [0:nl].map (λi => F1 i) ++ F2 :: [0:nr].map (λi => F3 i) = [0:nl + 1 + nr].map G := by
+  intro G
+  rw [sandwich (n := nl + 1 + nr) (i := nl) (by omega)]
+  simp_all
+  refine List.append_eq_append ?_ ?_
+  . exact Std.Range.map_eq_of_eq_of_mem (λ i iltnl => by simp_all [Membership.mem])
+  . refine List.cons_eq_cons.mpr ⟨rfl, ?_⟩
+    refine Std.Range.map_eq_of_eq_of_mem (λ i iltnl => ?_)
+    repeat' rw [if_neg (by omega)]
+    exact congrArg _ (by omega)
+
+macro "rwomega" equality:term : tactic => `(tactic | (have _eq : $equality := (by omega); rw [_eq]; clear _eq))
+
 theorem inv_list (Ast: [[ { </ A@i // i in [:n] /> } -> T ]] ): ∃ B, T = [[{ </ B@i // i in [:n] /> }]] ∧ [[ </ A@i ->* B@i // i in [:n] /> ]] := by
   generalize T_eq : [[{ </ A@i // i in [:n] /> } ]] = T_ at Ast
   cases Ast <;> try cases T_eq
   . case list n₀ A₀i A₁ A₁' n₂ A₂i A₀V A₁st =>
     injection T_eq with eq
-    sorry   -- TODO make a messy sandwich
+    have nlen: n = n₀ + 1 + n₂ := by
+      apply congrArg List.length at eq
+      rw [List.length_append, List.length_cons] at eq
+      repeat' rw [List.length_map] at eq
+      repeat' rw [Std.Range.length_toList] at eq
+      omega
+    refine ⟨(fun i => if i < n₀ then A₀i i else if i = n₀ then A₁' else A₂i (i - n₀ - 1)), ?_, λ i iltn => ?_⟩
+    . simp; rw [nlen, ← sandwich']
+    . have n₀ltn: n₀ < n := by omega
+      rw [sandwich n₀ltn] at eq
+      have ⟨A₀eq, A₁A₂eq⟩ := eq |> List.append_inj <| (by repeat1' rw [List.length_map])
+      have A₀eq := Std.Range.eq_of_mem_of_map_eq A₀eq
+      injection A₁A₂eq with A₁eq A₂eq
+      have h: n - (n₀ + 1) = n₂ := by omega
+      simp at A₂eq; rw [h] at A₂eq
+      have A₂eq := Std.Range.eq_of_mem_of_map_eq A₂eq
+      simp
+      repeat' split
+      . case _ iltn₀ =>
+        rw [A₀eq i (by simp_all [Membership.mem])]
+        exact .refl
+      . case _ _ ieqn₀ =>
+        subst ieqn₀
+        rw [A₁eq]
+        exact .step A₁st .refl
+      . case _ Niltn₀ Nieqn₀ =>
+        specialize A₂eq (i - n₀ - 1) (by simp_all [Membership.mem] ; omega)
+        rw [← A₂eq]
+        rwomega i - n₀ - 1 + (n₀ + 1) = i
+        exact .refl
 
 end SmallStep
 
