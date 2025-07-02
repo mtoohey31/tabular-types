@@ -107,25 +107,29 @@ def kind (σ : TypeScheme) (κ : Kind) : InferM Unit := do
   | _ => sorry
 
 namespace rowSolver
-inductive Node where
-| literal : MonotypePairList → Node
-| var : TypeVar → Node
-| uvar : UniVar → Node
-deriving Inhabited, BEq, Hashable
-namespace Node
+inductive Row where
+| literal : MonotypePairList → Row
+| var : TypeVar → Row
+| uvar : UniVar → Row
+deriving Inhabited, BEq, DecidableEq, Hashable
+structure RowData where
+/-- Whether an All constraint is attached to this row. -/
+all : Option Monotype
+deriving Inhabited, BEq, DecidableEq, Hashable
+namespace Row
   /-- Convert a row monotype into a node. Assumes ρ has kind `(.row .star)`. -/
-  def fromMonotype (ρ : Monotype) : Node :=
+  def fromMonotype (ρ : Monotype) : Row :=
     match ρ with
     | .row pairList _ => .literal pairList
     | .var α => .var α
     | .uvar x => .uvar x
     | _ => panic! "invalid row found in context"
-end Node
+end Row
 inductive EdgeComm where
 | literal : Comm → EdgeComm
 | var : TypeVar → EdgeComm
 | uvar : UniVar → EdgeComm
-deriving Inhabited, BEq, Hashable
+deriving Inhabited, BEq, Hashable, DecidableEq
 namespace EdgeComm
   /-- Convert a commutativity monotype into an EdgeComm. Assumes μ has kind `.comm`. -/
   def fromMonotype (μ : Monotype) : EdgeComm :=
@@ -137,56 +141,89 @@ namespace EdgeComm
 end EdgeComm
 
 inductive Edge where
-| concat (leftChild : Node) (μ : EdgeComm) (rightChild : Node) (parent : Node)
-| contain (child : Node) (μ : EdgeComm) (parent : Node)
+| concat (leftChild : Row) (μ : EdgeComm) (rightChild : Row) (parent : Row)
+| contain (child : Row) (μ : EdgeComm) (parent : Row)
 deriving Inhabited, BEq, Hashable
 structure RowGraph where
-  nodes : Set Node
+  rows : Std.HashMap Row RowData
   edges : Set Edge
 deriving Inhabited
 namespace RowGraph
-  def empty : RowGraph := { nodes := Std.HashSet.empty, edges := Std.HashSet.empty }
+  def empty : RowGraph := { rows := Std.HashMap.empty, edges := Std.HashSet.empty }
   /- get the set of direct parents for the given node -/
-  def parents (node : Node) (comm : EdgeComm) : ReaderM RowGraph (Set Node) := do
+  def parents (node : Row) (comm : EdgeComm) : ReaderM RowGraph (Set Row) := do
     let graph ← read
     return graph.edges.fold (fun acc val => match val with
     -- TODO: μ can be a subtype of comm, or maybe the other way around
       | .concat l μ r p => if (μ == comm) && (l == node || r == node) then acc.insert p else acc
       | .contain c μ p => if (μ == comm) && c == node then acc.insert p else acc
     ) Std.HashSet.empty
+  /--
+  Check if `edge₁` is associate to `edge₂`, i.e.
+  `edge₁` is `lₐ o r ~ p`
+  `edge₂` is `l o rₐ ~ p`
+  and there exists some row `a` such that
+  `lₐ` decomposes as `l o a ~ lₐ` and
+  `rₐ` decomposes as `a o r ~ rₐ`.
+  Essentially giving `(l o a) o r = l o (a o r)`
+  -/
+  def isAssociate (edge₁ : Edge) (edge₂ : Edge) : ReaderM RowGraph Bool := do
+    let graph ← read;
+    let Edge.concat lₐ μ r p := edge₁
+      | panic! "Associativity requires concatenations"
+    let Edge.concat l μ' rₐ p' := edge₂
+      | panic! "Associativity requires concatenations"
+    if μ != μ' || p != p' then return false
+    let possibleIntermediates := graph.edges.toList.filterMap (
+      match · with
+      | .concat l' μ' a lₐ' => .someIf a (l' == l && μ' == μ && lₐ' == lₐ)
+      | _ => .none
+    );
+    return graph.edges.toList.any (
+      match · with
+      | .concat a μ' r' rₐ' => possibleIntermediates.contains a && μ' == μ && r' == r && rₐ' == rₐ
+      | _ => false
+    );
   partial def generate (Γ : Context): RowGraph :=
     match Γ with
     | [] => RowGraph.empty
     | .constraint (.contain c μ p) :: Γ =>
       let graph := generate Γ
-      let (c, μ, p) := (Node.fromMonotype c, EdgeComm.fromMonotype μ, Node.fromMonotype p)
-      let nodes := graph.nodes.insert c |>.insert p
+      let (c, μ, p) := (Row.fromMonotype c, EdgeComm.fromMonotype μ, Row.fromMonotype p)
+      let rows := (
+        let emptyData : RowData := { all := .none }
+        graph.rows.insert c emptyData |>.insert p emptyData
+      );
       let edges := graph.edges.insert (.contain c μ p)
-      { graph with nodes, edges }
+      { graph with rows, edges }
     | .constraint (.concat l μ r p) :: Γ =>
       let graph := generate Γ
-      let (l, μ, r, p) := (Node.fromMonotype l, EdgeComm.fromMonotype μ, Node.fromMonotype r, Node.fromMonotype p)
-      let nodes := graph.nodes.insert l |>.insert r |>.insert p
+      let (l, μ, r, p) := (Row.fromMonotype l, EdgeComm.fromMonotype μ, Row.fromMonotype r, Row.fromMonotype p)
+      let rows := (
+        let emptyData : RowData := { all := .none }
+        graph.rows.insert l emptyData |>.insert r emptyData |>.insert p emptyData
+      )
       let edges := graph.edges.insert (.concat l μ r p)
-      { graph with nodes, edges }
+      { graph with rows, edges }
     | .constraint (Monotype.app (.app .all ϕ) ρ) :: Γ => sorry
     | _ => sorry
-  partial def contains (c : Node) (μ : EdgeComm) (p : Node) : ReaderM RowGraph Bool := do
+  partial def contains (c : Row) (μ : EdgeComm) (p : Row) : ReaderM RowGraph Bool := do
     let graph ← read
-    return (graph.nodes.contains c)
-    && (graph.nodes.contains p)
+    return (graph.rows.contains c)
+    && (graph.rows.contains p)
     && (
       c == p || (← parents c μ).any (contains · μ p |>.run graph)
     )
-  def concatenates (l : Node) (μ : EdgeComm) (r : Node) (p : Node) : ReaderM RowGraph Bool := do
+  partial def concatenates (l : Row) (μ : EdgeComm) (r : Row) (p : Row) : ReaderM RowGraph Bool := do
     let graph ← read
-    return (graph.nodes.contains l)
-    && (graph.nodes.contains r)
-    && (graph.nodes.contains p)
-    && (
-      -- TODO: forgot how this works
-      sorry
-    )
+    match l, μ, r with
+    | .literal .nil, _, r => return r == p
+    | l, _, .literal .nil => return l == p
+    | l, μ, r =>
+    if let .literal .comm := μ then
+      if graph.edges.contains (.concat r μ l p) then
+        return true
+    return ← graph.edges.toList.anyM <| isAssociate <| Edge.concat l μ r p
 end RowGraph
 end rowSolver
 
@@ -231,7 +268,14 @@ def instantiateRight (σ : TypeScheme) (ᾱ : UniVar) : InferM Unit := sorry
 def constraint (ψ : Monotype) : InferM (ψ.ConstraintSolution) := do
   kind ψ .constr
   match ψ with
-  | .concat ρ₁ μ ρ₂ ρ₃ => sorry
+  | .concat ρ₁ μ ρ₂ ρ₃ =>
+    let { Γ .. } ← get
+    let graph := rowSolver.RowGraph.generate Γ
+    sorry
+  | .contain ρ₁ μ ρ₂ =>
+    let { Γ .. } ← get
+    let graph := rowSolver.RowGraph.generate Γ
+    sorry
   | _ => sorry
 
 mutual
