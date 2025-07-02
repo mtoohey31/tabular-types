@@ -210,6 +210,13 @@ theorem Type_open_preservation {A : «Type»}
   (Aki : Kinding [[(Δ, a : K)]] (A.TypeVar_open a n) K') (aninfvA : a ∉ A.freeTypeVars)
   (Bki : [[Δ ⊢ B : K]]) : Kinding Δ (A.Type_open B n) K' := Type_open_preservation' (Δ' := [[ ε ]]) Aki (by simp_all [Environment.typeVarDom]) nofun aninfvA Bki
 
+theorem Type_open_preservation'' {A : «Type»}
+  (Aki : Kinding [[(Δ, a : K, Δ')]] (A.TypeVar_open a n) K') (ΔaΔ'wf : [[⊢ Δ, a : K, Δ']])
+  (aninfvA : a ∉ A.freeTypeVars) (Bki : [[Δ ⊢ B : K]])
+  : Kinding [[(Δ, (Δ'[B / a]))]] (A.Type_open B n) K' :=
+  Type_open_preservation' Aki (ΔaΔ'wf.append_typeVar_fresh_r _ <| .head _)
+    (ΔaΔ'wf.append_typeVar_fresh_l · · <| ·.tail _) aninfvA Bki
+
 end Kinding
 
 namespace EnvironmentWellFormedness
