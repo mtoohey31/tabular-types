@@ -476,6 +476,11 @@ theorem Type_open_dec (Alc : TypeVarLocallyClosed A (n + 1)) (Blc : B.TypeVarLoc
     let .sum A'lc := Alc
     exact sum <| A'lc.Type_open_dec Blc
 
+theorem TypeVar_open_dec (Alc : TypeVarLocallyClosed A (n + 1))
+  : (TypeVar_open A a n).TypeVarLocallyClosed n := by
+  rw [Type_open_var]
+  exact Alc.Type_open_dec .var_free
+
 theorem Type_open_TypeVar_close_eq_TypeVar_subst
   : TypeVarLocallyClosed A n → (A.TypeVar_close a n).Type_open B n = A.TypeVar_subst a B := by
   induction A using rec_uniform generalizing n <;> aesop

@@ -335,6 +335,89 @@ def ParallelReduction.delabPRed: Lean.PrettyPrinter.Unexpander
     `([ $Δ $vdash $A $into $B ])
   | _ => throw ()
 
+judgement_syntax A " ≠ " B : Type.Ne
+
+judgement Type.Ne := _root_.Ne (α := «Type»)
+
+judgement_syntax Δ " ⊢ " A " ≡>> " B : CompleteDevelopment (tex := s!"{Δ} \\, \\lottsym\{⊢} \\, {A} \\TwoRrightarrow {B}")
+
+judgement CompleteDevelopment where
+
+─────────── var
+Δ ⊢ a ≡>> a
+
+Δ ⊢ B : K
+∀ a ∉ (I: List _), Δ, a : K ⊢ A^a ≡>> A'^a
+Δ ⊢ B ≡>> B'
+────────────────────────────────────────── lamApp
+Δ ⊢ (λ a : K. A) B ≡>> A'^^B'/a
+
+Δ ⊢ A ≡>> A'
+</ Δ ⊢ B@i ≡>> B'@i // i in [:n] notex />
+∀ K, A ≠ λ a : K. a$0
+───────────────────────────────────────────────────────────────────────────────── listAppList
+Δ ⊢ A ⟦{ </ B@i // i in [:n] notex /> }⟧ ≡>> { </ A' B'@i // i in [:n] notex /> }
+
+Δ ⊢ A: L K
+Δ ⊢ A ≡>> A'
+───────────────────────────── listAppId
+Δ ⊢ (λ a : K. a$0) ⟦A⟧ ≡>> A'
+
+∀ a ∉ (I : List _), Δ, a : K ⊢ A^a ≡>> B^a
+────────────────────────────────────────── lam
+Δ ⊢ λ a : K. A ≡>> λ a : K. B
+
+∀ K A₁', A₁ ≠ λ a : K. A₁'
+Δ ⊢ A₁ ≡>> A₂
+Δ ⊢ B₁ ≡>> B₂
+────────────────────────── app
+Δ ⊢ A₁ B₁ ≡>> A₂ B₂
+
+∀ a ∉ (I: List _), Δ, a : K ⊢ A^a ≡>> B^a
+───────────────────────────────────────── scheme
+Δ ⊢ ∀ a : K. A ≡>> ∀ a : K. B
+
+Δ ⊢ A₁ ≡>> A₂
+Δ ⊢ B₁ ≡>> B₂
+─────────────────────── arr
+Δ ⊢ A₁ → B₁ ≡>> A₂ → B₂
+
+</ Δ ⊢ A@i ≡>> B@i // i in [:n] notex />
+───────────────────────────────────────────────────────────────────────── list
+Δ ⊢ { </ A@i // i in [:n] notex /> } ≡>> { </ B@i // i in [:n] notex /> }
+
+∀ K, A₁ ≠ λ a : K. a$0
+∀ B₁' n, B₁ ≠ {</ B₁'@i // i in [:n] />}
+Δ ⊢ A₁ ≡>> A₂
+Δ ⊢ B₁ ≡>> B₂
+─────────────────────── listApp
+Δ ⊢ A₁ ⟦B₁⟧ ≡>> A₂ ⟦B₂⟧
+
+∀ K, A₀ ≠ λ a : K. a$0
+Δ ⊢ A₀ ≡>> A₀'
+∀ a ∉ (I: List _), Δ, a : K ⊢ A₁^a ≡>> A₁'^a
+Δ ⊢ B ≡>> B'
+────────────────────────────────────────────────────── listAppComp
+Δ ⊢ A₀ ⟦(λ a : K. A₁) ⟦B⟧⟧ ≡>> (λ a : K. A₀' A₁') ⟦B'⟧
+
+Δ ⊢ A ≡>> B
+─────────────── prod
+Δ ⊢ ⊗ A ≡>> ⊗ B
+
+Δ ⊢ A ≡>> B
+─────────────── sum
+Δ ⊢ ⊕ A ≡>> ⊕ B
+
+termonly
+@[app_unexpander CompleteDevelopment]
+def CompleteDevelopment.delabPRed: Lean.PrettyPrinter.Unexpander
+  | `($(_) $Δ $A $B) =>
+    let info := Lean.SourceInfo.none
+    let vdash := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "⊢") }
+    let into := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "≡>>") }
+    `([ $Δ $vdash $A $into $B ])
+  | _ => throw ()
+
 judgement_syntax Δ " ⊢ " A " ≡>* " B : MultiParallelReduction (tex := s!"{Δ} \\, \\lottsym\{⊢} \\, {A} \\Rrightarrow^* {B}")
 
 judgement MultiParallelReduction where

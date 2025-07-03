@@ -9,6 +9,8 @@ import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Type.Kinding
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
 
+open Std
+
 namespace ParallelReduction
 
 local instance : Inhabited «Type» where
@@ -640,7 +642,211 @@ def Rangemk.delab: Lean.PrettyPrinter.Unexpander
     `([ $m : $n : $i ])
   | _ => throw ()
 
-lemma _root_.TabularTypeInterpreter.«F⊗⊕ω».Type.expand_app_id (T: «Type») : T = [[ (a$0^^T) ]] := by simp [Type.Type_open]
+end ParallelReduction
+
+lemma Type.expand_app_id (T: «Type») : T = [[ (a$0^^T) ]] := by simp [Type.Type_open]
+
+namespace CompleteDevelopment
+
+theorem list_inversion (pr : [[Δ ⊢ {</ A@i // i in [:n] />} ≡>> B]])
+  : ∃ C, B = [[{</ C@i // i in [:n] />}]] ∧ ∀ i ∈ [:n], [[Δ ⊢ A@i ≡>> C@i]] := by
+  generalize Aseq : [:n].map _ = As at pr
+  let .list pr' (B := C) := pr
+  let lengths_eq : List.length ([:n].map ..) = _ := by rw [Aseq]
+  rw [List.length_map, List.length_map, Range.length_toList, Range.length_toList, Nat.sub_zero,
+      Nat.sub_zero] at lengths_eq
+  cases lengths_eq
+  refine ⟨_, rfl, ?_⟩
+  intro i mem
+  rw [Range.eq_of_mem_of_map_eq Aseq _ mem]
+  exact pr' i mem
+
+open «Type» in
+theorem total (Aki : [[Δ ⊢ A : K]]) : ∃ B, [[Δ ⊢ A ≡>> B]] := by match A, Aki with
+  | .var _, .var _ => exact ⟨_, .var⟩
+  | .lam K A', .lam I A'ki =>
+    let ⟨a, anin⟩ := A'.freeTypeVars ++ I |>.exists_fresh
+    let ⟨aninA', aninI⟩ := List.not_mem_append'.mp anin
+    specialize A'ki a aninI
+    let ⟨B', A'cd⟩ := total A'ki
+    refine ⟨.lam K (B'.TypeVar_close a), .lam (I := []) ?_⟩
+    intro a' a'nin
+    sorry -- A'cd
+  | .app A' B', .app A'ki B'ki =>
+    by_cases ∃ K A'', A' = [[λ a : K. A'']]
+    · case pos h =>
+      rcases h with ⟨K, A'', rfl⟩
+      let .lam I A''ki := A'ki
+      sorry
+      -- refine ⟨_, lamApp B'ki ?_ ?_⟩
+    -- let f := total A'ki
+    · case neg ne =>
+      let ⟨_, A'cd⟩ := total A'ki
+      let ⟨_, B'cd⟩ := total B'ki
+      exact ⟨_, .app (not_exists.mp <| not_exists.mp ne ·) A'cd B'cd⟩
+  | .forall .., .scheme .. => sorry
+  | .arr A' B', .arr A'ki B'ki =>
+    let ⟨_, A'cd⟩ := total A'ki
+    let ⟨_, B'cd⟩ := total B'ki
+    exact ⟨_, .arr A'cd B'cd⟩
+  | .list .., .list .. => sorry
+  | .listApp .., .listApp .. => sorry
+  | .prod A', .prod A'ki =>
+    let ⟨_, A'cd⟩ := total A'ki
+    exact ⟨_, .prod A'cd⟩
+  | .sum A', .sum A'ki =>
+    let ⟨_, A'cd⟩ := total A'ki
+    exact ⟨_, .sum A'cd⟩
+
+set_option maxHeartbeats 4000000 in
+open «Type» in
+def ParallelReduction_close
+  (cd : [[Δ ⊢ A ≡>> C]]) (pr : [[Δ ⊢ A ≡> B]]) (wf : [[⊢ Δ]]) (lc : TypeVarLocallyClosed A)
+  : [[Δ ⊢ B ≡> C]] := by match cd, pr, lc with
+  | .var, .var, _ => exact .var
+  | .lamApp B'ki A'cd B'cd (I := I) (K := K) (A' := A''), .lamApp _ A'pr B'pr (I := I'), .app (.lam A'lc) B'lc =>
+    rename_i A''' _ _
+    let ⟨a, anin⟩ := A''.freeTypeVars ++ A'''.freeTypeVars ++ I ++ I' ++ Δ.typeVarDom
+      |>.exists_fresh
+    let ⟨aninA''A'''II', aninΔ⟩ := List.not_mem_append'.mp anin
+    let ⟨aninA''A'''I, aninI'⟩ := List.not_mem_append'.mp aninA''A'''II'
+    let ⟨aninA''A''', aninI⟩ := List.not_mem_append'.mp aninA''A'''I
+    let ⟨aninA'', aninA'''⟩ := List.not_mem_append'.mp aninA''A'''
+    let awf := wf.typeVarExt aninΔ (K := K)
+    rw [← TypeVar_open_TypeVar_subst_eq_Type_open_of_not_mem_freeTypeVars aninA'',
+        ← TypeVar_open_TypeVar_subst_eq_Type_open_of_not_mem_freeTypeVars aninA''']
+    specialize A'pr a aninI'
+    exact ParallelReduction.subst_all awf (B'cd.ParallelReduction_close B'pr wf B'lc)
+      (ParallelReduction_close (A'cd a aninI) A'pr awf A'lc.TypeVar_open_dec)
+      (B'pr.preservation wf B'ki) <| A'pr.preserve_lc A'lc.TypeVar_open_dec
+  | .lamApp B'ki A'cd B'cd (I := I), .app A'pr B'pr, .app (.lam A'lc) B'lc =>
+    rcases A'pr.inv_lam with ⟨A'', rfl, I', A'pr'⟩
+    apply ParallelReduction.lamApp (I := I ++ I' ++ Δ.typeVarDom) (B'pr.preservation wf B'ki) _
+      (ParallelReduction_close B'cd B'pr wf B'lc)
+    intro a anin
+    let ⟨aninII', aninΔ⟩ := List.not_mem_append'.mp anin
+    let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp aninII'
+    exact ParallelReduction_close (A'cd a aninI) (A'pr' a aninI') (wf.typeVarExt aninΔ)
+      A'lc.TypeVar_open_dec
+  | .listAppList A'cd B'cd ne (A := A'), pr, .listApp A'lc (.list B'lc) =>
+    generalize Bseq : [:_].map _ = Bs at pr
+    match __ : pr with
+    | .listAppList A'pr B'pr _ =>
+      let lengths_eq : List.length ([:_].map _) = _ := by rw [Bseq]
+      rw [List.length_map, List.length_map, Range.length_toList, Range.length_toList, Nat.sub_zero,
+          Nat.sub_zero] at lengths_eq
+      cases lengths_eq
+      apply ParallelReduction.list
+      intro i mem
+      apply ParallelReduction.app
+      · exact ParallelReduction_close A'cd A'pr wf A'lc
+      · apply ParallelReduction_close (B'cd i mem) _ wf <| B'lc _ <|
+          Range.mem_map_of_mem mem
+        rw [Range.eq_of_mem_of_map_eq Bseq _ mem]
+        exact B'pr i mem
+    | .listAppId _ _ (K := K) => nomatch ne K
+    | .listApp A'pr B'pr =>
+      cases Bseq
+      rcases B'pr.inv_list with ⟨_, rfl, B'pr'⟩
+      apply ParallelReduction.listAppList (ParallelReduction_close A'cd A'pr wf A'lc) _ <|
+        A'pr.preserve_lc A'lc
+      intro i mem
+      exact ParallelReduction_close (B'cd i mem) (B'pr' i mem) wf <| B'lc _ <|
+        Range.mem_map_of_mem mem
+  | .listAppId A'ki A'cd, .listAppId _ A'pr, .listApp _ A'lc =>
+    exact ParallelReduction_close A'cd A'pr wf A'lc
+  | .listAppId A'ki A'cd, .listAppList idpr A'pr _, .listApp _ (.list A'lc) =>
+    let A'ki' := A'ki.inv_list
+    cases idpr.inv_id
+    rcases A'cd.list_inversion with ⟨C, rfl, A'cd'⟩
+    apply ParallelReduction.list
+    intro i mem
+    specialize A'pr i mem
+    have : C i = Type_open (.var (.bound 0)) (C i) := by
+      rw [Type_open, if_pos rfl]
+    rw [this]
+    apply ParallelReduction.lamApp (A'pr.preservation wf (A'ki' i mem)) (I := []) (fun _ _ => .refl)
+    exact ParallelReduction_close (A'cd' i mem) A'pr wf <| A'lc _ <| Range.mem_map_of_mem mem
+  | .listAppId A'ki A'cd, .listApp idpr A'pr, .listApp _ A'lc =>
+    cases idpr.inv_id
+    apply ParallelReduction.listAppId (A'pr.preservation wf A'ki)
+    exact ParallelReduction_close A'cd A'pr wf A'lc
+  | .listAppId A'B'ki A'B'cd, .listAppComp _ idpr A'pr B'pr, .listApp _ (.listApp A'lc B'lc) =>
+    cases idpr.inv_id
+    -- cases A'B'cd
+    sorry
+  | .lam A'cd (I := I), .lam A'pr (I := I'), .lam A'lc =>
+    apply ParallelReduction.lam (I := I ++ I' ++ Δ.typeVarDom)
+    intro a anin
+    let ⟨aninII', aninΔ⟩ := List.not_mem_append'.mp anin
+    let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp aninII'
+    exact ParallelReduction_close (A'cd a aninI) (A'pr a aninI') (wf.typeVarExt aninΔ)
+      A'lc.TypeVar_open_dec
+  | .app ne A'cd B'cd, pr, .app A'lc B'lc => match pr with
+    | .app A'pr B'pr =>
+      exact ParallelReduction.app (ParallelReduction_close A'cd A'pr wf A'lc)
+        (ParallelReduction_close B'cd B'pr wf B'lc)
+    | .lamApp _ _ _ (K := K) (A := A') => nomatch ne K A'
+  | .scheme A'cd (I := I), .scheme A'pr (I := I'), .forall A'lc =>
+    apply ParallelReduction.scheme (I := I ++ I' ++ Δ.typeVarDom)
+    intro a anin
+    let ⟨aninII', aninΔ⟩ := List.not_mem_append'.mp anin
+    let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp aninII'
+    exact ParallelReduction_close (A'cd a aninI) (A'pr a aninI') (wf.typeVarExt aninΔ)
+      A'lc.TypeVar_open_dec
+  | .arr A'cd B'cd, .arr A'pr B'pr, .arr A'lc B'lc =>
+    exact .arr (ParallelReduction_close A'cd A'pr wf A'lc)
+      (ParallelReduction_close B'cd B'pr wf B'lc)
+  | .list A'cd, pr, .list A'lc =>
+    rcases pr.inv_list with ⟨_, rfl, A'pr⟩
+    exact .list fun i mem =>
+      ParallelReduction_close (A'cd i mem) (A'pr i mem) wf <| A'lc _ <| Range.mem_map_of_mem mem
+  | .listApp ne ne' A'cd B'cd, pr, .listApp A'lc B'lc => match pr with
+    | .listAppList _ _ _ (B := B') (n := n) => nomatch ne' B' n
+    | .listAppId _ _ (K := K) => nomatch ne K
+    | .listApp A'pr B'pr =>
+      exact .listApp (ParallelReduction_close A'cd A'pr wf A'lc)
+        (ParallelReduction_close B'cd B'pr wf B'lc)
+    | .listAppComp .. => sorry
+  | .listAppComp ne .., pr, _ => match pr with
+    | .listAppId _ _ (K := K) => nomatch ne K
+    | .listApp .. => sorry
+    | .listAppComp .. => sorry
+  | .prod A'cd, .prod A'pr, .prod A'lc =>
+    exact .prod <| ParallelReduction_close A'cd A'pr wf A'lc
+  | .sum A'cd, .sum A'pr, .sum A'lc =>
+    exact .sum <| ParallelReduction_close A'cd A'pr wf A'lc
+termination_by sizeOf A
+decreasing_by
+  all_goals simp_arith
+  · rename _ = A' => eq
+    cases eq
+    simp_arith
+  · apply Nat.le_of_lt
+    apply Nat.lt_add_right
+    apply Nat.lt_add_left
+    apply List.sizeOf_lt_of_mem
+    exact Range.mem_map_of_mem mem
+  · rename _ = A' => eq
+    cases eq
+    simp_arith
+  · apply Nat.le_of_lt
+    apply Nat.lt_add_right
+    apply Nat.lt_add_left
+    apply List.sizeOf_lt_of_mem
+    exact Range.mem_map_of_mem mem
+  · apply Nat.le_of_lt
+    apply Nat.lt_add_right
+    apply Nat.lt_add_left
+    apply List.sizeOf_lt_of_mem
+    exact Range.mem_map_of_mem mem
+  · apply Nat.le_of_lt
+    apply List.sizeOf_lt_of_mem
+    exact Range.mem_map_of_mem mem
+
+end CompleteDevelopment
+
+#exit
 
 local instance : Inhabited «Type» where
   default := .list []
