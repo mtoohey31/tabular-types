@@ -491,13 +491,131 @@ namespace TypeEquivalence
 theorem EqParallelReduction_of (eq: [[Δ ⊢ A ≡ B]]) (Alc: A.TypeVarLocallyClosed) (wf: [[ ⊢ Δ ]]) : [[Δ ⊢ A <≡>* B]] :=
   eq.TypeEquivalenceS_of Alc wf |>.ParallelReduction_of
 
-theorem weakening (equiv: [[ Δ, Δ'' ⊢ A ≡ B ]]) (Alc: A.TypeVarLocallyClosed) (wf: [[ ⊢ Δ, Δ'' ]]) (wf': [[ ⊢ Δ, Δ', Δ'' ]]) : [[ Δ, Δ', Δ'' ⊢ A ≡ B ]] :=
-  equiv.EqParallelReduction_of Alc wf |>.weakening wf'.EnvironmentTypeWellFormedness_of |>.TypeEquivalence_of wf'
+theorem weakening_type' (equiv: [[ Δ, Δ' ⊢ A ≡ B ]]) (freshΔ: a ∉ Δ.typeVarDom) : [[ Δ, a: K, Δ' ⊢ A ≡ B ]] := by
+  generalize Δ_eq: [[ (Δ, Δ') ]] = Δ_ at equiv
+  induction equiv generalizing Δ Δ' <;> subst Δ_eq
+  case lamApp B K' A BkiK' =>
+    refine .lamApp ?_
+    rw [<- Environment.append_type_assoc]
+    refine Kinding.weakening_r' (fresh := by simp_all [Environment.typeVarDom]) BkiK'
+  case listAppId AkiLK =>
+    refine .listAppId ?_
+    rw [<- Environment.append_type_assoc]
+    refine Kinding.weakening_r' (fresh := by simp_all [Environment.typeVarDom]) AkiLK
+  case lam K' A B I equiv ih =>
+    refine .lam (I := a :: I ++ Δ.typeVarDom) (λ a' nin => ?_)
+    rw [Environment.append_typeExt_assoc]
+    refine ih a' (by simp_all) freshΔ (by simp_all [Environment.append])
+  case scheme K' A B I equiv ih =>
+    refine .scheme (I := a :: I ++ Δ.typeVarDom) (λ a' nin => ?_)
+    rw [Environment.append_typeExt_assoc]
+    refine ih a' (by simp_all) freshΔ (by simp_all [Environment.append])
+  all_goals aesop (add unsafe constructors TypeEquivalence) (config := { enableSimp := false })
 
-theorem subst' {A T T' : «Type»} (equiv : [[ Δ, a: K, Δ' ⊢ T ≡ T' ]]) (Tlc: T.TypeVarLocallyClosed) (wf: [[ ⊢ Δ, a: K, Δ' ]]) (kindA: [[ Δ ⊢ A: K ]]) : [[ Δ, Δ'[A/a] ⊢ T[A/a] ≡ T'[A/a] ]] :=
-  equiv.EqParallelReduction_of Tlc wf |>.subst_out' wf kindA |>.TypeEquivalence_of <| wf.TypeVar_subst kindA
+theorem weakening_term' (equiv: [[ Δ, Δ' ⊢ A ≡ B ]]) : [[ Δ, x: T, Δ' ⊢ A ≡ B ]] := by
+  generalize Δ_eq: [[ (Δ, Δ') ]] = Δ_ at equiv
+  induction equiv generalizing Δ Δ' <;> subst Δ_eq
+  case lamApp B K' A BkiK' =>
+    refine .lamApp ?_
+    rw [<- Environment.append_term_assoc]
+    refine Kinding.weakening_r' (fresh := by simp_all [Environment.typeVarDom]) BkiK'
+  case listAppId AkiLK =>
+    refine .listAppId ?_
+    rw [<- Environment.append_term_assoc]
+    refine Kinding.weakening_r' (fresh := by simp_all [Environment.typeVarDom]) AkiLK
+  case lam K' A B I equiv ih =>
+    refine .lam (I := I) (λ a' nin => ?_)
+    rw [Environment.append_typeExt_assoc]
+    refine ih a' (by simp_all) (by simp_all [Environment.append])
+  case scheme K' A B I equiv ih =>
+    refine .scheme (I := I) (λ a' nin => ?_)
+    rw [Environment.append_typeExt_assoc]
+    refine ih a' (by simp_all) (by simp_all [Environment.append])
+  all_goals aesop (add unsafe constructors TypeEquivalence) (config := { enableSimp := false })
 
--- TODO this is not dt so properties on typing apparently have nothing to do with terms in env
+open Environment in
+theorem weakening (equiv: [[ Δ, Δ'' ⊢ A ≡ B ]]) (wfτ: [[ ⊢τ Δ, Δ', Δ'' ]]) : [[ Δ, Δ', Δ'' ⊢ A ≡ B ]] := by
+  induction Δ' generalizing Δ''
+  . case empty => simp_all [empty_append]
+  . case typeExt Δ' a' K' ih =>
+    specialize ih equiv (by
+      rw [append_assoc, <- append_typeExt_assoc] at wfτ
+      rw [append_assoc]
+      exact wfτ.TypeVar_drop
+    )
+    rw [append_assoc]
+    apply weakening_type'
+    . rw [<- append_assoc]
+      exact ih
+    . rw [<- append_type_assoc, append_assoc] at wfτ
+      exact wfτ.append_typeVar_fresh_l a' (by simp_all [typeVarDom_append, typeVarDom])
+  . case termExt Δ' x T ih =>
+    specialize ih equiv (by
+      rw [append_assoc, <- append_termExt_assoc] at wfτ
+      rw [append_assoc]
+      exact wfτ.TermVar_drop
+    )
+    rw [append_assoc]
+    apply weakening_term'
+    rw [<- append_assoc]
+    exact ih
+
+theorem subst' {A T T' : «Type»} (equiv : [[ Δ, a: K, Δ' ⊢ T ≡ T' ]]) (Tlc: T.TypeVarLocallyClosed) (wf: [[ ⊢ Δ, a: K, Δ' ]]) (AkiK: [[ Δ ⊢ A: K ]]) : [[ Δ, Δ'[A/a] ⊢ T[A/a] ≡ T'[A/a] ]] := by
+  generalize Δ_eq: [[ (Δ, a: K, Δ') ]] = Δ_ at equiv
+  induction equiv generalizing Δ Δ' <;> subst Δ_eq <;> (try simp_all [Type.TypeVar_subst])
+  . case refl => exact .refl
+  . case lamApp T₂ K' T₁ T₂kiK' =>
+    rw [AkiK.TypeVarLocallyClosed_of.Type_open_TypeVar_subst_dist]
+    refine .lamApp <| T₂kiK'.subst' wf AkiK
+  . case listAppList T₁ n T₂i T₁lc =>
+    unfold Function.comp
+    simp [Type.TypeVar_subst]
+    refine .listAppList <| T₁lc.TypeVar_subst AkiK.TypeVarLocallyClosed_of
+  . case listAppId T K' TkiLK' => exact .listAppId <| TkiLK'.subst' wf AkiK
+  . case lam K' T T' I TT' ih =>
+    let .lam Tlc := Tlc
+    refine .lam (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom) (λ a' nin => ?_)
+    repeat1 rw [<- AkiK.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm (neq := by aesop)]
+    rw [Environment.append_typeExt_assoc, Environment.typeExt_subst]
+    refine ih a' (by simp_all) Tlc.strengthen ?_ AkiK (by simp_all [Environment.append])
+    constructor <;> simp_all [Environment.typeVarDom, Environment.typeVarDom_append, Environment.TypeVarNotInDom, Environment.TypeVarInDom]
+  . case app A₁ A₂ B₁ B₂ A₁A₂ B₁B₂ ih1 ih2 =>
+    let .app A₁lc B₁lc := Tlc
+    refine .app (ih1 A₁lc wf AkiK rfl) (ih2 B₁lc wf AkiK rfl)
+  . case scheme K' T T' I TT' ih =>
+    let .forall Tlc := Tlc
+    refine .scheme (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom) (λ a' nin => ?_)
+    repeat1 rw [<- AkiK.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm (neq := by aesop)]
+    rw [Environment.append_typeExt_assoc, Environment.typeExt_subst]
+    refine ih a' (by simp_all) Tlc.strengthen ?_ AkiK (by simp_all [Environment.append])
+    constructor <;> simp_all [Environment.typeVarDom, Environment.typeVarDom_append, Environment.TypeVarNotInDom, Environment.TypeVarInDom]
+  . case arr A₁ A₂ B₁ B₂ A₁A₂ B₁B₂ ih1 ih2 =>
+    let .arr A₁lc B₁lc := Tlc
+    refine .arr (ih1 A₁lc wf AkiK rfl) (ih2 B₁lc wf AkiK rfl)
+  . case list n Ti Ti' TT' ih =>
+    let .list Tilc := Tlc
+    refine .list (λ i iltn => ?_)
+    simp [Function.comp]
+    exact ih i iltn (Tilc _ <| Std.Range.mem_map_of_mem iltn) wf AkiK rfl
+  . case listApp A₁ A₂ B₁ B₂ A₁A₂ B₁B₂ ih1 ih2 =>
+    let .listApp A₁lc B₁lc := Tlc
+    refine .listApp (ih1 A₁lc wf AkiK rfl) (ih2 B₁lc wf AkiK rfl)
+  . case listAppComp T₀ K' T₁ T₂ A₀lc =>
+    let .listApp T₀lc _ := Tlc
+    refine .listAppComp <| T₀lc.TypeVar_subst AkiK.TypeVarLocallyClosed_of
+  . case prod T T' TT' ih =>
+    let .prod Tlc := Tlc
+    refine .prod (ih Tlc wf AkiK rfl)
+  . case sum T T' TT' ih =>
+    let .sum Tlc := Tlc
+    refine .sum (ih Tlc wf AkiK rfl)
+  . case symm T T' TT' ih =>
+    have Tlc := TT'.preserve_lc.2 Tlc
+    refine .symm <| ih Tlc wf AkiK rfl
+  . case trans T₁ T₂ T₃ T₁T₂ T₂T₃ ih1 ih2 =>
+    have T₂lc := T₁T₂.preserve_lc.1 Tlc
+    exact .trans (ih1 wf AkiK rfl) (ih2 T₂lc wf AkiK rfl)
+
 theorem TermVar_drop (equiv: [[ Δ, x: T, Δ'' ⊢ A ≡ B ]]): [[ Δ, Δ'' ⊢ A ≡ B ]] := by
   generalize Δ_eq : [[ (Δ, x: T, Δ'') ]] = Δ' at equiv
   induction equiv generalizing Δ'' <;> subst Δ_eq

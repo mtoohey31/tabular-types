@@ -726,7 +726,7 @@ theorem weakening (h: [[Δ, Δ'' ⊢ E : A]]) (wf: [[⊢ Δ, Δ', Δ'']]): [[Δ,
     exact .sumIntro iltn (ih wf rfl) (λ i' i'ltn => AkiStar i' i'ltn |>.weakening wf)
   case equiv E A B h AB ih =>
     have EtyA := ih wf rfl
-    refine EtyA.equiv <| AB.weakening EtyA.TypeVarLocallyClosed_of h.WellFormedness_of wf
+    exact EtyA.equiv <| AB.weakening wf.EnvironmentTypeWellFormedness_of
   all_goals try aesop (add safe constructors Kinding, unsafe constructors Typing, safe forward Kinding.weakening) (config := { enableSimp := false }); done
 
 open Environment in
