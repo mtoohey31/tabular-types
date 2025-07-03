@@ -16,7 +16,7 @@ inductive Kind where
   | comm
   | row : Kind → Kind
   | constr
-deriving Inhabited, BEq, DecidableEq
+deriving Inhabited, Hashable, BEq, DecidableEq
 
 namespace Kind
 
@@ -48,7 +48,7 @@ instance : ToString Comm where
 inductive ProdOrSum where
   | prod
   | sum
-deriving Inhabited, BEq, DecidableEq
+deriving Inhabited, Hashable, BEq, DecidableEq
 
 instance : ToString ProdOrSum where
   toString
@@ -81,12 +81,12 @@ inductive Monotype where
   | int : Monotype
   | str : Monotype
   | alias : String → Monotype
-deriving BEq, DecidableEq
+deriving Hashable, BEq, DecidableEq
 
 inductive MonotypePairList where
   | nil : MonotypePairList
   | cons (head₀ head₁ : Monotype) (tail : MonotypePairList) : MonotypePairList
-deriving BEq, DecidableEq
+deriving Hashable, BEq, DecidableEq
 
 end
 

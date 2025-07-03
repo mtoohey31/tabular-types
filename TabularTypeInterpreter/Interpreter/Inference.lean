@@ -15,7 +15,7 @@ abbrev UniVar := Nat
 abbrev Set := Std.HashSet
 
 /--
-The context under which the algorithm is evaluated. 
+The context under which the algorithm is evaluated.
 Each type, term or existential variable can have at most a single declaration in the context.
 Furthermore, the context is ordered; entries earlier in the context can not refer to later entries.
 -/
@@ -53,7 +53,7 @@ abbrev Context := List ContextItem
 inductive InferError where
 | panic (message : String)
 deriving Inhabited
-structure InferState where 
+structure InferState where
   Γ : Context
   gen : StdGen
 deriving Inhabited
@@ -98,7 +98,7 @@ def withItem (item : ContextItem) (m : InferM a) : InferM a := do
   before item
   return x
 
-def kind (σ : TypeScheme) (κ : Kind) : InferM Unit := do 
+def kind (σ : TypeScheme) (κ : Kind) : InferM Unit := do
   let { Γ .. } <- get
   match σ with
   | .qual $ .mono $ .var α₀ =>
@@ -113,9 +113,9 @@ inductive Row where
 | uvar : UniVar → Row
 deriving Inhabited, BEq, DecidableEq, Hashable
 structure RowData where
-/-- Whether an All constraint is attached to this row. -/
-all : Option Monotype
-deriving Inhabited, BEq, DecidableEq, Hashable
+/-- The `All` constraints attached to this row. -/
+all : Set Monotype
+deriving Inhabited
 namespace Row
   /-- Convert a row monotype into a node. Assumes ρ has kind `(.row .star)`. -/
   def fromMonotype (ρ : Monotype) : Row :=
@@ -191,7 +191,7 @@ namespace RowGraph
       let graph := generate Γ
       let (c, μ, p) := (Row.fromMonotype c, EdgeComm.fromMonotype μ, Row.fromMonotype p)
       let rows := (
-        let emptyData : RowData := { all := .none }
+        let emptyData : RowData := { all := Std.HashSet.empty }
         graph.rows.insert c emptyData |>.insert p emptyData
       );
       let edges := graph.edges.insert (.contain c μ p)
@@ -200,12 +200,18 @@ namespace RowGraph
       let graph := generate Γ
       let (l, μ, r, p) := (Row.fromMonotype l, EdgeComm.fromMonotype μ, Row.fromMonotype r, Row.fromMonotype p)
       let rows := (
-        let emptyData : RowData := { all := .none }
+        let emptyData : RowData := { all := Std.HashSet.empty }
         graph.rows.insert l emptyData |>.insert r emptyData |>.insert p emptyData
       )
       let edges := graph.edges.insert (.concat l μ r p)
       { graph with rows, edges }
-    | .constraint (Monotype.app (.app .all ϕ) ρ) :: Γ => sorry
+    -- TODO: handle propogation downward
+    | .constraint (Monotype.app (.app .all ϕ) ρ) :: Γ =>
+      let graph := generate Γ
+      let p := Row.fromMonotype ρ
+      let prevData := graph.rows.getD p { all := Std.HashSet.empty }
+      let rows := graph.rows.insert p { prevData with all := prevData.all.insert ϕ }
+      { graph with rows }
     | _ => sorry
   partial def contains (c : Row) (μ : EdgeComm) (p : Row) : ReaderM RowGraph Bool := do
     let graph ← read
@@ -306,11 +312,11 @@ partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
     return ⟨σ, t.annot⟩
   | .let χ σ? e e' =>
     match σ? with
-    | .none => 
+    | .none =>
       let ⟨σ, t⟩ ← infer e
       let ⟨σ', t'⟩ ← withItem (.termvar χ σ) do infer e'
       return ⟨σ', t.let (b := false) t'⟩
-    | .some σ => 
+    | .some σ =>
       let t ← check e σ
       let ⟨σ', t'⟩ ← withItem (.termvar χ σ) do infer e'
       return ⟨σ', t.let (b := true) t'⟩
@@ -379,14 +385,14 @@ partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
     let rx ← fresh
     push <| .xunivar rx (.row .star)
     let c ← constraint <| .contain (.uvar rx) μ ρ
-    return ⟨Monotype.app (.prodOrSum .prod μ) (.uvar rx), t.prj c⟩ 
+    return ⟨Monotype.app (.prodOrSum .prod μ) (.uvar rx), t.prj c⟩
   | .inj e =>
     let ⟨Monotype.app (.prodOrSum .sum μ) ρ, t⟩ ← infer e
       | throw $ .panic "injection of non-variant term"
     let rx ← fresh
     push <| .xunivar rx (.row .star)
     let c ← constraint <| .contain ρ μ (.uvar rx)
-    return ⟨Monotype.app (.prodOrSum .sum μ) (.uvar rx), t.inj c⟩ 
+    return ⟨Monotype.app (.prodOrSum .sum μ) (.uvar rx), t.inj c⟩
   | .concat m n =>
     let μ ← freshType .comm
     let ρₘ ← freshType (.row .star)
