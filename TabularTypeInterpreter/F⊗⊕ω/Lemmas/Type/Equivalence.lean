@@ -8,7 +8,7 @@ namespace TabularTypeInterpreter.«F⊗⊕ω»
 open Environment in
 theorem ParallelReduction.TypeEquivalence_of (h: [[ Δ ⊢ A ≡> B ]]) (wf: [[ ⊢ Δ ]]) : [[ Δ ⊢ A ≡ B ]] := by
   induction h
-  . case refl => exact .refl
+  . case var => exact .refl
   . case lamApp Δ _ _ I _ _ _ kinding AA' BB' ih1 ih2 =>
     simp_all
     refine .trans (.app (.lam (I ++ Δ.typeVarDom) ?_) ih2) (.lamApp ?_)
@@ -55,7 +55,7 @@ theorem ParallelReduction_of (h: [[ Δ ⊢ A ≡ᵢ B ]]) : [[ Δ ⊢ A ≡> B ]
   case scheme I _ ih => exact .scheme (I := I) ih
   case listAppList Alc => exact .listAppList .refl (λ i iltn => .refl) Alc
   case listAppComp A₀lc => exact .listAppComp (I := []) A₀lc .refl (λa nin => .refl) .refl
-  all_goals aesop (add safe constructors ParallelReduction)
+  all_goals aesop (add safe constructors ParallelReduction, safe apply ParallelReduction.refl)
 
 local instance : Inhabited «Type» where
   default := .list []

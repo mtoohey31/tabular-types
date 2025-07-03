@@ -13,7 +13,27 @@ namespace ParallelReduction
 
 local instance : Inhabited «Type» where
   default := .list []
-in
+
+def refl : [[Δ ⊢ A ≡> A]] :=
+  match A with
+  | .var _ => .var
+  | .lam _ _ => .lam (I := []) fun _ _ => .refl
+  | .app .. => .app .refl .refl
+  | .forall .. => .scheme (I := []) fun _ _ => .refl
+  | .arr .. => .arr .refl .refl
+  | .list As => by
+    rw [← Std.Range.map_get!_eq (as := As)]
+    exact .list fun _ mem => .refl
+  | .listApp .. => .listApp .refl .refl
+  | .prod _ => .prod .refl
+  | .sum _ => .sum .refl
+termination_by sizeOf A
+decreasing_by
+  all_goals simp_arith
+  apply Nat.le_of_lt
+  apply List.sizeOf_lt_of_mem
+  simp [List.getElem?_eq_getElem mem.upper]
+
 def list' (As Bs: List «Type») (length_eq: As.length = Bs.length) (red: ∀A B, ⟨A, B⟩ ∈ (As.zip Bs) → [[ Δ ⊢ A ≡> B ]]): ParallelReduction Δ (Type.list As) (Type.list Bs) := by
   rw [← Std.Range.map_get!_eq (as := As), ← Std.Range.map_get!_eq (as := Bs), ← length_eq]
   apply list
@@ -61,29 +81,27 @@ theorem inv_sum (red: [[ Δ ⊢ ⊕A ≡> T ]]): ∃ A', T = [[⊕A']] ∧ [[ Δ
 theorem inv_list (red: [[ Δ ⊢ { </ A@i // i in [:n] /> } ≡> T ]] ): ∃ B, T = [[{ </ B@i // i in [:n] /> }]] ∧ [[ </ Δ ⊢ A@i ≡> B@i // i in [:n] /> ]] := by
   generalize T_eq : [[{ </ A@i // i in [:n] /> }]] = T_ at red
   cases red <;> try cases T_eq
-  . case refl.refl => exact ⟨A, rfl, fun i mem => refl⟩
-  . case list n' A_ B AB =>
-    injection T_eq with eq
-    have eqnn' := Std.Range.length_eq_of_mem_eq eq
-    subst eqnn'
-    have eqAA_ := Std.Range.eq_of_mem_of_map_eq eq; clear eq
-    exact ⟨B, rfl, λx nin => by simp_all⟩
+  case list n' A_ B AB =>
+  injection T_eq with eq
+  have eqnn' := Std.Range.length_eq_of_mem_eq eq
+  subst eqnn'
+  have eqAA_ := Std.Range.eq_of_mem_of_map_eq eq; clear eq
+  exact ⟨B, rfl, λx nin => by simp_all⟩
 
 open «Type» in
 theorem inv_id (red: [[Δ ⊢ λa: K. a$0 ≡> A']]): A' = [[ λa: K. a$0 ]] := by
   cases red
-  . case refl => rfl
-  . case lam I B2 aa =>
-    have ⟨a, nin⟩ := (I ++ B2.freeTypeVars).exists_fresh
-    simp [TypeVar_open] at aa
-    specialize aa a (by simp_all)
-    generalize B2eq: [[ (B2^a) ]] = B2_ at aa
-    cases aa; case refl =>
-    have B2eq := congrArg (λt => TypeVar_close t a) B2eq
-    simp [TypeVar_open, TypeVar_close] at B2eq
-    rw [TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars (by simp_all)] at B2eq
-    subst B2eq
-    rfl
+  case lam I B2 aa =>
+  have ⟨a, nin⟩ := (I ++ B2.freeTypeVars).exists_fresh
+  simp [TypeVar_open] at aa
+  specialize aa a (by simp_all)
+  generalize B2eq: [[ (B2^a) ]] = B2_ at aa
+  cases aa; case var =>
+  have B2eq := congrArg (λt => TypeVar_close t a) B2eq
+  simp [TypeVar_open, TypeVar_close] at B2eq
+  rw [TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars (by simp_all)] at B2eq
+  subst B2eq
+  rfl
 
 open «Type» in
 theorem preserve_not_mem_freeTypeVars (red: [[ Δ ⊢ A ≡> B ]]) a (notInFV: a ∉ A.freeTypeVars): a ∉ B.freeTypeVars := by
@@ -329,6 +347,7 @@ theorem subst_in {A B T: «Type»} (red: [[ Δ ⊢ A ≡> B ]]) (lcA: A.TypeVarL
 theorem subst_out' {A T T' : «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red : [[ Δ, a: K, Δ' ⊢ T ≡> T' ]]) (kindA: [[ Δ ⊢ A: K ]]) : [[ Δ, Δ'[A/a] ⊢ T[A/a] ≡> T'[A/a] ]] := by
   generalize Δ_eq: (Δ.typeExt a K |>.append Δ') = Δ_ at red
   induction red generalizing Δ Δ' <;> (try simp_all [Type.TypeVar_subst]) <;> try (aesop (rule_sets := [pred]); done)
+  · case var => split <;> exact .refl
   . case lamApp Δ_ T2 K' I T1 T1' T2' kindT2 redT1 redT2 ihT1 ihT2 =>
     subst Δ_
     rw [kindA.TypeVarLocallyClosed_of.Type_open_TypeVar_subst_dist]
@@ -392,7 +411,7 @@ set_option maxHeartbeats 400000 in  -- bruh
 theorem subst_all' {A B T: «Type»} (wf: [[ ⊢ Δ, a: K, Δ' ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ, a: K, Δ' ⊢ T ≡> T' ]]) (kindA: [[ Δ ⊢ A: K ]]) (lcT: T.TypeVarLocallyClosed): [[ Δ, Δ'[A/a] ⊢ T[A/a] ≡> T'[B/a] ]] := by
   generalize Δ_eq: (Δ.typeExt a K |>.append Δ') = Δ_ at red2
   induction red2 generalizing Δ Δ' A B
-  . case refl Δ_ T_ =>
+  . case var Δ_ T_ =>
     apply subst_in (lcA := kindA.TypeVarLocallyClosed_of) (lcT := lcT)
     apply weakening
     . assumption
@@ -534,7 +553,7 @@ theorem forall_intro_ex a (fresh: a ∉ A.freeTypeVars ++ B.freeTypeVars ++ Δ.t
 
 theorem preservation (red: [[ Δ ⊢ A ≡> B ]]) (wf: [[ ⊢ Δ ]]) (k: [[ Δ ⊢ A: K ]]): [[ Δ ⊢ B: K ]] := by
   induction red generalizing K
-  case refl => simp_all
+  case var => simp_all
   case lamApp Δ B KB I A A' B' kindB redA redB ihA ihB =>
     cases k; case app _ _ k =>
     cases k; case lam I' _ kindA =>
@@ -630,7 +649,7 @@ set_option maxHeartbeats 400000 in  -- bruh
 open Environment «Type» TypeVarLocallyClosed in
 theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ ⊢ A ≡> C ]]) (lc: A.TypeVarLocallyClosed): ∃ T, [[ Δ ⊢ B ≡> T ]] ∧ [[ Δ ⊢ C ≡> T ]] ∧ T.TypeVarLocallyClosed := by
   induction red1 generalizing C
-  . case refl Δ A => exact ⟨C, red2, .refl, red2.preserve_lc lc⟩
+  . case var Δ A => exact ⟨C, red2, .refl, red2.preserve_lc lc⟩
   . case lamApp Δ B K I A A' B' k redA redB ihA ihB =>
     -- Assume [[ Δ, a: K ⊢ A^a ≡> A'^a ]] [[ Δ ⊢ B ≡> B' ]]
     -- Also, red2: [[ Δ ⊢ (λ?: K. A) B ≡> C ]]
@@ -643,7 +662,6 @@ theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ �
     have lcA': A'.TypeVarLocallyClosed 1 := lcA.modus_ponens_open (λ a nin => redA a nin |>.preserve_lc)
     simp_all
     cases red2
-    . case refl => exact ⟨[[ (A'^^B') ]], .refl, .lamApp k redA redB, lcA'.Type_open_dec <| lcB |> redB.preserve_lc⟩
     . case lamApp I' A2 B2 redA' redB' _ =>
       have ⟨a, notInI⟩ := (I ++ I' ++ A'.freeTypeVars ++ A2.freeTypeVars ++ Δ.typeVarDom ++ B'.freeTypeVars).exists_fresh
       have wf' : [[ ⊢ Δ, a: K ]] := .typeVarExt wf (by simp_all [TypeVarNotInDom, TypeVarInDom])
@@ -663,25 +681,6 @@ theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ �
       . apply TypeVarLocallyClosed.TypeVar_subst <;> assumption
     . case app A2 B2 redA' redB' =>
       cases redA'
-      . case refl =>
-        have ⟨a, notInI⟩ := (I ++ A.freeTypeVars ++ A'.freeTypeVars ++ Δ.typeVarDom).exists_fresh
-        have wf' : [[ ⊢ Δ, a: K ]] := .typeVarExt wf (by simp_all [TypeVarNotInDom, TypeVarInDom])
-        specialize redA a (by simp_all)
-        have ⟨T1, redA'T, _, lcT1⟩ := ihA a (by simp_all) wf' redA
-        have ⟨T2, redB'T, redB2T, lcT2⟩ := ihB redB'
-
-        rw [<- TypeVar_open_TypeVar_close_id (A:=T1) (a:=a)] at redA'T <;> try assumption
-        exists [[ (A'^^T2) ]]
-        repeat' apply And.intro
-        . rw [<- TypeVar_subst_intro_of_not_mem_freeTypeVars (a := a) (by simp_all)]
-          rw [<- TypeVar_subst_intro_of_not_mem_freeTypeVars (a := a) (by simp_all)]
-          apply subst_in <;> try assumption
-          . apply redB.preserve_lc; simp_all
-          . apply redA.preserve_lc; simp_all
-        . apply (lamApp_intro_ex a) <;> try (simp_all; done)
-          . apply preservation (red := redB') <;> simp_all
-        . apply redB.preserve_lc at lcB
-          simp_all [Type_open_dec]
       . case lam I' B22 redA' =>
         have ⟨a, notInI⟩ := (I ++ I' ++ A'.freeTypeVars ++ B22.freeTypeVars ++ Δ.typeVarDom).exists_fresh
         have wf' : [[ ⊢ Δ, a: K ]] := .typeVarExt wf (by simp_all [TypeVarNotInDom, TypeVarInDom])
@@ -708,11 +707,6 @@ theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ �
     have B'ilc := λi iltn => BB' i iltn |>.preserve_lc <| Bilc i iltn
     have A'lc := AA'.preserve_lc Alc
     cases red2
-    . case refl =>
-      subst B_eq
-      refine ⟨_, .refl, .listAppList AA' BB' Alc, .list λT Tin => ?_⟩
-      . have ⟨i, iltn, Teq⟩ := Std.Range.mem_of_mem_map Tin; subst Teq
-        exact A'lc.app <| B'ilc i iltn
     . case listAppList A'' n_ B_ B'' _ BB'' _ AA'' =>
       injection B_eq with eq
       have neq := Std.Range.length_eq_of_mem_eq eq; subst neq
@@ -766,9 +760,6 @@ theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ �
     match lc with
     | .listApp _ Blc =>
     cases red2
-    . case refl =>
-      have ⟨T, B'T, BT, Tlc⟩ := ih wf .refl Blc
-      exact ⟨T, B'T, BT.listAppId BkiLK, Tlc⟩
     . case listAppList n B B2 BB2 _ aA' =>
       rw [aA'.inv_id]
       have ⟨T, B'T, B2T, Tlc⟩ := ih wf (.list BB2) Blc
@@ -812,7 +803,6 @@ theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ �
   . case app Δ A A' B B' AA' BB' ih1 ih2 =>
     cases lc; case app Alc Blc =>
     cases red2
-    . case refl => exact ⟨[[ (A' B') ]], .refl, .app AA' BB', .app (AA'.preserve_lc Alc) (BB'.preserve_lc Blc)⟩
     . case lamApp K I A A'' B'' AA'' BkiK BB'' =>
       have ⟨A', eqA', _, AA'⟩ := AA'.inv_lam; subst eqA'
       have ⟨T1, A'T1, A''T1, T1lc⟩ := ih1 wf (.lam AA'') Alc
@@ -866,7 +856,6 @@ theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ �
   . case listApp Δ A A' B B' AA' BB' ih1 ih2 =>
     cases lc; case listApp Alc Blc =>
     cases red2
-    . case refl => exact ⟨[[ (A' ⟦B'⟧) ]], .refl, .listApp AA' BB', .listApp (AA'.preserve_lc Alc) (BB'.preserve_lc Blc)⟩
     . case listAppList A'' n B B'' BB'' Alc AA'' =>
       have Bilc := λi iltn => match Blc with | .list Blc => Blc (B i) (Std.Range.mem_map_of_mem iltn)
 
@@ -911,27 +900,11 @@ theorem diamond (wf: [[ ⊢ Δ ]]) (red1: [[ Δ ⊢ A ≡> B ]]) (red2: [[ Δ �
       have ⟨T2, A₁'B'T2, A₁''B''T2, T2lc⟩ := ih2 wf (.listApp (.lam A₁A₁'') BB'') Blc
       clear ih1 ih2
       cases A₁BA₁B'
-      . case refl =>
-        let .listApp (.lam A₁lc) Blc := Blc
-        exact ⟨
-          .listApp (.lam K (T1.app A₁'')) B'',
-          listAppComp (I := I) (AA'.preserve_lc Alc) A₀'T1 A₁A₁'' BB'',
-          listApp (lam (I := Δ.typeVarDom) (by
-            intro _ anin
-            rw [TypeVar_open, TypeVar_open, T1lc.TypeVar_open_id,
-                AA₀'.preserve_lc Alc |>.TypeVar_open_id]
-            apply app _ refl
-            exact A₀''T1.weakening (Δ' := .typeExt .empty ..) <| wf.typeVarExt anin
-          )) refl,
-          .listApp (.lam (.app T1lc.weaken <| A₁lc.modus_ponens_open (λ a nin => A₁A₁'' a nin |>.preserve_lc)))
-            <| BB''.preserve_lc Blc
-        ⟩
       . case listAppList A₁' n B B' BB' A₁body A₁A₁' => sorry
       . case listAppId => sorry
       . case listApp A₁' B' A₁A₁' BB' =>
         cases A₁A₁'
-        . case refl => sorry
-        . case lam I A₁' A₁A₁' => sorry
+        case lam I A₁' A₁A₁' => sorry
           -- cases A₁''B''T2
       . case listAppComp =>
       sorry

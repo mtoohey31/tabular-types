@@ -263,8 +263,8 @@ judgement_syntax Δ " ⊢ " A " ≡> " B : ParallelReduction (tex := s!"{Δ} \\,
 
 judgement ParallelReduction where
 
-───────── refl
-Δ ⊢ A ≡> A
+────────── var
+Δ ⊢ a ≡> a
 
 Δ ⊢ B : K
 ∀ a ∉ (I: List _), Δ, a : K ⊢ A^a ≡> A'^a
