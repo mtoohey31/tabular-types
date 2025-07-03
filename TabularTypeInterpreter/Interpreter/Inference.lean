@@ -150,7 +150,7 @@ structure RowGraph where
 deriving Inhabited
 namespace RowGraph
   def empty : RowGraph := { rows := Std.HashMap.empty, edges := Std.HashSet.empty }
-  /- get the set of direct parents for the given node -/
+  /-- get the set of direct parents for the given node -/
   def parents (node : Row) (comm : EdgeComm) : ReaderM RowGraph (Set Row) := do
     let graph ← read
     return graph.edges.fold (fun acc val => match val with
@@ -158,6 +158,19 @@ namespace RowGraph
       | .concat l μ r p => if (μ == comm) && (l == node || r == node) then acc.insert p else acc
       | .contain c μ p => if (μ == comm) && c == node then acc.insert p else acc
     ) Std.HashSet.empty
+  /-- get the set of direct children for the given node -/
+  def getChildren (row : Row) : ReaderM RowGraph (Set Row) := do
+    let graph ← read
+    return graph.edges.fold (fun acc val => match val with
+    -- TODO: μ can be a subtype of comm, or maybe the other way around
+      | .concat l _ r p => if p == row then acc.insert l |>.insert r else acc
+      | .contain c _ p => if p == row then acc.insert c else acc
+    ) Std.HashSet.empty
+  /-- get all leaf nodes that share the given row as a common root. -/
+  def getLeaves (row : Row) : ReaderM RowGraph (Set Row) := do
+    let children ← getChildren row
+    if children.isEmpty then return Std.HashSet.empty.insert row
+    children.foldM (fun acc row => acc.union <$> getChildren row) Std.HashSet.empty
   /--
   Check if `edge₁` is associate to `edge₂`, i.e.
   `edge₁` is `lₐ o r ~ p`
@@ -205,12 +218,12 @@ namespace RowGraph
       )
       let edges := graph.edges.insert (.concat l μ r p)
       { graph with rows, edges }
-    -- TODO: handle propogation downward
     | .constraint (Monotype.app (.app .all ϕ) ρ) :: Γ =>
       let graph := generate Γ
       let p := Row.fromMonotype ρ
-      let prevData := graph.rows.getD p { all := Std.HashSet.empty }
-      let rows := graph.rows.insert p { prevData with all := prevData.all.insert ϕ }
+      let leaves : Set Row := getLeaves p |>.run graph
+      let rows := leaves.fold (fun rows leaf => rows.alter leaf (fun data? => data?.map (fun data => { data with all := data.all.insert ϕ }))) graph.rows
+      -- TODO: propogate the constraint to intermediate literal nodes as well.
       { graph with rows }
     | _ => sorry
   partial def contains (c : Row) (μ : EdgeComm) (p : Row) : ReaderM RowGraph Bool := do
