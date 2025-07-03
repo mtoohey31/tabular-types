@@ -310,12 +310,11 @@ notex lc_ A   -- NOTE this is for preserve_lc when n = 0
 ───────────────────── listApp
 Δ ⊢ A₁ ⟦B₁⟧ ≡> A₂ ⟦B₂⟧
 
-notex lc_ A₀
-Δ ⊢ A₀ ≡> A₀'
-∀ a ∉ (I: List _), Δ, a : K ⊢ A₁^a ≡> A₁'^a
-Δ ⊢ B ≡> B'
-───────────────────────────────────────────────── listAppComp
-Δ ⊢ A₀ ⟦(λ a : K. A₁) ⟦B⟧⟧ ≡> (λ a : K. A₀' A₁') ⟦B'⟧
+notex lc_ A
+Δ ⊢ A ≡> A'
+Δ ⊢ B ≡> (λ a : K. B₀') ⟦B₁'⟧
+──────────────────────────────────── listAppComp
+Δ ⊢ A ⟦B⟧ ≡> (λ a : K. A' B₀') ⟦B₁'⟧
 
 Δ ⊢ A ≡> B
 ───────────── prod
@@ -352,9 +351,9 @@ judgement CompleteDevelopment where
 ────────────────────────────────────────── lamApp
 Δ ⊢ (λ a : K. A) B ≡>> A'^^B'/a
 
+∀ K, A ≠ λ a : K. a$0
 Δ ⊢ A ≡>> A'
 </ Δ ⊢ B@i ≡>> B'@i // i in [:n] notex />
-∀ K, A ≠ λ a : K. a$0
 ───────────────────────────────────────────────────────────────────────────────── listAppList
 Δ ⊢ A ⟦{ </ B@i // i in [:n] notex /> }⟧ ≡>> { </ A' B'@i // i in [:n] notex /> }
 
@@ -393,12 +392,11 @@ judgement CompleteDevelopment where
 ─────────────────────── listApp
 Δ ⊢ A₁ ⟦B₁⟧ ≡>> A₂ ⟦B₂⟧
 
-∀ K, A₀ ≠ λ a : K. a$0
-Δ ⊢ A₀ ≡>> A₀'
-∀ a ∉ (I: List _), Δ, a : K ⊢ A₁^a ≡>> A₁'^a
-Δ ⊢ B ≡>> B'
-────────────────────────────────────────────────────── listAppComp
-Δ ⊢ A₀ ⟦(λ a : K. A₁) ⟦B⟧⟧ ≡>> (λ a : K. A₀' A₁') ⟦B'⟧
+∀ K, A ≠ λ a : K. a$0
+Δ ⊢ A ≡>> A'
+Δ ⊢ B ≡>> (λ a : K. B₀') ⟦B₁'⟧
+───────────────────────────────────── listAppComp
+Δ ⊢ A ⟦B⟧ ≡>> (λ a : K. A' B₀') ⟦B₁'⟧
 
 Δ ⊢ A ≡>> B
 ─────────────── prod

@@ -31,11 +31,8 @@ theorem ParallelReduction.TypeEquivalence_of (h: [[ Δ ⊢ A ≡> B ]]) (wf: [[ 
   . case arr _ _ ih1 ih2 => exact ih1 wf |>.arr <| ih2 wf
   . case list _ ih => simp_all [Std.Range.mem_toList_of_mem]; exact .list ih
   . case listApp _ _ ih1 ih2 => exact ih1 wf |>.listApp <| ih2 wf
-  . case listAppComp Δ _ I _ _ _ _ _ A₀lc A₀A₀' A₁A₁' BB' ih1 ih2 ih3 =>
-    simp_all
-    have A₀'lc := A₀A₀'.preserve_lc A₀lc
-    refine .trans (.listApp ih1 (.listApp (.lam (I ++ Δ.typeVarDom) ?_) ih3)) (.listAppComp A₀'lc)
-    exact λa nin => ih2 a (by simp_all) (wf.typeVarExt (by simp_all [TypeVarNotInDom, TypeVarInDom]))
+  . case listAppComp Alc Apr _ ih₀ ih₁ =>
+    exact .trans (.listApp (ih₀ wf) (ih₁ wf)) (.listAppComp <| Apr.preserve_lc Alc)
   . case prod _ ih => exact ih wf |>.prod
   . case sum _ ih => exact ih wf |>.sum
 
@@ -54,7 +51,7 @@ theorem ParallelReduction_of (h: [[ Δ ⊢ A ≡ᵢ B ]]) : [[ Δ ⊢ A ≡> B ]
   case lam I _ ih => exact .lam (I := I) ih
   case scheme I _ ih => exact .scheme (I := I) ih
   case listAppList Alc => exact .listAppList .refl (λ i iltn => .refl) Alc
-  case listAppComp A₀lc => exact .listAppComp (I := []) A₀lc .refl (λa nin => .refl) .refl
+  case listAppComp A₀lc => exact .listAppComp A₀lc .refl .refl
   all_goals aesop (add safe constructors ParallelReduction, safe apply ParallelReduction.refl)
 
 local instance : Inhabited «Type» where

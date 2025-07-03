@@ -46,10 +46,9 @@
 }{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \targetpre A₁ \targetpost \, \lottsym{⟦} \targetpre B₁ \targetpost \lottsym{⟧} \targetpost \Rrightarrow \targetpre \targetpre A₂ \targetpost \, \lottsym{⟦} \targetpre B₂ \targetpost \lottsym{⟧} \targetpost}
 \lottinferencerulesep
 \lottinferencerule{listAppComp}{
-\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A₀ \targetpost \Rrightarrow \targetpre A₀' \targetpost}\\
-\lotthypothesis{\targetpre \targetpre Δ \targetpost \lottsym{,} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \targetpost \, \lottsym{⊢} \, \targetpre \targetpre A₁ \targetpost \targetpost \Rrightarrow \targetpre \targetpre A₁' \targetpost \targetpost}\\
-\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre B \targetpost \Rrightarrow \targetpre B' \targetpost}
-}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \targetpre A₀ \targetpost \, \lottsym{⟦} \targetpre \targetpre \lottsym{(} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre A₁ \targetpost \targetpost \lottsym{)} \targetpost \, \lottsym{⟦} \targetpre B \targetpost \lottsym{⟧} \targetpost \lottsym{⟧} \targetpost \Rrightarrow \targetpre \targetpre \lottsym{(} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre \targetpre A₀' \targetpost \, \targetpre A₁' \targetpost \targetpost \targetpost \lottsym{)} \targetpost \, \lottsym{⟦} \targetpre B' \targetpost \lottsym{⟧} \targetpost}
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \Rrightarrow \targetpre A' \targetpost}\\
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre B \targetpost \Rrightarrow \targetpre \targetpre \lottsym{(} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre B₀' \targetpost \targetpost \lottsym{)} \targetpost \, \lottsym{⟦} \targetpre B₁' \targetpost \lottsym{⟧} \targetpost}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre \targetpre A \targetpost \, \lottsym{⟦} \targetpre B \targetpost \lottsym{⟧} \targetpost \Rrightarrow \targetpre \targetpre \lottsym{(} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre \targetpre A' \targetpost \, \targetpre B₀' \targetpost \targetpost \targetpost \lottsym{)} \targetpost \, \lottsym{⟦} \targetpre B₁' \targetpost \lottsym{⟧} \targetpost}
 \lottinferencerulesep
 \lottinferencerule{prod}{
 \lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \Rrightarrow \targetpre B \targetpost}
