@@ -243,6 +243,20 @@ namespace RowGraph
       if graph.edges.contains (.concat r μ l p) then
         return true
     return ← graph.edges.toList.anyM <| isAssociate <| Edge.concat l μ r p
+  partial def alls (ϕ : Monotype) (p : Row) : ReaderM RowGraph Bool := do
+    let leaves ← getLeaves p
+    leaves.toList.allM (satisfies ϕ)
+    where satisfies (ϕ : Monotype) (leaf : Row) : ReaderM RowGraph Bool := do
+      let graph ← read
+      if graph.rows.get? leaf |>.any (·.all.contains ϕ) then return true;
+      -- The only hope now is that `leaf` is a literal and that its individual types satisfy the constraints.
+      match leaf with
+      | .literal _pairs => 
+        -- TODO:
+        --   check `ϕ` is satisfied for each type in `pairs`.
+        --   this requires allowing for regular constraint checking inside the rowgraph context.
+        return sorry
+      |_ => return false
 end RowGraph
 end rowSolver
 
