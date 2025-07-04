@@ -52,6 +52,7 @@ abbrev Context := List ContextItem
 
 inductive InferError where
 | panic (message : String)
+| fail (message : String)
 deriving Inhabited
 structure InferState where
   Γ : Context
@@ -265,6 +266,7 @@ partial def subtype (σ₀ σ₁ : TypeScheme) : InferM (σ₀.Subtyping σ₁) 
     return by
       rewrite [h]
       exact .refl
+  -- TODO: How the heck do we handle transitivity?
   else match σ₀, σ₁ with
   | Monotype.arr τ₀ τ₁, Monotype.arr τ₂ τ₃ =>
     let sₗ ← subtype τ₂ τ₀
@@ -284,10 +286,11 @@ partial def subtype (σ₀ σ₁ : TypeScheme) : InferM (σ₀.Subtyping σ₁) 
   | Monotype.app (.prodOrSum Ξ₀ μ₀) ρ₀, Monotype.app (.prodOrSum Ξ₁ μ₁) ρ₁ =>
     if hρ : ρ₀ = ρ₁ then
       if hΞ : Ξ₀ = Ξ₁ then
-        let s : μ₀.CommutativityPartialOrdering μ₁ := sorry
-        return by
-          rewrite [hρ, hΞ]
-          exact .decay s
+        if s : μ₀.CommutativityPartialOrdering μ₁ then
+          return by
+            rewrite [hρ, hΞ]
+            exact .decay s
+        else throw $ .fail "to show compatibility of commutativity"
       else throw $ .panic "Subtype of different row constructors."
     else throw $ .panic "Subtype of different rows."
   | Monotype.app (.prodOrSum .sum (.comm .comm)) (.row .nil (.some .star)), σ =>

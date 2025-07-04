@@ -68,6 +68,16 @@ def multiSubst (τ : Monotype) : List (Monotype × TId) → Monotype
 inductive CommutativityPartialOrdering : Monotype → Monotype → Prop where
   | non : CommutativityPartialOrdering (comm .non) μ
   | comm : CommutativityPartialOrdering μ (comm .comm)
+instance : Decidable (CommutativityPartialOrdering μ₀ μ₁) :=
+  if hnon : μ₀ = .comm .non then by cases hnon; exact isTrue .non
+  else if hcomm : μ₁ = .comm .comm then by cases hcomm; exact isTrue .comm
+  else by
+   apply isFalse
+   intro ordering
+   cases ordering
+   nomatch hnon
+   nomatch hcomm
+  
 
 inductive RowEquivalence : Monotype → Monotype → Monotype → Type where
   | refl : RowEquivalence ρ μ ρ
