@@ -91,6 +91,10 @@ judgement TypeEquivalence where
 ───────── refl
 Δ ⊢ A ≡ A
 
+lc_ A
+────────────────────── eta
+Δ ⊢ λ a : K. A a$0 ≡ A
+
 Δ ⊢ B: K
 ─────────────────────────── lamApp
 Δ ⊢ (λ a : K. A) B ≡ A^^B/a
@@ -102,6 +106,11 @@ notex lc_ A   -- NOTE this is for preserve_lc when n = 0
 Δ ⊢ A: L K
 ────────────────────────── listAppId
 Δ ⊢ (λ a : K. a$0) ⟦A⟧ ≡ A
+
+notex lc_ A₀
+Δ ⊢ A₁ : K₁ ↦ K₂
+───────────────────────────────────────────── listAppComp
+Δ ⊢ A₀ ⟦A₁ ⟦B⟧⟧ ≡ (λ a : K₁. A₀ (A₁ a$0)) ⟦B⟧
 
 ∀ a ∉ I, Δ, a : K ⊢ A^a ≡ B^a
 ───────────────────────────── lam (I : List TypeVarId)
@@ -129,10 +138,6 @@ notex lc_ A   -- NOTE this is for preserve_lc when n = 0
 Δ ⊢ B₁ ≡ B₂
 ───────────────────── listApp
 Δ ⊢ A₁ ⟦B₁⟧ ≡ A₂ ⟦B₂⟧
-
-notex lc_ A₀
-───────────────────────────────────────────────── listAppComp
-Δ ⊢ A₀ ⟦(λ a : K. A₁) ⟦B⟧⟧ ≡ (λ a : K. A₀ A₁) ⟦B⟧
 
 Δ ⊢ A ≡ B
 ───────────── prod
@@ -171,6 +176,10 @@ judgement TypeEquivalenceI where
 ────────── refl
 Δ ⊢ A ≡ᵢ A
 
+lc_ A
+─────────────────────── eta
+Δ ⊢ λ a : K. A a$0 ≡ᵢ A
+
 Δ ⊢ B: K
 ─────────────────────────── lamApp
 Δ ⊢ (λ a : K. A) B ≡ᵢ A^^B/a
@@ -182,6 +191,11 @@ notex lc_ A   -- NOTE this is for preserve_lc when n = 0
 Δ ⊢ A: L K
 ────────────────────────── listAppId
 Δ ⊢ (λ a : K. a$0) ⟦A⟧ ≡ᵢ A
+
+notex lc_ A₀
+Δ ⊢ A₁ : K₁ ↦ K₂
+────────────────────────────────────────────── listAppComp
+Δ ⊢ A₀ ⟦A₁ ⟦B⟧⟧ ≡ᵢ (λ a : K₁. A₀ (A₁ a$0)) ⟦B⟧
 
 ∀ a ∉ I, Δ, a : K ⊢ A^a ≡ᵢ B^a
 ───────────────────────────── lam (I : List TypeVarId)
@@ -209,10 +223,6 @@ notex lc_ A   -- NOTE this is for preserve_lc when n = 0
 Δ ⊢ B₁ ≡ᵢ B₂
 ───────────────────── listApp
 Δ ⊢ A₁ ⟦B₁⟧ ≡ᵢ A₂ ⟦B₂⟧
-
-notex lc_ A₀
-───────────────────────────────────────────────── listAppComp
-Δ ⊢ A₀ ⟦(λ a : K. A₁) ⟦B⟧⟧ ≡ᵢ (λ a : K. A₀ A₁) ⟦B⟧
 
 Δ ⊢ A ≡ᵢ B
 ───────────── prod
@@ -258,148 +268,5 @@ def TypeEquivalenceS.delab: Lean.PrettyPrinter.Unexpander
     let into := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "≡ₛ") }
     `([ $Δ $vdash $A $into $B ])
   | _ => throw ()
-
-judgement_syntax Δ " ⊢ " A " ≡> " B : ParallelReduction (tex := s!"{Δ} \\, \\lottsym\{⊢} \\, {A} \\Rrightarrow {B}")
-
-judgement ParallelReduction where
-
-───────── refl
-Δ ⊢ A ≡> A
-
-Δ ⊢ B : K
-∀ a ∉ (I: List _), Δ, a : K ⊢ A^a ≡> A'^a
-Δ ⊢ B ≡> B'
-────────────────────────────── lamApp
-Δ ⊢ (λ a : K. A) B ≡> A'^^B'/a
-
-Δ ⊢ A ≡> A'
-</ Δ ⊢ B@i ≡> B'@i // i in [:n] notex />
-notex lc_ A   -- NOTE this is for preserve_lc when n = 0
-──────────────────────────────────────────────────────────────────────────────── listAppList
-Δ ⊢ A ⟦{ </ B@i // i in [:n] notex /> }⟧ ≡> { </ A' B'@i // i in [:n] notex /> }
-
-Δ ⊢ A: L K
-Δ ⊢ A ≡> A'
-──────────────────────────── listAppId
-Δ ⊢ (λ a : K. a$0) ⟦A⟧ ≡> A'
-
-∀ a ∉ (I : List _), Δ, a : K ⊢ A^a ≡> B^a
-─────────────────────────── lam
-Δ ⊢ λ a : K. A ≡> λ a : K. B
-
-Δ ⊢ A₁ ≡> A₂
-Δ ⊢ B₁ ≡> B₂
-───────────────── app
-Δ ⊢ A₁ B₁ ≡> A₂ B₂
-
-∀ a ∉ (I: List _), Δ, a : K ⊢ A^a ≡> B^a
-─────────────────────────── scheme
-Δ ⊢ ∀ a : K. A ≡> ∀ a : K. B
-
-Δ ⊢ A₁ ≡> A₂
-Δ ⊢ B₁ ≡> B₂
-───────────────────── arr
-Δ ⊢ A₁ → B₁ ≡> A₂ → B₂
-
-</ Δ ⊢ A@i ≡> B@i // i in [:n] notex />
-──────────────────────────────────────────────────────────────────────── list
-Δ ⊢ { </ A@i // i in [:n] notex /> } ≡> { </ B@i // i in [:n] notex /> }
-
-Δ ⊢ A₁ ≡> A₂
-Δ ⊢ B₁ ≡> B₂
-───────────────────── listApp
-Δ ⊢ A₁ ⟦B₁⟧ ≡> A₂ ⟦B₂⟧
-
-notex lc_ A₀
-Δ ⊢ A₀ ≡> A₀'
-∀ a ∉ (I: List _), Δ, a : K ⊢ A₁^a ≡> A₁'^a
-Δ ⊢ B ≡> B'
-───────────────────────────────────────────────── listAppComp
-Δ ⊢ A₀ ⟦(λ a : K. A₁) ⟦B⟧⟧ ≡> (λ a : K. A₀' A₁') ⟦B'⟧
-
-Δ ⊢ A ≡> B
-───────────── prod
-Δ ⊢ ⊗ A ≡> ⊗ B
-
-Δ ⊢ A ≡> B
-───────────── sum
-Δ ⊢ ⊕ A ≡> ⊕ B
-
-termonly
-@[app_unexpander ParallelReduction]
-def ParallelReduction.delabPRed: Lean.PrettyPrinter.Unexpander
-  | `($(_) $Δ $A $B) =>
-    let info := Lean.SourceInfo.none
-    let vdash := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "⊢") }
-    let into := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "≡>") }
-    `([ $Δ $vdash $A $into $B ])
-  | _ => throw ()
-
-judgement_syntax Δ " ⊢ " A " ≡>* " B : MultiParallelReduction (tex := s!"{Δ} \\, \\lottsym\{⊢} \\, {A} \\Rrightarrow^* {B}")
-
-judgement MultiParallelReduction where
-
-───────── refl
-Δ ⊢ A ≡>* A
-
-Δ ⊢ A ≡> A'
-Δ ⊢ A' ≡>* A''
-────────────── step
-Δ ⊢ A ≡>* A''
-
-termonly
-@[app_unexpander MultiParallelReduction]
-def MultiParallelReduction.delabMPRed: Lean.PrettyPrinter.Unexpander
-  | `($(_) $Δ $A $B) =>
-    let info := Lean.SourceInfo.none
-    let vdash := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "⊢") }
-    let into := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "≡>*") }
-    `([ $Δ $vdash $A $into $B ])
-  | _ => throw ()
-
-termonly
-def ParallelReduction.Multi_of (red: [[ Δ ⊢ A ≡> B ]]): [[ Δ ⊢ A ≡>* B ]] := .step red .refl
-
-judgement_syntax Δ " ⊢ " A " <≡>* " B : EqParallelReduction (tex := s!"{Δ} \\, \\lottsym\{⊢} \\, {A} \\Lleftrightarrow^* {B}")
-
-judgement EqParallelReduction where
-
-──────────── refl
-Δ ⊢ A <≡>* A
-
-Δ ⊢ A ≡> B
-──────────── step
-Δ ⊢ A <≡>* B
-
-Δ ⊢ B <≡>* A
-──────────── sym
-Δ ⊢ A <≡>* B
-
-Δ ⊢ A <≡>* A'
-Δ ⊢ A' <≡>* A''
-─────────────── trans
-Δ ⊢ A <≡>* A''
-
-termonly
-@[app_unexpander EqParallelReduction]
-def EqParallelReduction.delabMPRed: Lean.PrettyPrinter.Unexpander
-  | `($(_) $Δ $A $B) =>
-    let info := Lean.SourceInfo.none
-    let vdash := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "⊢") }
-    let into := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "<≡>*") }
-    `([ $Δ $vdash $A $into $B ])
-  | _ => throw ()
-
-termonly
-def ParallelReduction.Equiv_of (red: [[ Δ ⊢ A ≡> B ]]): [[ Δ ⊢ A <≡>* B ]] := .step red
-
-termonly
-def MultiParallelReduction.Equiv_of (red: [[ Δ ⊢ A ≡>* B ]]): [[ Δ ⊢ A <≡>* B ]] := by
-  induction red with
-  | refl => exact .refl
-  | step base _ ih => exact base.Equiv_of |>.trans ih
-
-termonly
-attribute [aesop unsafe simp constructors (rule_sets := [pred])] ParallelReduction MultiParallelReduction EqParallelReduction
 
 end TabularTypeInterpreter.«F⊗⊕ω»
