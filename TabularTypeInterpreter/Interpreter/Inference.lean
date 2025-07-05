@@ -284,15 +284,24 @@ partial def subtype (σ₀ σ₁ : TypeScheme) : InferM (σ₀.Subtyping σ₁) 
         exact s.scheme
     else throw $ .panic "Subtype of non-compatible scheme quantifiers"
   | Monotype.app (.prodOrSum Ξ₀ μ₀) ρ₀, Monotype.app (.prodOrSum Ξ₁ μ₁) ρ₁ =>
-    if hρ : ρ₀ = ρ₁ then
-      if hΞ : Ξ₀ = Ξ₁ then
+    if hΞ : Ξ₀ = Ξ₁ then
+      if hρ : ρ₀ = ρ₁ then
+        -- Case 1: same row, so the only different thing is the commutativity (since the types are not equal as reflexivity was checked earlier)
         if s : μ₀.CommutativityPartialOrdering μ₁ then
           return by
             rewrite [hρ, hΞ]
             exact .decay s
         else throw $ .fail "to show compatibility of commutativity"
-      else throw $ .panic "Subtype of different row constructors."
-    else throw $ .panic "Subtype of different rows."
+      else if let (.row list₀ κ?, .row list₁ κ'?) := (ρ₀, ρ₁) then
+        -- Case 2: concrete lists
+        if hκ : κ? = κ'? then by rw [hκ]; exact
+          return sorry
+          sorry
+        else throw $ .panic "Subtype of differently kinded rows"
+      else
+        -- Case 3: ρ₀ ≡ ρ₁
+        sorry
+    else throw $ .panic "Subtype of different row constructors"
   | Monotype.app (.prodOrSum .sum (.comm .comm)) (.row .nil (.some .star)), σ =>
     return .never
   | Monotype.app .list τ₀, Monotype.app .list τ₁ =>
