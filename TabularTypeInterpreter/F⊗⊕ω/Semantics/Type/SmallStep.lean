@@ -472,111 +472,6 @@ theorem list' (A₀v : ∀ A ∈ A₀, A.IsValue) (A₁st : [[Δ ⊢ A₁ -> A�
   rw [← Range.map_get!_eq (as := A₀), ← Range.map_get!_eq (as := A₂)]
   exact list (fun i mem => A₀v (A₀.get! i) <| List.get!_mem mem.upper) A₁st
 
-open «Type» in
-theorem TypeVar_subst_var {a' : TypeVarId} (Ast : [[Δ, a : K, Δ' ⊢ A -> B]])
-  : [[Δ, a' : K, Δ' ⊢ A[a' / a] -> B[a' / a] ]] := by match Ast with
-  | eta I _ Bav (K₂ := K₂) =>
-    rw [TypeVar_subst, TypeVar_subst, TypeVar_subst, if_neg nofun]
-    apply eta (a :: I) _ (K₂ := K₂)
-    · intro a'' a''nin
-      let ⟨ane, a''ninI⟩ := List.not_mem_cons.mp a''nin
-      let Bav' := Bav a'' a''ninI |>.TypeVar_subst_var (a := a) (a' := a')
-      rw [TypeVar_subst, TypeVar_subst, if_neg (ane.symm <| TypeVar.free.inj ·)] at Bav'
-      exact Bav'
-    · sorry
-  | lamApp A'ki B'ki A'v B'v =>
-    rw [TypeVar_subst, TypeVarLocallyClosed.Type_open_TypeVar_subst_dist .var_free]
-    let A'v' := A'v.TypeVar_subst_var (a := a) (a' := a')
-    rw [TypeVar_subst] at A'v' ⊢
-    apply lamApp _ _ A'v' B'v.TypeVar_subst_var
-    sorry
-    sorry
-    sorry
-  | listAppList ne _ A'v B'v (K₁ := K₁) (K₂ := K₂) =>
-    rename_i A' _ B' _
-    rw [TypeVar_subst, TypeVar_subst, TypeVar_subst, List.mapMem_eq_map, List.mapMem_eq_map,
-        List.map_map, List.map_map, ← Range.map, ← Range.map, Range.map_eq_of_eq_of_mem'' (by
-      intro i mem
-      show _ = (B' i).TypeVar_subst a (.var a')
-      simp
-    ), Range.map, Range.map_eq_of_eq_of_mem'' (by
-      intro i mem
-      show _ = (A'.TypeVar_subst a (.var a')).app ((B' i).TypeVar_subst a (.var a'))
-      simp [TypeVar_subst]
-    )]
-    apply listAppList (ne_preservation ne) _ A'v.TypeVar_subst_var (B'v · · |>.TypeVar_subst_var) (K₁ := K₁) (K₂ := K₂)
-    sorry
-  | listAppId A'ki A'v =>
-    rw [TypeVar_subst, TypeVar_subst, TypeVar_subst, if_neg nofun]
-    apply listAppId _ A'v.TypeVar_subst_var
-    sorry
-  | listAppComp ne A₁ki A₀v A₁B'v (K₂ := K₂) =>
-    rw [TypeVar_subst, TypeVar_subst, TypeVar_subst, TypeVar_subst, TypeVar_subst, TypeVar_subst,
-        TypeVar_subst]
-    apply Type.IsValue.TypeVar_subst_var at A₁B'v
-    rw [TypeVar_subst] at A₁B'v
-    apply listAppComp (ne_preservation ne) _ A₀v.TypeVar_subst_var A₁B'v (K₂ := K₂)
-    sorry
-  | lam I A'v =>
-    rw [TypeVar_subst, TypeVar_subst]
-    apply lam <| a :: I
-    intro a'' a''nin
-    let ⟨ane, a''ninI⟩ := List.not_mem_cons.mp a''nin
-    rw [TypeVar_open_TypeVar_subst_var_comm ane.symm, TypeVar_open_TypeVar_subst_var_comm ane.symm]
-    specialize A'v a'' a''ninI
-    rw [← Environment.append] at A'v ⊢
-    exact A'v.TypeVar_subst_var
-  | appl A'st =>
-    rw [TypeVar_subst, TypeVar_subst]
-    exact appl A'st.TypeVar_subst_var
-  | appr A'v B'st =>
-    rw [TypeVar_subst, TypeVar_subst]
-    exact appr A'v.TypeVar_subst_var B'st.TypeVar_subst_var
-  | .forall I A'v =>
-    rw [TypeVar_subst, TypeVar_subst]
-    apply «forall» <| a :: I
-    intro a'' a''nin
-    let ⟨ane, a''ninI⟩ := List.not_mem_cons.mp a''nin
-    rw [TypeVar_open_TypeVar_subst_var_comm ane.symm, TypeVar_open_TypeVar_subst_var_comm ane.symm]
-    specialize A'v a'' a''ninI
-    rw [← Environment.append] at A'v ⊢
-    exact A'v.TypeVar_subst_var
-  | arrl A'st =>
-    rw [TypeVar_subst, TypeVar_subst]
-    exact arrl A'st.TypeVar_subst_var
-  | arrr A'v B'st =>
-    rw [TypeVar_subst, TypeVar_subst]
-    exact arrr A'v.TypeVar_subst_var B'st.TypeVar_subst_var
-  | list A₀v A₁st =>
-    rw [TypeVar_subst, List.mapMem_eq_map, List.map_append, List.map_cons, List.map_map,
-        List.map_map, ← Range.map, ← Range.map, TypeVar_subst, List.mapMem_eq_map, List.map_append,
-        List.map_cons, List.map_map, List.map_map, ← Range.map, ← Range.map]
-    apply list _ A₁st.TypeVar_subst_var
-    intro i mem
-    simp
-    exact A₀v i mem |>.TypeVar_subst_var
-  | listAppl A'st =>
-    rw [TypeVar_subst, TypeVar_subst]
-    exact listAppl A'st.TypeVar_subst_var
-  | listAppr A'v B'st =>
-    rw [TypeVar_subst, TypeVar_subst]
-    exact listAppr A'v.TypeVar_subst_var
-      B'st.TypeVar_subst_var
-  | prod A'st =>
-    rw [TypeVar_subst, TypeVar_subst]
-    exact A'st.TypeVar_subst_var.prod
-  | sum A'st =>
-    rw [TypeVar_subst, TypeVar_subst]
-    exact A'st.TypeVar_subst_var.sum
-termination_by sizeOf A
-decreasing_by
-  all_goals simp_arith
-  exact Nat.le_of_lt <| List.sizeOf_lt_of_mem <| List.mem_append.mpr <| .inr <| .head _
-where
-  ne_preservation {A a a'} : (∀ K, A ≠ [[λ a : K. a$0]]) →
-    ∀ K, A.TypeVar_subst a (.var (.free a')) ≠ [[λ a : K. a$0]] :=
-    IsValue.TypeVar_subst_var.ne_preservation
-
 theorem preserve_not_mem_freeTypeVars (st : [[Δ ⊢ A -> B]]) (aninA : a ∉ A.freeTypeVars)
   : a ∉ B.freeTypeVars := by
   induction st
@@ -690,6 +585,127 @@ theorem preserve_lc_rev : [[Δ ⊢ A -> B]] → B.TypeVarLocallyClosed → A.Typ
   | listAppr _ B'st, .listApp A'lc B'lc => .listApp A'lc (B'st.preserve_lc_rev B'lc)
   | prod A'st, .prod A'lc => .prod <| A'st.preserve_lc_rev A'lc
   | sum A'st, .sum A'lc => .sum <| A'st.preserve_lc_rev A'lc
+
+open «Type» in
+theorem TypeVar_subst_var {a' : TypeVarId} (Ast : [[Δ, a : K, Δ' ⊢ A -> B]])
+  : [[Δ, a' : K, Δ' ⊢ A[a' / a] -> B[a' / a] ]] := by match Ast with
+  | eta I _ Bav (K₂ := K₂) =>
+    rw [TypeVar_subst, TypeVar_subst, TypeVar_subst, if_neg nofun]
+    apply eta (a :: I) _ (K₂ := K₂)
+    · intro a'' a''nin
+      let ⟨ane, a''ninI⟩ := List.not_mem_cons.mp a''nin
+      let Bav' := Bav a'' a''ninI |>.TypeVar_subst_var (a := a) (a' := a')
+      rw [TypeVar_subst, TypeVar_subst, if_neg (ane.symm <| TypeVar.free.inj ·)] at Bav'
+      exact Bav'
+    · sorry
+  | lamApp A'ki B'ki A'v B'v =>
+    rw [TypeVar_subst, TypeVarLocallyClosed.Type_open_TypeVar_subst_dist .var_free]
+    let A'v' := A'v.TypeVar_subst_var (a := a) (a' := a')
+    rw [TypeVar_subst] at A'v' ⊢
+    apply lamApp _ _ A'v' B'v.TypeVar_subst_var
+    sorry
+    sorry
+    sorry
+  | listAppList ne _ A'v B'v (K₁ := K₁) (K₂ := K₂) =>
+    rename_i A' _ B' _
+    rw [TypeVar_subst, TypeVar_subst, TypeVar_subst, List.mapMem_eq_map, List.mapMem_eq_map,
+        List.map_map, List.map_map, ← Range.map, ← Range.map, Range.map_eq_of_eq_of_mem'' (by
+      intro i mem
+      show _ = (B' i).TypeVar_subst a (.var a')
+      simp
+    ), Range.map, Range.map_eq_of_eq_of_mem'' (by
+      intro i mem
+      show _ = (A'.TypeVar_subst a (.var a')).app ((B' i).TypeVar_subst a (.var a'))
+      simp [TypeVar_subst]
+    )]
+    apply listAppList (ne_preservation ne) _ A'v.TypeVar_subst_var (B'v · · |>.TypeVar_subst_var) (K₁ := K₁) (K₂ := K₂)
+    sorry
+  | listAppId A'ki A'v =>
+    rw [TypeVar_subst, TypeVar_subst, TypeVar_subst, if_neg nofun]
+    apply listAppId _ A'v.TypeVar_subst_var
+    sorry
+  | listAppComp ne A₁ki A₀v A₁B'v (K₂ := K₂) =>
+    rw [TypeVar_subst, TypeVar_subst, TypeVar_subst, TypeVar_subst, TypeVar_subst, TypeVar_subst,
+        TypeVar_subst]
+    apply Type.IsValue.TypeVar_subst_var at A₁B'v
+    rw [TypeVar_subst] at A₁B'v
+    apply listAppComp (ne_preservation ne) _ A₀v.TypeVar_subst_var A₁B'v (K₂ := K₂)
+    sorry
+  | lam I A'v =>
+    rw [TypeVar_subst, TypeVar_subst]
+    apply lam <| a :: I
+    intro a'' a''nin
+    let ⟨ane, a''ninI⟩ := List.not_mem_cons.mp a''nin
+    rw [TypeVar_open_TypeVar_subst_var_comm ane.symm, TypeVar_open_TypeVar_subst_var_comm ane.symm]
+    specialize A'v a'' a''ninI
+    rw [← Environment.append] at A'v ⊢
+    exact A'v.TypeVar_subst_var
+  | appl A'st =>
+    rw [TypeVar_subst, TypeVar_subst]
+    exact appl A'st.TypeVar_subst_var
+  | appr A'v B'st =>
+    rw [TypeVar_subst, TypeVar_subst]
+    exact appr A'v.TypeVar_subst_var B'st.TypeVar_subst_var
+  | .forall I A'v =>
+    rw [TypeVar_subst, TypeVar_subst]
+    apply «forall» <| a :: I
+    intro a'' a''nin
+    let ⟨ane, a''ninI⟩ := List.not_mem_cons.mp a''nin
+    rw [TypeVar_open_TypeVar_subst_var_comm ane.symm, TypeVar_open_TypeVar_subst_var_comm ane.symm]
+    specialize A'v a'' a''ninI
+    rw [← Environment.append] at A'v ⊢
+    exact A'v.TypeVar_subst_var
+  | arrl A'st =>
+    rw [TypeVar_subst, TypeVar_subst]
+    exact arrl A'st.TypeVar_subst_var
+  | arrr A'v B'st =>
+    rw [TypeVar_subst, TypeVar_subst]
+    exact arrr A'v.TypeVar_subst_var B'st.TypeVar_subst_var
+  | list A₀v A₁st =>
+    rw [TypeVar_subst, List.mapMem_eq_map, List.map_append, List.map_cons, List.map_map,
+        List.map_map, ← Range.map, ← Range.map, TypeVar_subst, List.mapMem_eq_map, List.map_append,
+        List.map_cons, List.map_map, List.map_map, ← Range.map, ← Range.map]
+    apply list _ A₁st.TypeVar_subst_var
+    intro i mem
+    simp
+    exact A₀v i mem |>.TypeVar_subst_var
+  | listAppl A'st =>
+    rw [TypeVar_subst, TypeVar_subst]
+    exact listAppl A'st.TypeVar_subst_var
+  | listAppr A'v B'st =>
+    rw [TypeVar_subst, TypeVar_subst]
+    exact listAppr A'v.TypeVar_subst_var
+      B'st.TypeVar_subst_var
+  | prod A'st =>
+    rw [TypeVar_subst, TypeVar_subst]
+    exact A'st.TypeVar_subst_var.prod
+  | sum A'st =>
+    rw [TypeVar_subst, TypeVar_subst]
+    exact A'st.TypeVar_subst_var.sum
+termination_by sizeOf A
+decreasing_by
+  all_goals simp_arith
+  exact Nat.le_of_lt <| List.sizeOf_lt_of_mem <| List.mem_append.mpr <| .inr <| .head _
+where
+  ne_preservation {A a a'} : (∀ K, A ≠ [[λ a : K. a$0]]) →
+    ∀ K, A.TypeVar_subst a (.var (.free a')) ≠ [[λ a : K. a$0]] :=
+    IsValue.TypeVar_subst_var.ne_preservation
+
+theorem TypeVar_open_swap (Ast : [[Δ, a' : K ⊢ A^a' -> A']]) (Alc : A.TypeVarLocallyClosed 1)
+  (a'ninA : a' ∉ A.freeTypeVars) : [[Δ, a : K ⊢ A^a -> (\a'^A')^a]] := by
+  have : A.TypeVar_open a = (A.TypeVar_open a').TypeVar_subst a' (.var a) := by
+    rw [Type.Type_open_var, Type.Type_open_var,
+        Type.TypeVarLocallyClosed.Type_open_TypeVar_subst_dist .var_free,
+        Type.TypeVar_subst_id_of_not_mem_freeTypeVars a'ninA, Type.TypeVar_subst, if_pos rfl]
+  rw [this]
+  let Aoplc := Alc.Type_open_dec .var_free (B := .var a')
+  rw [← Type.Type_open_var] at Aoplc
+  have : (A'.TypeVar_close a').TypeVar_open a = A'.TypeVar_subst a' (.var a) := by
+    rw [Type.Type_open_var,
+        Type.TypeVarLocallyClosed.Type_open_TypeVar_close_eq_TypeVar_subst <|
+          Ast.preserve_lc Aoplc]
+  rw [this]
+  exact Ast.TypeVar_subst_var (Δ' := .empty)
 
 theorem weakening (ΔΔ'Δ''wf : [[⊢ Δ, Δ', Δ'']]) : [[Δ, Δ'' ⊢ A -> B]] → [[Δ, Δ', Δ'' ⊢ A -> B]]
   | eta I A'ki A'av => eta I (A'ki.weakening ΔΔ'Δ''wf) A'av
@@ -1302,8 +1318,11 @@ theorem preservation_rev : [[Δ ⊢ A -> B]] → [[Δ ⊢ B : K]] → [[Δ ⊢ A
     rw [Environment.typeVarDom, Environment.typeVarDom] at mem
     let .head _ := mem
     exact anin
-  | .lamApp B'ki .., Bki =>
-    sorry
+  | .lamApp (.lam I A'ki) B'ki _ _ (A := A'), Bki => by
+    let ⟨a, anin⟩ := A'.freeTypeVars ++ I |>.exists_fresh
+    let ⟨aninA', aninI⟩ := List.not_mem_append'.mp anin
+    cases A'ki a aninI |>.Type_open_preservation aninA' B'ki |>.deterministic Bki
+    exact .app (.lam I A'ki) B'ki
   | .listAppList _ A'ki _ _ (K₂ := K₂) (n := n), ki => by
     rcases ki.inv_list' with ⟨_, rfl, ki'⟩
     match n with
@@ -1529,17 +1548,17 @@ theorem est_of (st : [[Δ ⊢ A ->* B]]) : [[Δ ⊢ A <->* B]] := by
   | refl => exact .refl
   | step Ast _ ih => exact EqSmallStep.step Ast |>.trans ih
 
-open «Type» in
-theorem TypeVar_subst_var_preservation_of_not_mem_freeTypeVars {a' : TypeVarId}
-  (Ast : [[Δ, a : K ⊢ A ->* B]]) : [[Δ, a' : K ⊢ A[a' / a] ->* B[a' / a] ]] := by
-  induction Ast with
-  | refl => exact refl
-  | step st _ ih => exact step (st.TypeVar_subst_var (Δ' := .empty)) ih
-
 theorem preserve_lc (st : [[Δ ⊢ A ->* B]]) (Alc : A.TypeVarLocallyClosed) : B.TypeVarLocallyClosed := by
   induction st with
   | refl => exact Alc
   | step st _ ih => exact ih <| st.preserve_lc Alc
+
+open «Type» in
+theorem TypeVar_subst_var {a' : TypeVarId}
+  (Ast : [[Δ, a : K ⊢ A ->* B]]) : [[Δ, a' : K ⊢ A[a' / a] ->* B[a' / a] ]] := by
+  induction Ast with
+  | refl => exact refl
+  | step st _ ih => exact step (st.TypeVar_subst_var (Δ' := .empty)) ih
 
 theorem TypeVar_open_swap (Amst : [[Δ, a' : K ⊢ A^a' ->* A']]) (Alc : A.TypeVarLocallyClosed 1)
   (a'ninA : a' ∉ A.freeTypeVars) : [[Δ, a : K ⊢ A^a ->* (\a'^A')^a]] := by
@@ -1555,7 +1574,7 @@ theorem TypeVar_open_swap (Amst : [[Δ, a' : K ⊢ A^a' ->* A']]) (Alc : A.TypeV
         Type.TypeVarLocallyClosed.Type_open_TypeVar_close_eq_TypeVar_subst <|
           Amst.preserve_lc Aoplc]
   rw [this]
-  exact Amst.TypeVar_subst_var_preservation_of_not_mem_freeTypeVars
+  exact Amst.TypeVar_subst_var
 
 theorem weakening (mst : [[Δ, Δ'' ⊢ A ->* B]]) (ΔΔ'Δ''wf : [[⊢ Δ, Δ', Δ'']])
   : [[Δ, Δ', Δ'' ⊢ A ->* B]] := by
@@ -2357,7 +2376,9 @@ theorem MultiSmallStep.Type_open
   refine .trans ?_ <| Bmst.Type_open_out (Amst.preservation Aki) Δwf aninA' Bki
   exact Amst.Type_open_in Aki aninA aninA' Δwf Bki
 
-theorem EqSmallStep.lamApp (I : List TypeVarId) (Aki : ∀ a ∉ I, [[Δ, a : K₁ ⊢ A^a : K₂]])
+namespace EqSmallStep
+
+theorem lamApp (I : List TypeVarId) (Aki : ∀ a ∉ I, [[Δ, a : K₁ ⊢ A^a : K₂]])
   (Bki : [[Δ ⊢ B : K₁]]) (Δwf : [[⊢ Δ]]) : [[Δ ⊢ (λ a : K₁. A) B <->* A^^B]] := by
   let ⟨(a : TypeVarId), anin⟩ := A.freeTypeVars ++ I ++ Δ.typeVarDom |>.exists_fresh
   let ⟨aninAI, aninΔ⟩ := List.not_mem_append'.mp anin
@@ -2377,7 +2398,7 @@ theorem EqSmallStep.lamApp (I : List TypeVarId) (Aki : ∀ a ∉ I, [[Δ, a : K�
         apply lam I _ Alc
         intro a' a'nin
         simp [Type.TypeVar_open, A''lc.TypeVar_open_id]
-        let A'mst' := A'mst.TypeVar_subst_var_preservation_of_not_mem_freeTypeVars (a' := a')
+        let A'mst' := A'mst.TypeVar_subst_var (a' := a')
         simp [Type.TypeVar_subst] at A'mst'
         rw [Type.Type_open_var, Type.TypeVarLocallyClosed.Type_open_TypeVar_subst_dist .var_free,
             Type.TypeVar_subst_id_of_not_mem_freeTypeVars aninA''] at A'mst'
@@ -2402,14 +2423,14 @@ theorem EqSmallStep.lamApp (I : List TypeVarId) (Aki : ∀ a ∉ I, [[Δ, a : K�
             simp [Type.TypeVar_subst, Type.TypeVar_subst_id_of_not_mem_freeTypeVars aninA''] at A'v
             exact A'v
       [[Δ ⊢ A'' B' <->* A^^B]] := by
-        clear A''aki A''lc A'v anin B'v B'mst aninAI
+        clear A''aki A''lc A'v anin B'v aninAI
         generalize A'''eq : A.TypeVar_open a = A''', A''''eq : [[A'' a]] = A'''' at A'mst
         induction A'mst generalizing A A'' with
         | refl =>
           cases A'''eq
           cases A
           all_goals rw [Type.TypeVar_open] at A''''eq
-          case app A''''' =>
+          case app A'''''' A''''' =>
             injection A''''eq with eq eq'
             cases eq
             cases A'''''
@@ -2419,7 +2440,16 @@ theorem EqSmallStep.lamApp (I : List TypeVarId) (Aki : ∀ a ∉ I, [[Δ, a : K�
               · case isTrue h =>
                 cases h
                 simp [Type.Type_open]
-                sorry -- TODO: get locally closed out of aninA''
+                let .app A''lc _ := Alc
+                let A''lc' := A''lc.not_mem_freeTypeVars_TypeVar_open_dec aninA''
+                rw [A''lc'.TypeVar_open_id, A''lc'.Type_open_id]
+                specialize Aki a aninI
+                simp [Type.TypeVar_open, A''lc'.TypeVar_open_id] at Aki
+                let .app A''ki _ := Aki
+                apply app _ refl (symm B'mst)
+                swap
+                exact A''ki.TypeVar_drop_of_not_mem_freeTypeVars
+                  (Type.not_mem_freeTypeVars_TypeVar_open_drop aninA'') (Δ' := .empty)
               · case isFalse h =>
                 cases eq'
                 simp [Type.freeTypeVars] at aninA
@@ -2431,35 +2461,46 @@ theorem EqSmallStep.lamApp (I : List TypeVarId) (Aki : ∀ a ∉ I, [[Δ, a : K�
           let Aalc := Alc.Type_open_dec .var_free (B := .var (.free a))
           rw [← Type.Type_open_var] at Aalc
           let A₁lc := st.preserve_lc Aalc
-          apply trans <| ih _ Type.not_mem_freeTypeVars_TypeVar_close
-            (A₁lc.TypeVar_close_inc (a := a)) _ aninA'' A₁lc.TypeVar_open_TypeVar_close_id rfl
-          · symm
-            apply SmallStep.Type_open_in _ (Aki a aninI) aninA Type.not_mem_freeTypeVars_TypeVar_close
-              (Δwf.typeVarExt aninΔ) Bki (Δ' := .empty)
-            rw [A₁lc.TypeVar_open_TypeVar_close_id]
-            exact st
-          · intro a' a'nin
-            let f := st.preservation (Aki a aninI)
-            sorry
+          apply trans <| ih (st.TypeVar_open_swap Alc aninA |>.preservation <| Aki · ·)
+            Type.not_mem_freeTypeVars_TypeVar_close (A₁lc.TypeVar_close_inc (a := a)) _ aninA''
+            A₁lc.TypeVar_open_TypeVar_close_id rfl
+          symm
+          apply SmallStep.Type_open_in _ (Aki a aninI) aninA
+            Type.not_mem_freeTypeVars_TypeVar_close (Δwf.typeVarExt aninΔ) Bki (Δ' := .empty)
+          rw [A₁lc.TypeVar_open_TypeVar_close_id]
+          exact st
   · case neg h =>
-    sorry
-    -- apply step <| .lamApp sorry sorry _ Bv
-    -- refine .lam I Av ?_
-    -- apply not_exists.mp at h
-    -- intro A'' eq
-    -- specialize h A''
-    -- apply not_and_or.mp at h
-    -- match h with
-    -- | .inl ne => nomatch ne eq
-    -- | .inr notlc => exact notlc
-
--- TODO: This measure doesn't work, cause the inside might've
-private
-def listApp_depth : «Type» → Nat
-  | .listApp _ A => listApp_depth A + 1
-  | _ => 0
-
-namespace EqSmallStep
+    calc
+      [[Δ ⊢ (λ a : K₁. A) B <->* (λ a : K₁. \a^A') B']] := app (.lam I Aki)
+          (lam I (fun _ _ => A'mst.TypeVar_open_swap Alc aninA |>.EqSmallStep_of) Alc) B'mst
+      [[Δ ⊢ (λ a : K₁. \a^A') B' <->* (\a^A')^^B']] := by
+        apply step <| .lamApp _ (B'mst.preservation Bki) _ B'v (K₂ := K₂)
+        · apply Kinding.lam I
+          intro a' a'nin
+          exact A'mst.TypeVar_open_swap Alc aninA |>.preservation <| Aki a' a'nin
+        · apply Type.IsValue.lam I
+          · intro a' a'nin
+            rw [Type.Type_open_var,
+                A'v.TypeVarLocallyClosed_of.Type_open_TypeVar_close_eq_TypeVar_subst]
+            exact A'v.TypeVar_subst_var
+          · intro A'' eq A''lc
+            apply not_exists.mp at h
+            specialize h A''
+            apply not_and.mp at h
+            apply h
+            · have : [[(A'' a)]] = [[((A'' a$0)^a)]] := by
+                rw [Type.TypeVar_open, A''lc.TypeVar_open_id, Type.TypeVar_open, if_pos rfl]
+              rw [this, ← eq, Type.TypeVarLocallyClosed.TypeVar_open_TypeVar_close_id]
+              apply A'mst.preserve_lc
+              rw [Type.Type_open_var]
+              exact Alc.Type_open_dec .var_free
+            · have : A''.freeTypeVars = [[(A'' a$0)]].freeTypeVars := by
+                simp [Type.freeTypeVars]
+              rw [this, ← eq]
+              exact Type.not_mem_freeTypeVars_TypeVar_close
+      [[Δ ⊢ (\a^A')^^B' <->* A^^B]] :=
+        symm <| A'mst.TypeVar_open_swap Alc aninA |>.Type_open B'mst (Aki a aninI)
+          (Δwf.typeVarExt aninΔ) (Δ' := .empty) aninA Type.not_mem_freeTypeVars_TypeVar_close Bki
 
 theorem listAppComp' (A₀ki : [[Δ ⊢ A₀ : K₂ ↦ K₃]]) (A₁ki : [[Δ ⊢ A₁ : K₁ ↦ K₂]])
   (B'ki : [[Δ ⊢ B' : L K₁]]) (A₁B''ist : [[Δ ⊢ A₁ ⟦B'⟧ ->n* A₁B'']]) (A₁B''v : [[value A₁B'']])
@@ -2823,72 +2864,22 @@ theorem of_EquivalenceI (equ : [[Δ ⊢ A ≡ᵢ B]]) (Aki : [[Δ ⊢ A : K]]) (
   : [[Δ ⊢ A <->* B]] := by
   induction equ generalizing K with
   | refl => exact refl
-  | eta A'lc => sorry
-  | lamApp B'ki => sorry
-  --   rename_i Δ B' K' A'
-  --   let .app (.lam I A'ki) B'ki := Aki
-  --   let ⟨a, anin⟩ := A'.freeTypeVars ++ I ++ Δ.typeVarDom |>.exists_fresh
-  --   let ⟨aninA'I, aninΔ⟩ := List.not_mem_append'.mp anin
-  --   let ⟨aninA', aninI⟩ := List.not_mem_append'.mp aninA'I
-  --   let ⟨A'', A''v, A''mst⟩ := MultiSmallStep.normalization <| A'ki a aninI
-  --   let ⟨B'', B''v, B''mst⟩ := MultiSmallStep.normalization B'ki
-  --   let A''lc := A''mst.preserve_lc <| A'ki a aninI |>.TypeVarLocallyClosed_of
-  --   calc
-  --     [[Δ ⊢ (λ a : K'. A') B' <->* (λ a : K'. \a^A'') B'']] := by
-  --       apply app (.lam I A'ki) _ B''mst
-  --       let A'lc := A'ki a aninI |>.TypeVarLocallyClosed_of.TypeVar_close_inc (a := a)
-  --       rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars aninA'] at A'lc
-  --       apply lam (A''.freeTypeVars ++ I) _ A'lc
-  --       intro a' a'nin
-  --       exact A''mst.TypeVar_open_swap A'lc aninA' |>.EqSmallStep_of
-  --     [[Δ ⊢ (λ a : K'. \a^A'') B'' <->* (\a^A'')^^B'']] := by
-  --       apply lamApp [] _ B''v
-  --       intro a' a'nin
-  --       rw [Type.Type_open_var, A''lc.Type_open_TypeVar_close_eq_TypeVar_subst]
-  --       exact A''v.TypeVar_subst_var
-  --     [[Δ ⊢ (\a^A'')^^B'' <->* A'^^B']] := by
-  --       symm
-  --       rw [← A''lc.TypeVar_open_TypeVar_close_id (a := a) (n := 0)] at A''mst
-  --       exact A''mst.Type_open B''mst (A'ki a aninI) (Δ' := .empty) (Δwf.typeVarExt aninΔ) aninA'
-  --         Type.not_mem_freeTypeVars_TypeVar_close B'ki
+  | eta A'lc =>
+    rename_i A' _ _
+    let .lam I A'aki := Aki
+    let ⟨a, anin⟩ := A'.freeTypeVars ++ I |>.exists_fresh
+    let ⟨aninA', aninI⟩ := List.not_mem_append'.mp anin
+    specialize A'aki a aninI
+    simp [Type.TypeVar_open, A'lc.TypeVar_open_id] at A'aki
+    let .app A'ki (.var .head) := A'aki
+    exact eta (A'ki.TypeVar_drop_of_not_mem_freeTypeVars aninA' (Δ' := .empty)) Δwf
+  | lamApp B'ki =>
+    let .app (.lam I A'ki) B'ki' := Aki
+    cases B'ki.deterministic B'ki'
+    exact lamApp I A'ki B'ki Δwf
   | listAppList =>
-    rename_i A' Δ n B' _
-    let .listApp A'ki B'ki (K₁ := K₁) := Aki
-    let ⟨A'', A''v, A''mst⟩ := MultiSmallStep.normalization A'ki
-    let B'ki' := B'ki.inv_list
-    let ⟨B'', B''vB''mst⟩ := Range.skolem (MultiSmallStep.normalization <| B'ki' · ·)
-    let B''ki i mem := B''vB''mst i mem |>.right.preservation <| B'ki' i mem
-    by_cases ∃ K', A'' = [[λ a : K'. a$0]]
-    · case pos h =>
-      rcases h with ⟨_, rfl⟩
-      cases A''mst.preservation A'ki
-      calc
-        [[Δ ⊢ A' ⟦{</ B'@i // i in [:n] />}⟧ <->* (λ a : K₁. a$0) ⟦{</ B''@i // i in [:n] />}⟧]] :=
-          listApp A'ki A''mst <| list B'ki' (B''vB''mst · · |>.right)
-        [[Δ ⊢ (λ a : K₁. a$0) ⟦{</ B''@i // i in [:n] />}⟧ <->* {</ B''@i // i in [:n] />}]] :=
-          step <| .listAppId (.list B''ki) <| .list (B''vB''mst · · |>.left)
-        [[Δ ⊢ {</ B''@i // i in [:n] />} <->* {</ (λ a : K₁. a$0) B''@i // i in [:n] />}]] := by
-          apply list
-          · intro i mem
-            exact B''vB''mst i mem |>.right.preservation (B'ki' i mem)
-          · intro i mem
-            symm
-            have : B'' i = Type.Type_open (.var (.bound 0)) (B'' i) := by
-              rw [Type.Type_open, if_pos rfl]
-            rw (occs := .pos [2]) [this]
-            exact step <| .lamApp .id (B''ki i mem) .id <| B''vB''mst i mem |>.left
-        [[Δ ⊢ {</ (λ a : K₁. a$0) B''@i // i in [:n] />} <->* {</ A' B'@i // i in [:n] />}]] :=
-          symm <| list (.app A'ki <| B'ki' · ·)
-            (app A'ki A''mst <| B''vB''mst · · |>.right)
-    · case neg ne =>
-      calc
-        [[Δ ⊢ A' ⟦{</ B'@i // i in [:n] />}⟧ <->* A'' ⟦{</ B''@i // i in [:n] />}⟧]] :=
-          listApp A'ki A''mst <| list B'ki' (B''vB''mst · · |>.right)
-        [[Δ ⊢ A'' ⟦{</ B''@i // i in [:n] />}⟧ <->* {</ A'' B''@i // i in [:n] />}]] :=
-          step <| .listAppList (not_exists.mp ne) (A''mst.preservation A'ki) A''v
-            (B''vB''mst · · |>.left)
-        [[Δ ⊢ {</ A'' B''@i // i in [:n] />} <->* {</ A' B'@i // i in [:n] />}]] :=
-          symm <| list (.app A'ki <| B'ki' · ·) (app A'ki A''mst <| B''vB''mst · · |>.right)
+    let .listApp A'ki B'ki := Aki
+    exact listAppList A'ki B'ki.inv_list
   | listAppId A'ki =>
     rename_i Δ A' K'
     let ⟨A'', A''v, A''mst⟩ := MultiSmallStep.normalization A'ki
@@ -2911,7 +2902,7 @@ theorem of_EquivalenceI (equ : [[Δ ⊢ A ≡ᵢ B]]) (Aki : [[Δ ⊢ A : K]]) (
     exact ih a' a'ninI (A'ki a' a'ninI') <| Δwf.typeVarExt a'ninΔ
   | app _ _ ih₀ ih₁ =>
     let .app A'ki B'ki := Aki
-    exact .app A'ki (ih₀ A'ki Δwf) (ih₁ B'ki Δwf)
+    exact app A'ki (ih₀ A'ki Δwf) (ih₁ B'ki Δwf)
   | scheme I _ ih =>
     rename_i Δ _ A' _ _
     let .scheme I' A'ki := Aki
