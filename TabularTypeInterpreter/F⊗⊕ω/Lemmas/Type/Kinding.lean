@@ -287,6 +287,52 @@ theorem Environment_TypeVar_subst_swap (Aki : [[Δ, Δ'[B / a] ⊢ A : K']])
     rw [Environment.TypeVar_subst, Environment.append]
   all_goals aesop (add safe constructors Kinding)
 
+theorem TypeVar_subst_var (Aki : [[Δ, a : K, Δ' ⊢ A : K']]) (a'ninΔ : [[a' ∉ dom(Δ)]])
+  (aninΔ' : [[a ∉ dom(Δ')]]) (a'ninΔ' : [[a' ∉ dom(Δ')]])
+  : [[Δ, a' : K, Δ' ⊢ A[a' / a] : K']] := by
+  generalize Δ''eq : [[Δ, a : K, Δ']] = Δ'' at Aki
+  induction Aki generalizing Δ' <;> cases Δ''eq <;> simp [Type.TypeVar_subst]
+  case var a''in =>
+    split
+    · case isTrue h =>
+      cases h
+      apply var
+      match a''in.append_elim with
+      | .inl ⟨_, .head⟩ => exact .weakening_r a'ninΔ' .head
+      | .inr a''in' => nomatch aninΔ' a''in'.TypeVarInDom_of
+    · case isFalse h =>
+      apply var
+      match a''in.append_elim with
+      | .inl ⟨a''nin, .head⟩ => nomatch h
+      | .inl ⟨a''nin, .typeVarExt a''in' ne⟩ =>
+        let f := Environment.TypeVarNotInDom
+        apply TypeVarInEnvironment.weakening_r a''nin <| a''in'.typeVarExt _
+        intro aeq
+        cases aeq
+        nomatch a'ninΔ a''in'.TypeVarInDom_of
+      | .inr a''in' => exact a''in'.weakening_l
+  case lam I _ ih =>
+    apply lam <| a :: a' :: I
+    intro a'' a''nin
+    let ⟨ane, a''nina'I⟩ := List.not_mem_cons.mp a''nin
+    let ⟨a'ne, a''ninI⟩ := List.not_mem_cons.mp a''nina'I
+    rw [← Environment.append, Type.TypeVar_open_TypeVar_subst_var_comm ane.symm]
+    apply ih a'' a''ninI _ _ rfl
+    all_goals rw [Environment.TypeVarNotInDom, Environment.TypeVarInDom, Environment.typeVarDom]
+    · exact List.not_mem_cons.mpr ⟨ane.symm, aninΔ'⟩
+    · exact List.not_mem_cons.mpr ⟨a'ne.symm, a'ninΔ'⟩
+  case scheme I _ ih =>
+    apply scheme <| a :: a' :: I
+    intro a'' a''nin
+    let ⟨ane, a''nina'I⟩ := List.not_mem_cons.mp a''nin
+    let ⟨a'ne, a''ninI⟩ := List.not_mem_cons.mp a''nina'I
+    rw [← Environment.append, Type.TypeVar_open_TypeVar_subst_var_comm ane.symm]
+    apply ih a'' a''ninI _ _ rfl
+    all_goals rw [Environment.TypeVarNotInDom, Environment.TypeVarInDom, Environment.typeVarDom]
+    · exact List.not_mem_cons.mpr ⟨ane.symm, aninΔ'⟩
+    · exact List.not_mem_cons.mpr ⟨a'ne.symm, a'ninΔ'⟩
+  all_goals aesop (add safe constructors Kinding)
+
 theorem Type_open_preservation' {A : «Type»}
   (Aki : Kinding [[(Δ, a : K, Δ')]] (A.TypeVar_open a n) K') (h1: a ∉ Δ'.typeVarDom) (h2: ∀a ∈ Δ'.typeVarDom, a ∉ Δ.typeVarDom) (aninfvA : a ∉ A.freeTypeVars)
   (Bki : [[Δ ⊢ B : K]]) : Kinding [[(Δ, (Δ' [B / a]))]] (A.Type_open B n) K' := by
