@@ -176,6 +176,18 @@ judgement MultiSmallStep where
 ───────────── step
 Δ ⊢ A₀ ->* A₂
 
+judgement_syntax Δ " ⊢ " A " ->" n "* " B : IndexedSmallStep
+
+judgement IndexedSmallStep where
+
+─────────── refl
+Δ ⊢ A ->0* A
+
+Δ ⊢ A₀ -> A₁
+Δ ⊢ A₁ ->n* A₂
+──────────────────── step
+Δ ⊢ A₀ ->(n + 1)* A₂
+
 judgement_syntax Δ " ⊢ " A " <->* " B : EqSmallStep
 
 judgement EqSmallStep where
@@ -1566,6 +1578,13 @@ theorem EqSmallStep_of (Amst : [[Δ ⊢ A ->* B]]) : [[Δ ⊢ A <->* B]] := by
   | refl => exact .refl
   | step Ast _ ih => exact .trans (.step Ast) ih
 
+theorem IndexedSmallStep_of (mst : [[Δ ⊢ A ->* B]]) : ∃ n, [[Δ ⊢ A ->n* B]] := by
+  induction mst with
+  | refl => exact ⟨_, .refl⟩
+  | step st _ ih =>
+    let ⟨_, ist⟩ := ih
+    exact ⟨_, .step st ist⟩
+
 theorem Equivalence_of (Amst : [[Δ ⊢ A ->* B]]) (Aki : [[Δ ⊢ A : K]]) : [[Δ ⊢ A ≡ B]] := by
   induction Amst with
   | refl => exact .refl
@@ -2442,11 +2461,10 @@ def listApp_depth : «Type» → Nat
 
 namespace EqSmallStep
 
-theorem listAppComp (A₀ki : [[Δ ⊢ A₀ : K₂ ↦ K₃]]) (A₁ki : [[Δ ⊢ A₁ : K₁ ↦ K₂]])
-  (B'ki : [[Δ ⊢ B' : L K₁]]) (Δwf : [[⊢ Δ]])
-  : [[Δ ⊢ A₀ ⟦A₁ ⟦B'⟧⟧ <->* (λ a : K₁. A₀ (A₁ a$0)) ⟦B'⟧]] := by
+theorem listAppComp' (A₀ki : [[Δ ⊢ A₀ : K₂ ↦ K₃]]) (A₁ki : [[Δ ⊢ A₁ : K₁ ↦ K₂]])
+  (B'ki : [[Δ ⊢ B' : L K₁]]) (A₁B''ist : [[Δ ⊢ A₁ ⟦B'⟧ ->n* A₁B'']]) (A₁B''v : [[value A₁B'']])
+  (Δwf : [[⊢ Δ]]) : [[Δ ⊢ A₀ ⟦A₁ ⟦B'⟧⟧ <->* (λ a : K₁. A₀ (A₁ a$0)) ⟦B'⟧]] := by
   let ⟨A₀', A₀'v, A₀'mst⟩ := MultiSmallStep.normalization A₀ki
-  let ⟨A₁B'', A₁B''v, A₁B''mst⟩ := MultiSmallStep.normalization <| .listApp A₁ki B'ki
   by_cases ∃ K', A₀' = [[λ a : K'. a$0]]
   · case pos h =>
     rcases h with ⟨_, rfl⟩
@@ -2510,9 +2528,13 @@ theorem listAppComp (A₀ki : [[Δ ⊢ A₀ : K₂ ↦ K₃]]) (A₁ki : [[Δ �
             refl
         · exact refl
   · case neg ne =>
-    generalize A₁B'eq : [[A₁ ⟦B'⟧]] = A₁B' at A₁B''mst
+    generalize A₁B'eq : [[A₁ ⟦B'⟧]] = A₁B' at A₁B''ist
+    generalize meq : n = m at A₁B''ist
+    let mlen : n ≤ n := Nat.le.refl
+    rw (occs := .pos [1]) [meq] at mlen
+    clear meq
     let A₀lc := A₀ki.TypeVarLocallyClosed_of
-    induction A₁B''mst generalizing A₁ B' with
+    induction A₁B''ist generalizing A₁ B' with
     | refl =>
       cases A₁B'eq
       let A₁lc := A₁ki.TypeVarLocallyClosed_of
@@ -2539,7 +2561,7 @@ theorem listAppComp (A₀ki : [[Δ ⊢ A₀ : K₂ ↦ K₃]]) (A₁ki : [[Δ �
               (A₀'mst.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)).EqSmallStep_of
               refl
           · exact refl
-    | step st _ ih =>
+    | step st A₁B''ist' ih =>
       cases A₁B'eq
       match st with
       | .listAppList ne' _ A₁v B''v (B := B'') (n := n) =>
@@ -2618,7 +2640,7 @@ theorem listAppComp (A₀ki : [[Δ ⊢ A₀ : K₂ ↦ K₃]]) (A₁ki : [[Δ �
           [[Δ ⊢ A₀ ⟦A₁ ⟦B₀ ⟦B₁⟧⟧⟧ <->* A₀ ⟦(λ a : K₀. A₁ (B₀ a$0)) ⟦B₁⟧⟧]] :=
             listApp A₀ki refl <| step <| .listAppComp ne' B₀ki A₁v B₀B₁v
           [[Δ ⊢ A₀ ⟦(λ a : K₀. A₁ (B₀ a$0)) ⟦B₁⟧⟧ <->* (λ a : K₀. A₀ ((λ a : K₀. A₁ (B₀ a$0)) a$0)) ⟦B₁⟧]] := by
-            apply listAppComp A₀ki _ B₁ki Δwf
+            apply listAppComp' A₀ki _ B₁ki A₁B''ist' A₁B''v Δwf
             apply Kinding.lam Δ.typeVarDom
             intro a anin
             simp [Type.TypeVar_open, A₁lc.TypeVar_open_id, B₀lc.TypeVar_open_id]
@@ -2752,7 +2774,7 @@ theorem listAppComp (A₀ki : [[Δ ⊢ A₀ : K₂ ↦ K₃]]) (A₁ki : [[Δ �
           [[Δ ⊢ A₀ ⟦A₁ ⟦B'⟧⟧ <->* A₀ ⟦A₁' ⟦B'⟧⟧]] :=
             listApp A₀ki refl <| listApp A₁ki (step st') refl
           [[Δ ⊢ A₀ ⟦A₁' ⟦B'⟧⟧ <->* (λ a : K₁. A₀ (A₁' a$0)) ⟦B'⟧]] :=
-            ih (st'.preservation A₁ki) B'ki A₁B''v rfl
+            ih (st'.preservation A₁ki) B'ki A₁B''v rfl <| Nat.le_of_add_right_le mlen
           [[Δ ⊢ (λ a : K₁. A₀ (A₁' a$0)) ⟦B'⟧ <->* (λ a : K₁. A₀ (A₁ a$0)) ⟦B'⟧]] := by
             symm
             apply listApp (K := [[K₁ ↦ K₃]]) (Δ := Δ) _ _ refl
@@ -2777,7 +2799,7 @@ theorem listAppComp (A₀ki : [[Δ ⊢ A₀ : K₂ ↦ K₃]]) (A₁ki : [[Δ �
           [[Δ ⊢ A₀ ⟦A₁ ⟦B'⟧⟧ <->* A₀ ⟦A₁ ⟦B''⟧⟧]] :=
             listApp A₀ki refl <| listApp A₁ki refl <| step st'
           [[Δ ⊢ A₀ ⟦A₁ ⟦B''⟧⟧ <->* (λ a : K₁. A₀ (A₁ a$0)) ⟦B''⟧]] :=
-            ih A₁ki (st'.preservation B'ki) A₁B''v rfl
+            ih A₁ki (st'.preservation B'ki) A₁B''v rfl <| Nat.le_of_add_right_le mlen
           [[Δ ⊢ (λ a : K₁. A₀ (A₁ a$0)) ⟦B''⟧ <->* (λ a : K₁. A₀ (A₁ a$0)) ⟦B'⟧]] := by
             apply listApp (K := [[K₁ ↦ K₃]]) (Δ := Δ) _ refl <| symm <| step st'
             apply Kinding.lam Δ.typeVarDom
@@ -2787,8 +2809,15 @@ theorem listAppComp (A₀ki : [[Δ ⊢ A₀ : K₂ ↦ K₃]]) (A₁ki : [[Δ �
             let Δawf := Δwf.typeVarExt anin (K := K₁)
             exact .app (A₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <|
               .app (A₁ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <| .var .head
-termination_by sizeOf Δ
-decreasing_by sorry
+termination_by n
+decreasing_by exact mlen
+
+theorem listAppComp (A₀ki : [[Δ ⊢ A₀ : K₂ ↦ K₃]]) (A₁ki : [[Δ ⊢ A₁ : K₁ ↦ K₂]])
+  (B'ki : [[Δ ⊢ B' : L K₁]]) (Δwf : [[⊢ Δ]])
+  : [[Δ ⊢ A₀ ⟦A₁ ⟦B'⟧⟧ <->* (λ a : K₁. A₀ (A₁ a$0)) ⟦B'⟧]] :=
+  let ⟨_, A₁B''v, A₁B''mst⟩ := MultiSmallStep.normalization <| A₁ki.listApp B'ki
+  let ⟨_, A₁B''ist⟩ := A₁B''mst.IndexedSmallStep_of
+  listAppComp' A₀ki A₁ki B'ki A₁B''ist A₁B''v Δwf
 
 theorem of_EquivalenceI (equ : [[Δ ⊢ A ≡ᵢ B]]) (Aki : [[Δ ⊢ A : K]]) (Δwf : [[⊢ Δ]])
   : [[Δ ⊢ A <->* B]] := by
