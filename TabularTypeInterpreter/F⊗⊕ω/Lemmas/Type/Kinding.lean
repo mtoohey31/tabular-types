@@ -257,6 +257,36 @@ theorem subst' (kT: [[ Δ, a: K, Δ' ⊢ T: K' ]]) (wf: [[ ⊢ Δ, a: K, Δ' ]])
 theorem subst (kT: [[ Δ, a: K ⊢ T: K' ]]) (wf: [[ ⊢ Δ, a: K ]]) (kA: [[ Δ ⊢ A: K ]]): [[ Δ ⊢ T[A/a]: K' ]] :=
  by apply subst' (Δ' := Environment.empty) <;> assumption
 
+theorem Environment_TypeVar_subst_swap (Aki : [[Δ, Δ'[B / a] ⊢ A : K']])
+  : [[Δ, Δ'[B' / a] ⊢ A : K']] := by
+  generalize Δ''eq : [[Δ, Δ'[B / a] ]] = Δ'' at Aki
+  induction Aki generalizing Δ' <;> cases Δ''eq
+  case var ain =>
+    apply var
+    match ain.append_elim with
+    | .inl ⟨anin, ain'⟩ =>
+      apply ain'.weakening_r
+      intro ain''
+      apply anin
+      rw [Environment.TypeVarInDom, Environment.typeVarDom_TypeVar_subst] at ain'' ⊢
+      exact ain''
+    | .inr ain' =>
+      exact .weakening_l <| TypeVarInEnvironment.TypeVar_subst.mpr <|
+        TypeVarInEnvironment.TypeVar_subst.mp ain'
+  case lam I _ ih =>
+    apply lam I
+    intro a' a'nin
+    rw [← Environment.append, ← Environment.TypeVar_subst]
+    apply ih a' a'nin
+    rw [Environment.TypeVar_subst, Environment.append]
+  case scheme I _ ih =>
+    apply scheme I
+    intro a' a'nin
+    rw [← Environment.append, ← Environment.TypeVar_subst]
+    apply ih a' a'nin
+    rw [Environment.TypeVar_subst, Environment.append]
+  all_goals aesop (add safe constructors Kinding)
+
 theorem Type_open_preservation' {A : «Type»}
   (Aki : Kinding [[(Δ, a : K, Δ')]] (A.TypeVar_open a n) K') (h1: a ∉ Δ'.typeVarDom) (h2: ∀a ∈ Δ'.typeVarDom, a ∉ Δ.typeVarDom) (aninfvA : a ∉ A.freeTypeVars)
   (Bki : [[Δ ⊢ B : K]]) : Kinding [[(Δ, (Δ' [B / a]))]] (A.Type_open B n) K' := by
