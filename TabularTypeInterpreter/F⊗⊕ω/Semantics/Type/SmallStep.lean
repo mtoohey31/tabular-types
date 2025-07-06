@@ -208,8 +208,10 @@ judgement EqSmallStep where
 ────────────── trans
 Δ ⊢ A₀ <->* A₂
 
+attribute [refl] MultiSmallStep.refl EqSmallStep.refl
+
 @[symm]
-theorem EqSmallStep.symm' {Δ} (A B) : [[Δ ⊢ A <->* B]] → [[Δ ⊢ B <->* A]] := symm
+theorem EqSmallStep.symm' {Δ} A B : [[Δ ⊢ A <->* B]] → [[Δ ⊢ B <->* A]] := symm
 
 namespace Type.IsValue
 
@@ -1412,18 +1414,82 @@ theorem preservation_rev : [[Δ ⊢ A -> B]] → [[Δ ⊢ B : K]] → [[Δ ⊢ A
       let ⟨aninII', aninΔ⟩ := List.not_mem_append'.mp anin
       let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp aninII'
       exact preservation_rev (A'st a aninI) <| A'ki a aninI'
-  | .list _ A'st (m := m) (n := n), Aki => by
+  | .list _ A₁st (m := m) (n := n), Aki => by
     rw [← Range.map_get!_eq (as := _ ++ _ :: _)] at Aki ⊢
     rcases Aki.inv_list' with ⟨_, rfl, Aki'⟩
     apply Kinding.list
     intro i mem
     rw [List.length_append, Range.map, List.length_map, Range.length_toList, List.length_cons,
         Range.map, List.length_map, Range.length_toList, Nat.sub_zero, Nat.sub_zero] at mem
-    sorry
+    simp
+    rw [List.getElem?_append]
+    split
+    · case isTrue h =>
+      simp [List.getElem?_eq_getElem h]
+      rw [List.length_map, Range.length_toList, Nat.sub_zero] at h
+      rw [Range.getElem_toList h, Nat.zero_add]
+      simp [Range.length_toList] at Aki'
+      specialize Aki' i mem
+      rw [List.getElem?_append_left
+            (by rw [List.length_map, Range.length_toList]; exact h)] at Aki'
+      simp at Aki'
+      rw [List.getElem?_eq_getElem (by rw [Range.length_toList]; exact h)] at Aki'
+      simp [Range.getElem_toList h (l := 0), Nat.zero_add] at Aki'
+      exact Aki'
+    · case isFalse h =>
+      simp [Range.length_toList]
+      rw [List.getElem?_cons]
+      split
+      · case isTrue h' =>
+        simp
+        apply A₁st.preservation_rev
+        specialize Aki' m ⟨Nat.zero_le _, (by simp_arith [Range.length_toList]), Nat.mod_one _⟩
+        simp at Aki'
+        rw [List.getElem?_append_right
+              (by rw [List.length_map, Range.length_toList]; exact Nat.le.refl)] at Aki'
+        simp [Range.length_toList] at Aki'
+        exact Aki'
+      · case isFalse h' =>
+        simp_arith
+        let mle : m ≤ i := by
+          apply Nat.not_lt.mp at h
+          rw [List.length_map, Range.length_toList] at h
+          exact h
+        let ltn : i - m - 1 < n := by
+          apply Nat.sub_lt_left_of_lt_add <| by
+            apply Nat.le_sub_of_add_le
+            rw [Nat.add_comm]
+            apply Nat.succ_le_of_lt
+            apply Nat.lt_of_le_of_ne mle
+            intro meq
+            rw [meq] at h'
+            nomatch h' <| Nat.sub_self i
+          apply Nat.sub_lt_left_of_lt_add mle
+          rw [Nat.add_comm 1]
+          exact mem.upper
+        rw [List.getElem?_eq_getElem (by simp_arith [Range.length_toList]; exact ltn),
+            Range.getElem_toList ltn]
+        simp
+        simp [Range.length_toList] at Aki'
+        specialize Aki' i mem
+        rw [List.getElem?_append_right
+              (by simp_arith [List.length_map, Range.length_toList]; exact mle)] at Aki'
+        simp at Aki'
+        rw [List.getElem?_cons, if_neg (by rw [Range.length_toList]; exact h'), Range.length_toList,
+            List.getElem?_eq_getElem (by simp_arith [Range.length_toList]; exact ltn)] at Aki'
+        simp at Aki'
+        rw [Range.getElem_toList ltn, Nat.zero_add] at Aki'
+        exact Aki'
   | .listAppl A'st, .listApp A'ki B'ki => .listApp (A'st.preservation_rev A'ki) B'ki
   | .listAppr _ B'st, .listApp A'ki B'ki => .listApp A'ki <| B'st.preservation_rev B'ki
   | .prod A'st, .prod A'ki => .prod <| A'st.preservation_rev A'ki
   | .sum A'st, .sum A'ki => .sum <| A'st.preservation_rev A'ki
+termination_by sizeOf A
+decreasing_by
+  all_goals simp_arith
+  apply Nat.le_of_lt
+  apply List.sizeOf_lt_of_mem
+  exact List.mem_append.mpr <| .inr <| .head _
 
 theorem Equivalence_of : [[Δ ⊢ A -> B]] → [[Δ ⊢ A : K]] → [[Δ ⊢ A ≡ B]]
   | .eta _ A'ki _, _ => .eta A'ki.TypeVarLocallyClosed_of
@@ -1537,7 +1603,7 @@ theorem sandwich' {α: Type} {nl nr : ℕ} {F1 F3: ℕ → α} {F2: α}:
     repeat' rw [if_neg (by omega)]
     exact congrArg _ (by omega)
 
-macro "rwomega" equality:term : tactic => `(tactic | (have _eq : $equality := (by omega); rw [_eq]; clear _eq))
+macro "rwomega" equality:term : tactic => `(tactic | (have _eq : $equality := (by omega); rw [_eq]; try clear _eq))
 
 theorem inv_list (Ast: [[ Δ ⊢ { </ A@i // i in [:n] /> } -> T ]] ): ∃ B, T = [[{ </ B@i // i in [:n] /> }]] ∧ [[ </ Δ ⊢ A@i ->* B@i // i in [:n] /> ]] := by
   generalize T_eq : [[{ </ A@i // i in [:n] /> } ]] = T_ at Ast
@@ -1564,7 +1630,6 @@ theorem inv_list (Ast: [[ Δ ⊢ { </ A@i // i in [:n] /> } -> T ]] ): ∃ B, T 
       repeat' split
       . case _ iltn₀ =>
         rw [A₀eq i (by simp_all [Membership.mem])]
-        exact .refl
       . case _ _ ieqn₀ =>
         subst ieqn₀
         rw [A₁eq]
@@ -1573,7 +1638,6 @@ theorem inv_list (Ast: [[ Δ ⊢ { </ A@i // i in [:n] /> } -> T ]] ): ∃ B, T 
         specialize A₂eq (i - n₀ - 1) (by simp_all [Membership.mem] ; omega)
         rw [← A₂eq]
         rwomega i - n₀ - 1 + (n₀ + 1) = i
-        exact .refl
 
 end SmallStep
 
@@ -1598,7 +1662,7 @@ open «Type» in
 theorem TypeVar_subst_var (Ast : [[Δ, a : K ⊢ A ->* B]]) (a'ninΔ : [[a' ∉ dom(Δ)]])
   : [[Δ, a' : K ⊢ A[a' / a] ->* B[a' / a] ]] := by
   induction Ast with
-  | refl => exact refl
+  | refl => rfl
   | step st _ ih => exact step (st.TypeVar_subst_var (Δ' := .empty) a'ninΔ) ih
 
 theorem TypeVar_open_swap (Amst : [[Δ, a' : K ⊢ A^a' ->* A']]) (Alc : A.TypeVarLocallyClosed 1)
@@ -1623,7 +1687,7 @@ theorem weakening (mst : [[Δ, Δ'' ⊢ A ->* B]]) (ΔΔ'Δ''wf : [[⊢ Δ, Δ',
   induction mst with
   | refl =>
     cases Δ'''eq
-    exact refl
+    rfl
   | step st _ ih =>
     cases Δ'''eq
     exact step (st.weakening ΔΔ'Δ''wf) ih
@@ -1634,7 +1698,7 @@ theorem Environment_TypeVar_subst_swap (mst : [[Δ, Δ'[B / a] ⊢ A ->* A']])
   induction mst with
   | refl =>
     cases Δ''eq
-    exact refl
+    rfl
   | step st _ ih =>
     cases Δ''eq
     exact step st.Environment_TypeVar_subst_swap ih
@@ -1646,7 +1710,7 @@ theorem preservation (Amst : [[Δ ⊢ A ->* B]]) (Aki : [[Δ ⊢ A : K]]) : [[Δ
 
 theorem EqSmallStep_of (Amst : [[Δ ⊢ A ->* B]]) : [[Δ ⊢ A <->* B]] := by
   induction Amst with
-  | refl => exact .refl
+  | refl => rfl
   | step Ast _ ih => exact .trans (.step Ast) ih
 
 theorem IndexedSmallStep_of (mst : [[Δ ⊢ A ->* B]]) : ∃ n, [[Δ ⊢ A ->n* B]] := by
@@ -1745,7 +1809,7 @@ theorem Environment_TypeVar_subst_swap (est : [[Δ, Δ'[B / a] ⊢ A <->* A']])
   induction est with
   | refl =>
     cases Δ''eq
-    exact refl
+    rfl
   | step st =>
     cases Δ''eq
     exact step st.Environment_TypeVar_subst_swap
@@ -1774,7 +1838,7 @@ theorem lam (I : List TypeVarId) (Aest : ∀ a ∉ I, [[Δ, a : K ⊢ A^a <->* A
   | refl =>
     cases A''eq
     cases Type.TypeVar_open_inj_of_not_mem_freeTypeVars aninA' aninA A'''eq
-    exact refl
+    rfl
   | step st =>
     cases A''eq
     cases A'''eq
@@ -1818,12 +1882,12 @@ theorem app (Aki : [[Δ ⊢ A : K]]) (Aest : [[Δ ⊢ A <->* A']]) (Best : [[Δ 
     [[Δ ⊢ A B <->* A'' B]] := by
       clear Aest A''v
       induction A''mst with
-      | refl => exact refl
+      | refl => rfl
       | step st _ ih =>
         exact trans (step (.appl st)) ih
     [[Δ ⊢ A'' B <->* A'' B']] := by
       induction Best with
-      | refl => exact refl
+      | refl => rfl
       | step st => exact step <| .appr A''v st
       | symm _ ih => exact symm ih
       | trans _ _ ih₀ ih₁ => exact trans ih₀ ih₁
@@ -1831,13 +1895,13 @@ theorem app (Aki : [[Δ ⊢ A : K]]) (Aest : [[Δ ⊢ A <->* A']]) (Best : [[Δ 
       symm
       clear Aest A''v
       induction A''mst with
-      | refl => exact refl
+      | refl => rfl
       | step st _ ih =>
         exact trans (step (.appl st)) ih
     [[Δ ⊢ A B' <->* A' B']] := by
       clear A''mst
       induction Aest with
-      | refl => exact refl
+      | refl => rfl
       | step st => exact step <| .appl st
       | symm _ ih => exact symm ih
       | trans _ _ ih₀ ih₁ => exact trans ih₀ ih₁
@@ -1904,7 +1968,7 @@ theorem «forall» (I : List TypeVarId) (Aest : ∀ a ∉ I, [[Δ, a : K ⊢ A^a
   | refl =>
     cases A''eq
     cases Type.TypeVar_open_inj_of_not_mem_freeTypeVars aninA' aninA A'''eq
-    exact refl
+    rfl
   | step st =>
     cases A''eq
     cases A'''eq
@@ -1948,12 +2012,12 @@ theorem arr (Aki : [[Δ ⊢ A : K]]) (Aest : [[Δ ⊢ A <->* A']]) (Best : [[Δ 
     [[Δ ⊢ A → B <->* A'' → B]] := by
       clear Aest A''v
       induction A''mst with
-      | refl => exact refl
+      | refl => rfl
       | step st _ ih =>
         exact trans (step (.arrl st)) ih
     [[Δ ⊢ A'' → B <->* A'' → B']] := by
       induction Best with
-      | refl => exact refl
+      | refl => rfl
       | step st => exact step <| .arrr A''v st
       | symm _ ih => exact symm ih
       | trans _ _ ih₀ ih₁ => exact trans ih₀ ih₁
@@ -1961,13 +2025,13 @@ theorem arr (Aki : [[Δ ⊢ A : K]]) (Aest : [[Δ ⊢ A <->* A']]) (Best : [[Δ 
       symm
       clear Aest A''v
       induction A''mst with
-      | refl => exact refl
+      | refl => rfl
       | step st _ ih =>
         exact trans (step (.arrl st)) ih
     [[Δ ⊢ A → B' <->* A' → B']] := by
       clear A''mst
       induction Aest with
-      | refl => exact refl
+      | refl => rfl
       | step st => exact step <| .arrl st
       | symm _ ih => exact symm ih
       | trans _ _ ih₀ ih₁ => exact trans ih₀ ih₁
@@ -1975,10 +2039,100 @@ theorem arr (Aki : [[Δ ⊢ A : K]]) (Aest : [[Δ ⊢ A <->* A']]) (Best : [[Δ 
 theorem list (Aki : ∀ i ∈ [:n], [[Δ ⊢ A@i : K]]) (Aest : ∀ i ∈ [:n], [[Δ ⊢ A@i <->* A'@i]])
   : [[Δ ⊢ {</ A@i // i in [:n] />} <->* {</ A'@i // i in [:n] />}]] := by
   let ⟨A'', A''vA''mst⟩ := Range.skolem (MultiSmallStep.normalization <| Aki · ·)
-  rw [Range.map, ← Range.map_append (Nat.zero_le _) Nat.le.refl, Range.map]
-  rw (occs := .pos [2]) [← Range.map_append Nat.le.refl (Nat.zero_le _)]
-  rw [← Range.map, ← Range.map, ← Range.map, ← Range.map]
-  sorry
+  calc
+    [[Δ ⊢ {</ A@i // i in [:n] />} <->* {</ A''@i // i in [:n] />}]] := by
+      symm
+      rw [Range.map, ← Range.map_append (Nat.zero_le _) Nat.le.refl,
+          ← Range.map, ← Range.map]
+      rw (occs := .pos [2]) [Range.map_eq_of_eq_of_mem'' (by
+        intro i mem
+        show _ = A i
+        nomatch Nat.not_lt_of_le mem.lower mem.upper
+      )]
+      generalize meq : n = m
+      rw (occs := .pos [3, 4]) [← meq]
+      let mlen := Nat.le_refl n
+      rw (occs := .pos [1]) [meq] at mlen
+      clear meq
+      symm
+      induction m with
+      | zero => rw [Range.map_same_eq_nil, List.nil_append]
+      | succ m' ih =>
+        apply trans <| ih <| Nat.le_of_succ_le mlen
+        rw [Range.map_eq_cons_of_lt <| Nat.lt_of_succ_le mlen,
+            Range.map_eq_snoc_of_lt (Nat.zero_lt_succ _), Nat.succ_sub_one,
+            List.append_assoc, List.singleton_append,
+            ← Range.map_shift (m := m' + 1) (j := m' + 1) Nat.le.refl,
+            Nat.sub_self]
+        let A''mst := A''vA''mst m' ⟨Nat.zero_le _, Nat.lt_of_succ_le mlen, Nat.mod_one _⟩ |>.right
+        generalize A'''eq : A m' = A''', A''''eq : A'' m' = A''''
+        rw [A'''eq, A''''eq] at A''mst
+        clear A'''eq A''''eq
+        induction A''mst with
+        | refl => rfl
+        | step st _ ih =>
+          apply trans _ ih
+          exact step <| .list (A''vA''mst · ⟨
+              Nat.zero_le _,
+              Nat.lt_of_lt_of_le ·.upper (Nat.le_of_succ_le mlen),
+              Nat.mod_one _
+            ⟩ |>.left) st
+    [[Δ ⊢ {</ A''@i // i in [:n] />} <->* {</ A'@i // i in [:n] />}]] := by
+      symm
+      rw [Range.map, ← Range.map_append (Nat.zero_le _) (Nat.zero_le _),
+          ← Range.map, ← Range.map]
+      rw [Range.map_eq_of_eq_of_mem'' (by
+        intro i mem
+        show _ = A'' i
+        nomatch Nat.not_lt_of_le mem.lower mem.upper
+      )]
+      generalize meq : n = m
+      rw (occs := .pos [2, 3]) [← Nat.sub_self m]
+      rw (occs := .pos [1, 3, 5, 6]) [← meq]
+      let mlen := Nat.le_refl n
+      rw (occs := .pos [1]) [meq] at mlen
+      clear meq
+      induction m with
+      | zero => rw [Nat.sub_zero, Range.map_same_eq_nil, List.append_nil]
+      | succ m' ih =>
+        apply trans _ <| ih <| Nat.le_of_succ_le mlen
+        rw [Range.map_eq_cons_of_lt <| Nat.sub_lt (Nat.lt_of_lt_of_le (Nat.succ_pos _) mlen)
+              (Nat.succ_pos _), Nat.sub_add_eq,
+            Nat.sub_add_cancel <| Nat.le_sub_of_add_le (by rw [Nat.add_comm]; exact mlen),
+            Range.map_eq_snoc_of_lt <| Nat.zero_lt_sub_of_lt <| Nat.lt_of_succ_le mlen,
+            List.append_assoc, List.singleton_append,
+            ← Range.map_shift (m := n - m') (j := n - m') Nat.le.refl, Nat.sub_self]
+        specialize Aest (n - m' - 1) ⟨
+          Nat.zero_le _,
+          Nat.sub_lt_right_of_lt_add (Nat.le_sub_of_add_le (by rw [Nat.add_comm]; exact mlen))
+            (Nat.sub_lt_right_of_lt_add (Nat.le_of_succ_le mlen) (Nat.lt_add_right _ Nat.le.refl)),
+          Nat.mod_one _
+        ⟩
+        let A''mst := A''vA''mst (n - m' - 1) ⟨
+          Nat.zero_le _,
+          Nat.sub_lt_right_of_lt_add (Nat.le_sub_of_add_le (by rw [Nat.add_comm]; exact mlen))
+            (Nat.sub_lt_right_of_lt_add (Nat.le_of_succ_le mlen) (Nat.lt_add_right _ Nat.le.refl)),
+          Nat.mod_one _
+        ⟩ |>.right
+        let A'A''est := Aest.symm.trans A''mst.EqSmallStep_of
+        generalize A'''eq : A (n - m' - 1) = A''', A''''eq : A' (n - m' - 1) = A'''',
+          A'''''eq : A'' (n - m' - 1) = A'''''
+        rw [A''''eq, A'''''eq] at A'A''est
+        clear A'''eq A''''eq A'''''eq
+        induction A'A''est with
+        | refl => rfl
+        | step st =>
+          apply step <| .list _ st
+          intro i mem
+          apply A''vA''mst .. |>.left
+          exact ⟨
+            Nat.zero_le _,
+            Nat.lt_of_le_of_lt (by rw [Nat.add_assoc]; exact Nat.le_add_right ..)
+              (Nat.add_lt_of_lt_sub (Nat.add_lt_of_lt_sub mem.upper)),
+              Nat.mod_one _
+          ⟩
+        | symm _ ih => exact symm ih
+        | trans _ _ ih₀ ih₁ => exact trans ih₀ ih₁
 
 theorem listApp (Aki : [[Δ ⊢ A : K]]) (Aest : [[Δ ⊢ A <->* A']]) (Best : [[Δ ⊢ B <->* B']])
   : [[Δ ⊢ A ⟦B⟧ <->* A' ⟦B'⟧]] := by
@@ -1988,12 +2142,12 @@ theorem listApp (Aki : [[Δ ⊢ A : K]]) (Aest : [[Δ ⊢ A <->* A']]) (Best : [
     [[Δ ⊢ A ⟦B⟧ <->* A'' ⟦B⟧]] := by
       clear Aest A''v
       induction A''mst with
-      | refl => exact refl
+      | refl => rfl
       | step st _ ih =>
         exact trans (step (.listAppl st)) ih
     [[Δ ⊢ A'' ⟦B⟧ <->* A'' ⟦B'⟧]] := by
       induction Best with
-      | refl => exact refl
+      | refl => rfl
       | step st => exact step <| .listAppr A''v st
       | symm _ ih => exact symm ih
       | trans _ _ ih₀ ih₁ => exact trans ih₀ ih₁
@@ -2001,13 +2155,13 @@ theorem listApp (Aki : [[Δ ⊢ A : K]]) (Aest : [[Δ ⊢ A <->* A']]) (Best : [
       symm
       clear Aest A''v
       induction A''mst with
-      | refl => exact refl
+      | refl => rfl
       | step st _ ih =>
         exact trans (step (.listAppl st)) ih
     [[Δ ⊢ A ⟦B'⟧ <->* A' ⟦B'⟧]] := by
       clear A''mst
       induction Aest with
-      | refl => exact refl
+      | refl => rfl
       | step st => exact step <| .listAppl st
       | symm _ ih => exact symm ih
       | trans _ _ ih₀ ih₁ => exact trans ih₀ ih₁
@@ -2058,17 +2212,17 @@ theorem listAppId (Aki : [[Δ ⊢ A : L K]]) : [[Δ ⊢ (λ a : K. a$0) ⟦A⟧ 
 
 theorem prod (est : [[Δ ⊢ A <->* B]]) : [[Δ ⊢ ⊗ A <->* ⊗ B]] := by
   induction est with
-  | refl => exact .refl
-  | step st => exact .step st.prod
-  | symm _ ih => exact .symm ih
-  | trans _ _ ih₀ ih₁ => exact .trans ih₀ ih₁
+  | refl => rfl
+  | step st => exact step st.prod
+  | symm _ ih => exact symm ih
+  | trans _ _ ih₀ ih₁ => exact trans ih₀ ih₁
 
 theorem sum (est : [[Δ ⊢ A <->* B]]) : [[Δ ⊢ ⊕ A <->* ⊕ B]] := by
   induction est with
-  | refl => exact .refl
-  | step st => exact .step st.sum
-  | symm _ ih => exact .symm ih
-  | trans _ _ ih₀ ih₁ => exact .trans ih₀ ih₁
+  | refl => rfl
+  | step st => exact step st.sum
+  | symm _ ih => exact symm ih
+  | trans _ _ ih₀ ih₁ => exact trans ih₀ ih₁
 
 end EqSmallStep
 
@@ -2087,7 +2241,6 @@ theorem SmallStep.Type_open_out (Bst : [[Δ ⊢ B -> B']])
       exact .step <| Bst.weakening (Δwf.subst Bki) (Δ'' := .empty)
     · case isFalse h =>
       rw [Type_open, if_neg h]
-      exact .refl
   | .lam _ A' =>
     simp [freeTypeVars] at aninA
     rw [TypeVar_open] at Aki
@@ -2217,7 +2370,7 @@ theorem MultiSmallStep.Type_open_out (Bst : [[Δ ⊢ B ->* B']])
   (aninA : a ∉ A.freeTypeVars) (Bki : [[Δ ⊢ B : K]])
   : EqSmallStep [[Δ, Δ'[B / a] ]] (A.Type_open B n) (A.Type_open B' n) := by
   induction Bst with
-  | refl => exact .refl
+  | refl => rfl
   | step st _ ih =>
     let .typeVarExt Δwf _ := ΔaΔ'wf.weakening
     exact .trans (st.Type_open_out Aki ΔaΔ'wf aninA Bki)
@@ -2403,13 +2556,7 @@ theorem SmallStep.TypeVar_subst_in (Ast : [[Δ, a : K, Δ' ⊢ A -> A']])
       simp
       rw [List.getElem?_append]
       split
-      · case isTrue h =>
-        rw [List.getElem?_append_left h]
-        simp [Range.length_toList] at h ⊢
-        rw [List.getElem?_eq_getElem (by simp_arith [Range.length_toList, h]),
-            Range.getElem_toList h]
-        simp
-        exact .refl
+      · case isTrue h => rw [List.getElem?_append_left h]
       · case isFalse h =>
         rw [List.getElem?_append_right (Nat.le_of_not_lt h)]
         simp [Range.length_toList] at h ⊢
@@ -2431,13 +2578,11 @@ theorem SmallStep.TypeVar_subst_in (Ast : [[Δ, a : K, Δ' ⊢ A -> A']])
           case isTrue h'' => nomatch h' h''
           simp
           rw [List.getElem?_eq_getElem, Range.getElem_toList]
-          · simp
-            exact .refl
-          · rw [Nat.sub_zero]
-            apply Nat.sub_lt_left_of_lt_add (Nat.pos_of_ne_zero h')
-            apply Nat.sub_lt_left_of_lt_add h
-            rw [Nat.add_comm 1]
-            exact mem.upper
+          rw [Nat.sub_zero]
+          apply Nat.sub_lt_left_of_lt_add (Nat.pos_of_ne_zero h')
+          apply Nat.sub_lt_left_of_lt_add h
+          rw [Nat.add_comm 1]
+          exact mem.upper
   | .listApp A'' B', .listAppl A''st, .listApp A''ki B'ki =>
     rw [TypeVar_subst, TypeVar_subst]
     exact .listApp (A''ki.subst' Δwf Bki) (A''st.TypeVar_subst_in A''ki Δwf Bki) .refl
@@ -2474,7 +2619,7 @@ theorem MultiSmallStep.Type_open_in
   | refl =>
     cases A''eq
     cases Type.TypeVar_open_inj_of_not_mem_freeTypeVars aninA' aninA A'''eq
-    exact .refl
+    rfl
   | step st _ ih =>
     rename_i A'''' _ _
     cases A''eq
@@ -2678,7 +2823,7 @@ theorem EqSmallStep.listAppComp' (A₀ki : [[Δ ⊢ A₀ : K₂ ↦ K₃]]) (A�
           exact .app
             (A₁ki.weakening Δa'wf (Δ' := .typeExt .empty ..) (Δ'' := .empty))
             (.var .head)
-        · exact refl
+        · rfl
       [[Δ ⊢ (λ a : K₁. (λ a : K₂. a$0) (A₁ a$0)) ⟦B'⟧ <->* (λ a : K₁. A₀ (A₁ a$0)) ⟦B'⟧]] := by
         symm
         apply listApp
@@ -2699,7 +2844,7 @@ theorem EqSmallStep.listAppComp' (A₀ki : [[Δ ⊢ A₀ : K₂ ↦ K₃]]) (A�
             (A₀'mst.weakening (Δwf.typeVarExt a'nin) (Δ' := .typeExt .empty ..)
               (Δ'' := .empty)).EqSmallStep_of
             refl
-        · exact refl
+        · rfl
   · case neg ne =>
     generalize A₁B'eq : [[A₁ ⟦B'⟧]] = A₁B' at A₁B''ist
     generalize meq : n = m at A₁B''ist
@@ -2733,7 +2878,7 @@ theorem EqSmallStep.listAppComp' (A₀ki : [[Δ ⊢ A₀ : K₂ ↦ K₃]]) (A�
             exact app (A₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty))
               (A₀'mst.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)).EqSmallStep_of
               refl
-          · exact refl
+          · rfl
     | step st A₁B''ist' ih =>
       cases A₁B'eq
       match st with
@@ -2794,7 +2939,7 @@ theorem EqSmallStep.listAppComp' (A₀ki : [[Δ ⊢ A₀ : K₂ ↦ K₃]]) (A�
               rw (occs := .pos [1]) [this]
               symm
               apply step <| .lamApp .id (.var .head) .id .var
-            · exact refl
+            · rfl
       | .listAppComp ne' B₀ki A₁v B₀B₁v (A₁ := B₀) (B := B₁) (K₁ := K₀) =>
         let .listApp B₀ki' B₁ki := B'ki
         cases B₀ki.deterministic B₀ki'
@@ -2999,7 +3144,7 @@ theorem listAppComp (A₀ki : [[Δ ⊢ A₀ : K₂ ↦ K₃]]) (A₁ki : [[Δ �
 theorem of_EquivalenceI (equ : [[Δ ⊢ A ≡ᵢ B]]) (Aki : [[Δ ⊢ A : K]]) (Δwf : [[⊢ Δ]])
   : [[Δ ⊢ A <->* B]] := by
   induction equ generalizing K with
-  | refl => exact refl
+  | refl => rfl
   | eta A'lc =>
     rename_i A' _ _
     let .lam I A'aki := Aki
