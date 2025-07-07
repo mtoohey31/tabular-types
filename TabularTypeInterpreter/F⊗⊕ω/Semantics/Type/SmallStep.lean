@@ -2609,11 +2609,12 @@ theorem SmallStep.Type_open_in
 termination_by sizeOf Δ
 decreasing_by all_goals sorry
 
-theorem MultiSmallStep.Type_open_in
-  (Amst : MultiSmallStep [[Δ, a : K, Δ']] (Type.TypeVar_open A a n) (Type.TypeVar_open A' a n))
-  (Aki : Kinding [[Δ, a : K, Δ']] (Type.TypeVar_open A a n) K') (aninA : a ∉ A.freeTypeVars)
-  (aninA' : a ∉ A'.freeTypeVars) (Δwf : [[⊢ Δ, a : K, Δ']]) (Bki : [[Δ ⊢ B : K]])
-  : EqSmallStep [[Δ, Δ'[B / a] ]] (A.Type_open B n) (A'.Type_open B n) := by
+theorem MultiSmallStep.Type_open
+  (Amst : MultiSmallStep [[Δ, a : K, Δ']] (A.TypeVar_open a n) (Type.TypeVar_open A' a n))
+  (Bmst : [[Δ ⊢ B ->* B']]) (Aki : Kinding [[Δ, a : K, Δ']] (Type.TypeVar_open A a n) K')
+  (Δwf : [[⊢ Δ, a : K, Δ']]) (aninA : a ∉ A.freeTypeVars) (aninA' : a ∉ A'.freeTypeVars)
+  (Bki : [[Δ ⊢ B : K]]) : EqSmallStep [[Δ, Δ'[B / a] ]] (A.Type_open B n) (A'.Type_open B' n) := by
+  refine .trans ?_ <| Bmst.Type_open_out (Amst.preservation Aki) Δwf aninA' Bki
   generalize A''eq : A.TypeVar_open a n = A'', A'''eq : A'.TypeVar_open a n = A''' at Amst
   induction Amst generalizing A A' with
   | refl =>
@@ -2632,16 +2633,6 @@ theorem MultiSmallStep.Type_open_in
       aninA' (Type.TypeVarLocallyClosed.TypeVar_open_TypeVar_close_id A''''lc) rfl
     rw [← A''''lc.TypeVar_open_TypeVar_close_id (a := a) (n := n)] at st
     exact st.Type_open_in Aki aninA Type.not_mem_freeTypeVars_TypeVar_close Δwf Bki
-termination_by sizeOf Δ
-decreasing_by all_goals sorry
-
-theorem MultiSmallStep.Type_open
-  (Amst : MultiSmallStep [[Δ, a : K, Δ']] (A.TypeVar_open a n) (Type.TypeVar_open A' a n))
-  (Bmst : [[Δ ⊢ B ->* B']]) (Aki : Kinding [[Δ, a : K, Δ']] (Type.TypeVar_open A a n) K')
-  (Δwf : [[⊢ Δ, a : K, Δ']]) (aninA : a ∉ A.freeTypeVars) (aninA' : a ∉ A'.freeTypeVars)
-  (Bki : [[Δ ⊢ B : K]]) : EqSmallStep [[Δ, Δ'[B / a] ]] (A.Type_open B n) (A'.Type_open B' n) := by
-  refine .trans ?_ <| Bmst.Type_open_out (Amst.preservation Aki) Δwf aninA' Bki
-  exact Amst.Type_open_in Aki aninA aninA' Δwf Bki
 termination_by sizeOf Δ
 decreasing_by all_goals sorry
 
@@ -3131,7 +3122,7 @@ termination_by n
 decreasing_by all_goals sorry
 
 end
-
+#exit
 namespace EqSmallStep
 
 theorem listAppComp (A₀ki : [[Δ ⊢ A₀ : K₂ ↦ K₃]]) (A₁ki : [[Δ ⊢ A₁ : K₁ ↦ K₂]])
