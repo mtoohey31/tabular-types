@@ -222,7 +222,7 @@ theorem weakening_r' (EtyT: [[ Δ, Δ'' ⊢ E: T ]]) (wf: [[ ⊢ Δ, Δ', Δ'' ]
     exact wf.append_typeVar_fresh_l a (by simp_all [typeVarDom_append])
   case equiv Δ_ E T T' EtyT equiv ih =>
     subst Δ_
-    refine .equiv (ih wf rfl) (equiv.weakening EtyT.TypeVarLocallyClosed_of EtyT.WellFormedness_of wf)
+    refine .equiv (ih wf rfl) (equiv.weakening wf.EnvironmentTypeWellFormedness_of)
 
   all_goals aesop (add unsafe constructors Typing) (config := { enableSimp := false })
 
