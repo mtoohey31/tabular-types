@@ -1,5 +1,6 @@
 import TabularTypeInterpreter.Interpreter.Basic
 import TabularTypeInterpreter.Interpreter.Elaboration
+import TabularTypeInterpreter.Interpreter.Resolution
 
 namespace TabularTypeInterpreter.Interpreter.Inference
 
@@ -55,6 +56,7 @@ inductive InferError where
 | fail (message : String)
 deriving Inhabited
 structure InferState where
+  prog : Program
   Γ : Context
   gen : StdGen
 deriving Inhabited
@@ -81,7 +83,11 @@ def getType (χ : TermVar) : InferM TypeScheme := do
     | .nil => .none
     | .cons (.termvar χ' σ) Γ' => if χ == χ' then .some σ else getType' Γ' χ
     | .cons _ Γ' => getType' Γ' χ
-
+partial def lookupUniVar (ᾱ : UniVar) : Context → Option ContextItem
+| .nil => .none
+| .cons item@(.xunivar ᾱ' _κ) Γ => if ᾱ == ᾱ' then .some item else lookupUniVar ᾱ Γ
+| .cons item@(.sunivar ᾱ' _τ) Γ => if ᾱ == ᾱ' then .some item else lookupUniVar ᾱ Γ
+| .cons _ Γ => lookupUniVar ᾱ Γ
 /-- split the context into (before, after) based on the item's position. -/
 def split (item : ContextItem) : InferM (Context × Context) := do
   let { Γ .. } ← get
@@ -252,7 +258,7 @@ namespace RowGraph
       if graph.rows.get? leaf |>.any (·.all.contains ϕ) then return true;
       -- The only hope now is that `leaf` is a literal and that its individual types satisfy the constraints.
       match leaf with
-      | .literal _pairs => 
+      | .literal _pairs =>
         -- TODO:
         --   check `ϕ` is satisfied for each type in `pairs`.
         --   this requires allowing for regular constraint checking inside the rowgraph context.
@@ -296,7 +302,6 @@ partial def subtype (σ₀ σ₁ : TypeScheme) : InferM (σ₀.Subtyping σ₁) 
         -- Case 2: concrete lists
         if hκ : κ? = κ'? then by rw [hκ]; exact
           return sorry
-          sorry
         else throw $ .panic "Subtype of differently kinded rows"
       else
         -- Case 3: ρ₀ ≡ ρ₁
@@ -359,7 +364,11 @@ partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
       let t ← check e σ
       let ⟨σ', t'⟩ ← withItem (.termvar χ σ) do infer e'
       return ⟨σ', t.let (b := true) t'⟩
-  | .app e₁ e₂ => throw $ .panic "unimplemented"
+  | .app e₁ e₂ =>
+    let ⟨σ₁, t₁⟩ ← infer e₁
+    let σ ← inferApp σ₁ e₂
+    -- TODO: get necessary information from inferApp for the typing tree.
+    return ⟨σ, sorry⟩
   | .lam χ e =>
     let a ← fresh
     let b ← fresh
@@ -451,8 +460,12 @@ partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
     let ρ ← freshType (.row .star)
     let c ← constraint <| (.concat ρₘ μ ρₙ ρ)
     return ⟨_, tₘ.elim tₙ c⟩
-  | .member _ => throw $ .panic "unimplemented"
-  | .ind ϕ ρ l t rn ri rp M N => throw $ .panic "unimplemented"
+  | .member m =>
+    let { prog .. } ← get
+    -- lookup m in prog
+    return sorry
+  | .ind ϕ ρ l t rn ri rp M N =>
+    return sorry
   | .splitₚ ϕ e =>
     let ⟨Monotype.app (.prodOrSum .prod (.comm .comm)) ρ, t⟩ ← infer e
       | throw $ .panic "invalid splitₚ"
@@ -479,7 +492,7 @@ partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
     let t₂ ← check e₂ (Monotype.list.app τ₁)
     return ⟨_, t₁.cons t₂⟩
   | .fold =>
-    return ⟨_, Term.Typing.fold⟩
+    return sorry
   | .int n =>
     return ⟨_, Term.Typing.int⟩
   | .op _ e₁ e₂ =>
@@ -498,5 +511,34 @@ partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
     return ⟨_, Term.Typing.throw (σ := Monotype.uvar ex)⟩
 
 -- TODO: How do we produce a typing derivation for inferApp?
-partial def inferApp (σ : TypeScheme) (e : Term) : InferM TypeScheme := sorry
+partial def inferApp (σ : TypeScheme) (e : Term) : InferM TypeScheme := do
+  match σ with
+  | TypeScheme.quant α κ σ =>
+    let ᾱ ← fresh;
+    push (.xunivar ᾱ κ)
+    -- TODO: replace every occurence of `α` in `σ` with `ᾱ`. Call it `σ'`
+    let σ' : TypeScheme := sorry
+    inferApp σ' e
+  | Monotype.uvar ᾱ =>
+    let state@{ Γ .. } ← get
+    let .some item := lookupUniVar ᾱ Γ
+      | throw $ .panic "found unknown unification variable"
+    let .xunivar ᾱ (.arr κ₁ κ₂) := item
+      | throw $ .panic "bad unification variable"
+    let (before, after) ← split item
+    let ᾱ₁ ← fresh; let ᾱ₂ ← fresh;
+    -- RECALL: newers entries appear to the "left" of the Context
+    -- if regarded as a stack, this term should make sense
+    let injection : List ContextItem := [
+      .sunivar ᾱ (.arr (.uvar ᾱ₁) (.uvar ᾱ₂)),
+      .xunivar ᾱ₁ κ₁,
+      .xunivar ᾱ₂ κ₂,
+    ]
+    set { state with Γ := after++injection++before }
+    let _t ← check e (Monotype.uvar ᾱ₁)
+    return Monotype.uvar ᾱ₂
+  | Monotype.arr τ₁ τ₂ =>
+    let _t ← check e τ₁
+    return τ₂
+  | _ => throw $ .panic "can only infer applications for functions"
 end
