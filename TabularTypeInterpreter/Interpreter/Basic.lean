@@ -472,10 +472,13 @@ instance [ToString TId] [ToString MId] : ToString Term where
 
 end Term
 
+structure ClassDeclaration where
+  (TCₛs : List String) (TC : String) (a : TId) (κ : Kind) (m : String) (σ : TypeScheme)
+deriving BEq
 inductive ProgramEntry where
   | def (x : String) (σ? : Option TypeScheme) (M : Term)
   | typeAlias (a : String) (σ : TypeScheme)
-  | class (TCₛs : List String) (TC : String) (a : TId) (κ : Kind) (m : String) (σ : TypeScheme)
+  | class (decl : ClassDeclaration)
   | instance (as : List TId) (ψs : List Monotype) (TC : String) (τ : Monotype) (M : Term)
 deriving BEq
 
@@ -484,7 +487,7 @@ instance [ToString TId] [ToString MId] : ToString ProgramEntry where
   toString
     | .def x σ? M => s!"def {x} {match σ? with | some σ => s!": {σ} " | none => ""}= {M}"
     | .typeAlias a σ => s!"type {a} = {σ}"
-    | .class TCₛs TC a κ m σ =>
+    | .class { TCₛs, TC, a, κ, m, σ } =>
       let TCₛs := if TCₛs.length == 0 then "" else
         s!"{", ".intercalate <| TCₛs.map (s!"{·} {a}")} ⇒ "
       s!"class {TCₛs}{TC} {a} : {κ} where\n  {m} : {σ}"

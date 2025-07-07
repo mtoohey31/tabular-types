@@ -74,6 +74,12 @@ def freshType (κ : Kind): InferM Monotype := do
   let x ← fresh
   push $ .xunivar x κ
   return .uvar x
+def getClass (method : String) : InferM ClassDeclaration := do
+  let { prog .. } ← get
+  let decl? := prog.firstM (match · with | .class decl@{m ..} => Option.someIf decl (method == m) | _ => Option.none)
+  let .some decl := decl?
+    | throw $ .panic s!"unknown typeclass method `{method}`"
+  return decl
 def getType (χ : TermVar) : InferM TypeScheme := do
   let { Γ .. } ← get
   let σ ← (getType' Γ χ).getDM (throw $ .panic "variable not defined")
@@ -329,22 +335,6 @@ def constraint (ψ : Monotype) : InferM (ψ.ConstraintSolution) := do
   | _ => sorry
 
 mutual
-partial def check (e : Term) (σ : TypeScheme) : InferM (e.Typing σ) := do
-  match σ with
-  | .quant α κ σ =>
-    let t ← withItem (.typevar α κ) do check e σ
-    return t.schemeI
-  -- TODO: I am deeply inconfident in this rule.
-  | .qual $ .qual ψ γ =>
-    kind ψ .constr
-    let t ← withItem (.constraint ψ) do check e γ
-    return .qualI (fun _ => t)
-  | σ =>
-    let ⟨σ', t⟩ ← infer e
-    -- TODO: σ' and σ should have their bodies solved before subtyping begins
-    let s ← subtype σ' σ
-    return t.sub s
-
 partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
   match e with
   | .var χ =>
@@ -461,9 +451,12 @@ partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
     let c ← constraint <| (.concat ρₘ μ ρₙ ρ)
     return ⟨_, tₘ.elim tₙ c⟩
   | .member m =>
-    let { prog .. } ← get
-    -- lookup m in prog
-    return sorry
+    let classDecl ← getClass m
+    let τ ← freshType .star
+    -- TODO: push the constraint into the environment and get a proof for it.
+    let s : ((Monotype.tc classDecl.TC).app τ).ConstraintSolution := sorry
+    let σ' : TypeScheme := sorry
+    return ⟨σ', Term.Typing.member s⟩
   | .ind ϕ ρ l t rn ri rp M N =>
     return sorry
   | .splitₚ ϕ e =>
@@ -541,4 +534,20 @@ partial def inferApp (σ : TypeScheme) (e : Term) : InferM TypeScheme := do
     let _t ← check e τ₁
     return τ₂
   | _ => throw $ .panic "can only infer applications for functions"
+
+partial def check (e : Term) (σ : TypeScheme) : InferM (e.Typing σ) := do
+  match σ with
+  | .quant α κ σ =>
+    let t ← withItem (.typevar α κ) do check e σ
+    return t.schemeI
+  -- TODO: I am deeply inconfident in this rule.
+  | .qual $ .qual ψ γ =>
+    kind ψ .constr
+    let t ← withItem (.constraint ψ) do check e γ
+    return .qualI (fun _ => t)
+  | σ =>
+    let ⟨σ', t⟩ ← infer e
+    -- TODO: σ' and σ should have their bodies solved before subtyping begins
+    let s ← subtype σ' σ
+    return t.sub s
 end
