@@ -120,69 +120,46 @@ def kind (σ : TypeScheme) (κ : Kind) : InferM Unit := do
   | _ => sorry
 
 namespace rowSolver
-inductive Row where
-| literal : MonotypePairList → Row
-| var : TypeVar → Row
-| uvar : UniVar → Row
-deriving Inhabited, BEq, DecidableEq, Hashable
 structure RowData where
 /-- The `All` constraints attached to this row. -/
 all : Set Monotype
 deriving Inhabited
-namespace Row
-  /-- Convert a row monotype into a node. Assumes ρ has kind `(.row .star)`. -/
-  def fromMonotype (ρ : Monotype) : Row :=
-    match ρ with
-    | .row pairList _ => .literal pairList
-    | .var α => .var α
-    | .uvar x => .uvar x
-    | _ => panic! "invalid row found in context"
-end Row
-inductive EdgeComm where
-| literal : Comm → EdgeComm
-| var : TypeVar → EdgeComm
-| uvar : UniVar → EdgeComm
-deriving Inhabited, BEq, Hashable, DecidableEq
-namespace EdgeComm
-  /-- Convert a commutativity monotype into an EdgeComm. Assumes μ has kind `.comm`. -/
-  def fromMonotype (μ : Monotype) : EdgeComm :=
-    match μ with
-    | .comm c => .literal c
-    | .var α => .var α
-    | .uvar x => .uvar x
-    | _ => panic! "invalid commutativity found in context"
-end EdgeComm
-
 inductive Edge where
-| concat (leftChild : Row) (μ : EdgeComm) (rightChild : Row) (parent : Row)
-| contain (child : Row) (μ : EdgeComm) (parent : Row)
-deriving Inhabited, BEq, Hashable
+| concat (ρ₁ : Monotype) (μ : Monotype) (ρ₂ : Monotype) (ρ₃ : Monotype) (solution : (Monotype.concat ρ₁ μ ρ₂ ρ₃).ConstraintSolution)
+| contain (ρ₁ : Monotype) (μ : Monotype) (ρ₂ : Monotype) (solution : (Monotype.contain ρ₁ μ ρ₂).ConstraintSolution)
+instance : BEq Edge where beq
+| .concat ρ₁ μ ρ₂ ρ₃ _, .concat ρ₁' μ' ρ₂' ρ₃' _ => ρ₁ == ρ₁' && μ == μ' && ρ₂ == ρ₂' && ρ₃ == ρ₃'
+| .contain ρ₁ μ ρ₂ _, .contain ρ₁' μ' ρ₂' _ => ρ₁ == ρ₁' && μ == μ' && ρ₂ == ρ₂'
+| _, _ => false
+instance : Hashable Edge where hash
+| .concat ρ₁ μ ρ₂ ρ₃ _ => hash [hash ρ₁, hash μ, hash ρ₂, hash ρ₃]
+| .contain ρ₁ μ ρ₂ _ => hash [hash ρ₁, hash μ, hash ρ₂]
 structure RowGraph where
-  rows : Std.HashMap Row RowData
+  rows : Std.HashMap Monotype RowData
   edges : Set Edge
 deriving Inhabited
 namespace RowGraph
   def empty : RowGraph := { rows := Std.HashMap.empty, edges := Std.HashSet.empty }
   /-- get the set of direct parents for the given node -/
-  def parents (node : Row) (comm : EdgeComm) : ReaderM RowGraph (Set Row) := do
+  def parents (ρ : Monotype) (μ : Monotype) : ReaderM RowGraph (Set Monotype) := do
     let graph ← read
     return graph.edges.fold (fun acc val => match val with
     -- TODO: μ can be a subtype of comm, or maybe the other way around
-      | .concat l μ r p => if (μ == comm) && (l == node || r == node) then acc.insert p else acc
-      | .contain c μ p => if (μ == comm) && c == node then acc.insert p else acc
+      | .concat l μ' r p _ => if (μ' == μ) && (l == ρ || r == ρ) then acc.insert p else acc
+      | .contain c μ' p _ => if (μ' == μ) && c == ρ then acc.insert p else acc
     ) Std.HashSet.empty
   /-- get the set of direct children for the given node -/
-  def getChildren (row : Row) : ReaderM RowGraph (Set Row) := do
+  def getChildren (row : Monotype) : ReaderM RowGraph (Set Monotype) := do
     let graph ← read
     return graph.edges.fold (fun acc val => match val with
     -- TODO: μ can be a subtype of comm, or maybe the other way around
-      | .concat l _ r p => if p == row then acc.insert l |>.insert r else acc
-      | .contain c _ p => if p == row then acc.insert c else acc
+      | .concat l _ r p _ => if p == row then acc.insert l |>.insert r else acc
+      | .contain c _ p _ => if p == row then acc.insert c else acc
     ) Std.HashSet.empty
   /-- get all leaf nodes that share the given row as a common root. -/
-  def getLeaves (row : Row) : ReaderM RowGraph (Set Row) := do
-    let children ← getChildren row
-    if children.isEmpty then return Std.HashSet.empty.insert row
+  def getLeaves (ρ : Monotype) : ReaderM RowGraph (Set Monotype) := do
+    let children ← getChildren ρ
+    if children.isEmpty then return Std.HashSet.empty.insert ρ
     children.foldM (fun acc row => acc.union <$> getChildren row) Std.HashSet.empty
   /--
   Check if `edge₁` is associate to `edge₂`, i.e.
@@ -195,81 +172,101 @@ namespace RowGraph
   -/
   def isAssociate (edge₁ : Edge) (edge₂ : Edge) : ReaderM RowGraph Bool := do
     let graph ← read;
-    let Edge.concat lₐ μ r p := edge₁
+    let Edge.concat lₐ μ r p _ := edge₁
       | panic! "Associativity requires concatenations"
-    let Edge.concat l μ' rₐ p' := edge₂
+    let Edge.concat l μ' rₐ p' _ := edge₂
       | panic! "Associativity requires concatenations"
     if μ != μ' || p != p' then return false
     let possibleIntermediates := graph.edges.toList.filterMap (
       match · with
-      | .concat l' μ' a lₐ' => .someIf a (l' == l && μ' == μ && lₐ' == lₐ)
+      | .concat l' μ' a lₐ' _ => .someIf a (l' == l && μ' == μ && lₐ' == lₐ)
       | _ => .none
     );
     return graph.edges.toList.any (
       match · with
-      | .concat a μ' r' rₐ' => possibleIntermediates.contains a && μ' == μ && r' == r && rₐ' == rₐ
+      | .concat a μ' r' rₐ' _ => possibleIntermediates.contains a && μ' == μ && r' == r && rₐ' == rₐ
       | _ => false
     );
   partial def generate (Γ : Context): RowGraph :=
-    match Γ with
-    | [] => RowGraph.empty
-    | .constraint (.contain c μ p) :: Γ =>
-      let graph := generate Γ
-      let (c, μ, p) := (Row.fromMonotype c, EdgeComm.fromMonotype μ, Row.fromMonotype p)
-      let rows := (
-        let emptyData : RowData := { all := Std.HashSet.empty }
-        graph.rows.insert c emptyData |>.insert p emptyData
-      );
-      let edges := graph.edges.insert (.contain c μ p)
-      { graph with rows, edges }
-    | .constraint (.concat l μ r p) :: Γ =>
-      let graph := generate Γ
-      let (l, μ, r, p) := (Row.fromMonotype l, EdgeComm.fromMonotype μ, Row.fromMonotype r, Row.fromMonotype p)
-      let rows := (
-        let emptyData : RowData := { all := Std.HashSet.empty }
-        graph.rows.insert l emptyData |>.insert r emptyData |>.insert p emptyData
-      )
-      let edges := graph.edges.insert (.concat l μ r p)
-      { graph with rows, edges }
-    | .constraint (Monotype.app (.app .all ϕ) ρ) :: Γ =>
-      let graph := generate Γ
-      let p := Row.fromMonotype ρ
-      let leaves : Set Row := getLeaves p |>.run graph
-      let rows := leaves.fold (fun rows leaf => rows.alter leaf (fun data? => data?.map (fun data => { data with all := data.all.insert ϕ }))) graph.rows
-      -- TODO: propogate the constraint to intermediate literal nodes as well.
-      { graph with rows }
-    | _ => sorry
-  partial def contains (c : Row) (μ : EdgeComm) (p : Row) : ReaderM RowGraph Bool := do
-    let graph ← read
-    return (graph.rows.contains c)
-    && (graph.rows.contains p)
-    && (
-      c == p || (← parents c μ).any (contains · μ p |>.run graph)
-    )
-  partial def concatenates (l : Row) (μ : EdgeComm) (r : Row) (p : Row) : ReaderM RowGraph Bool := do
-    let graph ← read
-    match l, μ, r with
-    | .literal .nil, _, r => return r == p
-    | l, _, .literal .nil => return l == p
-    | l, μ, r =>
-    if let .literal .comm := μ then
-      if graph.edges.contains (.concat r μ l p) then
-        return true
-    return ← graph.edges.toList.anyM <| isAssociate <| Edge.concat l μ r p
-  partial def alls (ϕ : Monotype) (p : Row) : ReaderM RowGraph Bool := do
-    let leaves ← getLeaves p
-    leaves.toList.allM (satisfies ϕ)
-    where satisfies (ϕ : Monotype) (leaf : Row) : ReaderM RowGraph Bool := do
+    secondPass (firstPass RowGraph.empty Γ) Γ
+  where
+    firstPass (graph : RowGraph) (Γ : Context) : RowGraph :=
+      match Γ with
+      | .constraint (.contain c μ p) :: Γ =>
+        let graph := firstPass graph Γ
+        let rows := (
+          let emptyData : RowData := { all := Std.HashSet.empty }
+          graph.rows.insert c emptyData |>.insert p emptyData
+        );
+        let edges := graph.edges.insert (.contain c μ p sorry)
+        { graph with rows, edges }
+      | .constraint (.concat l μ r p) :: Γ =>
+        let graph := firstPass graph Γ
+        let rows := (
+          let emptyData : RowData := { all := Std.HashSet.empty }
+          graph.rows.insert l emptyData |>.insert r emptyData |>.insert p emptyData
+        )
+        let edges := graph.edges.insert (.concat l μ r p sorry)
+        { graph with rows, edges }
+      | _ => graph
+    secondPass (graph : RowGraph) (Γ : Context) : RowGraph :=
+      match Γ with
+      | .constraint (Monotype.app (.app .all ϕ) ρ) :: Γ =>
+        let graph := secondPass graph Γ
+        let leaves : Set Monotype := getLeaves ρ |>.run graph
+        let rows := leaves.fold (fun rows leaf => rows.alter leaf (fun data? => data?.map (fun data => { data with all := data.all.insert ϕ }))) graph.rows
+        -- TODO: propogate the constraint to intermediate literal nodes as well.
+        { graph with rows }
+      | _ => graph
+
+    partial def contains (ρ₁ : Monotype) (μ : Monotype) (ρ₂ : Monotype) : ReaderM RowGraph (Option (Monotype.contain ρ₁ μ ρ₂).ConstraintSolution) := do
       let graph ← read
-      if graph.rows.get? leaf |>.any (·.all.contains ϕ) then return true;
-      -- The only hope now is that `leaf` is a literal and that its individual types satisfy the constraints.
-      match leaf with
-      | .literal _pairs =>
-        -- TODO:
-        --   check `ϕ` is satisfied for each type in `pairs`.
-        --   this requires allowing for regular constraint checking inside the rowgraph context.
-        return sorry
-      |_ => return false
+      let childrenOfρ₂ : List ((child : Monotype) × (Monotype.contain child μ ρ₂).ConstraintSolution) :=
+        graph.edges.toList.foldl (fun children edge =>
+          match edge with
+          | .concat cl μ' cr ρ s =>
+            if hρ : ρ₂ = ρ then
+              if hμ : μ = μ' then
+                by rewrite [hρ, hμ]; exact ⟨cl, s.concatContainL⟩::⟨cr, s.concatContainR⟩::(by rewrite [hμ.symm, hρ.symm]; exact children)
+              else children
+            else children
+          | .contain c μ' ρ s =>
+            if hρ : ρ₂ = ρ then
+              if hμ : μ = μ' then
+                by rewrite [hρ, hμ]; exact ⟨c, s⟩::(by rewrite [hμ.symm, hρ.symm]; exact children)
+              else children
+            else children
+        ) []
+      for ⟨child, sol₂⟩ in childrenOfρ₂ do
+        if let .some sol₁ ← contains ρ₁ μ child then
+          return sol₁.containTrans sol₂
+      return .none
+  partial def concatenates (ρ₁ : Monotype) (μ : Monotype) (ρ₂ : Monotype) (ρ₃ : Monotype) : ReaderM RowGraph (Option (Monotype.concat ρ₁ μ ρ₂ ρ₃).ConstraintSolution) := do
+    let graph ← read
+    return sorry
+    -- match l, μ, r with
+    -- | .literal .nil, _, r => return r == p
+    -- | l, _, .literal .nil => return l == p
+    -- | l, μ, r =>
+    -- if let .literal .comm := μ then
+    --   if graph.edges.contains (.concat r μ l p) then
+    --     return true
+    -- return ← graph.edges.toList.anyM <| isAssociate <| Edge.concat l μ r p
+  partial def alls (ϕ : Monotype) (p : Monotype) : ReaderM RowGraph (Option (Monotype.all |>.app ϕ |>.app ρ).ConstraintSolution) := do
+    return sorry
+    -- let leaves ← getLeaves p
+    -- leaves.toList.allM (satisfies ϕ)
+    -- where satisfies (ϕ : Monotype) (leaf : Monotype) : ReaderM RowGraph Bool := do
+    --   let graph ← read
+    --   if graph.rows.get? leaf |>.any (·.all.contains ϕ) then return true;
+    --   -- The only hope now is that `leaf` is a literal and that its individual types satisfy the constraints.
+    --   match leaf with
+    --   | .literal _pairs =>
+    --     -- TODO:
+    --     --   check `ϕ` is satisfied for each type in `pairs`.
+    --     --   this requires allowing for regular constraint checking inside the rowgraph context.
+    --     return sorry
+    --   |_ => return false
 end RowGraph
 end rowSolver
 
@@ -306,7 +303,7 @@ partial def subtype (σ₀ σ₁ : TypeScheme) : InferM (σ₀.Subtyping σ₁) 
         else throw $ .fail "to show compatibility of commutativity"
       else if let (.row list₀ κ?, .row list₁ κ'?) := (ρ₀, ρ₁) then
         -- Case 2: concrete lists
-        if hκ : κ? = κ'? then by rw [hκ]; exact
+        if hκ : κ? = κ'? then
           return sorry
         else throw $ .panic "Subtype of differently kinded rows"
       else
@@ -327,12 +324,22 @@ def constraint (ψ : Monotype) : InferM (ψ.ConstraintSolution) := do
   | .concat ρ₁ μ ρ₂ ρ₃ =>
     let { Γ .. } ← get
     let graph := rowSolver.RowGraph.generate Γ
-    sorry
+    let .some solution := graph.concatenates ρ₁ μ ρ₂ ρ₃
+      | throw $ .fail s!"Could not prove concatenation constraint `{ψ}`"
+    return solution
   | .contain ρ₁ μ ρ₂ =>
     let { Γ .. } ← get
     let graph := rowSolver.RowGraph.generate Γ
-    sorry
-  | _ => sorry
+    let .some solution := graph.contains ρ₁ μ ρ₂
+      | throw $ .fail s!"Could not prove containment constraint `{ψ}`"
+    return solution
+  | .app (.app .all ϕ) ρ =>
+    let { Γ .. } ← get
+    let graph := rowSolver.RowGraph.generate Γ
+    let .some solution := graph.alls ϕ ρ
+      | throw $ .fail s!"Could not prove constraint `{ψ}`"
+    return solution
+  | _ => throw $ .fail s!"Proving constraints of the form `{ψ}`is as-of-yet unimplemented"
 
 mutual
 partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
