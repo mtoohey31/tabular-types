@@ -95,7 +95,7 @@ judgement SmallStep where
 value λ a : K₁. A
 value B
 ─────────────────────────── lamApp
-Δ ⊢ (λ a : K₁. A) B -> A^^B
+Δ ⊢ (λ a : K₁. A) B -> A^^B/a
 
 ∀ K, A ≠ λ a : K. a$0
 Δ ⊢ A : K₁ ↦ K₂
