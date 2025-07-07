@@ -591,6 +591,19 @@ theorem freeTypeVars_in_Δ
       specialize ih (by cases xAinΔ <;> simp_all)
       simp_all [TypeVarNotInDom, TypeVarInDom, typeVarDom]
 
+open Environment in
+theorem Kinding_of (xinΔ: [[ x : A ∈ Δ ]]) (wf: [[ ⊢ Δ ]]): [[ Δ ⊢ A : * ]] := by
+  induction xinΔ
+  . case head Δ =>
+    let .termVarExt _ _ AkiStar := wf
+    exact AkiStar.weakening (Δ' := [[ ε, x: A ]]) (Δ'' := [[ε]]) wf
+  . case typeVarExt Δ a K xinΔ ih =>
+    let .typeVarExt wf' aninΔ := wf
+    exact ih wf' |>.weakening (Δ' := [[ ε, a: K ]]) (Δ'' := [[ε]]) wf
+  . case termVarExt Δ x' A' xinΔ xnex' ih =>
+    let .termVarExt wf' xninΔ AkiStar := wf
+    exact ih wf' |>.weakening (Δ' := [[ ε, x': A' ]]) (Δ'' := [[ε]]) wf
+
 end TermVarInEnvironment
 
 namespace Kinding

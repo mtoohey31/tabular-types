@@ -730,6 +730,33 @@ theorem weakening (h: [[Δ, Δ'' ⊢ E : A]]) (wf: [[⊢ Δ, Δ', Δ'']]): [[Δ,
   all_goals try aesop (add safe constructors Kinding, unsafe constructors Typing, safe forward Kinding.weakening) (config := { enableSimp := false }); done
 
 open Environment in
+theorem Kinding_of (EtyA : [[Δ ⊢ E : A]]) : [[ Δ ⊢ A: * ]] := by
+  induction EtyA
+  . case var wf xinΔ => exact xinΔ.Kinding_of wf
+  . case lam Δ A E B I EtyB ih =>
+    have ⟨x, xnin⟩ := I ++ Δ.termVarDom |>.exists_fresh
+    let .termVarExt wf _ AkiStar := EtyB x (by simp_all) |>.WellFormedness_of
+    exact .arr AkiStar <| ih x (by simp_all) |>.TermVar_drop (Δ'' := [[ ε ]])
+  . case app ih1 _ =>
+    let .arr _ BkiStar := ih1
+    exact BkiStar
+  . case typeLam Δ K E A I EtyA ih =>
+    exact .scheme (I ++ Δ.typeVarDom) (λ a anin => ih a (by simp_all))
+  . case typeApp Δ E K A B EtyA BkiK ih =>
+    let .scheme I AkiStar := ih
+    have ⟨a, anin⟩ := I ++ Δ.typeVarDom ++ A.freeTypeVars |>.exists_fresh
+    specialize AkiStar a (by simp_all)
+    rw [← Type.TypeVar_open_TypeVar_subst_eq_Type_open_of_not_mem_freeTypeVars (a := a) (by simp_all)]
+    exact AkiStar.subst (.typeVarExt EtyA.WellFormedness_of (by simp_all [TypeVarNotInDom, TypeVarInDom])) BkiK
+  . case prodIntro Δ n E A wf EtyA ih => exact .prod <| .list ih
+  . case prodElim Δ E n A i EtyA iltn ih =>
+    let .prod h := ih; have AkiStar := h.inv_list; clear h
+    exact AkiStar i iltn
+  . case sumIntro AkiStar _ => exact .sum <| .list AkiStar
+  . case sumElim BkiStar _ _ => exact BkiStar
+  . case equiv Δ E A B EtyA eqAB ih => sorry -- TODO kinding preservation for TypeEq
+
+open Environment in
 theorem inv_arr' (Ety: [[Δ ⊢ λ x? : T. E : C ]]) (eqC: [[ Δ ⊢ C ≡ A → B ]]): [[ Δ ⊢ T ≡ A ]] ∧ (∃(I: List _), ∀x ∉ I, [[ Δ, x: T ⊢ E^x : B ]]) := by
   generalize T_eq : [[ λ x? : T. E ]] = T_ at Ety
   induction Ety <;> cases T_eq
