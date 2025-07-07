@@ -3229,6 +3229,10 @@ theorem of_EquivalenceS (equ : [[Δ ⊢ A ≡ₛ B]]) (Aki : [[Δ ⊢ A : K]]) (
   | trans equ' _ ih₀ ih₁ =>
     exact .trans (ih₀ Aki (equ'.preservation Aki)) (ih₁ (equ'.preservation Aki) Bki)
 
+theorem of_Equivalence (equ : [[Δ ⊢ A ≡ B]]) (Aki : [[Δ ⊢ A : K]]) (Δwf : [[⊢ Δ]]) : [[Δ ⊢ A <->* B]] :=
+  have eqs := equ.TypeEquivalenceS_of Aki.TypeVarLocallyClosed_of Δwf
+  of_EquivalenceS eqs Aki (eqs.preservation Aki) Δwf
+
 theorem preservation (Aest : [[Δ ⊢ A <->* B]]) : [[Δ ⊢ A : K]] ↔ [[Δ ⊢ B : K]] := by
   induction Aest with
   | refl => exact ⟨id, id⟩

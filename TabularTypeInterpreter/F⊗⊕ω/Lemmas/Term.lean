@@ -2,6 +2,7 @@ import Aesop
 import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Environment
 import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Type
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Term
+import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Type.SmallStep
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
 
@@ -760,24 +761,27 @@ open Environment in
 theorem inv_arr' (Ety: [[Δ ⊢ λ x? : T. E : C ]]) (eqC: [[ Δ ⊢ C ≡ A → B ]]): [[ Δ ⊢ T ≡ A ]] ∧ (∃(I: List _), ∀x ∉ I, [[ Δ, x: T ⊢ E^x : B ]]) := by
   generalize T_eq : [[ λ x? : T. E ]] = T_ at Ety
   induction Ety <;> cases T_eq
+  -- . case lam.refl Δ B' I EtyB' _ =>
+  --   refine skolem ⟨I ++ Δ.termVarDom, λx nin => ?_⟩
+  --   specialize EtyB' x (by simp_all)
+  --   have .termVarExt wf _ TkiStar := EtyB'.WellFormedness_of
+  --   have B'kiStar := EtyB'.Kinding_of.TermVar_drop (Δ'' := [[ ε ]])
+  --   have ⟨eTA, eB'B⟩ := EqSmallStep.of_Equivalence eqC (TkiStar.arr B'kiStar) wf |>.inj_arr
+  --   refine ⟨eTA.Equivalence_of TkiStar, ?_⟩
+  --   refine .equiv EtyB' ?_
+  --   exact eB'B.Equivalence_of B'kiStar |>.weakening_term' (Δ' := [[ ε ]])
   . case lam.refl Δ B' I EtyB' _ =>
-    have := eqC.EqParallelReduction_of
-    have ⟨wf, AkiStar, TB'lc⟩ := (
+    have ⟨wf, TkiStar, B'kiStar⟩: _ ∧ _ ∧ _ := (
       have ⟨x, xnin⟩ := I.exists_fresh
-      have EtyB' := EtyB' x xnin
-      have ⟨wf, AkiStar⟩ := match EtyB'.WellFormedness_of with | .termVarExt wf _ AkiStar => And.intro wf AkiStar
-      have B'lc := EtyB'.TypeVarLocallyClosed_of
-      have Tlc := EtyB'.Δext_TypeVarLocallyClosed_of
-      have TB'lc := Tlc.arr B'lc
-      And.intro wf (And.intro AkiStar TB'lc)
+      have .termVarExt wf _ TkiStar := EtyB' x xnin |>.WellFormedness_of
+      have B'kiStar := EtyB' x xnin |>.Kinding_of.TermVar_drop (Δ'' := [[ ε ]])
+      ⟨wf, TkiStar, B'kiStar⟩
     )
-    have ⟨eTA, eB'B⟩ := this TB'lc wf |>.inj_arr wf TB'lc
-    refine ⟨eTA.TypeEquivalence_of wf, ?_⟩
-    refine ⟨I ++ Δ.termVarDom, λ x xnin => ?_⟩
+    have ⟨eTA, eB'B⟩ := EqSmallStep.of_Equivalence eqC (TkiStar.arr B'kiStar) wf |>.inj_arr
+    refine ⟨eTA.Equivalence_of TkiStar, ?_⟩
+    refine ⟨I, λ x xnin => ?_⟩
     refine .equiv (EtyB' x (by simp_all)) ?_
-    refine eB'B.weakening (Δ'' := [[ ε ]]) (Δ' := [[ ε, x: T ]]) (.termVarExt wf.EnvironmentTypeWellFormedness_of)
-      |>.TypeEquivalence_of ?_
-    refine wf.termVarExt (by simp_all [TermVarNotInDom, TermVarInDom]) AkiStar
+    exact eB'B.Equivalence_of B'kiStar |>.weakening_term' (Δ' := [[ ε ]])
   . case equiv.refl _ _ _ eqA'B' _ ih => exact ih (eqA'B'.trans eqC) rfl
 
 theorem inv_arr (Ety: [[Δ ⊢ λ x? : T. E : A → B ]]) : [[ Δ ⊢ T ≡ A ]] ∧ (∃(I: List _), ∀x ∉ I, [[ Δ, x: T ⊢ E^x : B ]]) := Ety.inv_arr' .refl
@@ -787,29 +791,18 @@ theorem inv_forall' (Ety: [[Δ ⊢ Λ a? : K. E : T ]]) (eqT: [[ Δ ⊢ T ≡ �
   generalize T_eq : [[ Λ a? : K. E ]] = T_ at Ety
   induction Ety <;> cases T_eq
   . case typeLam.refl Δ A' I EtyA' _ =>
-    have := eqT.EqParallelReduction_of
-    -- have ⟨a, nin⟩ := (I ++ A'.freeTypeVars).exists_fresh
-    -- have EtyA' := EtyA' a (by simp_all)
-    -- have wf := match EtyA'.WellFormedness_of with | .typeVarExt wf _ => wf
-    -- have A'lc := EtyA'.Type_TypeVarLocallyClosed_of |>.TypeVar_close_inc (a := a)
-    -- simp at A'lc
-    -- rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars (by simp_all)] at A'lc
-    have ⟨wf, A'lc⟩ := (
-      have ⟨a, nin⟩ := (I ++ A'.freeTypeVars).exists_fresh
-      have EtyA' := EtyA' a (by simp_all)
-      have wf := match EtyA'.WellFormedness_of with | .typeVarExt wf _ => wf
-      have A'lc := EtyA'.TypeVarLocallyClosed_of |>.TypeVar_close_inc (a := a)
-      have A'lc: A'.TypeVarLocallyClosed 1 := (by
-        rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars (by simp_all)] at A'lc
-        exact A'lc
-      )
-      And.intro wf A'lc
+    have wf := (
+      have ⟨a, xnin⟩ := I.exists_fresh
+      let .typeVarExt wf _ := EtyA' a xnin |>.WellFormedness_of
+      wf
     )
-    have ⟨eqKK', I', eA'A⟩ := this A'lc.forall wf |>.inj_forall wf A'lc.forall
+    have A'kiStar := Kinding.scheme I (λ a nin => EtyA' a nin |>.Kinding_of)
+    have ⟨eqKK', I', eA'A⟩ := EqSmallStep.of_Equivalence eqT A'kiStar wf |>.inj_forall
     refine ⟨eqKK', ?_⟩
-    refine ⟨I ++ I' ++ Δ.typeVarDom, λ a anin => ?_⟩
+    have .scheme I'' A'kiStar := A'kiStar
+    refine ⟨I ++ I', λ a anin => ?_⟩
     refine .equiv (EtyA' a (by simp_all)) ?_
-    refine eA'A a (by simp_all) |>.TypeEquivalence_of (wf.typeVarExt (by simp_all [TypeVarNotInDom, TypeVarInDom]))
+    exact eA'A a (by simp_all) |>.Equivalence_of <| EtyA' a (by simp_all) |>.Kinding_of
   . case equiv.refl _ _ _ eqA'B' _ ih => exact ih (eqA'B'.trans eqT) rfl
 
 theorem inv_forall (Ety: [[Δ ⊢ Λ a? : K. E : ∀ a?: K'. A ]]) : K = K' ∧ (∃(I: List _), ∀a ∉ I, [[ Δ, a: K ⊢ E^a : A^a ]]) := Ety.inv_forall' .refl
@@ -823,15 +816,17 @@ theorem inv_prod' (Ety: [[ Δ ⊢ (</ E@i // i in [:n] />) : T ]]) (eqT: [[ Δ �
     have eqnn_ := Std.Range.length_eq_of_mem_eq eq; simp at eqnn_; subst n_
     have eqEE_ := Std.Range.eq_of_mem_of_map_eq eq; clear eq
     have Alc' := match Alc with | .prod Alc => Alc
-    have ⟨eqn'n, eAA_⟩ := eqT.EqParallelReduction_of (by
-      refine .prod (.list λ T Tin => ?_)
-      have ⟨i, iltn, Teq⟩ := Std.Range.mem_of_mem_map Tin; subst Teq
-      exact EtyA i iltn |>.TypeVarLocallyClosed_of
-    ) wf |>.sym.inj_prod wf Alc |>.inj_list wf Alc'
+    have ⟨eqn'n, eA_A⟩ := EqSmallStep.of_Equivalence eqT (by exact .prod (.list λ i iltn => EtyA i iltn |>.Kinding_of)) wf |>.inj_prod.inj_list
+    -- have ⟨eqn'n, eAA_⟩ := eqT.EqParallelReduction_of (by
+    --   refine .prod (.list λ T Tin => ?_)
+    --   have ⟨i, iltn, Teq⟩ := Std.Range.mem_of_mem_map Tin; subst Teq
+    --   exact EtyA i iltn |>.TypeVarLocallyClosed_of
+    -- ) wf |>.sym.inj_prod wf Alc |>.inj_list wf Alc'
     subst n'
     refine ⟨rfl, λ x xin => ?_⟩
     simp_all
-    exact .equiv (EtyA x xin) <| eAA_ x xin |>.sym.TypeEquivalence_of wf
+    refine .equiv (EtyA x xin) ?_
+    exact eA_A x xin |>.Equivalence_of (EtyA x xin |>.Kinding_of)
   . case equiv.refl _ _ _ eqA'B' _ ih => exact ih (eqA'B'.trans eqT) rfl
 
 theorem inv_prod (Ety: [[ Δ ⊢ (</ E@i // i in [:n] />) : ⊗ {</ A@i // i in [:n'] />} ]]) : n = n' ∧ [[ </ Δ ⊢ E@i : A@i // i in [:n] /> ]] := Ety.inv_prod' .refl Ety.TypeVarLocallyClosed_of
@@ -863,13 +858,9 @@ theorem inv_sum' (Ety: [[ Δ ⊢ ι n E : T ]]) (eqT: [[ Δ ⊢ T ≡ ⊕ {</ A@
     clear ih
     have wf := EtyA'.WellFormedness_of
     have Alc' := match Alc with | .sum Alc => Alc
-    have ⟨eqn'n_, eAA'⟩ := eqT.EqParallelReduction_of (by
-      refine .sum (.list λ T Tin => ?_)
-      have ⟨i, iltn, Teq⟩ := Std.Range.mem_of_mem_map Tin; subst Teq
-      exact A'kiStar i iltn |>.TypeVarLocallyClosed_of
-    ) wf |>.sym.inj_sum wf Alc |>.inj_list wf Alc'
+    have ⟨eqn'n_, eA'A⟩ := EqSmallStep.of_Equivalence eqT (K := [[ * ]]) (by exact .sum (.list λ i iltn => A'kiStar i iltn)) wf |>.inj_sum.inj_list
     subst n_
-    exact ⟨nin, .equiv EtyA' <| eAA' n nin |>.sym.TypeEquivalence_of wf⟩
+    exact ⟨nin, .equiv EtyA' <| eA'A n nin |>.Equivalence_of <| A'kiStar n nin⟩
   . case equiv.refl _ _ _ eqA'B' _ ih => exact ih (eqA'B'.trans eqT) rfl
 
 theorem inv_sum (Ety: [[ Δ ⊢ ι n E : ⊕ {</ A@i // i in [:n'] />} ]]) : n ∈ [0:n'] ∧ [[ Δ ⊢ E : A@n ]] := Ety.inv_sum' .refl Ety.TypeVarLocallyClosed_of
