@@ -2609,33 +2609,6 @@ theorem SmallStep.Type_open_in
 termination_by sizeOf Δ
 decreasing_by all_goals sorry
 
-theorem MultiSmallStep.Type_open
-  (Amst : MultiSmallStep [[Δ, a : K, Δ']] (A.TypeVar_open a n) (Type.TypeVar_open A' a n))
-  (Bmst : [[Δ ⊢ B ->* B']]) (Aki : Kinding [[Δ, a : K, Δ']] (Type.TypeVar_open A a n) K')
-  (Δwf : [[⊢ Δ, a : K, Δ']]) (aninA : a ∉ A.freeTypeVars) (aninA' : a ∉ A'.freeTypeVars)
-  (Bki : [[Δ ⊢ B : K]]) : EqSmallStep [[Δ, Δ'[B / a] ]] (A.Type_open B n) (A'.Type_open B' n) := by
-  refine .trans ?_ <| Bmst.Type_open_out (Amst.preservation Aki) Δwf aninA' Bki
-  generalize A''eq : A.TypeVar_open a n = A'', A'''eq : A'.TypeVar_open a n = A''' at Amst
-  induction Amst generalizing A A' with
-  | refl =>
-    cases A''eq
-    cases Type.TypeVar_open_inj_of_not_mem_freeTypeVars aninA' aninA A'''eq
-    rfl
-  | step st _ ih =>
-    rename_i A'''' _ _
-    cases A''eq
-    cases A'''eq
-    let A''''lc := st.preserve_lc Aki.TypeVarLocallyClosed_of |>.weaken (n := n)
-    rw [Nat.zero_add] at A''''lc
-    refine .trans ?_ <| ih (A := A''''.TypeVar_close a n) (by
-      rw [Type.TypeVarLocallyClosed.TypeVar_open_TypeVar_close_id A''''lc]
-      exact st.preservation Aki) Type.not_mem_freeTypeVars_TypeVar_close
-      aninA' (Type.TypeVarLocallyClosed.TypeVar_open_TypeVar_close_id A''''lc) rfl
-    rw [← A''''lc.TypeVar_open_TypeVar_close_id (a := a) (n := n)] at st
-    exact st.Type_open_in Aki aninA Type.not_mem_freeTypeVars_TypeVar_close Δwf Bki
-termination_by sizeOf Δ
-decreasing_by all_goals sorry
-
 theorem EqSmallStep.lamApp (I : List TypeVarId) (Aki : ∀ a ∉ I, [[Δ, a : K₁ ⊢ A^a : K₂]])
   (Bki : [[Δ ⊢ B : K₁]]) (Δwf : [[⊢ Δ]]) : [[Δ ⊢ (λ a : K₁. A) B <->* A^^B]] := by
   open EqSmallStep in
@@ -2763,9 +2736,34 @@ theorem EqSmallStep.lamApp (I : List TypeVarId) (Aki : ∀ a ∉ I, [[Δ, a : K�
                 simp [Type.freeTypeVars]
               rw [this, ← eq]
               exact Type.not_mem_freeTypeVars_TypeVar_close
-      [[Δ ⊢ (\a^A')^^B' <->* A^^B]] :=
-        symm <| A'mst.TypeVar_open_swap Alc aninA aninΔ |>.Type_open B'mst (Aki a aninIΔ)
-          (Δwf.typeVarExt aninΔ) (Δ' := .empty) aninA Type.not_mem_freeTypeVars_TypeVar_close Bki
+      [[Δ ⊢ (\a^A')^^B' <->* A^^B]] := by
+        symm
+        replace A'mst := A'mst.TypeVar_open_swap Alc aninA aninΔ
+        let Δawf := Δwf.typeVarExt aninΔ (K := K₁)
+        specialize Aki a aninIΔ
+        refine .trans ?_ <| B'mst.Type_open_out (A'mst.preservation Aki) Δawf
+          Type.not_mem_freeTypeVars_TypeVar_close Bki (Δ' := .empty)
+        generalize A''eq : [[(A^a)]] = A'', A'''eq : [[((\a^A')^a)]] = A''' at A'mst
+        clear A'v Alc aninIΔ anin h
+        induction A'mst generalizing A A' with
+        | refl =>
+          cases A''eq
+          cases Type.TypeVar_open_inj_of_not_mem_freeTypeVars
+            Type.not_mem_freeTypeVars_TypeVar_close aninA A'''eq
+          rfl
+        | step st _ ih =>
+          rename_i A'''' _ _
+          cases A''eq
+          cases A'''eq
+          let A''''lc := st.preserve_lc Aki.TypeVarLocallyClosed_of
+          refine .trans ?_ <| ih (A := A''''.TypeVar_close a)
+            Type.not_mem_freeTypeVars_TypeVar_close _ (by
+            rw [Type.TypeVarLocallyClosed.TypeVar_open_TypeVar_close_id A''''lc]
+            exact st.preservation Aki)
+            (Type.TypeVarLocallyClosed.TypeVar_open_TypeVar_close_id A''''lc) rfl
+          rw [← A''''lc.TypeVar_open_TypeVar_close_id (a := a) (n := 0)] at st
+          exact st.Type_open_in Aki aninA Type.not_mem_freeTypeVars_TypeVar_close Δawf Bki
+            (Δ' := .empty)
 termination_by sizeOf Δ
 decreasing_by all_goals sorry
 
