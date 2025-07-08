@@ -1,0 +1,14 @@
+type Bool = Σ(N) ⟨'false' ▹ Unit, 'true' ▹ Unit⟩
+
+def false : Bool = inj ['false' ▹ {}]
+
+def true : Bool = inj ['true' ▹ {}]
+
+def not : Bool → Bool =
+  ((\_. true) : Σ(N) ⟨'false' ▹ Unit⟩ → Bool) ▿ (\_. false)
+
+def and : Bool → Bool → Bool =
+  \x. ((\_. false) : Σ(N) ⟨'false' ▹ Unit⟩ → Bool) ▿ (\_. x)
+
+def or : Bool → Bool → Bool =
+  \x. ((\_. x) : Σ(N) ⟨'false' ▹ Unit⟩ → Bool) ▿ (\_. false)

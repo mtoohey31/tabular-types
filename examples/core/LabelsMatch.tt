@@ -1,0 +1,4 @@
+def LabelsMatch = \r0 r1 : R *. And ⟨
+    Lift (\_ : *. ⟨ : * ⟩) r0 ≲(C) Lift (\_ : *. ⟨ : * ⟩) r1,
+    Lift (\_ : *. ⟨ : * ⟩) r1 ≲(C) Lift (\_ : *. ⟨ : * ⟩) r0
+  ⟩

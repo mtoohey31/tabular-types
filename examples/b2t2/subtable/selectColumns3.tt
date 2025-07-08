@@ -1,0 +1,3 @@
+def selectColumns : ∀ r r' : R *, u : U. r' ≲(C) r ⇒
+    List (Π(C) r) → LabelList r' → List (Π(N) r') =
+  \tb _. map (\r. orderₚ r' (prj r)) tb

@@ -1,0 +1,4 @@
+def fillna : ∀ r ro r' : R *, l : L, t : *.
+    ⟨l ▹ Option t⟩ ⊙(C) ro ~ r, ⟨l ▹ t⟩ ⊙(C) ro ~ r' ⇒
+    List (Π(C) r) → ⌊l⌋ → t → List (Π(C) r') =
+  \tb l default. map (\r. prj r ++ {l ▹ ogetD (prj r)/l default}) tb

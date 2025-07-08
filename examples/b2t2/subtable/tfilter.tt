@@ -1,0 +1,2 @@
+def tfilter : ∀ r : R *, u : U.
+  List (Π(u) r) → (Π(u) r → Bool) → List (Π(u) r) = flip filter

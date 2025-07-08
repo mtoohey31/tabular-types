@@ -1,0 +1,2 @@
+def dropColumn : ∀ r r' : R *, l : L, t : *. r' ⊙(C) ⟨l ▹ t⟩ ~ r ⇒
+    List (Π(C) r) → ⌊l⌋ → List (Π(C) r') = \tb _. map (\r. prj r) tb

@@ -1,0 +1,1 @@
+def values : ∀ r : R *, u : U. List (Π(u) r) → List (Π(u) r) = \tb. tb
