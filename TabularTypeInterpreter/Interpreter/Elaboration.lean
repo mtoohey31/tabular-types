@@ -633,8 +633,8 @@ def Typing.elab : Typing M σ → ReaderT (HashMap String (Thunk «λπι».Term
   | inj M'ty containso => return (← containso.elab).prodElim 1 |>.app <| ← M'ty.elab
   | elim M'ty Nty concatso =>
     return (← concatso.elab).prodElim 1 |>.app (← M'ty.elab) |>.app <| ← Nty.elab
-  | sub Mty' σ₀st =>
-    return (← σ₀st.elab).app <| ← Mty'.elab
+  | sub Mty' .refl => Mty'.elab
+  | sub Mty' σ₀st => return (← σ₀st.elab).app <| ← Mty'.elab
   | member TCτso => return (← TCτso.elab).prodElim 0
   | ind M'ty Nty indso => return (← indso.elab).app (← M'ty.elab) |>.app <| ← Nty.elab
   | splitₚ M'ty splitso => do
