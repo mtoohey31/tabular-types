@@ -2,7 +2,6 @@ import Aesop
 import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Environment
 import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Type
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Term
-import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Type.SmallStep
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
 

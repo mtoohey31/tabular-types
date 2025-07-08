@@ -2258,21 +2258,39 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
       apply this.equiv
       apply TypeEquivalence.arr
       · apply TypeEquivalence.prod
-        apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free
-        apply TypeEquivalence.listApp (.lam (I ++ I'') _) .refl
-        intro a anin
-        let ⟨aninI, aninI''⟩ := List.not_mem_append'.mp anin
-        simp [Type.TypeVar_open]
-        rw [τke _ aninI |>.deterministic (τke'' _ aninI'') |>.right]
-        exact .refl
+        apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free _ (K₁ := K₀) (K₂ := K₁)
+        · apply TypeEquivalence.listApp (.lam (I ++ I'') _) .refl
+          intro a anin
+          let ⟨aninI, aninI''⟩ := List.not_mem_append'.mp anin
+          simp [Type.TypeVar_open]
+          rw [τke _ aninI |>.deterministic (τke'' _ aninI'') |>.right]
+          apply TypeEquivalence.app .refl
+          rw [Type.Type_open_var, A''lc.TypeVar_open_id]
+          exact .symm <| .lamApp <| .var .head
+        · apply Kinding.lam <| I'' ++ ↑a' :: Γ.typeVarDom
+          intro a anin
+          let ⟨aninI'', aninaΓ⟩ := List.not_mem_append'.mp anin
+          specialize τke'' a aninI''
+          let Γa'awe := Γwe.typeExt a'nin (κ₁e.arr .star) |>.typeExt aninaΓ κ₀e
+          exact τke''.weakening Γa'awe (Γ' := .typeExt .empty ..) (Γ'' := .typeExt .empty ..)
+            |>.soundness Γcw Γa'awe κ₁e
       · apply TypeEquivalence.prod
-        apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free
-        apply TypeEquivalence.listApp (.lam (I ++ I') _) .refl
-        intro a anin
-        let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
-        simp [Type.TypeVar_open]
-        rw [τke _ aninI |>.deterministic (τke' _ aninI') |>.right]
-        exact .refl
+        apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free _ (K₁ := K₀) (K₂ := K₁)
+        · apply TypeEquivalence.listApp (.lam (I ++ I') _) .refl
+          intro a anin
+          let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
+          simp [Type.TypeVar_open]
+          rw [τke _ aninI |>.deterministic (τke' _ aninI') |>.right]
+          apply TypeEquivalence.app .refl
+          rw [Type.Type_open_var, A'lc.TypeVar_open_id]
+          exact .symm <| .lamApp <| .var .head
+        · apply Kinding.lam <| I' ++ ↑a' :: Γ.typeVarDom
+          intro a anin
+          let ⟨aninI', aninaΓ⟩ := List.not_mem_append'.mp anin
+          specialize τke' a aninI'
+          let Γa'awe := Γwe.typeExt a'nin (κ₁e.arr .star) |>.typeExt aninaΓ κ₀e
+          exact τke'.weakening Γa'awe (Γ' := .typeExt .empty ..) (Γ'' := .typeExt .empty ..)
+            |>.soundness Γcw Γa'awe κ₁e
     · apply Typing.typeLam Γ.typeVarDom
       intro a' a'nin
       simp [«F⊗⊕ω».Term.TypeVar_open, «F⊗⊕ω».Type.TypeVar_open]
@@ -2308,21 +2326,39 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
       apply this.equiv
       apply TypeEquivalence.arr
       · apply TypeEquivalence.sum
-        apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free
-        apply TypeEquivalence.listApp (.lam (I ++ I') _) .refl
-        intro a anin
-        let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
-        simp [Type.TypeVar_open]
-        rw [τke _ aninI |>.deterministic (τke' _ aninI') |>.right]
-        exact .refl
+        apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free _ (K₁ := K₀) (K₂ := K₁)
+        · apply TypeEquivalence.listApp (.lam (I ++ I') _) .refl
+          intro a anin
+          let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
+          simp [Type.TypeVar_open]
+          rw [τke _ aninI |>.deterministic (τke' _ aninI') |>.right]
+          apply TypeEquivalence.app .refl
+          rw [Type.Type_open_var, A'lc.TypeVar_open_id]
+          exact .symm <| .lamApp <| .var .head
+        · apply Kinding.lam <| I' ++ ↑a' :: Γ.typeVarDom
+          intro a anin
+          let ⟨aninI', aninaΓ⟩ := List.not_mem_append'.mp anin
+          specialize τke' a aninI'
+          let Γa'awe := Γwe.typeExt a'nin (κ₁e.arr .star) |>.typeExt aninaΓ κ₀e
+          exact τke'.weakening Γa'awe (Γ' := .typeExt .empty ..) (Γ'' := .typeExt .empty ..)
+            |>.soundness Γcw Γa'awe κ₁e
       · apply TypeEquivalence.sum
-        apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free
-        apply TypeEquivalence.listApp (.lam (I ++ I'') _) .refl
-        intro a anin
-        let ⟨aninI, aninI''⟩ := List.not_mem_append'.mp anin
-        simp [Type.TypeVar_open]
-        rw [τke _ aninI |>.deterministic (τke'' _ aninI'') |>.right]
-        exact .refl
+        apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free _ (K₁ := K₀) (K₂ := K₁)
+        · apply TypeEquivalence.listApp (.lam (I ++ I'') _) .refl
+          intro a anin
+          let ⟨aninI, aninI''⟩ := List.not_mem_append'.mp anin
+          simp [Type.TypeVar_open]
+          rw [τke _ aninI |>.deterministic (τke'' _ aninI'') |>.right]
+          apply TypeEquivalence.app .refl
+          rw [Type.Type_open_var, A''lc.TypeVar_open_id]
+          exact .symm <| .lamApp <| .var .head
+        · apply Kinding.lam <| I'' ++ ↑a' :: Γ.typeVarDom
+          intro a anin
+          let ⟨aninI'', aninaΓ⟩ := List.not_mem_append'.mp anin
+          specialize τke'' a aninI''
+          let Γa'awe := Γwe.typeExt a'nin (κ₁e.arr .star) |>.typeExt aninaΓ κ₀e
+          exact τke''.weakening Γa'awe (Γ' := .typeExt .empty ..) (Γ'' := .typeExt .empty ..)
+            |>.soundness Γcw Γa'awe κ₁e
   | liftConcat I concatce ρ₀ke τke κ₀e κ₁e ih =>
     rename «Type» => A_
     rename Environment => Δ
@@ -2420,30 +2456,57 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
       apply this.equiv
       apply TypeEquivalence.arr
       · apply TypeEquivalence.prod
-        apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free
-        apply TypeEquivalence.listApp (.lam (I ++ I') _) .refl
-        intro a anin
-        let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
-        simp [Type.TypeVar_open]
-        rw [τke _ aninI |>.deterministic (τke' _ aninI') |>.right]
-        exact .refl
+        apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free _ (K₁ := K₀) (K₂ := K₁)
+        · apply TypeEquivalence.listApp (.lam (I ++ I') _) .refl
+          intro a anin
+          let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
+          simp [Type.TypeVar_open]
+          rw [τke _ aninI |>.deterministic (τke' _ aninI') |>.right]
+          apply TypeEquivalence.app .refl
+          rw [Type.Type_open_var, A'lc.TypeVar_open_id]
+          exact .symm <| .lamApp <| .var .head
+        · apply Kinding.lam <| I' ++ ↑a' :: Γ.typeVarDom
+          intro a anin
+          let ⟨aninI', aninaΓ⟩ := List.not_mem_append'.mp anin
+          specialize τke' a aninI'
+          let Γa'awe := Γwe.typeExt a'nin (κ₁e.arr .star) |>.typeExt aninaΓ κ₀e
+          exact τke'.weakening Γa'awe (Γ' := .typeExt .empty ..) (Γ'' := .typeExt .empty ..)
+            |>.soundness Γcw Γa'awe κ₁e
       · apply TypeEquivalence.arr
         · apply TypeEquivalence.prod
-          apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free
-          apply TypeEquivalence.listApp (.lam (I ++ I'') _) .refl
-          intro a anin
-          let ⟨aninI, aninI''⟩ := List.not_mem_append'.mp anin
-          simp [Type.TypeVar_open]
-          rw [τke _ aninI |>.deterministic (τke'' _ aninI'') |>.right]
-          exact .refl
+          apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free _ (K₁ := K₀) (K₂ := K₁)
+          · apply TypeEquivalence.listApp (.lam (I ++ I'') _) .refl
+            intro a anin
+            let ⟨aninI, aninI''⟩ := List.not_mem_append'.mp anin
+            simp [Type.TypeVar_open]
+            rw [τke _ aninI |>.deterministic (τke'' _ aninI'') |>.right]
+            apply TypeEquivalence.app .refl
+            rw [Type.Type_open_var, A''lc.TypeVar_open_id]
+            exact .symm <| .lamApp <| .var .head
+          · apply Kinding.lam <| I'' ++ ↑a' :: Γ.typeVarDom
+            intro a anin
+            let ⟨aninI'', aninaΓ⟩ := List.not_mem_append'.mp anin
+            specialize τke'' a aninI''
+            let Γa'awe := Γwe.typeExt a'nin (κ₁e.arr .star) |>.typeExt aninaΓ κ₀e
+            exact τke''.weakening Γa'awe (Γ' := .typeExt .empty ..) (Γ'' := .typeExt .empty ..)
+              |>.soundness Γcw Γa'awe κ₁e
         · apply TypeEquivalence.prod
-          apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free
-          apply TypeEquivalence.listApp (.lam (I ++ I''') _) .refl
-          intro a anin
-          let ⟨aninI, aninI'''⟩ := List.not_mem_append'.mp anin
-          simp [Type.TypeVar_open]
-          rw [τke _ aninI |>.deterministic (τke''' _ aninI''') |>.right]
-          exact .refl
+          apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free _ (K₁ := K₀) (K₂ := K₁)
+          · apply TypeEquivalence.listApp (.lam (I ++ I''') _) .refl
+            intro a anin
+            let ⟨aninI, aninI'''⟩ := List.not_mem_append'.mp anin
+            simp [Type.TypeVar_open]
+            rw [τke _ aninI |>.deterministic (τke''' _ aninI''') |>.right]
+            apply TypeEquivalence.app .refl
+            rw [Type.Type_open_var, A'''lc.TypeVar_open_id]
+            exact .symm <| .lamApp <| .var .head
+          · apply Kinding.lam <| I''' ++ ↑a' :: Γ.typeVarDom
+            intro a anin
+            let ⟨aninI''', aninaΓ⟩ := List.not_mem_append'.mp anin
+            specialize τke''' a aninI'''
+            let Γa'awe := Γwe.typeExt a'nin (κ₁e.arr .star) |>.typeExt aninaΓ κ₀e
+            exact τke'''.weakening Γa'awe (Γ' := .typeExt .empty ..) (Γ'' := .typeExt .empty ..)
+              |>.soundness Γcw Γa'awe κ₁e
     · apply Typing.typeLam Γ.typeVarDom
       intro a' a'nin
       simp [«F⊗⊕ω».Term.TypeVar_open, «F⊗⊕ω».Type.TypeVar_open]
@@ -2473,36 +2536,66 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
       rw [Blc.weaken (n := 1).Type_open_id, B'lc.weaken (n := 1).Type_open_id,
           B''lc.weaken (n := 1).Type_open_id] at this
       apply this.equiv
-      apply TypeEquivalence.scheme []
+      apply TypeEquivalence.scheme <| a' :: Γ.typeVarDom
       intro a'' a''nin
       simp [«F⊗⊕ω».Type.TypeVar_open]
       rw [Alc.TypeVar_open_id, A'lc.TypeVar_open_id, A''lc.TypeVar_open_id, A'''lc.TypeVar_open_id]
       apply TypeEquivalence.arr
       · apply TypeEquivalence.arr (.sum _) .refl
-        apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free
-        apply TypeEquivalence.listApp (.lam (I ++ I') _) .refl
-        intro a anin
-        let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
-        simp [Type.TypeVar_open]
-        rw [τke _ aninI |>.deterministic (τke' _ aninI') |>.right]
-        exact .refl
+        apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free _ (K₁ := K₀) (K₂ := K₁)
+        · apply TypeEquivalence.listApp (.lam (I ++ I') _) .refl
+          intro a anin
+          let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
+          simp [Type.TypeVar_open]
+          rw [τke _ aninI |>.deterministic (τke' _ aninI') |>.right]
+          apply TypeEquivalence.app .refl
+          rw [Type.Type_open_var, A'lc.TypeVar_open_id]
+          exact .symm <| .lamApp <| .var .head
+        · apply Kinding.lam <| I' ++ ↑a'' :: ↑a' :: Γ.typeVarDom
+          intro a''' a'''nin
+          let ⟨a'''ninI', a'''ninaΓ⟩ := List.not_mem_append'.mp a'''nin
+          specialize τke' a''' a'''ninI'
+          let Γa'awe := Γwe.typeExt a'nin (κ₁e.arr .star) |>.typeExt a''nin .star |>.typeExt
+            a'''ninaΓ κ₀e
+          exact τke'.weakening Γa'awe (Γ' := .typeExt (.typeExt .empty ..) ..)
+            (Γ'' := .typeExt .empty ..) |>.soundness Γcw Γa'awe κ₁e
       · apply TypeEquivalence.arr
         · apply TypeEquivalence.arr (.sum _) .refl
-          apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free
-          apply TypeEquivalence.listApp (.lam (I ++ I'') _) .refl
-          intro a anin
-          let ⟨aninI, aninI''⟩ := List.not_mem_append'.mp anin
-          simp [Type.TypeVar_open]
-          rw [τke _ aninI |>.deterministic (τke'' _ aninI'') |>.right]
-          exact .refl
+          apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free _ (K₁ := K₀) (K₂ := K₁)
+          · apply TypeEquivalence.listApp (.lam (I ++ I'') _) .refl
+            intro a anin
+            let ⟨aninI, aninI''⟩ := List.not_mem_append'.mp anin
+            simp [Type.TypeVar_open]
+            rw [τke _ aninI |>.deterministic (τke'' _ aninI'') |>.right]
+            apply TypeEquivalence.app .refl
+            rw [Type.Type_open_var, A''lc.TypeVar_open_id]
+            exact .symm <| .lamApp <| .var .head
+          · apply Kinding.lam <| I'' ++ ↑a'' :: ↑a' :: Γ.typeVarDom
+            intro a''' a'''nin
+            let ⟨a'''ninI'', a'''ninaΓ⟩ := List.not_mem_append'.mp a'''nin
+            specialize τke'' a''' a'''ninI''
+            let Γa'awe := Γwe.typeExt a'nin (κ₁e.arr .star) |>.typeExt a''nin .star |>.typeExt
+              a'''ninaΓ κ₀e
+            exact τke''.weakening Γa'awe (Γ' := .typeExt (.typeExt .empty ..) ..)
+              (Γ'' := .typeExt .empty ..) |>.soundness Γcw Γa'awe κ₁e
         · apply TypeEquivalence.arr (.sum _) .refl
-          apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free
-          apply TypeEquivalence.listApp (.lam (I ++ I''') _) .refl
-          intro a anin
-          let ⟨aninI, aninI'''⟩ := List.not_mem_append'.mp anin
-          simp [Type.TypeVar_open]
-          rw [τke _ aninI |>.deterministic (τke''' _ aninI''') |>.right]
-          exact .refl
+          apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free _ (K₁ := K₀) (K₂ := K₁)
+          · apply TypeEquivalence.listApp (.lam (I ++ I''') _) .refl
+            intro a anin
+            let ⟨aninI, aninI'''⟩ := List.not_mem_append'.mp anin
+            simp [Type.TypeVar_open]
+            rw [τke _ aninI |>.deterministic (τke''' _ aninI''') |>.right]
+            apply TypeEquivalence.app .refl
+            rw [Type.Type_open_var, A'''lc.TypeVar_open_id]
+            exact .symm <| .lamApp <| .var .head
+          · apply Kinding.lam <| I''' ++ ↑a'' :: ↑a' :: Γ.typeVarDom
+            intro a''' a'''nin
+            let ⟨a'''ninI''', a'''ninaΓ⟩ := List.not_mem_append'.mp a'''nin
+            specialize τke''' a''' a'''ninI'''
+            let Γa'awe := Γwe.typeExt a'nin (κ₁e.arr .star) |>.typeExt a''nin .star |>.typeExt
+              a'''ninaΓ κ₀e
+            exact τke'''.weakening Γa'awe (Γ' := .typeExt (.typeExt .empty ..) ..)
+              (Γ'' := .typeExt .empty ..) |>.soundness Γcw Γa'awe κ₁e
     · apply Typing.pair
       · apply Typing.typeLam Γ.typeVarDom
         intro a' a'nin
@@ -2535,21 +2628,39 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
         apply this.equiv
         apply TypeEquivalence.arr
         · apply TypeEquivalence.prod
-          apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free
-          apply TypeEquivalence.listApp (.lam (I ++ I''''') _) .refl
-          intro a anin
-          let ⟨aninI, aninI'''''⟩ := List.not_mem_append'.mp anin
-          simp [Type.TypeVar_open]
-          rw [τke _ aninI |>.deterministic (τke''''' _ aninI''''') |>.right]
-          exact .refl
+          apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free _ (K₁ := K₀) (K₂ := K₁)
+          · apply TypeEquivalence.listApp (.lam (I ++ I''''') _) .refl
+            intro a anin
+            let ⟨aninI, aninI'''''⟩ := List.not_mem_append'.mp anin
+            simp [Type.TypeVar_open]
+            rw [τke _ aninI |>.deterministic (τke''''' _ aninI''''') |>.right]
+            apply TypeEquivalence.app .refl
+            rw [Type.Type_open_var, A'''''lc.TypeVar_open_id]
+            exact .symm <| .lamApp <| .var .head
+          · apply Kinding.lam <| I''''' ++ ↑a' :: Γ.typeVarDom
+            intro a anin
+            let ⟨aninI''''', aninaΓ⟩ := List.not_mem_append'.mp anin
+            specialize τke''''' a aninI'''''
+            let Γa'awe := Γwe.typeExt a'nin (κ₁e.arr .star) |>.typeExt aninaΓ κ₀e
+            exact τke'''''.weakening Γa'awe (Γ' := .typeExt .empty ..) (Γ'' := .typeExt .empty ..)
+              |>.soundness Γcw Γa'awe κ₁e
         · apply TypeEquivalence.prod
-          apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free
-          apply TypeEquivalence.listApp (.lam (I ++ I'''') _) .refl
-          intro a anin
-          let ⟨aninI, aninI''''⟩ := List.not_mem_append'.mp anin
-          simp [Type.TypeVar_open]
-          rw [τke _ aninI |>.deterministic (τke'''' _ aninI'''') |>.right]
-          exact .refl
+          apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free _ (K₁ := K₀) (K₂ := K₁)
+          · apply TypeEquivalence.listApp (.lam (I ++ I'''') _) .refl
+            intro a anin
+            let ⟨aninI, aninI''''⟩ := List.not_mem_append'.mp anin
+            simp [Type.TypeVar_open]
+            rw [τke _ aninI |>.deterministic (τke'''' _ aninI'''') |>.right]
+            apply TypeEquivalence.app .refl
+            rw [Type.Type_open_var, A''''lc.TypeVar_open_id]
+            exact .symm <| .lamApp <| .var .head
+          · apply Kinding.lam <| I'''' ++ ↑a' :: Γ.typeVarDom
+            intro a anin
+            let ⟨aninI'''', aninaΓ⟩ := List.not_mem_append'.mp anin
+            specialize τke'''' a aninI''''
+            let Γa'awe := Γwe.typeExt a'nin (κ₁e.arr .star) |>.typeExt aninaΓ κ₀e
+            exact τke''''.weakening Γa'awe (Γ' := .typeExt .empty ..) (Γ'' := .typeExt .empty ..)
+              |>.soundness Γcw Γa'awe κ₁e
       · apply Typing.typeLam Γ.typeVarDom
         intro a' a'nin
         simp [«F⊗⊕ω».Term.TypeVar_open, «F⊗⊕ω».Type.TypeVar_open]
@@ -2581,21 +2692,39 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
         apply this.equiv
         apply TypeEquivalence.arr
         · apply TypeEquivalence.sum
-          apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free
-          apply TypeEquivalence.listApp (.lam (I ++ I'''') _) .refl
-          intro a anin
-          let ⟨aninI, aninI''''⟩ := List.not_mem_append'.mp anin
-          simp [Type.TypeVar_open]
-          rw [τke _ aninI |>.deterministic (τke'''' _ aninI'''') |>.right]
-          exact .refl
+          apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free _ (K₁ := K₀) (K₂ := K₁)
+          · apply TypeEquivalence.listApp (.lam (I ++ I'''') _) .refl
+            intro a anin
+            let ⟨aninI, aninI''''⟩ := List.not_mem_append'.mp anin
+            simp [Type.TypeVar_open]
+            rw [τke _ aninI |>.deterministic (τke'''' _ aninI'''') |>.right]
+            apply TypeEquivalence.app .refl
+            rw [Type.Type_open_var, A''''lc.TypeVar_open_id]
+            exact .symm <| .lamApp <| .var .head
+          · apply Kinding.lam <| I'''' ++ ↑a' :: Γ.typeVarDom
+            intro a anin
+            let ⟨aninI'''', aninaΓ⟩ := List.not_mem_append'.mp anin
+            specialize τke'''' a aninI''''
+            let Γa'awe := Γwe.typeExt a'nin (κ₁e.arr .star) |>.typeExt aninaΓ κ₀e
+            exact τke''''.weakening Γa'awe (Γ' := .typeExt .empty ..) (Γ'' := .typeExt .empty ..)
+              |>.soundness Γcw Γa'awe κ₁e
         · apply TypeEquivalence.sum
-          apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free
-          apply TypeEquivalence.listApp (.lam (I ++ I''''') _) .refl
-          intro a anin
-          let ⟨aninI, aninI'''''⟩ := List.not_mem_append'.mp anin
-          simp [Type.TypeVar_open]
-          rw [τke _ aninI |>.deterministic (τke''''' _ aninI''''') |>.right]
-          exact .refl
+          apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free _ (K₁ := K₀) (K₂ := K₁)
+          · apply TypeEquivalence.listApp (.lam (I ++ I''''') _) .refl
+            intro a anin
+            let ⟨aninI, aninI'''''⟩ := List.not_mem_append'.mp anin
+            simp [Type.TypeVar_open]
+            rw [τke _ aninI |>.deterministic (τke''''' _ aninI''''') |>.right]
+            apply TypeEquivalence.app .refl
+            rw [Type.Type_open_var, A'''''lc.TypeVar_open_id]
+            exact .symm <| .lamApp <| .var .head
+          · apply Kinding.lam <| I''''' ++ ↑a' :: Γ.typeVarDom
+            intro a anin
+            let ⟨aninI''''', aninaΓ⟩ := List.not_mem_append'.mp anin
+            specialize τke''''' a aninI'''''
+            let Γa'awe := Γwe.typeExt a'nin (κ₁e.arr .star) |>.typeExt aninaΓ κ₀e
+            exact τke'''''.weakening Γa'awe (Γ' := .typeExt .empty ..) (Γ'' := .typeExt .empty ..)
+              |>.soundness Γcw Γa'awe κ₁e
     · apply Typing.pair
       · apply Typing.typeLam Γ.typeVarDom
         intro a' a'nin
@@ -2628,21 +2757,39 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
         apply this.equiv
         apply TypeEquivalence.arr
         · apply TypeEquivalence.prod
-          apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free
-          apply TypeEquivalence.listApp (.lam (I ++ I''''''') _) .refl
-          intro a anin
-          let ⟨aninI, aninI'''''''⟩ := List.not_mem_append'.mp anin
-          simp [Type.TypeVar_open]
-          rw [τke _ aninI |>.deterministic (τke''''''' _ aninI''''''') |>.right]
-          exact .refl
+          apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free _ (K₁ := K₀) (K₂ := K₁)
+          · apply TypeEquivalence.listApp (.lam (I ++ I''''''') _) .refl
+            intro a anin
+            let ⟨aninI, aninI'''''''⟩ := List.not_mem_append'.mp anin
+            simp [Type.TypeVar_open]
+            rw [τke _ aninI |>.deterministic (τke''''''' _ aninI''''''') |>.right]
+            apply TypeEquivalence.app .refl
+            rw [Type.Type_open_var, A'''''''lc.TypeVar_open_id]
+            exact .symm <| .lamApp <| .var .head
+          · apply Kinding.lam <| I''''''' ++ ↑a' :: Γ.typeVarDom
+            intro a anin
+            let ⟨aninI''''''', aninaΓ⟩ := List.not_mem_append'.mp anin
+            specialize τke''''''' a aninI'''''''
+            let Γa'awe := Γwe.typeExt a'nin (κ₁e.arr .star) |>.typeExt aninaΓ κ₀e
+            exact τke'''''''.weakening Γa'awe (Γ' := .typeExt .empty ..)
+              (Γ'' := .typeExt .empty ..) |>.soundness Γcw Γa'awe κ₁e
         · apply TypeEquivalence.prod
-          apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free
-          apply TypeEquivalence.listApp (.lam (I ++ I'''''') _) .refl
-          intro a anin
-          let ⟨aninI, aninI''''''⟩ := List.not_mem_append'.mp anin
-          simp [Type.TypeVar_open]
-          rw [τke _ aninI |>.deterministic (τke'''''' _ aninI'''''') |>.right]
-          exact .refl
+          apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free _ (K₁ := K₀) (K₂ := K₁)
+          · apply TypeEquivalence.listApp (.lam (I ++ I'''''') _) .refl
+            intro a anin
+            let ⟨aninI, aninI''''''⟩ := List.not_mem_append'.mp anin
+            simp [Type.TypeVar_open]
+            rw [τke _ aninI |>.deterministic (τke'''''' _ aninI'''''') |>.right]
+            apply TypeEquivalence.app .refl
+            rw [Type.Type_open_var, A''''''lc.TypeVar_open_id]
+            exact .symm <| .lamApp <| .var .head
+          · apply Kinding.lam <| I'''''' ++ ↑a' :: Γ.typeVarDom
+            intro a anin
+            let ⟨aninI'''''', aninaΓ⟩ := List.not_mem_append'.mp anin
+            specialize τke'''''' a aninI''''''
+            let Γa'awe := Γwe.typeExt a'nin (κ₁e.arr .star) |>.typeExt aninaΓ κ₀e
+            exact τke''''''.weakening Γa'awe (Γ' := .typeExt .empty ..)
+              (Γ'' := .typeExt .empty ..) |>.soundness Γcw Γa'awe κ₁e
       · apply Typing.typeLam Γ.typeVarDom
         intro a' a'nin
         simp [«F⊗⊕ω».Term.TypeVar_open, «F⊗⊕ω».Type.TypeVar_open]
@@ -2674,21 +2821,39 @@ theorem soundness (ψce : [[Γᵢ; Γc; Γ ⊨ ψ ⇝ E]]) (ψke : [[Γc; Γ ⊢
         apply this.equiv
         apply TypeEquivalence.arr
         · apply TypeEquivalence.sum
-          apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free
-          apply TypeEquivalence.listApp (.lam (I ++ I'''''') _) .refl
-          intro a anin
-          let ⟨aninI, aninI''''''⟩ := List.not_mem_append'.mp anin
-          simp [Type.TypeVar_open]
-          rw [τke _ aninI |>.deterministic (τke'''''' _ aninI'''''') |>.right]
-          exact .refl
+          apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free _ (K₁ := K₀) (K₂ := K₁)
+          · apply TypeEquivalence.listApp (.lam (I ++ I'''''') _) .refl
+            intro a anin
+            let ⟨aninI, aninI''''''⟩ := List.not_mem_append'.mp anin
+            simp [Type.TypeVar_open]
+            rw [τke _ aninI |>.deterministic (τke'''''' _ aninI'''''') |>.right]
+            apply TypeEquivalence.app .refl
+            rw [Type.Type_open_var, A''''''lc.TypeVar_open_id]
+            exact .symm <| .lamApp <| .var .head
+          · apply Kinding.lam <| I'''''' ++ ↑a' :: Γ.typeVarDom
+            intro a anin
+            let ⟨aninI'''''', aninaΓ⟩ := List.not_mem_append'.mp anin
+            specialize τke'''''' a aninI''''''
+            let Γa'awe := Γwe.typeExt a'nin (κ₁e.arr .star) |>.typeExt aninaΓ κ₀e
+            exact τke''''''.weakening Γa'awe (Γ' := .typeExt .empty ..)
+              (Γ'' := .typeExt .empty ..) |>.soundness Γcw Γa'awe κ₁e
         · apply TypeEquivalence.sum
-          apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free
-          apply TypeEquivalence.listApp (.lam (I ++ I''''''') _) .refl
-          intro a anin
-          let ⟨aninI, aninI'''''''⟩ := List.not_mem_append'.mp anin
-          simp [Type.TypeVar_open]
-          rw [τke _ aninI |>.deterministic (τke''''''' _ aninI''''''') |>.right]
-          exact .refl
+          apply TypeEquivalence.trans _ <| .symm <| .listAppComp .var_free _ (K₁ := K₀) (K₂ := K₁)
+          · apply TypeEquivalence.listApp (.lam (I ++ I''''''') _) .refl
+            intro a anin
+            let ⟨aninI, aninI'''''''⟩ := List.not_mem_append'.mp anin
+            simp [Type.TypeVar_open]
+            rw [τke _ aninI |>.deterministic (τke''''''' _ aninI''''''') |>.right]
+            apply TypeEquivalence.app .refl
+            rw [Type.Type_open_var, A'''''''lc.TypeVar_open_id]
+            exact .symm <| .lamApp <| .var .head
+          · apply Kinding.lam <| I''''''' ++ ↑a' :: Γ.typeVarDom
+            intro a anin
+            let ⟨aninI''''''', aninaΓ⟩ := List.not_mem_append'.mp anin
+            specialize τke''''''' a aninI'''''''
+            let Γa'awe := Γwe.typeExt a'nin (κ₁e.arr .star) |>.typeExt aninaΓ κ₀e
+            exact τke'''''''.weakening Γa'awe (Γ' := .typeExt .empty ..)
+              (Γ'' := .typeExt .empty ..) |>.soundness Γcw Γa'awe κ₁e
   | TCInst γᵢin τ'ke ψce ψopih =>
     rename_i o κ l ψ τ E n E' _ _ Γ τ' B F _
     let .tc γcin τopke (A := A') (A' := A''') := ψke

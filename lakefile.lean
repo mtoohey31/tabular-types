@@ -7,7 +7,7 @@ require lott from "vendor/lott"
 require mathlib from git "https://github.com/leanprover-community/mathlib4.git" @ "v4.17.0"
 
 package «tabular-type-interpreter» where
-  moreGlobalServerArgs := #[s!"-Dweak.lott.tex.output.dir={__dir__}/tex"]
+  moreGlobalServerArgs := #[s!"-Dweak.lott.tex.output.dir={__dir__}/tex", "-DmaxHeartbeats=4000000"]
 
 -- TODO: Figure out how to enable makeDeps without breaking build.
 
