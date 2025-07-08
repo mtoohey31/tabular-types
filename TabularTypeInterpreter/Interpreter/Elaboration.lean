@@ -38,13 +38,13 @@ def subst (τ τ' : Monotype) (i : TId) : Monotype := match τ with
   | comm u => comm u
   | row ξτ''s κ? => row (ξτ''s.mapMem fun (ξ, τ'') _ => (subst ξ τ' i, subst τ'' τ' i)) κ?
   | prodOrSum Ξ μ => prodOrSum Ξ <| subst μ τ' i
-  | lift => lift
+  | lift ϕ => lift <| subst ϕ τ' i
   | contain ρ₀ μ ρ₁ => contain (subst ρ₀ τ' i) (subst μ τ' i) (subst ρ₁ τ' i)
   | concat ρ₀ μ ρ₁ ρ₂ => concat (subst ρ₀ τ' i) (subst μ τ' i) (subst ρ₁ τ' i) (subst ρ₂ τ' i)
   | tc s => tc s
-  | all => all
-  | ind => ind
-  | split => split
+  | all ϕ => all <| subst ϕ τ' i
+  | ind ρ => ind <| subst ρ τ' i
+  | split ϕ ρ₀ ρ₁ ρ₂ => split (subst ϕ τ' i) (subst ρ₀ τ' i) (subst ρ₁ τ' i) (subst ρ₂ τ' i)
   | list => list
   | int => int
   | str => str
@@ -81,10 +81,10 @@ inductive RowEquivalence : Monotype → Monotype → Monotype → Type where
   | refl : RowEquivalence ρ μ ρ
   | trans : RowEquivalence ρ₀ μ ρ₁ → RowEquivalence ρ₁ μ ρ₂ → RowEquivalence ρ₀ μ ρ₂
   | comm : List.Perm ξτs₀ ξτs₁ → RowEquivalence (row ξτs₀ κ?) (comm .non) (row ξτs₁ κ?)
-  | liftL : RowEquivalence ((lift.app ϕ).app (row ξτs κ?)) μ
+  | liftL : RowEquivalence ((lift ϕ).app (row ξτs κ?)) μ
       (row (ξτs.map fun (ξ, τ) => (ξ, ϕ.app τ)) κ?)
   | liftR : RowEquivalence (row (ξτs.map fun (ξ, τ) => (ξ, ϕ.app τ)) κ?) μ
-      ((lift.app ϕ).app (row ξτs κ?))
+      ((lift ϕ).app (row ξτs κ?))
 
 namespace RowEquivalence
 
@@ -155,40 +155,40 @@ inductive ConstraintSolution : Monotype → Type where
   | concatDecay : ConstraintSolution (concat ρ₀ μ₀ ρ₁ ρ₂) → CommutativityPartialOrdering μ₀ μ₁ →
     ConstraintSolution (concat ρ₀ μ₁ ρ₁ ρ₂)
   | liftContain : ConstraintSolution (contain ρ₀ μ ρ₁) →
-    ConstraintSolution (contain ((lift.app ϕ).app ρ₀) μ ((lift.app ϕ).app ρ₁))
+    ConstraintSolution (contain ((lift ϕ).app ρ₀) μ ((lift ϕ).app ρ₁))
   | liftConcat : ConstraintSolution (concat ρ₀ μ ρ₁ ρ₂) →
-    ConstraintSolution (concat ((lift.app ϕ).app ρ₀) μ ((lift.app ϕ).app ρ₁) ((lift.app ϕ).app ρ₂))
+    ConstraintSolution (concat ((lift ϕ).app ρ₀) μ ((lift ϕ).app ρ₁) ((lift ϕ).app ρ₂))
   | tcInst : (inst : Instance) → (τ's : List Monotype) →
     (∀ ψ ∈ inst.prereqs, ConstraintSolution (ψ.multiSubst (τ's.zip inst.tids))) →
     ConstraintSolution ((tc inst.name).app (inst.target.multiSubst (τ's.zip inst.tids)))
   | tcSuper : ConstraintSolution ((tc s₀).app τ) → Nat → ConstraintSolution ((tc s₁).app τ)
-  | allEmpty : ConstraintSolution (all.app (row .nil (some .constr)))
+  | allEmpty : ConstraintSolution ((all ϕ).app (row .nil (some .constr)))
   | allSingletonIntro : ConstraintSolution (ϕ.app τ) →
-    ConstraintSolution ((all.app ϕ).app (row [(ξ, τ)] κ?))
-  | allSingletonElim : ConstraintSolution ((all.app ϕ).app (row [(ξ, τ)] κ?)) →
+    ConstraintSolution ((all ϕ).app (row [(ξ, τ)] κ?))
+  | allSingletonElim : ConstraintSolution ((all ϕ).app (row [(ξ, τ)] κ?)) →
     ConstraintSolution (ϕ.app τ)
   | allContain : ConstraintSolution (contain ρ₀ (comm .comm) ρ₁) →
-    ConstraintSolution ((all.app ϕ).app ρ₁) → ConstraintSolution ((all.app ϕ).app ρ₀)
+    ConstraintSolution ((all ϕ).app ρ₁) → ConstraintSolution ((all ϕ).app ρ₀)
   | allConcat : ConstraintSolution (concat ρ₀ (comm .comm) ρ₁ ρ₂) →
-    ConstraintSolution ((all.app ϕ).app ρ₀) → ConstraintSolution ((all.app ϕ).app ρ₁) →
-    ConstraintSolution ((all.app ϕ).app ρ₂)
+    ConstraintSolution ((all ϕ).app ρ₀) → ConstraintSolution ((all ϕ).app ρ₁) →
+    ConstraintSolution ((all ϕ).app ρ₂)
   | ind : ConstraintSolution (row ξτs κ?)
-  | splitEmpty : ConstraintSolution ((((split.app ϕ).app (row .nil (some κ))).app
-      (row .nil (some star))).app (row .nil (some star)))
-  | splitSingletonMatch : ConstraintSolution ((((split.app ϕ).app
-      (row [(ξ, τ)] (some κ))).app (row .nil (some star))).app (row [(ξ, ϕ.app τ)] (some star)))
-  | splitSingletonRest : ConstraintSolution ((((split.app ϕ).app (row [] (some κ))).app
-      (row [(ξ, τ)] (some star))).app (row [(ξ, τ)] (some star)))
-  | splitPiecewise : ConstraintSolution ((((split.app ϕ).app ρ₀).app ρ₁).app ρ₂) →
-    ConstraintSolution ((((split.app ϕ).app ρ₃).app ρ₄).app ρ₅) →
-    ConstraintSolution (concat ((lift.app ϕ).app ρ₀) (comm .comm) ((lift.app ϕ).app ρ₃)
-      ((lift.app ϕ).app ρ₆)) →
+  | splitEmpty : ConstraintSolution
+    (split ϕ (row [] (some κ)) (row [] (some star)) (row [] (some star)))
+  | splitSingletonMatch : ConstraintSolution
+    (split ϕ (row [(ξ, τ)] (some κ)) (row .nil (some star)) (row [(ξ, ϕ.app τ)] (some star)))
+  | splitSingletonRest : ConstraintSolution
+    (split ϕ (row [] (some κ)) (row [(ξ, τ)] (some star)) (row [(ξ, τ)] (some star)))
+  | splitPiecewise : ConstraintSolution (split ϕ ρ₀ ρ₁ ρ₂) →
+    ConstraintSolution (split ϕ ρ₃ ρ₄ ρ₅) →
+    ConstraintSolution (concat ((lift ϕ).app ρ₀) (comm .comm) ((lift ϕ).app ρ₃)
+      ((lift ϕ).app ρ₆)) →
     ConstraintSolution (concat ρ₁ (comm .comm) ρ₄ ρ₇) →
     ConstraintSolution (concat ρ₂ (comm .comm) ρ₅ ρ₈) →
-    ConstraintSolution (concat ((lift.app ϕ).app ρ₆) (comm .comm) ρ₇ ρ₈) →
-    ConstraintSolution ((((split.app ϕ).app ρ₆).app ρ₇).app ρ₈)
-  | splitConcat : ConstraintSolution ((((split.app ϕ).app ρ₀).app ρ₁).app ρ₂) →
-    ConstraintSolution (concat ((lift.app ϕ).app ρ₀) (comm .comm) ρ₁ ρ₂)
+    ConstraintSolution (concat ((lift ϕ).app ρ₆) (comm .comm) ρ₇ ρ₈) →
+    ConstraintSolution (split ϕ ρ₆ ρ₇ ρ₈)
+  | splitConcat : ConstraintSolution (split ϕ ρ₀ ρ₁ ρ₂) →
+    ConstraintSolution (concat ((lift ϕ).app ρ₀) (comm .comm) ρ₁ ρ₂)
 
 def _root_.Nat.map : Nat → (Nat → α) → List α
   | 0, _ => []
@@ -461,17 +461,15 @@ inductive Subtyping : TypeScheme → TypeScheme → Type where
     Subtyping (contain ρ₀ μ ρ₁) (contain ρ₂ μ ρ₃)
   | concat : RowEquivalence ρ₀ μ ρ₃ → RowEquivalence ρ₁ μ ρ₄ → RowEquivalence ρ₂ μ ρ₅ →
     Subtyping (concat ρ₀ μ ρ₁ ρ₂) (concat ρ₃ μ ρ₄ ρ₅)
-  | all : RowEquivalence ρ₀ (comm .comm) ρ₁ → Subtyping ((all.app ϕ).app ρ₀) ((all.app ϕ).app ρ₁)
-  | split : Subtyping (concat ((lift.app ϕ).app ρ₀) μ ρ₁ ρ₂) (concat ((lift.app ϕ).app ρ₃) μ ρ₄ ρ₅) →
-    Subtyping ((((split.app ϕ).app ρ₀).app ρ₁).app ρ₂)
-      ((((split.app ϕ).app ρ₃).app ρ₄).app ρ₅)
-  | aliasₗ : Subtyping («alias» s) σ
-  | aliasᵣ : Subtyping σ («alias» s)
+  | all : RowEquivalence ρ₀ (comm .comm) ρ₁ → Subtyping ((all ϕ).app ρ₀) ((all ϕ).app ρ₁)
+  | split : Subtyping (concat ((lift ϕ).app ρ₀) (comm .comm) ρ₁ ρ₂)
+      (concat ((lift ϕ).app ρ₃) (comm .comm) ρ₄ ρ₅) →
+    Subtyping (split ϕ ρ₀ ρ₁ ρ₂) (split ϕ ρ₃ ρ₄ ρ₅)
   | list {τ₀ τ₁ : Monotype} : Subtyping τ₀ τ₁ →
     Subtyping (list.app τ₀) (list.app τ₁)
 
 def Subtyping.elab : Subtyping σ₀ σ₁ → ElabM «λπι».Term
-  | refl | decay _ | aliasₗ | aliasᵣ => return .id
+  | refl | decay _ => return .id
   | trans σ₀₁'st σ₁'₂st => do
     let i ← freshId
     return .lam i <| (← σ₁'₂st.elab).app <| (← σ₀₁'st.elab).app <| .var i
@@ -580,18 +578,18 @@ inductive Typing : Term → TypeScheme → Type where
       (qual (.concat (.var iₚ) (comm .non) (row [(.var iₗ, .var iₜ)] none) (.var iᵢ))
         (qual (.concat (.var iᵢ) (comm .non) (.var iₙ) ρ)
           ((floor (.var iₗ)).arr ((ϕ.app (.var iₚ)).arr (ϕ.app (.var iᵢ))))))))))) →
-    Typing N (ϕ.app (.row .nil (some κ))) → ConstraintSolution (Monotype.ind.app ρ) →
+    Typing N (ϕ.app (.row .nil (some κ))) → ConstraintSolution (Monotype.ind ρ) →
     Typing (ind ϕ ρ iₗ iₜ iₚ iᵢ iₙ M N) (ϕ.app ρ)
   | splitₚ : Typing M ((prodOrSum .prod (comm .comm)).app ρ₂) →
-    ConstraintSolution ((((split.app ϕ).app ρ₀).app ρ₁).app ρ₂) →
+    ConstraintSolution (split ϕ ρ₀ ρ₁ ρ₂) →
     Typing (M.splitₚ ϕ) ((prodOrSum .prod (comm .non)).app
       (row [
-        (.label "match", (prodOrSum .prod (comm .comm)).app ((lift.app ϕ).app ρ₀)),
+        (.label "match", (prodOrSum .prod (comm .comm)).app ((lift ϕ).app ρ₀)),
         (.label "rest", (prodOrSum .prod (comm .comm)).app ρ₁)
       ] none))
-  | splitₛ : Typing M (((prodOrSum .sum (comm .comm)).app ((lift.app ϕ).app ρ₀)).arr τ) →
+  | splitₛ : Typing M (((prodOrSum .sum (comm .comm)).app ((lift ϕ).app ρ₀)).arr τ) →
     Typing N (((prodOrSum .sum (comm .comm)).app ρ₁).arr τ) →
-    ConstraintSolution ((((split.app ϕ).app ρ₀).app ρ₁).app ρ₂) →
+    ConstraintSolution (split ϕ ρ₀ ρ₁ ρ₂) →
     Typing (M.splitₛ ϕ N) (((prodOrSum .sum (comm .comm)).app ρ₂).arr τ)
   | nil : Typing nil (list.app τ)
   | cons {τ : Monotype} : Typing M τ → Typing N (list.app τ) → Typing (cons M N) (list.app τ)

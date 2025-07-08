@@ -304,10 +304,10 @@ def monotype (inTerm allowFree : Bool) (greedy := true) : TypeM Monotype :=
       <$> ((char '<' <|> char '⟨') **> (sepBy (~*> char ',' <*~) (Prod.mk <$> go <**> «▹» **> go)))
         <**> (option? (char ':' **> kind)) <** (char '>' <|> char '⟩')
     <|> Monotype.prodOrSum <$> prodOrSum <**> paren go
-    <|> string "Lift" *> pure lift
-    <|> string "All" *> pure all
-    <|> string "Ind" *> pure ind
-    <|> string "Split" *> pure split
+    <|> lift <$> (string "Lift" **> go false)
+    <|> all <$> (string "All" **> go false)
+    <|> ind <$> (string "Ind" **> go false)
+    <|> split <$> (string "Split" **> go false) <**> go false <**> go false <**> go false
     <|> string "List" *> pure list
     <|> string "Int" *> pure int
     <|> string "String" *> pure str
@@ -394,8 +394,8 @@ macro "#parse_type " input:str " to " expected:term : command =>
 #parse_type "N" to Monotype.comm .non
 #parse_type "⟨⟩" to row .nil none
 #parse_type "< : * >" to row .nil <| some .star
-#parse_type "⟨'a' ▹ Lift, 'b' |> (All), ('c') ▹ Ind⟩" to row
-  [(label "a", lift), (label "b", all), (label "c", ind)] none
+#parse_type "⟨'a' ▹ Lift a, 'b' |> (All b), ('c') ▹ Ind c⟩" to row
+  [(label "a", lift (var 0)), (label "b", all (var 1)), (label "c", ind (var 2))] none
 #parse_type "Π(N) ⟨⟩" to Monotype.prodOrSum .prod (.comm .non) |>.app <|
   row .nil none
 #parse_type "P(C)" to Monotype.prodOrSum .prod <| .comm .comm
@@ -410,8 +410,8 @@ macro "#parse_type " input:str " to " expected:term : command =>
   (concat (var 0) (Monotype.comm .comm) (var 1) (var 2)) (mono (var 0))
 #parse_type "Eq" to tc "Eq"
 #parse_type "LE" to tc "LE"
-#parse_type "Split a b c -> List a" to split |>.app (var 0) |>.app (var 1)
-  |>.app (var 2) |>.arr (list.app <| var 0)
+#parse_type "Split a a b c -> List a" to split (var 0) (var 0) (var 1) (var 2)
+  |>.arr (list.app <| var 0)
 #parse_type "Int → String" to int |>.arr str
 #parse_type "∀ a : *. a" to quant 3 .star <| qual <| mono <| var 3
 #parse_type "forall d : R *. a d" to quant 3 (.row .star) <| qual <| mono <|
@@ -747,7 +747,7 @@ macro "#parse_term " input:str " to " expected:term : command =>
 #parse_term "inj z/'hi'" to inj <| unlabel (var 2) (label "hi")
 #parse_term "ind (λ d : R *. P(N) (Lift a d)) b (λ l acc. acc ++ {l : ⌊l⌋ ▹ 0}) {}" to ind
   (.lam 3 (.row .star)
-    (.app (.prodOrSum .prod (.comm .non)) (.app (.app .lift (.var 0)) (.var 3))))
+    (.app (.prodOrSum .prod (.comm .non)) (.app (.lift (.var 0)) (.var 3))))
   (.var 1)
   4 5 6 7 8
   (lam 3 (lam 4 (concat (var 4) (prod [(annot (var 3) (Monotype.floor (.var 4)), int 0)]))))

@@ -68,13 +68,13 @@ inductive Monotype where
   | comm : Comm → Monotype
   | row : List (Monotype × Monotype) → Option Kind → Monotype
   | prodOrSum : ProdOrSum → Monotype → Monotype
-  | lift : Monotype
+  | lift (ϕ : Monotype) : Monotype
   | contain (ρ₀ μ ρ₁ : Monotype) : Monotype
   | concat (ρ₀ μ ρ₁ ρ₂ : Monotype) : Monotype
   | tc : String → Monotype
-  | all : Monotype
-  | ind : Monotype
-  | split : Monotype
+  | all (ϕ : Monotype) : Monotype
+  | ind (ρ : Monotype) : Monotype
+  | split (ϕ ρ₀ ρ₁ ρ₂ : Monotype) : Monotype
   | list : Monotype
   | int : Monotype
   | str : Monotype
@@ -192,9 +192,12 @@ def decidableEq (τ₀ τ₁ : Monotype) : Decidable (τ₀ = τ₁) := by
         else
           isFalse (hΞ <| And.left <| prodOrSum.inj ·)
     all_goals exact isFalse nofun
-  | lift =>
+  | lift ϕ₀ =>
     cases τ₁
-    case lift => exact isTrue rfl
+    case lift ϕ₁ =>
+      exact match decidableEq ϕ₀ ϕ₁ with
+        | isTrue hϕ => isTrue <| lift.injEq .. |>.mpr hϕ
+        | isFalse hϕ => isFalse (hϕ <| lift.inj ·)
     all_goals exact isFalse nofun
   | contain ρ₀₀ μ₀ ρ₁₀ =>
     cases τ₁
@@ -225,17 +228,33 @@ def decidableEq (τ₀ τ₁ : Monotype) : Decidable (τ₀ = τ₁) := by
     case tc s₁ =>
       exact if h : s₀ = s₁ then isTrue <| tc.injEq .. |>.mpr h else isFalse (h <| tc.inj ·)
     all_goals exact isFalse nofun
-  | all =>
+  | all ϕ₀ =>
     cases τ₁
-    case all => exact isTrue rfl
+    case all ϕ₁ =>
+      exact match decidableEq ϕ₀ ϕ₁ with
+        | isTrue hϕ => isTrue <| all.injEq .. |>.mpr hϕ
+        | isFalse hϕ => isFalse (hϕ <| all.inj ·)
     all_goals exact isFalse nofun
-  | ind =>
+  | ind ρ₀ =>
     cases τ₁
-    case ind => exact isTrue rfl
+    case ind ρ₁ =>
+      exact match decidableEq ρ₀ ρ₁ with
+        | isTrue hρ => isTrue <| ind.injEq .. |>.mpr hρ
+        | isFalse hρ => isFalse (hρ <| ind.inj ·)
     all_goals exact isFalse nofun
-  | split =>
+  | split ϕ₀ ρ₀₀ ρ₁₀ ρ₂₀ =>
     cases τ₁
-    case split => exact isTrue rfl
+    case split ϕ₁ ρ₀₁ ρ₁₁ ρ₂₁ =>
+      exact
+        match decidableEq ϕ₀ ϕ₁ with
+        | isTrue hϕ => match decidableEq ρ₀₀ ρ₀₁ with
+          | isTrue hρ₀ => match decidableEq ρ₁₀ ρ₁₁ with
+            | isTrue hρ₁ => match decidableEq ρ₂₀ ρ₂₁ with
+              | isTrue hρ₂ => isTrue <| split.injEq .. |>.mpr ⟨hϕ, hρ₀, hρ₁, hρ₂⟩
+              | isFalse hρ₂ => isFalse (hρ₂ <| And.right <| And.right <| And.right <| split.inj ·)
+            | isFalse hρ₁ => isFalse (hρ₁ <| And.left <| And.right <| And.right <| split.inj ·)
+          | isFalse hρ₀ => isFalse (hρ₀ <| And.left <| And.right <| split.inj ·)
+        | isFalse hϕ => isFalse (hϕ <| And.left <| split.inj ·)
     all_goals exact isFalse nofun
   | list =>
     cases τ₁
@@ -273,13 +292,13 @@ def toString [ToString TId] (τ : Monotype) : String := match τ with
     let ξτsString := ξτs.mapMem fun (ξ, τ) _ => s!"{ξ.toString} ▹ {τ.toString}"
     s!"⟨{ξτsString}{κString}⟩"
   | prodOrSum Ξ μ => s!"{Ξ}({μ.toString})"
-  | lift => "Lift"
+  | lift ϕ => s!"Lift {ϕ.toString}"
   | contain ρ₀ μ ρ₁ => s!"{ρ₀.toString} ≲({μ.toString}) {ρ₁.toString}"
   | concat ρ₀ μ ρ₁ ρ₂ => s!"{ρ₀.toString} ⊙({μ.toString}) {ρ₁.toString} ~ {ρ₂.toString}"
   | tc s => s
-  | all => "All"
-  | ind => "Ind"
-  | split => "Split"
+  | all ϕ => s!"All {ϕ.toString}"
+  | ind ρ => s!"Ind {ρ.toString}"
+  | split ϕ ρ₀ ρ₁ ρ₂ => s!"Split {ϕ.toString} {ρ₀.toString} {ρ₁.toString} {ρ₂.toString}"
   | list => "List"
   | int => "Int"
   | str => "String"
