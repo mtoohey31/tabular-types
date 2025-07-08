@@ -2786,7 +2786,7 @@ set_option maxHeartbeats 4000000 in
 mutual
 
 theorem SmallStep.TypeVar_subst_in (Ast : [[Δ, a : K, Δ' ⊢ A -> A']])
-  (A'ist : [[Δ, Δ'[B / a] ⊢n A'[B / a] ->* A'']]) (A''v : [[value A'']])
+  (A'ist : [[Δ, a : K, Δ' ⊢n A' ->* A'']]) (A''v : [[value A'']])
   (Aki : [[Δ, a : K, Δ' ⊢ A : K']]) (Δwf : [[⊢ Δ, a : K, Δ']]) (Bki : [[Δ ⊢ B : K]])
   : [[Δ, Δ'[B / a] ⊢ A[B / a] <->* A'[B / a] ]] := by
   open «Type» in
@@ -2796,8 +2796,8 @@ theorem SmallStep.TypeVar_subst_in (Ast : [[Δ, a : K, Δ' ⊢ A -> A']])
     exact .eta (A''ki.subst' Δwf Bki) (Δwf.subst Bki)
   | .app (.lam K'' A'') B', .lamApp .., .app (.lam I A''ki) B'ki =>
     simp [TypeVar_subst] at A'ist ⊢
-    rw [Bki.TypeVarLocallyClosed_of.Type_open_TypeVar_subst_dist] at A'ist ⊢
-    apply EqSmallStep.lamApp' (a :: I ++ [[Δ, a : K, Δ']].typeVarDom) _ (B'ki.subst' Δwf Bki) A'ist
+    rw [Bki.TypeVarLocallyClosed_of.Type_open_TypeVar_subst_dist]
+    apply EqSmallStep.lamApp' (a :: I ++ [[Δ, a : K, Δ']].typeVarDom) _ (B'ki.subst' Δwf Bki) sorry
       A''v (Δwf.subst Bki) (K₂ := K')
     intro a' a'nin
     let ⟨a'ninaI, a'ninΔ⟩ := List.not_mem_append'.mp a'nin
@@ -3047,7 +3047,7 @@ decreasing_by
   --   simp_arith
 
 theorem EqSmallStep.lamApp' (I : List TypeVarId) (Aki : ∀ a ∉ I, [[Δ, a : K₁ ⊢ A^a : K₂]])
-  (Bki : [[Δ ⊢ B : K₁]]) (ist : [[Δ ⊢n A^^B ->* C]]) (Cv : [[value C]])
+  (Bki : [[Δ ⊢ B : K₁]]) (ist : [[Δ ⊢n A ->* C]]) (Cv : [[value C]])
   (Δwf : [[⊢ Δ]]) : [[Δ ⊢ (λ a : K₁. A) B <->* A^^B]] := by
   open EqSmallStep in
   replace Aki := fun a' (a'nin : a' ∉ I ++ Δ.typeVarDom) =>
