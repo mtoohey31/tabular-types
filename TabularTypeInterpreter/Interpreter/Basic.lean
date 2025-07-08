@@ -57,8 +57,6 @@ instance : ToString ProdOrSum where
 
 abbrev TId := Id `type
 
-mutual
-
 inductive Monotype where
   | var : TId → Monotype
   | uvar : Nat → Monotype
@@ -68,7 +66,7 @@ inductive Monotype where
   | label : String → Monotype
   | floor : Monotype → Monotype
   | comm : Comm → Monotype
-  | row : MonotypePairList → Option Kind → Monotype
+  | row : List (Monotype × Monotype) → Option Kind → Monotype
   | prodOrSum : ProdOrSum → Monotype → Monotype
   | lift : Monotype
   | contain (ρ₀ μ ρ₁ : Monotype) : Monotype
@@ -81,98 +79,183 @@ inductive Monotype where
   | int : Monotype
   | str : Monotype
   | alias : String → Monotype
-deriving Hashable, BEq, DecidableEq
-
-inductive MonotypePairList where
-  | nil : MonotypePairList
-  | cons (head₀ head₁ : Monotype) (tail : MonotypePairList) : MonotypePairList
-deriving Hashable, BEq, DecidableEq
-
-end
-
-mutual
-
-@[simp]
-protected noncomputable
-def Monotype.sizeOf : Monotype → Nat
-  | .var _ | .uvar _ | .label _ | .comm _ | .lift | .tc _ | .all | .ind | .split
-  | .list | .int | .str | .alias _ => 1
-  | .lam _ κ τ => 1 + sizeOf κ + τ.sizeOf
-  | .app ϕ τ => 1 + ϕ.sizeOf + τ.sizeOf
-  | .arr τ₀ τ₁ => 1 + τ₀.sizeOf + τ₁.sizeOf
-  | .floor ξ => 1 + ξ.sizeOf
-  | .row ξτs κ? => 1 + ξτs.sizeOf + sizeOf κ?
-  | .prodOrSum _ ρ => 1 + ρ.sizeOf
-  | .contain ρ₀ μ ρ₁ => 1 + ρ₀.sizeOf + μ.sizeOf + ρ₁.sizeOf
-  | .concat ρ₀ μ ρ₁ ρ₂ => 1 + ρ₀.sizeOf + μ.sizeOf + ρ₁.sizeOf + ρ₂.sizeOf
-
-@[simp]
-protected noncomputable
-def MonotypePairList.sizeOf : MonotypePairList → Nat
-  | .nil => 1
-  | .cons head₀ head₁ tail => 2 + head₀.sizeOf + head₁.sizeOf + tail.sizeOf
-
-end
-
-noncomputable
-instance (priority := high) : SizeOf Monotype where
-  sizeOf := Monotype.sizeOf
-
-namespace MonotypePairList
-
-instance : Inhabited MonotypePairList where
-  default := nil
-
-def toList : MonotypePairList → List (Monotype × Monotype)
-  | nil => []
-  | cons head₀ head₁ tail => (head₀, head₁) :: tail.toList
-
-def ofList : List (Monotype × Monotype) → MonotypePairList
-  | [] => nil
-  | (head₀, head₁) :: tail => cons head₀ head₁ <| .ofList tail
-
-noncomputable
-instance (priority := high) : SizeOf MonotypePairList where
-  sizeOf := MonotypePairList.sizeOf
-
-@[simp]
-theorem sizeOf_toList' : MonotypePairList.sizeOf ξτs = SizeOf.sizeOf (toList ξτs) := by
-  match ξτs with
-  | nil =>
-    rw [toList, List.nil.sizeOf_spec]
-    simp [sizeOf]
-  | cons _ _ tail =>
-    rw [toList, List.cons.sizeOf_spec, Prod.mk.sizeOf_spec, ← Nat.add_assoc, ← Nat.add_assoc]
-    simp [SizeOf.sizeOf]
-    have := tail.sizeOf_toList'
-    simp [SizeOf.sizeOf] at this
-    rw [this]
-
-@[simp]
-theorem sizeOf_toList : SizeOf.sizeOf ξτs = SizeOf.sizeOf (toList ξτs) := by
-  rw [SizeOf.sizeOf, instSizeOf]
-  simp only
-  exact sizeOf_toList'
-
-@[simp]
-theorem sizeOf_ofList : SizeOf.sizeOf ξτs = SizeOf.sizeOf (ofList ξτs) := by
-  match ξτs with
-  | [] =>
-    rw [ofList, List.nil.sizeOf_spec]
-    simp [SizeOf.sizeOf]
-  | _ :: tail =>
-    rw [ofList, List.cons.sizeOf_spec, Prod.mk.sizeOf_spec, ← Nat.add_assoc, ← Nat.add_assoc]
-    simp [SizeOf.sizeOf]
-    have := sizeOf_ofList (ξτs := tail)
-    simp [SizeOf.sizeOf] at this
-    rw [this]
-
-end MonotypePairList
+deriving Inhabited, Hashable, BEq
 
 namespace Monotype
 
-instance : Inhabited Monotype where
-  default := var <| .mk 1000000
+private
+def decidableEq (τ₀ τ₁ : Monotype) : Decidable (τ₀ = τ₁) := by
+  match τ₀ with
+  | var i₀ =>
+    cases τ₁
+    case var i₁ =>
+      exact if h : i₀ = i₁ then isTrue <| var.injEq .. |>.mpr h else isFalse (h <| var.inj ·)
+    all_goals exact isFalse nofun
+  | uvar x₀ =>
+    cases τ₁
+    case uvar x₁ =>
+      exact if h : x₀ = x₁ then isTrue <| uvar.injEq .. |>.mpr h else isFalse (h <| uvar.inj ·)
+    all_goals exact isFalse nofun
+  | lam i₀ κ₀ τ₀' =>
+    cases τ₁
+    case lam i₁ κ₁ τ₁' =>
+      exact if hi : i₀ = i₁ then
+        if hκ : κ₀ = κ₁ then
+          match decidableEq τ₀' τ₁' with
+          | isTrue hτ => isTrue <| lam.injEq .. |>.mpr ⟨hi, hκ, hτ⟩
+          | isFalse hτ =>
+            isFalse (hτ <| And.right <| And.right <| lam.inj ·)
+        else
+          isFalse (hκ <| And.left <| And.right <| lam.inj ·)
+      else
+        isFalse (hi <| And.left <| lam.inj ·)
+    all_goals exact isFalse nofun
+  | app τ₀' τ₀'' =>
+    cases τ₁
+    case app τ₁' τ₁'' =>
+      exact match decidableEq τ₀' τ₁' with
+        | isTrue hτ => match decidableEq τ₀'' τ₁'' with
+          | isTrue hτ' => isTrue <| app.injEq .. |>.mpr ⟨hτ, hτ'⟩
+          | isFalse hτ' => isFalse (hτ' <| And.right <| app.inj ·)
+        | isFalse hτ => isFalse (hτ <| And.left <| app.inj ·)
+    all_goals exact isFalse nofun
+  | arr τ₀' τ₀'' =>
+    cases τ₁
+    case arr τ₁' τ₁'' =>
+      exact match decidableEq τ₀' τ₁' with
+        | isTrue hτ => match decidableEq τ₀'' τ₁'' with
+          | isTrue hτ' => isTrue <| arr.injEq .. |>.mpr ⟨hτ, hτ'⟩
+          | isFalse hτ' => isFalse (hτ' <| And.right <| arr.inj ·)
+        | isFalse hτ => isFalse (hτ <| And.left <| arr.inj ·)
+    all_goals exact isFalse nofun
+  | label s₀ =>
+    cases τ₁
+    case label s₁ =>
+      exact if h : s₀ = s₁ then isTrue <| label.injEq .. |>.mpr h else isFalse (h <| label.inj ·)
+    all_goals exact isFalse nofun
+  | floor ξ₀ =>
+    cases τ₁
+    case floor ξ₁ =>
+      exact match decidableEq ξ₀ ξ₁ with
+        | isTrue h => isTrue <| floor.injEq .. |>.mpr h
+        | isFalse h => isFalse (h <| floor.inj ·)
+    all_goals exact isFalse nofun
+  | comm u₀ =>
+    cases τ₁
+    case comm u₁ =>
+      exact if h : u₀ = u₁ then isTrue <| comm.injEq .. |>.mpr h else isFalse (h <| comm.inj ·)
+    all_goals exact isFalse nofun
+  | row ξτs₀ κ₀ =>
+    cases τ₁
+    case row ξτs₁ κ₁ =>
+      exact match ξτs₀ with
+        | [] => match ξτs₁ with
+          | [] => if hκ : κ₀ = κ₁ then
+              isTrue <| row.injEq .. |>.mpr ⟨rfl, hκ⟩
+            else
+              isFalse (hκ <| And.right <| row.inj ·)
+          | (ξ₁, τ₁) :: ξτs₁' => isFalse (nomatch And.left <| row.inj ·)
+        | (ξ₀, τ₀) :: ξτs₀' => match ξτs₁ with
+          | [] => isFalse (nomatch And.left <| row.inj ·)
+          | (ξ₁, τ₁) :: ξτs₁' => match decidableEq ξ₀ ξ₁ with
+            | isTrue hξ => match decidableEq τ₀ τ₁ with
+              | isTrue hτ => match decidableEq (row ξτs₀' κ₀) (row ξτs₁' κ₁) with
+                | isTrue hξτs' =>
+                  let ⟨hξτs', hκ⟩ := row.inj hξτs'
+                  isTrue <| row.injEq .. |>.mpr ⟨
+                    List.cons.injEq .. |>.mpr ⟨
+                      Prod.mk.injEq .. |>.mpr ⟨hξ, hτ⟩,
+                      hξτs'
+                    ⟩,
+                    hκ
+                  ⟩
+                | isFalse hξτs' => by
+                  apply isFalse
+                  intro eq
+                  let ⟨ξτseq, κeq⟩ := row.inj eq
+                  let ⟨_, ξτs'eq⟩ := List.cons.inj ξτseq
+                  exact (hξτs' <| row.injEq .. |>.mpr ·) ⟨ξτs'eq, κeq⟩
+              | isFalse hτ =>
+                isFalse (hτ <| And.right <| Prod.mk.inj <| And.left <|
+                  List.cons.inj <| And.left <| row.inj ·)
+            | isFalse hξ =>
+              isFalse (hξ <| And.left <| Prod.mk.inj <| And.left <|
+                List.cons.inj <| And.left <| row.inj ·)
+    all_goals exact isFalse nofun
+  | prodOrSum Ξ₀ μ₀ =>
+    cases τ₁
+    case prodOrSum Ξ₁ μ₁ =>
+      exact if hΞ : Ξ₀ = Ξ₁ then
+          match decidableEq μ₀ μ₁ with
+          | isTrue hμ => isTrue <| prodOrSum.injEq .. |>.mpr ⟨hΞ, hμ⟩
+          | isFalse hμ => isFalse (hμ <| And.right <| prodOrSum.inj ·)
+        else
+          isFalse (hΞ <| And.left <| prodOrSum.inj ·)
+    all_goals exact isFalse nofun
+  | lift =>
+    cases τ₁
+    case lift => exact isTrue rfl
+    all_goals exact isFalse nofun
+  | contain ρ₀₀ μ₀ ρ₁₀ =>
+    cases τ₁
+    case contain ρ₀₁ μ₁ ρ₁₁ =>
+      exact match decidableEq ρ₀₀ ρ₀₁ with
+        | isTrue hρ₀ => match decidableEq μ₀ μ₁ with
+          | isTrue hμ => match decidableEq ρ₁₀ ρ₁₁ with
+            | isTrue hρ₁ => isTrue <| contain.injEq .. |>.mpr ⟨hρ₀, hμ, hρ₁⟩
+            | isFalse hρ₁ => isFalse (hρ₁ <| And.right <| And.right <| contain.inj ·)
+          | isFalse hμ => isFalse (hμ <| And.left <| And.right <| contain.inj ·)
+        | isFalse hρ₀ => isFalse (hρ₀ <| And.left <| contain.inj ·)
+    all_goals exact isFalse nofun
+  | concat ρ₀₀ μ₀ ρ₁₀ ρ₂₀ =>
+    cases τ₁
+    case concat ρ₀₁ μ₁ ρ₁₁ ρ₂₁ =>
+      exact match decidableEq ρ₀₀ ρ₀₁ with
+        | isTrue hρ₀ => match decidableEq μ₀ μ₁ with
+          | isTrue hμ => match decidableEq ρ₁₀ ρ₁₁ with
+            | isTrue hρ₁ => match decidableEq ρ₂₀ ρ₂₁ with
+              | isTrue hρ₂ => isTrue <| concat.injEq .. |>.mpr ⟨hρ₀, hμ, hρ₁, hρ₂⟩
+              | isFalse hρ₂ => isFalse (hρ₂ <| And.right <| And.right <| And.right <| concat.inj ·)
+            | isFalse hρ₁ => isFalse (hρ₁ <| And.left <| And.right <| And.right <| concat.inj ·)
+          | isFalse hμ => isFalse (hμ <| And.left <| And.right <| concat.inj ·)
+        | isFalse hρ₀ => isFalse (hρ₀ <| And.left <| concat.inj ·)
+    all_goals exact isFalse nofun
+  | tc s₀ =>
+    cases τ₁
+    case tc s₁ =>
+      exact if h : s₀ = s₁ then isTrue <| tc.injEq .. |>.mpr h else isFalse (h <| tc.inj ·)
+    all_goals exact isFalse nofun
+  | all =>
+    cases τ₁
+    case all => exact isTrue rfl
+    all_goals exact isFalse nofun
+  | ind =>
+    cases τ₁
+    case ind => exact isTrue rfl
+    all_goals exact isFalse nofun
+  | split =>
+    cases τ₁
+    case split => exact isTrue rfl
+    all_goals exact isFalse nofun
+  | list =>
+    cases τ₁
+    case list => exact isTrue rfl
+    all_goals exact isFalse nofun
+  | int =>
+    cases τ₁
+    case int => exact isTrue rfl
+    all_goals exact isFalse nofun
+  | str =>
+    cases τ₁
+    case str => exact isTrue rfl
+    all_goals exact isFalse nofun
+  | «alias» s₀ =>
+    cases τ₁
+    case «alias» s₁ =>
+      exact if h : s₀ = s₁ then isTrue <| alias.injEq .. |>.mpr h else isFalse (h <| alias.inj ·)
+    all_goals exact isFalse nofun
+
+instance : DecidableEq Monotype := decidableEq
 
 def toString [ToString TId] (τ : Monotype) : String := match τ with
   | var i => s!"{i}"
@@ -187,7 +270,7 @@ def toString [ToString TId] (τ : Monotype) : String := match τ with
     let κString := match κ? with
       | some κ => s!" : {κ}"
       | none => ""
-    let ξτsString := ξτs.toList.mapMem fun (ξ, τ) _ => s!"{ξ.toString} ▹ {τ.toString}"
+    let ξτsString := ξτs.mapMem fun (ξ, τ) _ => s!"{ξ.toString} ▹ {τ.toString}"
     s!"⟨{ξτsString}{κString}⟩"
   | prodOrSum Ξ μ => s!"{Ξ}({μ.toString})"
   | lift => "Lift"
@@ -203,12 +286,11 @@ def toString [ToString TId] (τ : Monotype) : String := match τ with
   | «alias» s => s
 termination_by sizeOf τ
 decreasing_by
-  all_goals simp_arith [sizeOf]
+  all_goals simp_arith
   all_goals (
     apply Nat.le_add_right_of_le
     apply Nat.le_of_lt <| Nat.lt_of_le_of_lt (m := sizeOf (ξ, τ)) _ <| List.sizeOf_lt_of_mem ..
     · simp_arith
-      simp_arith [sizeOf]
     · assumption
   )
 
@@ -218,7 +300,7 @@ instance [ToString TId] : ToString Monotype where
 def unit : Monotype := row .nil <| some .star
 
 def bool : Monotype := prodOrSum .sum (comm .non) |>.app <|
-  row (.cons (label "false") unit (.cons (label "true") unit .nil)) none
+  row [(label "false", unit), (label "true", unit)] none
 
 end Monotype
 
@@ -266,8 +348,6 @@ open TypeScheme
 
 abbrev MId := Id `term
 
-mutual
-
 inductive Term where
   | var : MId → Term
   | member : String → Term
@@ -276,7 +356,7 @@ inductive Term where
   | let : MId → Option TypeScheme → Term → Term → Term
   | annot : Term → TypeScheme → Term
   | label : String → Term
-  | prod : TermPairList → Term
+  | prod : List (Term × Term) → Term
   | sum : Term → Term → Term
   | unlabel : Term → Term → Term
   | prj : Term → Term
@@ -295,104 +375,264 @@ inductive Term where
   | str : String → Term
   | throw : Term
   | def : String → Term
-deriving BEq, DecidableEq
-
-inductive TermPairList where
-  | nil : TermPairList
-  | cons (head₀ head₁ : Term) (tail : TermPairList) : TermPairList
-deriving BEq, DecidableEq
-
-end
-
-mutual
-
-@[simp]
-protected noncomputable
-def Term.sizeOf : Term → Nat
-  | .var _ | .member _ | .label _ | .nil | .fold | .int _ | .range | .str _ | .throw | .def _ => 1
-  | .lam _ M | .prj M | .inj M => 1 + M.sizeOf
-  | .app M N | .sum M N | .unlabel M N | .concat M N | .elim M N | .cons M N | .op _ M N =>
-    1 + M.sizeOf + N.sizeOf
-  | .let _ σ? M N => 1 + sizeOf σ? + M.sizeOf + N.sizeOf
-  | .annot M σ => 1 + M.sizeOf + sizeOf σ
-  | .prod MNs => 1 + MNs.sizeOf
-  | .ind ϕ ρ _ _ _ _ _ M N => 1 + sizeOf ϕ + sizeOf ρ + M.sizeOf + N.sizeOf
-  | .splitₚ ϕ M => 1 + sizeOf ϕ + M.sizeOf
-  | .splitₛ ϕ M N => 1 + sizeOf ϕ + M.sizeOf + N.sizeOf
-
-@[simp]
-protected noncomputable
-def TermPairList.sizeOf : TermPairList → Nat
-  | .nil => 1
-  | .cons head₀ head₁ tail => 2 + head₀.sizeOf + head₁.sizeOf + tail.sizeOf
-
-end
-
-noncomputable
-instance (priority := high) : SizeOf Term where
-  sizeOf := Term.sizeOf
-
-namespace TermPairList
-
-instance : Inhabited TermPairList where
-  default := .nil
-
-def toList : TermPairList → List (Term × Term)
-  | nil => []
-  | cons head₀ head₁ tail => (head₀, head₁) :: tail.toList
-
-def ofList : List (Term × Term) → TermPairList
-  | [] => nil
-  | (head₀, head₁) :: tail => cons head₀ head₁ <| .ofList tail
-
-noncomputable
-instance (priority := high) : SizeOf TermPairList where
-  sizeOf := TermPairList.sizeOf
-
-@[simp]
-theorem sizeOf_toList' : TermPairList.sizeOf ξτs = SizeOf.sizeOf (toList ξτs) := by
-  match ξτs with
-  | nil =>
-    rw [toList, List.nil.sizeOf_spec]
-    simp [sizeOf]
-  | cons _ _ tail =>
-    rw [toList, List.cons.sizeOf_spec, Prod.mk.sizeOf_spec, ← Nat.add_assoc, ← Nat.add_assoc]
-    simp [SizeOf.sizeOf]
-    have := tail.sizeOf_toList'
-    simp [SizeOf.sizeOf] at this
-    rw [this]
-
-@[simp]
-theorem sizeOf_toList : SizeOf.sizeOf ξτs = SizeOf.sizeOf (toList ξτs) := by
-  rw [SizeOf.sizeOf, instSizeOf]
-  simp only
-  exact sizeOf_toList'
-
-@[simp]
-theorem sizeOf_ofList : SizeOf.sizeOf ξτs = SizeOf.sizeOf (ofList ξτs) := by
-  match ξτs with
-  | [] =>
-    rw [ofList, List.nil.sizeOf_spec]
-    simp [SizeOf.sizeOf]
-  | _ :: tail =>
-    rw [ofList, List.cons.sizeOf_spec, Prod.mk.sizeOf_spec, ← Nat.add_assoc, ← Nat.add_assoc]
-    simp [SizeOf.sizeOf]
-    have := sizeOf_ofList (ξτs := tail)
-    simp [SizeOf.sizeOf] at this
-    rw [this]
-
-@[simp]
-theorem ofList_left_inv_toList : ofList (toList MNs) = MNs := by
-  match MNs with
-  | nil => rw [toList, ofList]
-  | cons head₀ head₁ tail => rw [toList, ofList, ofList_left_inv_toList]
-
-end TermPairList
+deriving Inhabited, BEq
 
 namespace Term
 
-instance : Inhabited Term where
-  default := label "default"
+private
+def decidableEq (M₀ M₁ : Term) : Decidable (M₀ = M₁) := by
+  match M₀ with
+  | var i₀ =>
+    cases M₁
+    case var i₁ =>
+      exact if h : i₀ = i₁ then isTrue <| var.injEq .. |>.mpr h else isFalse (h <| var.inj ·)
+    all_goals exact isFalse nofun
+  | member s₀ =>
+    cases M₁
+    case member i₁ =>
+      exact if h : s₀ = i₁ then isTrue <| member.injEq .. |>.mpr h else isFalse (h <| member.inj ·)
+    all_goals exact isFalse nofun
+  | lam i₀ M₀' =>
+    cases M₁
+    case lam i₁ M₁' =>
+      exact if hi : i₀ = i₁ then
+        match decidableEq M₀' M₁' with
+        | isTrue hM => isTrue <| lam.injEq .. |>.mpr ⟨hi, hM⟩
+        | isFalse hM => isFalse (hM <| And.right <| lam.inj ·)
+      else
+        isFalse (hi <| And.left <| lam.inj ·)
+    all_goals exact isFalse nofun
+  | app M₀' N₀ =>
+    cases M₁
+    case app M₁' N₁ =>
+      exact match decidableEq M₀' M₁' with
+        | isTrue hM => match decidableEq N₀ N₁ with
+          | isTrue hN => isTrue <| app.injEq .. |>.mpr ⟨hM, hN⟩
+          | isFalse hN => isFalse (hN <| And.right <| app.inj ·)
+        | isFalse hM => isFalse (hM <| And.left <| app.inj ·)
+    all_goals exact isFalse nofun
+  | .let i₀ σ₀? M₀' N₀ =>
+    cases M₁
+    case «let» i₁ σ₁? M₁' N₁ =>
+      exact if hi : i₀ = i₁ then
+          if hσ? : σ₀? = σ₁? then
+            match decidableEq M₀' M₁' with
+            | isTrue hM => match decidableEq N₀ N₁ with
+              | isTrue hN => isTrue <| let.injEq .. |>.mpr ⟨hi, hσ?, hM, hN⟩
+              | isFalse hN => isFalse (hN <| And.right <| And.right <| And.right <| let.inj ·)
+            | isFalse hM => isFalse (hM <| And.left <| And.right <| And.right <| let.inj ·)
+          else
+            isFalse (hσ? <| And.left <| And.right <| let.inj ·)
+        else
+          isFalse (hi <| And.left <| let.inj ·)
+    all_goals exact isFalse nofun
+  | annot M₀' σ₀ =>
+    cases M₁
+    case annot M₁' σ₁ =>
+      exact match decidableEq M₀' M₁' with
+        | isTrue hM => if hσ : σ₀ = σ₁ then
+            isTrue <| annot.injEq .. |>.mpr ⟨hM, hσ⟩
+          else
+            isFalse (hσ <| And.right <| annot.inj ·)
+        | isFalse hM => isFalse (hM <| And.left <| annot.inj ·)
+    all_goals exact isFalse nofun
+  | label s₀ =>
+    cases M₁
+    case label s₁ =>
+      exact if h : s₀ = s₁ then isTrue <| label.injEq .. |>.mpr h else isFalse (h <| label.inj ·)
+    all_goals exact isFalse nofun
+  | prod MNs₀ =>
+    cases M₁
+    case prod MNs₁ =>
+      exact match MNs₀ with
+        | [] => match MNs₁ with
+          | [] => isTrue rfl
+          | _ :: _ => isFalse (nomatch prod.inj ·)
+        | (M₀', N₀) :: MNs₀' => match MNs₁ with
+          | [] => isFalse (nomatch prod.inj ·)
+          | (M₁', N₁) :: MNs₁' => match decidableEq M₀' M₁' with
+            | isTrue hM => match decidableEq N₀ N₁ with
+              | isTrue hN => match decidableEq (prod MNs₀') (prod MNs₁') with
+                | isTrue hMNs' => isTrue <| prod.injEq .. |>.mpr <| List.cons.injEq .. |>.mpr ⟨
+                    Prod.mk.injEq .. |>.mpr ⟨hM, hN⟩,
+                    prod.inj hMNs'
+                  ⟩
+                | isFalse hMNs' => by
+                  apply isFalse
+                  intro eq
+                  let ⟨_, MNs'eq⟩ := List.cons.inj <| prod.inj eq
+                  exact (hMNs' <| prod.injEq .. |>.mpr ·) MNs'eq
+              | isFalse hτ =>
+                isFalse (hτ <| And.right <| Prod.mk.inj <| And.left <| List.cons.inj <| prod.inj ·)
+            | isFalse hξ =>
+              isFalse (hξ <| And.left <| Prod.mk.inj <| And.left <| List.cons.inj <| prod.inj ·)
+    all_goals exact isFalse nofun
+  | sum M₀' N₀ =>
+    cases M₁
+    case sum M₁' N₁ =>
+      exact match decidableEq M₀' M₁' with
+        | isTrue hM => match decidableEq N₀ N₁ with
+          | isTrue hN => isTrue <| sum.injEq .. |>.mpr ⟨hM, hN⟩
+          | isFalse hN => isFalse (hN <| And.right <| sum.inj ·)
+        | isFalse hM => isFalse (hM <| And.left <| sum.inj ·)
+    all_goals exact isFalse nofun
+  | unlabel M₀' N₀ =>
+    cases M₁
+    case unlabel M₁' N₁ =>
+      exact match decidableEq M₀' M₁' with
+        | isTrue hM => match decidableEq N₀ N₁ with
+          | isTrue hN => isTrue <| unlabel.injEq .. |>.mpr ⟨hM, hN⟩
+          | isFalse hN => isFalse (hN <| And.right <| unlabel.inj ·)
+        | isFalse hM => isFalse (hM <| And.left <| unlabel.inj ·)
+    all_goals exact isFalse nofun
+  | prj M₀' =>
+    cases M₁
+    case prj M₁' =>
+      exact match decidableEq M₀' M₁' with
+        | isTrue hM => isTrue <| prj.injEq .. |>.mpr hM
+        | isFalse hM => isFalse (hM <| prj.inj ·)
+    all_goals exact isFalse nofun
+  | concat M₀' N₀ =>
+    cases M₁
+    case concat M₁' N₁ =>
+      exact match decidableEq M₀' M₁' with
+        | isTrue hM => match decidableEq N₀ N₁ with
+          | isTrue hN => isTrue <| concat.injEq .. |>.mpr ⟨hM, hN⟩
+          | isFalse hN => isFalse (hN <| And.right <| concat.inj ·)
+        | isFalse hM => isFalse (hM <| And.left <| concat.inj ·)
+    all_goals exact isFalse nofun
+  | inj M₀' =>
+    cases M₁
+    case inj M₁' =>
+      exact match decidableEq M₀' M₁' with
+        | isTrue hM => isTrue <| inj.injEq .. |>.mpr hM
+        | isFalse hM => isFalse (hM <| inj.inj ·)
+    all_goals exact isFalse nofun
+  | elim M₀' N₀ =>
+    cases M₁
+    case elim M₁' N₁ =>
+      exact match decidableEq M₀' M₁' with
+        | isTrue hM => match decidableEq N₀ N₁ with
+          | isTrue hN => isTrue <| elim.injEq .. |>.mpr ⟨hM, hN⟩
+          | isFalse hN => isFalse (hN <| And.right <| elim.inj ·)
+        | isFalse hM => isFalse (hM <| And.left <| elim.inj ·)
+    all_goals exact isFalse nofun
+  | ind ϕ₀ ρ₀ l₀ t₀ rn₀ ri₀ rp₀ M₀' N₀ =>
+    cases M₁
+    case ind ϕ₁ ρ₁ l₁ t₁ rn₁ ri₁ rp₁ M₁' N₁ =>
+      exact if hϕ : ϕ₀ = ϕ₁ then
+          if hρ : ρ₀ = ρ₁ then
+            if hl : l₀ = l₁ then
+              if ht : t₀ = t₁ then
+                if hrn : rn₀ = rn₁ then
+                  if hri : ri₀ = ri₁ then
+                    if hrp : rp₀ = rp₁ then
+                      match decidableEq M₀' M₁' with
+                      | isTrue hM => match decidableEq N₀ N₁ with
+                        | isTrue hN =>
+                          isTrue <| ind.injEq .. |>.mpr
+                            ⟨hϕ, hρ, hl, ht, hrn, hri, hrp, hM, hN⟩
+                        | isFalse hN =>
+                          isFalse (hN <| And.right <| And.right <| And.right <|
+                            And.right <| And.right <| And.right <| And.right <|
+                            And.right <| ind.inj ·)
+                      | isFalse hM =>
+                        isFalse (hM <| And.left <| And.right <| And.right <|
+                          And.right <| And.right <| And.right <| And.right <|
+                          And.right <| ind.inj ·)
+                    else
+                      isFalse (hrp <| And.left <| And.right <| And.right <|
+                        And.right <| And.right <| And.right <| And.right <| ind.inj ·)
+                  else
+                    isFalse (hri <| And.left <| And.right <| And.right <|
+                      And.right <| And.right <| And.right <| ind.inj ·)
+                else
+                  isFalse (hrn <| And.left <| And.right <| And.right <| And.right <| And.right <| ind.inj ·)
+              else
+                isFalse (ht <| And.left <| And.right <| And.right <| And.right <| ind.inj ·)
+            else
+              isFalse (hl <| And.left <| And.right <| And.right <| ind.inj ·)
+          else
+            isFalse (hρ <| And.left <| And.right <| ind.inj ·)
+        else
+          isFalse (hϕ <| And.left <| ind.inj ·)
+    all_goals exact isFalse nofun
+  | splitₚ ϕ₀ M₀' =>
+    cases M₁
+    case splitₚ ϕ₁ M₁' =>
+      exact if hϕ : ϕ₀ = ϕ₁ then
+          match decidableEq M₀' M₁' with
+          | isTrue hM => isTrue <| splitₚ.injEq .. |>.mpr ⟨hϕ, hM⟩
+          | isFalse hM => isFalse (hM <| And.right <| splitₚ.inj ·)
+        else
+          isFalse (hϕ <| And.left <| splitₚ.inj ·)
+    all_goals exact isFalse nofun
+  | splitₛ ϕ₀ M₀' N₀ =>
+    cases M₁
+    case splitₛ ϕ₁ M₁' N₁ =>
+      exact if hϕ : ϕ₀ = ϕ₁ then
+          match decidableEq M₀' M₁' with
+          | isTrue hM => match decidableEq N₀ N₁ with
+            | isTrue hN => isTrue <| splitₛ.injEq .. |>.mpr ⟨hϕ, hM, hN⟩
+            | isFalse hN => isFalse (hN <| And.right <| And.right <| splitₛ.inj ·)
+          | isFalse hM => isFalse (hM <| And.left <| And.right <| splitₛ.inj ·)
+        else
+          isFalse (hϕ <| And.left <| splitₛ.inj ·)
+    all_goals exact isFalse nofun
+  | nil =>
+    cases M₁
+    case nil => exact isTrue rfl
+    all_goals exact isFalse nofun
+  | cons M₀' N₀ =>
+    cases M₁
+    case cons M₁' N₁ =>
+      exact match decidableEq M₀' M₁' with
+        | isTrue hM => match decidableEq N₀ N₁ with
+          | isTrue hN => isTrue <| cons.injEq .. |>.mpr ⟨hM, hN⟩
+          | isFalse hN => isFalse (hN <| And.right <| cons.inj ·)
+        | isFalse hM => isFalse (hM <| And.left <| cons.inj ·)
+    all_goals exact isFalse nofun
+  | fold =>
+    cases M₁
+    case fold => exact isTrue rfl
+    all_goals exact isFalse nofun
+  | int i₀ =>
+    cases M₁
+    case int i₁ =>
+      exact if h : i₀ = i₁ then isTrue <| int.injEq .. |>.mpr h else isFalse (h <| int.inj ·)
+    all_goals exact isFalse nofun
+  | op o₀ M₀' N₀ =>
+    cases M₁
+    case op o₁ M₁' N₁ =>
+      exact if ho : o₀ = o₁ then
+          match decidableEq M₀' M₁' with
+          | isTrue hM => match decidableEq N₀ N₁ with
+            | isTrue hN => isTrue <| op.injEq .. |>.mpr ⟨ho, hM, hN⟩
+            | isFalse hN => isFalse (hN <| And.right <| And.right <| op.inj ·)
+          | isFalse hM => isFalse (hM <| And.left <| And.right <| op.inj ·)
+        else
+          isFalse (ho <| And.left <| op.inj ·)
+    all_goals exact isFalse nofun
+  | range =>
+    cases M₁
+    case range => exact isTrue rfl
+    all_goals exact isFalse nofun
+  | str s₀ =>
+    cases M₁
+    case str s₁ =>
+      exact if h : s₀ = s₁ then isTrue <| str.injEq .. |>.mpr h else isFalse (h <| str.inj ·)
+    all_goals exact isFalse nofun
+  | throw =>
+    cases M₁
+    case throw => exact isTrue rfl
+    all_goals exact isFalse nofun
+  | «def» s₀ =>
+    cases M₁
+    case «def» s₁ =>
+      exact if h : s₀ = s₁ then isTrue <| def.injEq .. |>.mpr h else isFalse (h <| def.inj ·)
+    all_goals exact isFalse nofun
+
+instance : DecidableEq Term := decidableEq
 
 private
 def termsFromList (M : Term) : List Term × Option Term := match M with
@@ -407,9 +647,9 @@ mutual
 partial
 def tableFromTerms [ToString TId] [ToString MId] (Ms : List Term) : Option String := do
   let .prod MNs :: _ := Ms | none
-  let header ← MNs.toList.mapM fun | (.label s, _) => some s | _ => none
+  let header ← MNs.mapM fun | (.label s, _) => some s | _ => none
   let entries ← Ms.mapM fun
-    | .prod MNs' => some <| MNs'.toList.map fun (_, N) => N.toString true
+    | .prod MNs' => some <| MNs'.map fun (_, N) => N.toString true
     | _ => none
   let maxWidths := header.mapIdx fun i h => Option.get! <| List.max? <|
     (h :: entries.map (·.get! i)).flatMap (String.splitOn (sep := "\n")) |>.map String.length
@@ -438,7 +678,7 @@ def toString [ToString TId] [ToString MId] (M : Term) (table := false) : String 
   | label s => s!"'{s}'"
   | prod M'Ns =>
     s!"\{{String.join <| List.intersperse ", " <|
-            M'Ns.toList.map fun (M', N) => s!"{M'.toString} ▹ {N.toString}"}}"
+            M'Ns.map fun (M', N) => s!"{M'.toString} ▹ {N.toString}"}}"
   | sum M' N => s!"[{M'.toString} ▹ {N.toString}]"
   | unlabel M' N => s!"{M'.toString}/{N.toString}"
   | prj M' => s!"prj {M'.toString}"

@@ -300,7 +300,7 @@ def monotype (inTerm allowFree : Bool) (greedy := true) : TypeM Monotype :=
       (char '\'' *> takeUntil (char '\'') anyToken)
     <|> floor <$> ((string "|_" <|> string "⌊") **> go <** (string "_|" <|> string "⌋"))
     <|> Monotype.comm <$> comm
-    <|> (row ∘ .ofList ∘ Array.toList)
+    <|> (row ∘ Array.toList)
       <$> ((char '<' <|> char '⟨') **> (sepBy (~*> char ',' <*~) (Prod.mk <$> go <**> «▹» **> go)))
         <**> (option? (char ':' **> kind)) <** (char '>' <|> char '⟩')
     <|> Monotype.prodOrSum <$> prodOrSum <**> paren go
@@ -395,7 +395,7 @@ macro "#parse_type " input:str " to " expected:term : command =>
 #parse_type "⟨⟩" to row .nil none
 #parse_type "< : * >" to row .nil <| some .star
 #parse_type "⟨'a' ▹ Lift, 'b' |> (All), ('c') ▹ Ind⟩" to row
-  (.cons (label "a") lift (.cons (label "b") all (.cons (label "c") ind .nil))) none
+  [(label "a", lift), (label "b", all), (label "c", ind)] none
 #parse_type "Π(N) ⟨⟩" to Monotype.prodOrSum .prod (.comm .non) |>.app <|
   row .nil none
 #parse_type "P(C)" to Monotype.prodOrSum .prod <| .comm .comm
@@ -606,7 +606,7 @@ def term (greedy unlabel := true) (allowFree := false) : TermM Term := withError
         return .let id none M N)
     <|> (label ∘ String.mk ∘ Array.toList ∘ Prod.fst) <$>
       (char '\'' *> takeUntil (char '\'') anyToken)
-    <|> (prod ∘ .ofList ∘ Array.toList) <$> (char '{' **>
+    <|> (prod ∘ Array.toList) <$> (char '{' **>
       sepBy (~*> char ',' <*~) (Prod.mk <$> go <**> liftM «▹» **> go) <** char '}')
     <|> sum <$> (char '[' **> go) <**> liftM «▹» **> go <** char ']'
     <|> prj <$> (string "prj" **> go false)
@@ -658,7 +658,7 @@ def term (greedy unlabel := true) (allowFree := false) : TermM Term := withError
       let M ← string "if" **> go
       let (N₀, id₀) ← ~*> string "then" **> TermM.pushVar "if$then" go
       let (N₁, id₁) ← ~*> string "else" **> TermM.pushVar "if$else" go
-      let τ := Monotype.row (.cons (.label "true") .unit .nil) none |>.arr <| ← freshUVar
+      let τ := Monotype.row [(.label "true", .unit)] none |>.arr <| ← freshUVar
       return N₀.lam id₀ |>.annot τ |>.elim (N₁.lam id₁) |>.app M)
     <|> paren go
     <|> (do
@@ -740,8 +740,7 @@ macro "#parse_term " input:str " to " expected:term : command =>
 #parse_term "''" to label ""
 #parse_term "'asdf'" to label "asdf"
 #parse_term "{}" to prod .nil
-#parse_term "{'foo' ▹ 0, x |> \"hi\"}" to prod <| .cons (label "foo") (int 0) <|
-  .cons (var 0) (str "hi") .nil
+#parse_term "{'foo' ▹ 0, x |> \"hi\"}" to prod [(label "foo", int 0), (var 0, str "hi")]
 #parse_term "[z ▹ 5]" to sum (var 2) (int 5)
 #parse_term "['baz' |> 0153]" to sum (label "baz") (int 153)
 #parse_term "prj x/y z" to app (prj (unlabel (var 0) (var 1))) (var 2)
@@ -751,9 +750,8 @@ macro "#parse_term " input:str " to " expected:term : command =>
     (.app (.prodOrSum .prod (.comm .non)) (.app (.app .lift (.var 0)) (.var 3))))
   (.var 1)
   4 5 6 7 8
-  (lam 3 (lam 4 (concat (var 4)
-    (prod (.cons (annot (var 3) (Monotype.floor (.var 4))) (int 0) .nil)))))
-  (prod .nil)
+  (lam 3 (lam 4 (concat (var 4) (prod [(annot (var 3) (Monotype.floor (.var 4)), int 0)]))))
+  (prod [])
 #parse_term "x ▿ y z" to (var 0).elim (var 1) |>.app <| var 2
 #parse_term "x \\/ y z" to (var 0).elim (var 1) |>.app <| var 2
 #parse_term "splitₚ List nil" to splitₚ .list nil

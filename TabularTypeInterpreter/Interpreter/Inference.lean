@@ -377,53 +377,50 @@ partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
     return ⟨Monotype.arr τa τb, t.lam⟩
   | .label l => return ⟨Monotype.floor (.label l), .label⟩
   | .unlabel e₁ e₂ =>
-    let ⟨Monotype.app (.prodOrSum Ξ μ) (.row (.cons ξ τ .nil) _), t₁⟩ ← infer e₁
+    let ⟨Monotype.app (.prodOrSum Ξ μ) (.row [(ξ, τ)] _), t₁⟩ ← infer e₁
       | throw $ .panic "expected a singleton product or sum"
     let t₂ ← check e₂ (ξ.floor)
     return ⟨τ, t₁.unlabel⟩
-  | .prod labelledTerms =>
-    by
-      rw [← TermPairList.ofList_left_inv_toList (MNs := labelledTerms)]
-      exact do
-      let x : (ξτs : List (Monotype × Monotype)) ×
-        ∀ MNξτ ∈ labelledTerms.toList.zip ξτs, let ((_, N), _, τ) := MNξτ; N.Typing τ ← by
-        induction labelledTerms.toList with
-        | nil => exact return ⟨[], nofun⟩
-        | cons MN tail ih =>
-          exact do
-          let ⟨ξτs, h⟩ ← ih
-          let ⟨.qual $ .mono ξ, _⟩ ← infer MN.fst -- TODO: Check that ξ has kind label, evaluate lam apps?
-            | throw $ .panic "expected a monotype for the label"
-          let ⟨.qual $ .mono τ, t⟩ ← infer MN.snd
-            | throw $ .panic "expected a monotype in the row"
-          return by
-            refine ⟨(ξ, τ) :: ξτs, ?h⟩
-            intro MNξτ mem
-            let ((M', N'), ξ', τ') := MNξτ
-            rw [List.zip_cons_cons] at mem
-            simp only
-            exact if h' : MN.snd = N' ∧ τ = τ' then by
-                rcases h' with ⟨rfl, rfl⟩
-                exact t
-              else by
-                let mem' : ((M', N'), ξ', τ') ∈ tail.zip ξτs := by
-                  match mem with
-                  | .head _ => match Classical.not_and_iff_or_not_not.mp h' with
-                    | .inl h'' => nomatch h''
-                    | .inr h'' => nomatch h''
-                  | .tail _ mem' => exact mem'
-                exact h _ mem'
-      return ⟨
-        (Monotype.prodOrSum .prod (.comm .non)).app (.row (.ofList x.fst) none),
-        Term.Typing.prod x.snd
-      ⟩
+  | .prod MNs =>
+    let rec f : (MNs : List (Term × Term)) → InferM
+      ((ξτs : List (Monotype × Monotype)) ×
+        ∀ MNξτ ∈ MNs.zip ξτs, let ((_, N), _, τ) := MNξτ; N.Typing τ)
+      | [] => return ⟨[], nofun⟩
+      | (M, N) :: MNs' => do
+        let ⟨ξτs, h⟩ ← f MNs'
+        let ⟨.qual $ .mono ξ, _⟩ ← infer M -- TODO: Check that ξ has kind label, evaluate lam apps?
+          | throw $ .panic "expected a monotype for the label"
+        let ⟨.qual $ .mono τ, t⟩ ← infer N
+          | throw $ .panic "expected a monotype in the row"
+        return by
+          refine ⟨(ξ, τ) :: ξτs, ?h⟩
+          intro MNξτ mem
+          let ((M', N'), ξ', τ') := MNξτ
+          rw [List.zip_cons_cons] at mem
+          simp only
+          exact if h' : N = N' ∧ τ = τ' then by
+              rcases h' with ⟨rfl, rfl⟩
+              exact t
+            else by
+              let mem' : ((M', N'), ξ', τ') ∈ MNs'.zip ξτs := by
+                match mem with
+                | .head _ => match Classical.not_and_iff_or_not_not.mp h' with
+                  | .inl h'' => nomatch h''
+                  | .inr h'' => nomatch h''
+                | .tail _ mem' => exact mem'
+              exact h _ mem'
+    let x ← f MNs
+    return ⟨
+      (Monotype.prodOrSum .prod (.comm .non)).app (.row x.fst none),
+      Term.Typing.prod x.snd
+    ⟩
   | .sum e₁ e₂ =>
     let ⟨.qual $ .mono ξ, _⟩ ← infer e₁
       | throw $ .panic "expected a monotype for the label"
     kind ξ .label
     let ⟨.qual $ .mono τ, t⟩ ← infer e₂
       | throw $ .panic "expected a monotype in the row"
-    return ⟨(Monotype.prodOrSum .sum (.comm .non)).app (.row (.cons ξ τ .nil) none), t.sum⟩
+    return ⟨(Monotype.prodOrSum .sum (.comm .non)).app (.row [(ξ, τ)] none), t.sum⟩
   | .prj e =>
     let ⟨Monotype.app (.prodOrSum .prod μ) ρ, t⟩ ← infer e
       | throw $ .panic "projection out of non-record term"
