@@ -4,14 +4,6 @@ import TabularTypeInterpreter.Interpreter.Resolution
 
 namespace TabularTypeInterpreter.Interpreter.Inference
 
--- Some placeholders for now:
-/-- type variables -/
-abbrev TypeVar := TId
-/-- term variables -/
-abbrev TermVar := MId
-/-- unification variables -/
-abbrev UniVar := Nat
-
 /-- helper abbreviation -/
 abbrev Set := Std.HashSet
 
@@ -21,39 +13,41 @@ Each type, term or existential variable can have at most a single declaration in
 Furthermore, the context is ordered; entries earlier in the context can not refer to later entries.
 -/
 inductive ContextItem where
-| typevar (α : TypeVar) (κ : Kind)
-| termvar (χ : TermVar) (σ : TypeScheme)
-| xunivar (ᾱ : UniVar) (κ : Kind)
-| sunivar (ᾱ : UniVar) (τ : Monotype)
-| mark (ᾱ : UniVar)
-| constraint (ψ : Monotype)
+  | typevar (α : TId) (κ : Kind)
+  | termvar (χ : MId) (σ : TypeScheme)
+  | xunivar (ᾱ : UId) (κ : Kind)
+  | sunivar (ᾱ : UId) (τ : Monotype)
+  | mark (ᾱ : UId)
+  | constraint (ψ : Monotype)
 deriving Inhabited
 
-instance : ToString ContextItem where toString
-| .typevar α κ => s!"{α} : {κ}"
-| .termvar χ σ => s!"{χ} : {σ.toString}"
-| .xunivar ᾱ κ => s!"{ᾱ} : {κ}"
-| .sunivar ᾱ τ => s!"{ᾱ} = {τ.toString}"
-| .mark ᾱ => s!"mark {ᾱ}"
-| .constraint ψ => toString ψ
+instance : ToString ContextItem where
+  toString
+    | .typevar α κ => s!"{α} : {κ}"
+    | .termvar χ σ => s!"{χ} : {σ.toString}"
+    | .xunivar ᾱ κ => s!"u{ᾱ} : {κ}"
+    | .sunivar ᾱ τ => s!"u{ᾱ} = {τ.toString}"
+    | .mark ᾱ => s!"mark u{ᾱ}"
+    | .constraint ψ => toString ψ
 
 /-- Equivalence for context items is entirely determined by the variable, since each must be uniquely declared.
 I believe we could derive this instance, but I want to be explicit just in case.
 -/
-instance : BEq ContextItem where beq
-| .typevar α₀ _, .typevar α₁ _ => α₀ == α₁
-| .termvar χ₀ _, .termvar χ₁ _ => χ₀ == χ₁
-| .xunivar ᾱ₀ _, .xunivar ᾱ₁ _ => ᾱ₀ == ᾱ₁
-| .sunivar ᾱ₀ _, .xunivar ᾱ₁ _ => ᾱ₀ == ᾱ₁
-| .mark ᾱ₀, .mark ᾱ₁ => ᾱ₀ == ᾱ₁
-| .constraint ψ₀, .constraint ψ₁ => sorry -- TODO
-| _, _ => false
+instance : BEq ContextItem where
+  beq
+    | .typevar α₀ _, .typevar α₁ _ => α₀ == α₁
+    | .termvar χ₀ _, .termvar χ₁ _ => χ₀ == χ₁
+    | .xunivar ᾱ₀ _, .xunivar ᾱ₁ _ => ᾱ₀ == ᾱ₁
+    | .sunivar ᾱ₀ _, .xunivar ᾱ₁ _ => ᾱ₀ == ᾱ₁
+    | .mark ᾱ₀, .mark ᾱ₁ => ᾱ₀ == ᾱ₁
+    | .constraint ψ₀, .constraint ψ₁ => sorry -- TODO
+    | _, _ => false
 
 abbrev Context := List ContextItem
 
 inductive InferError where
-| panic (message : String)
-| fail (message : String)
+  | panic (message : String)
+  | fail (message : String)
 deriving Inhabited
 
 instance : ToString InferError where
@@ -64,22 +58,23 @@ instance : ToString InferError where
 structure InferState where
   prog : Program
   Γ : Context := []
-  gen : StdGen := default
-deriving Inhabited
+  nextFresh : Nat
 
 abbrev InferM := EStateM InferError InferState
+
 def push (item : ContextItem) : InferM Unit := do
   let state@{ Γ .. } <- get
   set { state with Γ := item::Γ }
-def fresh : InferM UniVar := do
-  let state@{ gen .. } ← get
-  let (n, gen) := RandomGen.next gen
-  set { state with gen }
-  return n
-def freshType (κ : Kind): InferM Monotype := do
-  let x ← fresh
-  push $ .xunivar x κ
-  return .uvar x
+
+def fresh : InferM UId := do
+  let { nextFresh, .. } ← getModify fun st => { st with nextFresh := st.nextFresh.succ }
+  return { val := nextFresh }
+
+def freshType (κ : Kind) : InferM Monotype := do
+  let α ← fresh
+  push <| .xunivar α κ
+  return .uvar α
+
 -- TODO: Failures to find things should probably `panic!` since this should be caught by the parser.
 set_option linter.deprecated false in
 def getClassByName (name : String) : InferM ClassDeclaration := do
@@ -88,41 +83,49 @@ def getClassByName (name : String) : InferM ClassDeclaration := do
   let .some decl := decl?
     | throw $ .panic s!"unknown typeclass `{name}`"
   return decl
+
 def getClass (method : String) : InferM ClassDeclaration := do
   let { prog .. } ← get
   let decl? := prog.firstM (match · with | .class decl@{m ..} => Option.someIf decl (method == m) | _ => Option.none)
   let .some decl := decl?
     | throw $ .panic s!"unknown typeclass method `{method}`"
   return decl
+
 def getTypeAlias («alias» : String) : InferM TypeScheme := do
   let { prog .. } ← get
   let decl? := prog.firstM (match · with | .typeAlias a σ => Option.someIf σ («alias» == a) | _ => Option.none)
   let .some decl := decl?
     | throw $ .panic s!"unknown type alias `{«alias»}`"
   return decl
-def getKind (a : TypeVar) : InferM Kind := do
+
+def getKind (a : TId) : InferM Kind := do
   let { Γ .. } ← get
   let κ ← (getKind' Γ a).getDM (throw $ .panic "type variable not defined")
   return κ
-where getKind' (Γ : Context) (a : TypeVar) : Option Kind :=
-  match Γ with
-  | .nil => .none
-  | .cons (.typevar a' κ) Γ' => if a == a' then .some κ else getKind' Γ' a
-  | .cons _ Γ' => getKind' Γ' a
-def getType (χ : TermVar) : InferM TypeScheme := do
+where
+  getKind' (Γ : Context) (a : TId) : Option Kind :=
+    match Γ with
+    | .nil => .none
+    | .cons (.typevar a' κ) Γ' => if a == a' then .some κ else getKind' Γ' a
+    | .cons _ Γ' => getKind' Γ' a
+
+def getType (χ : MId) : InferM TypeScheme := do
   let { Γ .. } ← get
   let σ ← (getType' Γ χ).getDM (throw $ .panic "variable not defined")
   return σ
-  where getType' (Γ : Context) (χ : TermVar) : Option TypeScheme :=
+where
+  getType' (Γ : Context) (χ : MId) : Option TypeScheme :=
     match Γ with
     | .nil => .none
     | .cons (.termvar χ' σ) Γ' => if χ == χ' then .some σ else getType' Γ' χ
     | .cons _ Γ' => getType' Γ' χ
-def lookupUniVar (ᾱ : UniVar) : Context → Option ContextItem
-| .nil => .none
-| .cons item@(.xunivar ᾱ' _κ) Γ => if ᾱ == ᾱ' then .some item else lookupUniVar ᾱ Γ
-| .cons item@(.sunivar ᾱ' _τ) Γ => if ᾱ == ᾱ' then .some item else lookupUniVar ᾱ Γ
-| .cons _ Γ => lookupUniVar ᾱ Γ
+
+def lookupUniVar (ᾱ : UId) : Context → Option ContextItem
+  | .nil => .none
+  | .cons item@(.xunivar ᾱ' _κ) Γ => if ᾱ == ᾱ' then .some item else lookupUniVar ᾱ Γ
+  | .cons item@(.sunivar ᾱ' _τ) Γ => if ᾱ == ᾱ' then .some item else lookupUniVar ᾱ Γ
+  | .cons _ Γ => lookupUniVar ᾱ Γ
+
 /-- split the context into (before, after) based on the item's position. -/
 def split (item : ContextItem) : InferM (Context × Context) := do
   let { Γ .. } ← get
@@ -130,15 +133,20 @@ def split (item : ContextItem) : InferM (Context × Context) := do
   if let (after, _::before) := Γ.splitAt index then
     return (before, after)
   else panic! "malfunction in core `List.idxOf`"
+
 def before (item : ContextItem) : InferM Unit := do
   let state ← get
   let (before, _after) ← split item
   set { state with Γ := before }
+
 def withItem (item : ContextItem) (m : InferM a) : InferM a := do
   push item
   let x ← m
   before item
   return x
+
+def withItems (items : List ContextItem) (m : InferM a) : InferM a :=
+  items.foldl (fun m item => withItem item m) m
 
 mutual
 
@@ -664,8 +672,7 @@ partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
       | throw $ .panic "cons applied to non-monotype"
     let t₂ ← check e₂ (Monotype.list.app τ₁)
     return ⟨_, t₁.cons t₂⟩
-  | .fold =>
-    return sorry
+  | .fold i iₐ => return ⟨_, Term.Typing.fold⟩
   | .int n =>
     return ⟨_, Term.Typing.int⟩
   | .op _ e₁ e₂ =>

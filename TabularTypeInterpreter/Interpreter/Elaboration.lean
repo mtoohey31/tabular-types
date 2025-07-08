@@ -6,7 +6,6 @@ namespace TabularTypeInterpreter
 
 namespace Interpreter
 
-private
 abbrev ElabM := StateM Nat
 
 def freshId : ElabM «λπι».Id := do
@@ -589,7 +588,7 @@ inductive Typing : Term → TypeScheme → Type where
     Typing (M.splitₛ ϕ N) (((prodOrSum .sum (comm .comm)).app ρ₂).arr τ)
   | nil : Typing nil (list.app τ)
   | cons {τ : Monotype} : Typing M τ → Typing N (list.app τ) → Typing (cons M N) (list.app τ)
-  | fold : Typing fold (quant i .star (quant iₐ .star (qual (mono (arr (arr
+  | fold : Typing (fold i iₐ) (quant i .star (quant iₐ .star (qual (mono (arr (arr
       (.var iₐ) (arr (.var i) (.var iₐ))) (arr (.var iₐ) ((list.app (.var i)).arr (.var iₐ))))))))
   | int : Typing (int i) Monotype.int
   | op : Typing M Monotype.int → Typing N Monotype.int →
@@ -639,7 +638,7 @@ def Typing.elab : Typing M σ → ReaderT (HashMap String «λπι».Term) ElabM
     return (← splitso.elab).prodElim 1 |>.app (← M'ty.elab) |>.app <| ← Nty.elab
   | nil => return .nil
   | cons M'ty Nty => return .cons (← M'ty.elab) (← Nty.elab)
-  | fold => return .fold
+  | fold .. => return .fold
   | int (i := i) => return .int i
   | op M'ty Nty (o := o) => return .op o (← M'ty.elab) (← Nty.elab)
   | range => return .range
@@ -666,7 +665,7 @@ def Value.delab (V : Value) (σ : Interpreter.TypeScheme) : Option Interpreter.T
       let .arr τₐ (.arr (.app .list τₑ) _) := τ | none
       let FIs := match EIs with | .fold₁ h => h
       let M ← delab ⟨F, FIs⟩ <| τₐ.arr <| τₑ.arr τₐ
-      some <| .app .fold M
+      some <| .app (.fold { val := 0 } { val := 0 }) M
     | .app .fold _ => none -- Can't determine accumulator type.
   | .prodIntro Es =>
     let .app (.prodOrSum .prod _) (.row ξτ's _) := τ | none
@@ -693,11 +692,11 @@ def Value.delab (V : Value) (σ : Interpreter.TypeScheme) : Option Interpreter.T
     let M ← delab ⟨E', E'Is⟩ τ'
     let N ← delab ⟨F, FIs⟩ <| .qual <| .mono <| .app .list τ'
     return M.cons N
-  | .fold => some <| .fold
+  | .fold => some <| .fold { val := 0 } { val := 0 }
   | .int i => some <| .int i
-  | .range => some <| .range
+  | .range => some .range
   | .str s => some <| .str s
-  | .throw => some <| .throw
+  | .throw => some .throw
 termination_by sizeOf V.val
 
 end «λπι»

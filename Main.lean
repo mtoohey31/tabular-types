@@ -3,7 +3,7 @@ import TabularTypeInterpreter.Interpreter
 
 open IO FS
 open System
-open TabularTypeInterpreter.Interpreter Inference Term
+open TabularTypeInterpreter.Interpreter Inference Parser Term
 
 inductive Status where
   | ok
@@ -67,66 +67,91 @@ def Args.parse : List String → (optParam Args { }) → IO Args
 
     parse args { acc with files := files ++ [↑file] }
 
+structure MainState where
+  programState : ProgramState
+  program : Program
+
+abbrev MainM := StateT MainState IO
+
+def getProgram : MainM Program := MainState.program <$> get
+
+def pushProgram (e : ProgramEntry) : MainM Unit :=
+  fun st@{ program, .. } => return ((), { st with program := program ++ [e] })
+
+def liftInfer : InferM α → MainM (Except InferError α) := fun x st@{ programState, program, .. } =>
+  match x { nextFresh := programState.term.type.uvar.nextFresh, prog := program } with
+  | .ok a { nextFresh, .. } =>
+    return (.ok a, { st with programState := st.programState.updateTermNextFresh nextFresh })
+  | .error e { nextFresh, .. } =>
+    return (.error e, { st with programState := st.programState.updateTermNextFresh nextFresh })
+
+instance : MonadLift Parser.ParseM MainM where
+  monadLift
+    | x, st@{ programState, .. } => do
+      let (a, programState) := x programState
+      return (a, { st with programState })
+
+instance : MonadLift ElabM MainM where
+  monadLift
+    | x, st@{ programState, .. } => do
+      let (a, n) := x programState.term.mid.nextFresh
+      return (a, { st with programState := programState.updateTermNextFresh n })
+
 set_option linter.deprecated false in
-def main (args : List String) : IO UInt32 := do
+def main' (args : Args) : MainM Status := do
   let stdin ← getStdin
   let stdout ← getStdout
   let stderr ← getStderr
-  let args ← Args.parse args
 
-  let mut st : Parser.ProgramState := { }
-  let mut pgm : Program := []
   let mut defElabs := default
   for file in args.allFiles do
     let s ← readFile file
-    let (pgm!, st') := Parser.program s st
+    let pgm! ← Parser.program s
     match pgm! with
     | .error _ e =>
       stderr.putStrLn s!"parse error in {file}: {e}"
       return syntaxOrSemanticError
     | .ok _ pgm' =>
-      st := st'
       for e in pgm' do
         match e with
         | .def x σ? M =>
           let ⟨_, ty⟩ ← match σ? with
             | some σ =>
-              match check M σ { prog := pgm } with
-              | .error e _ =>
+              match ← liftInfer <| check M σ with
+              | .error e =>
                 stderr.putStrLn s!"type checking error in def {x}: {e}"
                 return syntaxOrSemanticError
-              | .ok res _ => pure ⟨σ, res⟩
+              | .ok res => pure ⟨σ, res⟩
             | none =>
-              match infer M { prog := pgm } with
-              | .error e _ =>
+              match ← liftInfer <| infer M with
+              | .error e =>
                 stderr.putStrLn s!"type checking error in def {x}: {e}"
                 return syntaxOrSemanticError
-              | .ok res _ => pure res
+              | .ok res => pure res
 
-          let (E, nextFresh) ← ty.elab defElabs st.term.mid.nextFresh
-          defElabs := defElabs.insert x E
-          st := st.updateTermNextFresh nextFresh
+          defElabs := defElabs.insert x <| ← ty.elab defElabs
         | .typeAlias a σ =>
-          if let .error e _ := inferKind σ { prog := pgm } then
+          if let .error e ← liftInfer <| inferKind σ then
             stderr.putStrLn s!"kind inference error in type alias {a}: {e}"
             return syntaxOrSemanticError
         | .class { TCₛs, TC, a, κ, σ, .. } =>
-          for e in pgm do
+          for e in ← getProgram do
             let .class { TC := TC', κ := κ', .. } := e | continue
             if TCₛs.contains TC' && κ ≠ κ' then
               stderr.putStrLn s!"superclass {TC'} of {TC} has kind {κ'} which does not match {κ}: {e}"
               return syntaxOrSemanticError
 
-          if let .error e _ := checkKind σ .star { prog := pgm, Γ := [.typevar a κ] } then
+          if let .error e ← liftInfer <| withItem (.typevar a κ) <| checkKind σ .star then
             stderr.putStrLn s!"kind checking error in class {TC}: {e}"
             return syntaxOrSemanticError
         | .instance as ψs TC τ M =>
           for ψ in ψs do
             -- TODO: We need to figure out kinds for as somehow...
-            if let .error e _ := checkKind ψ .constr { prog := pgm } then
+            if let .error e ← liftInfer <| checkKind ψ .constr then
               stderr.putStrLn s!"kind checking error in constraints of instance of {TC} for {τ}: {e}"
               return syntaxOrSemanticError
 
+          let pgm ← getProgram
           let some { TCₛs, a, κ, σ, .. : ClassDeclaration } := List.head? <| pgm.filterMap fun
               | .class decl@{ TC := TC', .. } => .someIf decl (TC == TC')
               | _ => none
@@ -134,32 +159,33 @@ def main (args : List String) : IO UInt32 := do
 
           for TCₛ in TCₛs do
             -- TODO: We need to figure out kinds for `as` somehow...
-            if let .error e _ := constraint (.app (.tc TCₛ) τ) { prog := pgm, Γ := ψs.map ContextItem.constraint } then
+            let items := ψs.map ContextItem.constraint
+            if let .error e ← liftInfer <| withItems items <| constraint (.app (.tc TCₛ) τ) then
               stderr.putStrLn s!"failed to solve superclass {TCₛ} in instance of {TC} for {τ}: {e}"
               return syntaxOrSemanticError
 
           -- TODO: We need to figure out kinds for `as` somehow...
-          if let .error e _ := checkKind τ κ { prog := pgm } then
+          if let .error e ← liftInfer <| checkKind τ κ then
             stderr.putStrLn s!"kind checking error in instance of {TC} for {τ}: {e}"
             return syntaxOrSemanticError
 
           -- TODO: We need to figure out kinds for `as` somehow...
-          if let .error e _ := check M (σ.subst τ a) { prog := pgm } then
+          if let .error e ← liftInfer <| check M (σ.subst τ a) then
             stderr.putStrLn s!"type checking error in instance of {TC} for {τ}: {e}"
             return syntaxOrSemanticError
 
-        pgm := pgm ++ [e]
+        pushProgram e
 
-  let evalTerm (s : String) : IO Status := do
-    match Parser.term s st with
+  let evalTerm (s : String) : MainM Status := do
+    match ← Parser.term s with
     | .error _ e =>
       stderr.putStrLn s!"parse error in term: {e}"
       return syntaxOrSemanticError
-    | .ok _ M => match infer M { prog := pgm } with
-      | .error e _ =>
+    | .ok _ M => match ← liftInfer <| infer M with
+      | .error e =>
         stderr.putStrLn s!"inference error in term: {e}"
         return syntaxOrSemanticError
-      | .ok ⟨σ, ty⟩ _ => match ty.elab defElabs st.term.mid.nextFresh |>.fst.eval with
+      | .ok ⟨σ, ty⟩ => match ← «λπι».Term.eval <$> ty.elab defElabs with
         | .error e =>
           stderr.putStrLn s!"eval error: {e}\nthis means there is a bug in a prior stage"
           Process.exit internalError
@@ -182,3 +208,14 @@ def main (args : List String) : IO UInt32 := do
 
       let _ ← evalTerm s
     return ok
+
+def main (args : List String) : IO UInt32 := do
+  let args ← Args.parse args
+  main' args |>.run' {
+    programState := {
+      term := {
+        mid := { nextFresh := 0 },
+        type := { id := { nextFresh := 0 }, uvar := { nextFresh := 0 } } }
+    },
+    program := []
+  }

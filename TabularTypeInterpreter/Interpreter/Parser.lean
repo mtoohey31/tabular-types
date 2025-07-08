@@ -127,20 +127,15 @@ structure TypeContext extends ProgramContext where
 deriving Inhabited
 
 structure IdState (n : Name) where
-  nextFresh : Nat := 0
+  nextFresh : Nat
   private invertedVars : InvertedVarTable (Id n) := .empty
-deriving Inhabited
 
-private
 structure UVarState where
-  nextFresh : Nat := 0
-deriving Inhabited
+  nextFresh : Nat
 
-private
 structure TypeState where
-  id : IdState `type := { }
-  uvar : UVarState := { }
-deriving Inhabited
+  private id : IdState `type
+  uvar : UVarState
 
 private
 abbrev TypeM := SimpleParserT Substring Char <| StateT TypeState <| StateM TypeContext
@@ -248,7 +243,7 @@ private
 def freshUVar : TypeM Monotype := do
   let { uvar := { nextFresh, .. }, .. } ← getModify fun st =>
     { st with uvar := { st.uvar with nextFresh := st.uvar.nextFresh + 1 } }
-  return .uvar nextFresh
+  return .uvar { val := nextFresh }
 
 private
 def typeId (inTerm allowFree : Bool) : TypeM Monotype := do
@@ -362,6 +357,14 @@ def typeScheme (inTerm allowFree : Bool) : TypeM (TypeScheme × VarTable TId) :=
 namespace Test
 
 local
+instance : OfNat UId n where
+  ofNat := { val := n }
+
+local
+instance : ToString UId where
+  toString | { val } => toString val
+
+local
 instance : OfNat TId n where
   ofNat := { val := n }
 
@@ -372,8 +375,10 @@ instance : ToString TId where
 local
 macro "#parse_type " input:str " to " expected:term : command =>
   `(#eval assertResultEq $input (α := TypeScheme)
-      (open TypeScheme in open QualifiedType in open Monotype in $expected)
-      <| Prod.fst <$> ((typeScheme true false <* endOfInput) $input { id := { nextFresh := 3 } } {
+      (open TypeScheme in open QualifiedType in open Monotype in $expected) <|
+      Prod.fst <$>
+        ((typeScheme true false <* endOfInput) $input
+          { id := { nextFresh := 3 }, uvar := { nextFresh := 0 } } {
           typeAliases := { "Option", "Bool" }
           classToMember := { ("Eq", "eq"), ("LE", "le") }
           typeVars := .ofList [("a", 0), ("b", 1), ("c", 2)] compare
@@ -428,9 +433,8 @@ structure TermContext extends TypeContext where
 deriving Inhabited
 
 structure TermState where
-  mid : IdState `term := { }
-  private type : TypeState := { }
-deriving Inhabited
+  mid : IdState `term
+  type : TypeState
 
 private
 abbrev TermM := SimpleParserT Substring Char <| StateT TermState <| ReaderM TermContext
@@ -619,7 +623,9 @@ def term' (greedy unlabel := true) (allowFree := false) : TermM Term := withErro
     <|> splitₛ <$> ((string "splits" <|> string "splitₛ") **> monotype false)
       <**> go false <**> go false
     <|> string "nil" *> pure nil
-    <|> string "fold" *> pure fold
+    <|> (do
+      let ((), xs) ← string "fold" *> (TermM.pushTypeVars ["fold$list", "fold$acc"] <| pure ())
+      return fold xs[0]! xs[1]!)
     <|> int <$> (String.toInt! ∘ String.mk ∘ Array.toList) <$> takeMany1 numeric
     <|> string "range" *> pure range
     <|> (str ∘ String.mk ∘ Array.toList ∘ Prod.fst) <$>
@@ -717,7 +723,13 @@ local
 macro "#parse_term " input:str " to " expected:term : command =>
   `(#eval assertResultEq $input (α := Term) (open Term in $expected) <|
       (term' <* endOfInput) $input
-        { mid := { nextFresh := 3 }, type := { id := { nextFresh := 3 } } }
+        {
+          mid := { nextFresh := 3 },
+          type := {
+            id := { nextFresh := 3 },
+            uvar := { nextFresh := 0 }
+          }
+        }
         {
           defs := { "map", "true" }
           classToMember := { ("Eq", "eq"), ("LE", "le") }
@@ -753,7 +765,7 @@ macro "#parse_term " input:str " to " expected:term : command =>
 #parse_term "x ▿ y z" to (var 0).elim (var 1) |>.app <| var 2
 #parse_term "x \\/ y z" to (var 0).elim (var 1) |>.app <| var 2
 #parse_term "splitₚ List nil" to splitₚ .list nil
-#parse_term "splitp List (fold)" to splitₚ .list fold
+#parse_term "splitp List (fold)" to splitₚ .list (fold 3 4)
 #parse_term "splitₛ List range y" to splitₛ .list range (var 1)
 #parse_term "splits List x y" to splitₛ .list (var 0) (var 1)
 #parse_term "\"\"" to str ""
@@ -776,8 +788,7 @@ end Test
 
 structure ProgramState where
   private ctx : ProgramContext := { }
-  term : TermState := { }
-deriving Inhabited
+  term : TermState
 
 def ProgramState.updateTermNextFresh (st : ProgramState) (nextFresh : Nat) :=
   { st with term := { st.term with mid := { st.term.mid with nextFresh } } }
@@ -862,6 +873,14 @@ where
 private
 def program' : ProgramM Program := ~*> Array.toList <$> sepBy ws programEntry <** endOfInput
 
-def program (s : String) (st : ProgramState) := program'.run s st
+abbrev ParseM := StateM ProgramState
 
-def term (s : String) (st : ProgramState) := term'.run s st.term { st.ctx with } |>.fst
+def program (s : String) : ParseM (Parser.Result (Error.Simple Substring Char) Substring Program) :=
+  program' s
+
+def term (s : String)
+  : ParseM (Parser.Result (Error.Simple Substring Char) Substring Term) := do
+  let st ← get
+  let (res, st') := term'.run s st.term { st.ctx with }
+  set { st with term := st' }
+  return res

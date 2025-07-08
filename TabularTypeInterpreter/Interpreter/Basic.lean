@@ -57,9 +57,11 @@ instance : ToString ProdOrSum where
 
 abbrev TId := Id `type
 
+abbrev UId := Id `uvar
+
 inductive Monotype where
   | var : TId → Monotype
-  | uvar : Nat → Monotype
+  | uvar : UId → Monotype
   | lam : TId → Kind → Monotype → Monotype
   | app : Monotype → Monotype → Monotype
   | arr : Monotype → Monotype → Monotype
@@ -387,7 +389,7 @@ inductive Term where
   | splitₛ : Monotype → Term → Term → Term
   | nil : Term
   | cons : Term → Term → Term
-  | fold : Term
+  | fold (i iₐ : TId) : Term
   | int : Int → Term
   | op : Op → Term → Term → Term
   | range : Term
@@ -611,9 +613,16 @@ def decidableEq (M₀ M₁ : Term) : Decidable (M₀ = M₁) := by
           | isFalse hN => isFalse (hN <| And.right <| cons.inj ·)
         | isFalse hM => isFalse (hM <| And.left <| cons.inj ·)
     all_goals exact isFalse nofun
-  | fold =>
+  | fold i₀ iₐ₀ =>
     cases M₁
-    case fold => exact isTrue rfl
+    case fold i₁ iₐ₁ =>
+      exact if hi : i₀ = i₁ then
+          if hiₐ : iₐ₀ = iₐ₁ then
+            isTrue <| fold.injEq .. |>.mpr ⟨hi, hiₐ⟩
+          else
+            isFalse (hiₐ <| And.right <| fold.inj ·)
+        else
+          isFalse (hi <| And.left <| fold.inj ·)
     all_goals exact isFalse nofun
   | int i₀ =>
     cases M₁
@@ -716,7 +725,7 @@ def toString [ToString TId] [ToString MId] (M : Term) (table := false) : String 
       if let some table := tableFromTerms M's then
         return table
     return s!"[{M's.map toString}]"
-  | fold => "fold"
+  | fold .. => "fold"
   | int i => s!"{i}"
   | op o M' N => s!"{M'.toString} {o} {N.toString}"
   | range => "range"
