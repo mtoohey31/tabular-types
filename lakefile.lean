@@ -8,7 +8,10 @@ require mathlib from git "https://github.com/leanprover-community/mathlib4.git" 
 require Parser from git "https://github.com/fgdorais/lean4-parser" @ "053703dce47f6cbe537635e5bf3e54c59bcccc78"
 
 package «tabular-type-interpreter» where
-  moreGlobalServerArgs := #[s!"-Dweak.lott.tex.output.dir={__dir__}/tex"]
+  moreGlobalServerArgs := #[
+    s!"-Dweak.lott.tex.output.dir={__dir__}/tex",
+    s!"-Dweak.tti.corePath={__dir__}/examples/core"
+  ]
 
 -- TODO: Figure out how to enable makeDeps without breaking build.
 
@@ -22,3 +25,4 @@ lean_lib TabularTypeInterpreter where
 
 lean_exe tti where
   root := `Main
+  moreLeanArgs := #[s!"-Dweak.tti.corePath={__dir__}/examples/core"]

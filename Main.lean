@@ -1,3 +1,4 @@
+import TabularTypeInterpreter.Elab.Options
 import TabularTypeInterpreter.Interpreter
 
 open IO FS
@@ -28,11 +29,35 @@ structure Args where
   table : Bool := false
   files : List FilePath := [ ]
   term : Option String := none
+  core : Bool := true
+
+def corePath := by_elab do
+  let opts ← Lean.MonadOptions.getOptions
+  let some path := opts.get? tti.corePath.name | throwError "'tti.corePath' variable should be set"
+  return Lean.mkStrLit path
+
+def coreFiles : List FilePath := List.map (FilePath.join corePath) [
+    "And.tt",
+    "Bool.tt",
+    "Const.tt",
+    "Eq.tt",
+    "flip.tt",
+    "is.tt",
+    "Unit.tt",
+    "Labels.tt",
+    "LabelsMatch.tt",
+    "LE.tt",
+    "Option.tt",
+    "List.tt"
+  ]
+
+def Args.allFiles (args : Args) := (if args.core then coreFiles else []) ++ args.files
 
 def Args.parse : List String → (optParam Args { }) → IO Args
   | [], acc => return acc
   | "--table" :: args, acc => parse args { acc with table := true }
   | "-e" :: term :: args, acc => parse args { acc with term }
+  | "--nocore" :: args, acc => parse args { acc with core := false }
   | "--" :: files', acc@{ files, .. } => return { acc with files := files ++ files'.map (↑·) }
   | file :: args, acc@{ files, .. } => do
     if file.get? 0 == some '-' then
@@ -52,7 +77,7 @@ def main (args : List String) : IO UInt32 := do
   let mut st : Parser.ProgramState := { }
   let mut pgm : Program := []
   let mut defElabs := default
-  for file in args.files do
+  for file in args.allFiles do
     let s ← readFile file
     let (pgm!, st') := Parser.program s st
     match pgm! with
