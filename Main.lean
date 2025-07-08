@@ -38,12 +38,12 @@ def corePath := by_elab do
 
 def coreFiles : List FilePath := List.map (FilePath.join corePath) [
     "And.tt",
+    "Unit.tt",
     "Bool.tt",
     "Const.tt",
     "Eq.tt",
     "flip.tt",
     "is.tt",
-    "Unit.tt",
     "Labels.tt",
     "LabelsMatch.tt",
     "LE.tt",
