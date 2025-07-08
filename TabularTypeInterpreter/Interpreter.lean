@@ -1,4 +1,5 @@
 import TabularTypeInterpreter.Interpreter.Basic
 import TabularTypeInterpreter.Interpreter.«λπι»
 import TabularTypeInterpreter.Interpreter.Elaboration
+import TabularTypeInterpreter.Interpreter.Inference
 import TabularTypeInterpreter.Interpreter.Parser

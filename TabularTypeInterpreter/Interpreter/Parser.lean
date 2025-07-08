@@ -126,10 +126,9 @@ structure TypeContext extends ProgramContext where
   typeVars : VarTable TId := .empty
 deriving Inhabited
 
-private
 structure IdState (n : Name) where
   nextFresh : Nat := 0
-  invertedVars : InvertedVarTable (Id n) := .empty
+  private invertedVars : InvertedVarTable (Id n) := .empty
 deriving Inhabited
 
 private
@@ -428,10 +427,9 @@ structure TermContext extends TypeContext where
   termVars : VarTable MId := .empty
 deriving Inhabited
 
-private
 structure TermState where
   mid : IdState `term := { }
-  type : TypeState := { }
+  private type : TypeState := { }
 deriving Inhabited
 
 private
@@ -578,7 +576,7 @@ def op : TermM «λπι».Op := withErrorMessage "expected binary operator" <|
 
 open Term in
 private partial
-def term (greedy unlabel := true) (allowFree := false) : TermM Term := withErrorMessage "expected term" do
+def term' (greedy unlabel := true) (allowFree := false) : TermM Term := withErrorMessage "expected term" do
   let M ← termId
     <|> (do
       let idsτ?s ← (char '\\' <|> char 'λ') **> sepBy (~*> char ',' <*~)
@@ -703,7 +701,7 @@ where
   typeScheme := Parser.typeScheme true allowFree
   monotype (greedy := true) : TermM Monotype := Parser.monotype true allowFree greedy
   indIds := ["l", "t", "rp", "ri", "rn"]
-  go (greedy unlabel := true) (allowFree := allowFree) := term greedy unlabel allowFree
+  go (greedy unlabel := true) (allowFree := allowFree) := term' greedy unlabel allowFree
 
 namespace Test
 
@@ -718,7 +716,7 @@ instance : ToString (Id n) where
 local
 macro "#parse_term " input:str " to " expected:term : command =>
   `(#eval assertResultEq $input (α := Term) (open Term in $expected) <|
-      (term <* endOfInput) $input
+      (term' <* endOfInput) $input
         { mid := { nextFresh := 3 }, type := { id := { nextFresh := 3 } } }
         {
           defs := { "map", "true" }
@@ -776,11 +774,13 @@ macro "#parse_term " input:str " to " expected:term : command =>
 
 end Test
 
-private
 structure ProgramState where
-  ctx : ProgramContext := { }
+  private ctx : ProgramContext := { }
   term : TermState := { }
 deriving Inhabited
+
+def ProgramState.updateTermNextFresh (st : ProgramState) (nextFresh : Nat) :=
+  { st with term := { st.term with mid := { st.term.mid with nextFresh } } }
 
 private
 abbrev ProgramM := SimpleParserT Substring Char <| StateM ProgramState
@@ -805,10 +805,10 @@ where
       throwUnexpectedWithMessage none s!"redeclaration of '{x}'"
     let σvt? ← option? (~*> char ':' **> typeScheme false false)
     if let some (σ, vt) := σvt? then
-      let M ← ~*> char '=' **> TermM.includeTypeVars vt term
+      let M ← ~*> char '=' **> TermM.includeTypeVars vt term'
       return .def x σ M
     else
-      let M ← ~*> char '=' **> term
+      let M ← ~*> char '=' **> term'
       return .def x none M
   typeAlias : ProgramM ProgramEntry := do
     let a ← string "type" **> unreservedTypeId
@@ -856,10 +856,12 @@ where
     let m ← ~*> string "where" **> unreservedTermId
     if m != expectedM then
       throwUnexpectedWithMessage none s!"incorrect member name '{m}', expected '{expectedM}'"
-    let M ← ~*> char '=' **> term
+    let M ← ~*> char '=' **> term'
     return .instance vt.values ψs.toList TC τ M
 
 private
-def program : ProgramM Program := ~*> Array.toList <$> sepBy ws programEntry <** endOfInput
+def program' : ProgramM Program := ~*> Array.toList <$> sepBy ws programEntry <** endOfInput
 
-def parse (s : String) := term.run s default default |>.fst
+def program (s : String) (st : ProgramState) := program'.run s st
+
+def term (s : String) (st : ProgramState) := term'.run s st.term { st.ctx with } |>.fst

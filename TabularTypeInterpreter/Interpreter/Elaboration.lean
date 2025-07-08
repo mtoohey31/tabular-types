@@ -7,14 +7,10 @@ namespace TabularTypeInterpreter
 namespace Interpreter
 
 private
-structure ElabState where
-  nextFresh : Nat
-
-private
-abbrev ElabM := StateM ElabState
+abbrev ElabM := StateM Nat
 
 def freshId : ElabM «λπι».Id := do
-  let { nextFresh } ← getModify fun st => { st with nextFresh := st.nextFresh + 1 }
+  let nextFresh ← getModify Nat.succ
   return { val := nextFresh }
 
 instance : Coe MId «λπι».Id where
@@ -559,7 +555,7 @@ inductive Typing : Term → TypeScheme → Type where
   | annot : Typing M σ → Typing (M.annot σ) σ
   | label : Typing (label s) (floor (.label s))
   | prod : (∀ MNξτ ∈ MNs.zip ξτs, let ((_, N), _, τ) := MNξτ; Typing N τ) →
-    Typing (prod MNs) ((prodOrSum .prod (comm .non)).app (row ξτs none))
+    Typing (prod MNs) ((prodOrSum .prod (comm .non)).app (row ξτs (some .star)))
   | sum {τ : Monotype} : Typing N τ →
     Typing (sum M N) ((prodOrSum .sum (comm .non)).app (row [(ξ, τ)] none))
   | unlabel : Typing M ((prodOrSum Ξ μ).app (row [(ξ, τ)] κ?)) → Typing (unlabel M N) τ
@@ -606,7 +602,7 @@ inductive Typing : Term → TypeScheme → Type where
 instance [Inhabited α] : Inhabited (Thunk α) where
   default := .mk fun _ => default
 
-def Typing.elab : Typing M σ → ReaderT (HashMap String (Thunk «λπι».Term)) ElabM «λπι».Term
+def Typing.elab : Typing M σ → ReaderT (HashMap String «λπι».Term) ElabM «λπι».Term
   | var (n := n) => return .var n
   | lam (i := i) M'ty => M'ty.elab <&> .lam i
   | app M'ty Nty => return (← M'ty.elab).app <| ← Nty.elab
@@ -649,7 +645,7 @@ def Typing.elab : Typing M σ → ReaderT (HashMap String (Thunk «λπι».Term
   | range => return .range
   | str (s := s) => return .str s
   | throw => return .throw
-  | «def» (s := s) => return (← read)[s]!.get
+  | «def» (s := s) => return (← read)[s]!
 
 end Term
 

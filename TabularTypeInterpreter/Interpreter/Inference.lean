@@ -55,10 +55,16 @@ inductive InferError where
 | panic (message : String)
 | fail (message : String)
 deriving Inhabited
+
+instance : ToString InferError where
+  toString
+    | .panic msg => s!"panic: {msg}"
+    | .fail msg => s!"fail: {msg}"
+
 structure InferState where
   prog : Program
-  Γ : Context
-  gen : StdGen
+  Γ : Context := []
+  gen : StdGen := default
 deriving Inhabited
 
 abbrev InferM := EStateM InferError InferState
@@ -152,8 +158,8 @@ def inferKind (σ : TypeScheme) : InferM Kind := open Monotype in do
         | _ => return none
       | throw <| .panic "couldn't find uvar in context"
     return κ?
-  | lam _ κ₀ τ =>
-    let κ₁ ← inferKind τ
+  | lam i κ₀ τ =>
+    let κ₁ ← withItem (.typevar i κ₀) <| inferKind τ
     return κ₀.arr κ₁
   | app τ₀ τ₁ =>
     let .arr κ₀ κ₁ ← inferKind τ₀ | throw <| .panic "type application of type with non-arrow kind"
@@ -581,12 +587,12 @@ partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
               exact h _ mem'
     let x ← f MNs
     return ⟨
-      (Monotype.prodOrSum .prod (.comm .non)).app (.row x.fst none),
+      (Monotype.prodOrSum .prod (.comm .non)).app (.row x.fst (some .star)),
       Term.Typing.prod x.snd
     ⟩
   | .sum e₁ e₂ =>
-    let ⟨.qual $ .mono ξ, _⟩ ← infer e₁
-      | throw $ .panic "expected a monotype for the label"
+    let ⟨.qual <| .mono <| .floor ξ, _⟩ ← infer e₁
+      | throw $ .panic "expected a floor for the label"
     checkKind ξ .label
     let ⟨.qual $ .mono τ, t⟩ ← infer e₂
       | throw $ .panic "expected a monotype in the row"
