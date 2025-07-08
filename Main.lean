@@ -33,8 +33,8 @@ structure Args where
 
 def corePath := by_elab do
   let opts ← Lean.MonadOptions.getOptions
-  let some path := opts.get? tti.corePath.name | throwError "'tti.corePath' variable should be set"
-  return Lean.mkStrLit path
+  let some (path : String) := opts.get? tti.corePath.name | throwError "'tti.corePath' variable should be set"
+  return Lean.mkStrLit <| ← FilePath.toString <$> realPath path
 
 def coreFiles : List FilePath := List.map (FilePath.join corePath) [
     "And.tt",
