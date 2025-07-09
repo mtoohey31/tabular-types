@@ -75,11 +75,11 @@ instance : Decidable (CommutativityPartialOrdering μ₀ μ₁) :=
 inductive RowEquivalence : Monotype → Monotype → Monotype → Type where
   | refl : RowEquivalence ρ μ ρ
   | trans : RowEquivalence ρ₀ μ ρ₁ → RowEquivalence ρ₁ μ ρ₂ → RowEquivalence ρ₀ μ ρ₂
-  | comm : List.Perm ξτs₀ ξτs₁ → RowEquivalence (row ξτs₀ κ?) (comm .non) (row ξτs₁ κ?)
-  | liftL : RowEquivalence ((lift ϕ).app (row ξτs κ?)) μ
-      (row (ξτs.map fun (ξ, τ) => (ξ, ϕ.app τ)) κ?)
-  | liftR : RowEquivalence (row (ξτs.map fun (ξ, τ) => (ξ, ϕ.app τ)) κ?) μ
-      ((lift ϕ).app (row ξτs κ?))
+  | comm : List.Perm ξτs₀ ξτs₁ → RowEquivalence (row ξτs₀ κ₀?) (comm .comm) (row ξτs₁ κ₁?)
+  | liftL : RowEquivalence ((lift ϕ).app (row ξτs κ₀?)) μ
+      (row (ξτs.map fun (ξ, τ) => (ξ, ϕ.app τ)) κ₁?)
+  | liftR : RowEquivalence (row (ξτs.map fun (ξ, τ) => (ξ, ϕ.app τ)) κ₀?) μ
+      ((lift ϕ).app (row ξτs κ₁?))
 
 namespace RowEquivalence
 

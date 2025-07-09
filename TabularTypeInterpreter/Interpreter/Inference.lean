@@ -412,7 +412,56 @@ namespace RowGraph
 end RowGraph
 end rowSolver
 
-def rowEquivalence (ρ₀ μ ρ₁ : Monotype) : InferM (ρ₀.RowEquivalence μ ρ₁) := sorry
+def rowEquivalence (ρ₀ μ ρ₁ : Monotype) : InferM (ρ₀.RowEquivalence μ ρ₁) := do
+  if h : ρ₀ = ρ₁ then
+    return by cases h; exact .refl
+
+  match ρ₀, ρ₁ with
+  | .app (.lift ϕ₀) (.row ξτs₀ κ₀?), .app (.lift ϕ₁) (.row ξτs₁ κ₁?) =>
+    if h : (ξτs₀.map fun (ξ, τ) => (ξ, ϕ₀.app τ)) = ξτs₁.map fun (ξ, τ) => (ξ, ϕ₁.app τ) then
+      return by
+        refine .trans .liftL ?_ (ρ₁ := .row (ξτs₀.map fun (ξ, τ) => (ξ, ϕ₀.app τ)) κ₀?)
+        rw [h]
+        exact .liftR
+    else if h' : μ = .comm .comm ∧
+        @List.isPerm _ instBEqOfDecidableEq (ξτs₀.map fun (ξ, τ) => (ξ, ϕ₀.app τ))
+          (ξτs₁.map fun (ξ, τ) => (ξ, ϕ₁.app τ)) then
+      return by
+        rcases h' with ⟨rfl, perm⟩
+        exact .trans .liftL <|
+          .trans (.comm (List.isPerm_iff.mp perm) (κ₀? := κ₀?) (κ₁? := κ₁?)) .liftR
+    else
+      throw <| .panic s!"{ρ₀} is not equivalent to {ρ₁} with respect to {μ}"
+  | .app (.lift ϕ) (.row ξτs₀ κ₀?), .row ξτs₁ κ₁? =>
+    if h : (ξτs₀.map fun (ξ, τ) => (ξ, ϕ.app τ)) = ξτs₁ then
+      return by cases h; exact .liftL
+    else if h' : μ = .comm .comm ∧
+        @List.isPerm _ instBEqOfDecidableEq (ξτs₀.map fun (ξ, τ) => (ξ, ϕ.app τ)) ξτs₁ then
+      return by
+        let ⟨eq, perm⟩ := h'
+        cases eq
+        exact .trans .liftL (.comm (List.isPerm_iff.mp perm) (κ₀? := κ₀?))
+    else
+      throw <| .panic s!"{ρ₀} is not equivalent to {ρ₁} with respect to {μ}"
+  | .row ξτs₀ _, .app (.lift ϕ) (.row ξτs₁ κ₁?) =>
+    if h : ξτs₀ = ξτs₁.map fun (ξ, τ) => (ξ, ϕ.app τ) then
+      return by cases h; exact .liftR
+    else if h' : μ = .comm .comm ∧
+        @List.isPerm _ instBEqOfDecidableEq ξτs₀ (ξτs₁.map fun (ξ, τ) => (ξ, ϕ.app τ)) then
+      return by
+        rcases h' with ⟨rfl, perm⟩
+        exact .trans (.comm (List.isPerm_iff.mp perm) (κ₁? := κ₁?)) .liftR
+    else
+      throw <| .panic s!"{ρ₀} is not equivalent to {ρ₁} with respect to {μ}"
+  | .row ξτs₀ _, .row ξτs₁ _ =>
+    if h : μ = .comm .comm ∧ @List.isPerm _ instBEqOfDecidableEq ξτs₀ ξτs₁ then
+      return by
+        rcases h with ⟨rfl, perm⟩
+        exact .comm <| List.isPerm_iff.mp perm
+    else
+      throw <| .panic s!"{ρ₀} is not equivalent to {ρ₁} with respect to {μ}"
+  | _, _ =>
+    throw <| .panic "non-equal and non (optionally lifted) concrete rows are not equivalent"
 
 attribute [refl] TypeScheme.Subtyping.refl
 
