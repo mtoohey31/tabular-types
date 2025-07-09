@@ -278,16 +278,22 @@ def prodOrSum : TypeM ProdOrSum := withErrorMessage "expected prod or sum" <|
 private
 def «▹» : TypeM String := string "|>" <|> string "▹"
 
+private
+def idsκs : TypeM (List (List String × Kind)) :=
+  Array.toList <$>
+    sepBy (~*> char ',' <*~)
+      (Prod.mk <$> (Array.toList <$> sepBy ws unreservedTypeId) <**> char ':' **> kind)
+    <** char '.' <*~
+
 open Monotype in
 private partial
 def monotype (inTerm allowFree : Bool) (greedy := true) : TypeM Monotype :=
   withErrorMessage "expected monotype" do
   let τ ← typeId inTerm allowFree
     <|> (do
-      let idsκs ← (char '\\' <|> char 'λ') **> sepBy (~*> char ',' <*~)
-        (Prod.mk <$> sepBy ws unreservedTypeId <**> char ':' **> kind) <** char '.' <*~
+      let idsκs ← (char '\\' <|> char 'λ') **> idsκs
       let (τ, idsκs) ← idsκs.foldr (init := ((·, [])) <$> go) fun (ids, κ) acc => do
-        let ((τ, idsκs), ids) ← TypeM.pushVars ids.toList acc
+        let ((τ, idsκs), ids) ← TypeM.pushVars ids acc
         return (τ, (ids, κ) :: idsκs)
       return idsκs.foldr (fun (ids, κ) τ' => ids.foldr (lam · κ ·) τ') τ)
     <|> (label ∘ String.mk ∘ Array.toList ∘ Prod.fst) <$>
@@ -342,11 +348,10 @@ open TypeScheme in
 private partial
 def typeScheme (inTerm allowFree : Bool) : TypeM (TypeScheme × VarTable TId) :=
   withErrorMessage "expected type scheme" <| (do
-      let idsκs ← (string "forall" <|> string "∀") **> sepBy (~*> char ',' <*~)
-        (Prod.mk <$> sepBy ws unreservedTypeId <**> char ':' **> liftM kind) <** char '.' <*~
+      let idsκs ← (string "forall" <|> string "∀") **> idsκs
       let ((σ, vt), idsκs) ← idsκs.foldr (init := ((·, [])) <$> typeScheme inTerm allowFree)
         fun (ids, κ) acc => do
-          let ((σvt, idsκs), ids) ← TypeM.pushVars ids.toList acc
+          let ((σvt, idsκs), ids) ← TypeM.pushVars ids acc
           return (σvt, (ids, κ) :: idsκs)
       return (idsκs.foldr (fun (ids, κ) σ' => ids.foldr (quant · κ ·) σ') σ, vt))
       <|> (do
@@ -849,26 +854,29 @@ where
 
     let ((σ, _), a) ← ~*> char ':' **> TypeM.pushVar a (typeScheme false false)
     return .class { TCₛs := TCₛs.toList, TC, a, κ, m, σ }
-  «instance» : ProgramM ProgramEntry := do
-    let _ ← string "instance" <*~
-    let (ψs, vt) ← liftM (m := TypeM) do
-      let ψs ← optionD (sepBy (~*> char ',' <*~) (monotype false true) <** «⇒») #[]
-      let { typeVars := vt, .. } ← get (m := StateM TypeContext)
-      return (ψs, vt)
-
+  «instance» : ProgramM ProgramEntry := set_option linter.deprecated false in do
+    let idsκs ← string "instance" **> option! ((string "forall" <|> string "∀") **> idsκs)
     let { classToMember, .. } ← read
-    let TC ← ~*> unreservedTypeId
-    let some expectedM := classToMember[TC]?
-      | throwUnexpectedWithMessage none s!"class '{TC}' is undeclared"
+    let init : TermM _ := do
+      let ψs ← optionD (sepBy (~*> char ',' <*~) (monotype false false) <** «⇒») #[]
+      let TC ← ~*> unreservedTypeId
+      let some expectedM := classToMember[TC]?
+        | throwUnexpectedWithMessage none s!"class '{TC}' is undeclared"
 
-    let τ ← ~*> liftM (m := TypeM) do
-      modify (m := StateM TypeContext) fun ctx => { ctx with typeVars := vt }
-      monotype false true
-    let m ← ~*> string "where" **> unreservedTermId
-    if m != expectedM then
-      throwUnexpectedWithMessage none s!"incorrect member name '{m}', expected '{expectedM}'"
-    let M ← ~*> char '=' **> term'
-    return .instance vt.values ψs.toList TC τ M
+      let τ ← ~*> monotype false false
+      let m ← ~*> string "where" **> unreservedTermId
+      if m != expectedM then
+        throwUnexpectedWithMessage none s!"incorrect member name '{m}', expected '{expectedM}'"
+      let M ← ~*> char '=' **> term'
+
+      return (ψs, TC, τ, M)
+
+    let ((ψs, TC, τ, M), aκs) ← liftM (m := TermM) <| idsκs.foldr (init := ((·, []) <$> init))
+      fun (ids, κ) acc => do
+        let ((res, aκs), as) ← TermM.pushTypeVars ids acc
+        return (res, as.map (·, κ) ++ aκs)
+
+    return .instance aκs ψs.toList TC τ M
 
 private
 def program' : ProgramM Program := ~*> Array.toList <$> sepBy ws programEntry <** endOfInput

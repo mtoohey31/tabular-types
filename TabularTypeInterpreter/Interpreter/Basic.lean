@@ -747,7 +747,7 @@ inductive ProgramEntry where
   | def (x : String) (σ? : Option TypeScheme) (M : Term)
   | typeAlias (a : String) (σ : TypeScheme)
   | class (decl : ClassDeclaration)
-  | instance (as : List TId) (ψs : List Monotype) (TC : String) (τ : Monotype) (M : Term)
+  | instance (aκs : List (TId × Kind)) (ψs : List Monotype) (TC : String) (τ : Monotype) (M : Term)
 deriving BEq
 
 variable {TC} in
@@ -759,10 +759,12 @@ instance [ToString TId] [ToString MId] : ToString ProgramEntry where
       let TCₛs := if TCₛs.length == 0 then "" else
         s!"{", ".intercalate <| TCₛs.map (s!"{·} {a}")} ⇒ "
       s!"class {TCₛs}{TC} {a} : {κ} where\n  {m} : {σ}"
-    | .instance _ ψs TC τ M =>
+    | .instance aκs ψs TC τ M =>
+      let aκs := if aκs.length == 0 then "" else
+        s!"∀ {", ".intercalate <| aκs.map fun (a, κ) => s!"{a} : {κ}"}. "
       let ψs := if ψs.length == 0 then "" else
         s!"{", ".intercalate <| ψs.map ToString.toString} ⇒ "
-      s!"instance {ψs}{TC} {τ} where\n  {M}"
+      s!"instance {aκs}{ψs}{TC} {τ} where\n  {M}"
 
 abbrev Program := List ProgramEntry
 

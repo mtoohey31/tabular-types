@@ -30,6 +30,7 @@ structure Args where
   files : List FilePath := [ ]
   term : Option String := none
   core : Bool := true
+  parseOnly : Bool := false
 
 def corePath := by_elab do
   let opts ← Lean.MonadOptions.getOptions
@@ -55,9 +56,10 @@ def Args.allFiles (args : Args) := (if args.core then coreFiles else []) ++ args
 
 def Args.parse : List String → (optParam Args { }) → IO Args
   | [], acc => return acc
-  | "--table" :: args, acc => parse args { acc with table := true }
   | "-e" :: term :: args, acc => parse args { acc with term }
+  | "--table" :: args, acc => parse args { acc with table := true }
   | "--nocore" :: args, acc => parse args { acc with core := false }
+  | "--parse-only" :: args, acc | "-p" :: args, acc => parse args { acc with parseOnly := true }
   | "--" :: files', acc@{ files, .. } => return { acc with files := files ++ files'.map (↑·) }
   | file :: args, acc@{ files, .. } => do
     if file.get? 0 == some '-' then
@@ -74,6 +76,9 @@ structure MainState where
 abbrev MainM := StateT MainState IO
 
 def getProgram : MainM Program := MainState.program <$> get
+
+def appendProgram (pgm : Program) : MainM Unit :=
+  fun st@{ program, .. } => return ((), { st with program := program ++ pgm })
 
 def pushProgram (e : ProgramEntry) : MainM Unit :=
   fun st@{ program, .. } => return ((), { st with program := program ++ [e] })
@@ -112,6 +117,10 @@ def main' (args : Args) : MainM Status := do
       stderr.putStrLn s!"parse error in {file}: {e}"
       return syntaxOrSemanticError
     | .ok _ pgm' =>
+      if args.parseOnly then
+        appendProgram pgm'
+        continue
+
       for e in pgm' do
         match e with
         | .def x σ? M =>
@@ -144,10 +153,10 @@ def main' (args : Args) : MainM Status := do
           if let .error e ← liftInfer <| withItem (.typevar a κ) <| checkKind σ .star then
             stderr.putStrLn s!"kind checking error in class {TC}: {e}"
             return syntaxOrSemanticError
-        | .instance as ψs TC τ M =>
+        | .instance aκs ψs TC τ M =>
+          let aκitems := aκs.map <| Function.uncurry ContextItem.typevar
           for ψ in ψs do
-            -- TODO: We need to figure out kinds for as somehow...
-            if let .error e ← liftInfer <| checkKind ψ .constr then
+            if let .error e ← liftInfer <| withItems aκitems <| checkKind ψ .constr then
               stderr.putStrLn s!"kind checking error in constraints of instance of {TC} for {τ}: {e}"
               return syntaxOrSemanticError
 
@@ -157,20 +166,17 @@ def main' (args : Args) : MainM Status := do
               | _ => none
             | unreachable!
 
+          let ψitems := ψs.map ContextItem.constraint
           for TCₛ in TCₛs do
-            -- TODO: We need to figure out kinds for `as` somehow...
-            let items := ψs.map ContextItem.constraint
-            if let .error e ← liftInfer <| withItems items <| constraint (.app (.tc TCₛ) τ) then
+            if let .error e ← liftInfer <| withItems (aκitems ++ ψitems) <| constraint (.app (.tc TCₛ) τ) then
               stderr.putStrLn s!"failed to solve superclass {TCₛ} in instance of {TC} for {τ}: {e}"
               return syntaxOrSemanticError
 
-          -- TODO: We need to figure out kinds for `as` somehow...
-          if let .error e ← liftInfer <| checkKind τ κ then
+          if let .error e ← liftInfer <| withItems aκitems <| checkKind τ κ then
             stderr.putStrLn s!"kind checking error in instance of {TC} for {τ}: {e}"
             return syntaxOrSemanticError
 
-          -- TODO: We need to figure out kinds for `as` somehow...
-          if let .error e ← liftInfer <| check M (σ.subst τ a) then
+          if let .error e ← liftInfer <| withItems (aκitems ++ ψitems) <| check M (σ.subst τ a) then
             stderr.putStrLn s!"type checking error in instance of {TC} for {τ}: {e}"
             return syntaxOrSemanticError
 
@@ -181,7 +187,11 @@ def main' (args : Args) : MainM Status := do
     | .error _ e =>
       stderr.putStrLn s!"parse error in term: {e}"
       return syntaxOrSemanticError
-    | .ok _ M => match ← liftInfer <| infer M with
+    | .ok _ M =>
+      if args.parseOnly then
+        return ok
+
+      match ← liftInfer <| infer M with
       | .error e =>
         stderr.putStrLn s!"inference error in term: {e}"
         return syntaxOrSemanticError

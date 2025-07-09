@@ -639,10 +639,10 @@ partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
     let c ← constraint <| (.concat ρₘ μ ρₙ ρ)
     return ⟨_, tₘ.elim tₙ c⟩
   | .member m =>
-    let classDecl ← getClass m
-    let τ ← freshType .star
+    let { TC, κ, .. } ← getClass m
+    let τ ← freshType κ
     -- TODO: push the constraint into the environment and get a proof for it.
-    let s : ((Monotype.tc classDecl.TC).app τ).ConstraintSolution := sorry
+    let s : ((Monotype.tc TC).app τ).ConstraintSolution := sorry
     let σ' : TypeScheme := sorry
     return ⟨σ', Term.Typing.member s⟩
   | .ind ϕ ρ l t rp ri rn M N =>
