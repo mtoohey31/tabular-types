@@ -442,7 +442,8 @@ inductive Subtyping : TypeScheme → TypeScheme → Type where
     Subtyping (arr τ₀ τ₁) (arr τ₂ τ₃)
   | qual {ψ₀ ψ₁ : Monotype} {γ₀ γ₁ : QualifiedType} : Subtyping ψ₁ ψ₀ → Subtyping γ₀ γ₁ →
     Subtyping (γ₀.qual ψ₀) (γ₁.qual ψ₁)
-  | scheme : Subtyping σ₀ (subst σ₁ (var i) i') → Subtyping (quant i κ σ₀) (quant i' κ σ₁)
+  | schemeL : Subtyping (subst σ₀ τ i) σ₁ → Subtyping (quant i κ σ₀) σ₁
+  | schemeR : Subtyping σ₀ σ₁ → Subtyping σ₀ (quant i κ σ₁)
   | prodOrSum {τ₀s τ₁s : List Monotype} :
     (∀ τ₀₁ ∈ List.zip τ₀s τ₁s, let (τ₀, τ₁) := τ₀₁; Subtyping τ₀ τ₁) →
     Subtyping ((prodOrSum Ξ μ).app (row (List.zip ξs τ₀s) κ?))
@@ -473,7 +474,7 @@ def Subtyping.elab : Subtyping σ₀ σ₁ → ElabM «λπι».Term
     let i ← freshId
     let i' ← freshId
     return .lam i <| .lam i' <| (← st'.elab).app <| .app (.var i) <| (← st.elab).app <| .var i'
-  | scheme σ₀₁'st => σ₀₁'st.elab
+  | schemeL st' | schemeR st' => st'.elab
   | prodOrSum τ₀₁sst (Ξ := Ξ) (τ₀s := τ₀s) (τ₁s := τ₁s) => do
     let i ← freshId
     match Ξ with

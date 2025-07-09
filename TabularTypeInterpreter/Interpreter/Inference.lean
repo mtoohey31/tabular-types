@@ -483,6 +483,13 @@ def subtype (σ₀ σ₁ : TypeScheme) : InferM (σ₀.Subtyping σ₁) :=
     return by rw [h]
 
   match σ₀, σ₁ with
+  | quant i κ σ₀', σ₁ =>
+    let α ← fresh
+    let st ← withItems [.mark α, .xunivar α κ] <| subtype (σ₀'.subst (.uvar α) i) σ₁
+    return st.schemeL
+  | σ₀, quant i κ σ₁' =>
+    let st ← withItem (.typevar i κ) <| subtype σ₀ σ₁'
+    return st.schemeR
   | uvar ᾱ, σ₁ =>
     -- TODO: Account for substitutions in the return type or something so that these can work?
     instantiateLeft ᾱ σ₁
@@ -498,13 +505,6 @@ def subtype (σ₀ σ₁ : TypeScheme) : InferM (σ₀.Subtyping σ₁) :=
     let sψ ← subtype ψ₁ ψ₀
     let sγ ← subtype γ₀ γ₁
     return sψ.qual sγ
-  | quant i₀ κ₀ σ₀, quant i₁ κ₁ σ₁ =>
-    if h : κ₀ = κ₁ then
-      let s ← subtype σ₀ (σ₁.subst (.var i₀) i₁)
-      return by
-        rewrite [h]
-        exact s.scheme
-    else throw $ .panic "Subtype of non-compatible scheme quantifiers"
   | app (prodOrSum .sum μ) (row [] (some .star)), σ => return .trans (.decay .comm) .never
   | app (prodOrSum Ξ₀ μ₀) ρ₀, app (prodOrSum Ξ₁ μ₁) ρ₁ =>
     if hΞ : Ξ₀ = Ξ₁ then
