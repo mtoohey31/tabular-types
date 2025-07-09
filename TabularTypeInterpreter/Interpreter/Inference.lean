@@ -645,8 +645,15 @@ partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
     let s : ((Monotype.tc classDecl.TC).app τ).ConstraintSolution := sorry
     let σ' : TypeScheme := sorry
     return ⟨σ', Term.Typing.member s⟩
-  | .ind ϕ ρ l t rn ri rp M N =>
-    return sorry
+  | .ind ϕ ρ l t rp ri rn M N =>
+    let .arr κ κ' ← inferKind ϕ | throw <| .panic "ind function with non-arrow kind"
+    if κ' ≠ .star then
+      throw <| .panic "ind function with non-star result kind"
+
+    let so ← constraint <| .ind ρ
+    let Mty ← check M _
+    let Nty ← check N _
+    return ⟨_, .ind (κ := κ) Mty Nty so⟩
   | .splitₚ ϕ e =>
     let ⟨Monotype.app (.prodOrSum .prod (.comm .comm)) ρ, t⟩ ← infer e
       | throw $ .panic "invalid splitₚ"
