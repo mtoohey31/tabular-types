@@ -727,7 +727,7 @@ theorem weakening (h: [[Δ, Δ'' ⊢ E : A]]) (wf: [[⊢ Δ, Δ', Δ'']]): [[Δ,
   case equiv E A B h AB ih =>
     have EtyA := ih wf rfl
     exact EtyA.equiv <| AB.weakening wf.EnvironmentTypeWellFormedness_of
-  all_goals try aesop (add safe constructors Kinding, unsafe constructors Typing, safe forward Kinding.weakening) (config := { enableSimp := false }); done
+  all_goals try aesop (add safe constructors Kinding, unsafe constructors Typing, safe forward Kinding.weakening) (config := { enableSimp := false })
 
 open Environment in
 theorem Kinding_of (EtyA : [[Δ ⊢ E : A]]) : [[ Δ ⊢ A: * ]] := by
