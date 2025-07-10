@@ -1,2 +1,0 @@
-import TabularTypeInterpreter.Semantics.ClassEnvironment.Basic
-import TabularTypeInterpreter.Semantics.ClassEnvironment.WellFormedness

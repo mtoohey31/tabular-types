@@ -1,2 +1,0 @@
-import TabularTypeInterpreter.Semantics.TypeEnvironment.Basic
-import TabularTypeInterpreter.Semantics.TypeEnvironment.WellFormednessAndElaboration
