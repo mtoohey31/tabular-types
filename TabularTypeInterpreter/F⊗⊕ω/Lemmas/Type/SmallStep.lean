@@ -1,4 +1,6 @@
+import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Type.Equivalence
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Type.SmallStep
+import TabularTypeInterpreter.«F⊗⊕ω».Tactics.Basic
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
 

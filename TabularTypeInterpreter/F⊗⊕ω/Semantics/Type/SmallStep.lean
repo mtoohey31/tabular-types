@@ -1,9 +1,7 @@
 import Lott.Elab.ImpliesJudgement
 import Lott.Elab.NotJudgement
 import TabularTypeInterpreter.Data.List
-import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Type.Equivalence
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Type
-import TabularTypeInterpreter.«F⊗⊕ω».Tactics.Basic
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
 
