@@ -205,6 +205,18 @@ theorem TermVarInEnvironment_of (xInDomΔ : [[x ∈ dom(Δ)]]) : ∃ T, [[x : T 
 end TermVarInDom
 namespace TypeVarInEnvironment
 
+theorem deterministic (aK₁inΔ : [[a : K₁ ∈ Δ]]) (aK₂inΔ : [[a : K₂ ∈ Δ]]) : K₁ = K₂ :=
+  match aK₁inΔ with
+  | .head =>
+    let .head := aK₂inΔ
+    rfl
+  | .typeVarExt aK₁inΔ' ne => match aK₂inΔ with
+    | .head => nomatch ne
+    | .typeVarExt aK₂inΔ' _ => aK₁inΔ'.deterministic aK₂inΔ'
+  | .termVarExt aK₁inΔ' =>
+    let .termVarExt aK₂inΔ' := aK₂inΔ
+    aK₁inΔ'.deterministic aK₂inΔ'
+
 theorem eq_of (aKinΔ : [[a : K ∈ Δ]]) : ∃ Δ' Δ'', Δ = [[(Δ', a : K, Δ'')]] := by
   match aKinΔ with
   | .head => exact ⟨_, .empty, rfl⟩
@@ -308,6 +320,10 @@ theorem TypeVar_subst: [[ a: K ∈ Δ[A/a'] ]] ↔ [[ a: K ∈ Δ ]] := by
     aesop (add norm Environment.TypeVar_subst, unsafe cases TypeVarInEnvironment, unsafe constructors TypeVarInEnvironment)
 
 theorem TermVar_drop : [[ a: K ∈ Δ, x: T, Δ' ]] → [[ a: K ∈ Δ, Δ' ]] := by
+  induction Δ' <;>
+    aesop (add norm Environment.append, unsafe constructors TypeVarInEnvironment, safe cases TypeVarInEnvironment)
+
+theorem TypeVar_drop : [[a : K ∈ Δ, a' : K', Δ']] → a ≠ a' → [[a : K ∈ Δ, Δ']] := by
   induction Δ' <;>
     aesop (add norm Environment.append, unsafe constructors TypeVarInEnvironment, safe cases TypeVarInEnvironment)
 

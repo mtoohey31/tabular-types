@@ -67,7 +67,7 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
         let VE' : Value := ⟨E', E'IsValue⟩
         have : E' = VE'.1 := rfl
         have A'Blc := E'tyA'arrB.TypeVarLocallyClosed_of
-        have ⟨_, _, VE'eq⟩ := VE'.canonical_form_of_arr E'tyA'arrB E'tyA'arrB.TypeVarLocallyClosed_of
+        have ⟨_, _, VE'eq⟩ := VE'.canonical_form_of_arr E'tyA'arrB
         rw [this, VE'eq]
         exact .inl <| .intro _ <| .lamApp (V := ⟨F, FIsValue⟩)
   · case typeLam => exact .inr .typeLam
@@ -76,7 +76,7 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
     | .inr E'IsValue =>
       let V : Value := ⟨E', E'IsValue⟩
       have : E' = V.1 := rfl
-      have ⟨_, _, Veq⟩ := V.canonical_form_of_forall E'ty E'ty.TypeVarLocallyClosed_of
+      have ⟨_, _, Veq⟩ := V.canonical_form_of_forall E'ty
       rw [this, Veq]
       exact .inl <| .intro _ <| .typeLamApp
   · case prodIntro n E' A wf E'ty ih => match progress.fold E'ty (fun i mem => ih i mem rfl) with
@@ -101,7 +101,7 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
     | .inr E'IsValue =>
       let V : Value := ⟨E', E'IsValue⟩
       have : E' = V.1 := rfl
-      have ⟨_, Veq⟩ := V.canonical_form_of_prod E'ty E'ty.TypeVarLocallyClosed_of
+      have ⟨_, Veq⟩ := V.canonical_form_of_prod E'ty
       rw [this, Veq]
       exact .inl <| .intro _ <| .prodElimIntro mem
   · case sumIntro ih => match ih rfl with
@@ -111,7 +111,7 @@ theorem progress (EtyA : [[ε ⊢ E : A]]) : (∃ E', [[E -> E']]) ∨ E.IsValue
     | .inl ⟨E'', E'toE''⟩ => exact .inl <| .intro _ <| .sumElimL E'toE''
     | .inr E'IsValue =>
       let VE' : Value := ⟨E', E'IsValue⟩
-      have ⟨n', mem, VE'', VE'_eq⟩ := VE'.canonical_form_of_sum E'ty E'ty.TypeVarLocallyClosed_of
+      have ⟨n', mem, VE'', VE'_eq⟩ := VE'.canonical_form_of_sum E'ty
       cases VE'_eq
       match progress.fold Fty (fun i mem => ih₂ i mem rfl) with
       | .inl ⟨j, ⟨_, jltn, _⟩, IsValue, F', toF'⟩ =>

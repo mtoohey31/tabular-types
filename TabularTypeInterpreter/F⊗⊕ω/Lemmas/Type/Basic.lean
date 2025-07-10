@@ -99,6 +99,11 @@ theorem TypeVar_open_comm (A : «Type»)
   : m ≠ n → (A.TypeVar_open a m).TypeVar_open a' n = (A.TypeVar_open a' n).TypeVar_open a m := by
   induction A using rec_uniform generalizing m n <;> aesop (add simp TypeVar_open)
 
+theorem TypeVar_open_TypeVar_subst_var_comm : a ≠ a'' →
+    TypeVar_open (TypeVar_subst A a (.var (.free a'))) a'' n =
+      TypeVar_subst (A.TypeVar_open a'' n) a (.var (.free a')) := by
+  induction A using rec_uniform generalizing n <;> aesop (add simp [TypeVar_open, TypeVar_subst])
+
 theorem TypeVar_open_TypeVar_multi_open_comm (mlen : m ≤ n)
   : TypeVar_multi_open (TypeVar_open A a n) a' m =
     TypeVar_open (TypeVar_multi_open A a' m) a n := by
@@ -560,6 +565,26 @@ theorem aux_of : TypeVarLocallyClosed A → TypeVarLocallyClosed_aux A := by
 
 -- thank you matthew!!!
 theorem aux_iff : (TypeVarLocallyClosed_aux A ↔ A.TypeVarLocallyClosed) := ⟨of_aux, aux_of⟩
+
+theorem not_mem_freeTypeVars_TypeVar_open_dec
+  : TypeVarLocallyClosed A (n + 1) → a ∉ freeTypeVars (TypeVar_open A a n) → TypeVarLocallyClosed A n := by
+  induction A using rec_uniform generalizing n
+  case var =>
+    rw [TypeVar_open]
+    split
+    · case isTrue h =>
+      cases h
+      rw [freeTypeVars]
+      intro _ nmem
+      nomatch List.not_mem_singleton.mp nmem
+    · case isFalse h =>
+      intro Alc nmem
+      match Alc with
+      | var_free => exact var_free
+      | var_bound h' =>
+        exact var_bound <|
+          Nat.lt_of_le_of_ne (Nat.le_of_lt_succ h') (h <| TypeVar.bound.injEq .. |>.mpr ·.symm)
+  all_goals aesop (add simp [TypeVar_open, freeTypeVars], unsafe cases TypeVarLocallyClosed, safe constructors TypeVarLocallyClosed)
 
 end TypeVarLocallyClosed
 

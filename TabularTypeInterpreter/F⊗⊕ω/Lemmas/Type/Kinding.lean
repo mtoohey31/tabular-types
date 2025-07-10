@@ -128,7 +128,64 @@ theorem TermVar_drop (kT: [[ Δ, x: T', Δ'' ⊢ T: K ]]): [[ Δ, Δ'' ⊢ T: K 
     simp_all [append]
   all_goals aesop (add safe constructors Kinding) (config := { enableSimp := false })
 
--- def substAuxCondition Δ_ :=
+open «Type» in
+theorem TypeVar_drop_of_not_mem_freeTypeVars (Aki : [[Δ, a : K, Δ' ⊢ A : K']])
+  (aninA : a ∉ A.freeTypeVars) : [[Δ, Δ' ⊢ A : K']] := by
+  match Aki with
+  | var aK'in =>
+    rw [freeTypeVars] at aninA
+    exact var <| aK'in.TypeVar_drop <| Ne.symm <| List.not_mem_singleton.mp aninA
+  | lam I A'ki =>
+    apply lam <| a :: I
+    intro a' a'nin
+    let ⟨ane, a'ninI⟩ := List.not_mem_cons.mp a'nin
+    specialize A'ki a' a'ninI
+    rw [← Environment.append] at A'ki ⊢
+    rw [freeTypeVars] at aninA
+    exact TypeVar_drop_of_not_mem_freeTypeVars A'ki <|
+      not_mem_freeTypeVars_TypeVar_open_intro aninA ane.symm
+  | app A'ki Bki =>
+    rw [freeTypeVars] at aninA
+    let ⟨aninA', aninB⟩ := List.not_mem_append'.mp aninA
+    exact app (TypeVar_drop_of_not_mem_freeTypeVars A'ki aninA')
+      (TypeVar_drop_of_not_mem_freeTypeVars Bki aninB)
+  | scheme I A'ki =>
+    apply scheme <| a :: I
+    intro a' a'nin
+    let ⟨ane, a'ninI⟩ := List.not_mem_cons.mp a'nin
+    specialize A'ki a' a'ninI
+    rw [← Environment.append] at A'ki ⊢
+    rw [freeTypeVars] at aninA
+    exact TypeVar_drop_of_not_mem_freeTypeVars A'ki <|
+      not_mem_freeTypeVars_TypeVar_open_intro aninA ane.symm
+  | arr A'ki Bki =>
+    rw [freeTypeVars] at aninA
+    let ⟨aninA', aninB⟩ := List.not_mem_append'.mp aninA
+    exact arr (TypeVar_drop_of_not_mem_freeTypeVars A'ki aninA')
+      (TypeVar_drop_of_not_mem_freeTypeVars Bki aninB)
+  | list A'ki (A := A') =>
+    rw [freeTypeVars, List.mapMem_eq_map] at aninA
+    apply list
+    intro i mem
+    apply TypeVar_drop_of_not_mem_freeTypeVars <| A'ki i mem
+    apply List.not_mem_flatten.mp aninA
+    rw [List.map_map, ← Std.Range.map]
+    exact Std.Range.mem_map_of_mem mem
+  | listApp A'ki Bki =>
+    rw [freeTypeVars] at aninA
+    let ⟨aninA', aninB⟩ := List.not_mem_append'.mp aninA
+    exact listApp (TypeVar_drop_of_not_mem_freeTypeVars A'ki aninA')
+      (TypeVar_drop_of_not_mem_freeTypeVars Bki aninB)
+  | prod A'ki =>
+    rw [freeTypeVars] at aninA
+    exact prod <| TypeVar_drop_of_not_mem_freeTypeVars A'ki aninA
+  | sum A'ki =>
+    rw [freeTypeVars] at aninA
+    exact sum <| TypeVar_drop_of_not_mem_freeTypeVars A'ki aninA
+termination_by sizeOf A
+decreasing_by
+  all_goals simp_arith
+  exact Nat.le_of_lt <| List.sizeOf_lt_of_mem <| Std.Range.mem_map_of_mem mem
 
 -- NOTE we could use a weaker wf: wfτ
 theorem substAux (kT: [[ Δ, a: K, Δ' ⊢ T: K' ]]) (h1: a ∉ Δ'.typeVarDom) (h2: ∀a ∈ Δ'.typeVarDom, a ∉ Δ.typeVarDom) (kA: [[ Δ ⊢ A: K ]]): [[ (Δ , Δ'[A/a]) ⊢ T[A/a] : K' ]] := by
@@ -200,6 +257,82 @@ theorem subst' (kT: [[ Δ, a: K, Δ' ⊢ T: K' ]]) (wf: [[ ⊢ Δ, a: K, Δ' ]])
 theorem subst (kT: [[ Δ, a: K ⊢ T: K' ]]) (wf: [[ ⊢ Δ, a: K ]]) (kA: [[ Δ ⊢ A: K ]]): [[ Δ ⊢ T[A/a]: K' ]] :=
  by apply subst' (Δ' := Environment.empty) <;> assumption
 
+theorem Environment_TypeVar_subst_swap (Aki : [[Δ, Δ'[B / a] ⊢ A : K']])
+  : [[Δ, Δ'[B' / a] ⊢ A : K']] := by
+  generalize Δ''eq : [[Δ, Δ'[B / a] ]] = Δ'' at Aki
+  induction Aki generalizing Δ' <;> cases Δ''eq
+  case var ain =>
+    apply var
+    match ain.append_elim with
+    | .inl ⟨anin, ain'⟩ =>
+      apply ain'.weakening_r
+      intro ain''
+      apply anin
+      rw [Environment.TypeVarInDom, Environment.typeVarDom_TypeVar_subst] at ain'' ⊢
+      exact ain''
+    | .inr ain' =>
+      exact .weakening_l <| TypeVarInEnvironment.TypeVar_subst.mpr <|
+        TypeVarInEnvironment.TypeVar_subst.mp ain'
+  case lam I _ ih =>
+    apply lam I
+    intro a' a'nin
+    rw [← Environment.append, ← Environment.TypeVar_subst]
+    apply ih a' a'nin
+    rw [Environment.TypeVar_subst, Environment.append]
+  case scheme I _ ih =>
+    apply scheme I
+    intro a' a'nin
+    rw [← Environment.append, ← Environment.TypeVar_subst]
+    apply ih a' a'nin
+    rw [Environment.TypeVar_subst, Environment.append]
+  all_goals aesop (add safe constructors Kinding)
+
+theorem TypeVar_subst_var (Aki : [[Δ, a : K, Δ' ⊢ A : K']]) (a'ninΔ : [[a' ∉ dom(Δ)]])
+  (aninΔ' : [[a ∉ dom(Δ')]]) (a'ninΔ' : [[a' ∉ dom(Δ')]])
+  : [[Δ, a' : K, Δ' ⊢ A[a' / a] : K']] := by
+  generalize Δ''eq : [[Δ, a : K, Δ']] = Δ'' at Aki
+  induction Aki generalizing Δ' <;> cases Δ''eq <;> simp [Type.TypeVar_subst]
+  case var a''in =>
+    split
+    · case isTrue h =>
+      cases h
+      apply var
+      match a''in.append_elim with
+      | .inl ⟨_, .head⟩ => exact .weakening_r a'ninΔ' .head
+      | .inr a''in' => nomatch aninΔ' a''in'.TypeVarInDom_of
+    · case isFalse h =>
+      apply var
+      match a''in.append_elim with
+      | .inl ⟨a''nin, .head⟩ => nomatch h
+      | .inl ⟨a''nin, .typeVarExt a''in' ne⟩ =>
+        let f := Environment.TypeVarNotInDom
+        apply TypeVarInEnvironment.weakening_r a''nin <| a''in'.typeVarExt _
+        intro aeq
+        cases aeq
+        nomatch a'ninΔ a''in'.TypeVarInDom_of
+      | .inr a''in' => exact a''in'.weakening_l
+  case lam I _ ih =>
+    apply lam <| a :: a' :: I
+    intro a'' a''nin
+    let ⟨ane, a''nina'I⟩ := List.not_mem_cons.mp a''nin
+    let ⟨a'ne, a''ninI⟩ := List.not_mem_cons.mp a''nina'I
+    rw [← Environment.append, Type.TypeVar_open_TypeVar_subst_var_comm ane.symm]
+    apply ih a'' a''ninI _ _ rfl
+    all_goals rw [Environment.TypeVarNotInDom, Environment.TypeVarInDom, Environment.typeVarDom]
+    · exact List.not_mem_cons.mpr ⟨ane.symm, aninΔ'⟩
+    · exact List.not_mem_cons.mpr ⟨a'ne.symm, a'ninΔ'⟩
+  case scheme I _ ih =>
+    apply scheme <| a :: a' :: I
+    intro a'' a''nin
+    let ⟨ane, a''nina'I⟩ := List.not_mem_cons.mp a''nin
+    let ⟨a'ne, a''ninI⟩ := List.not_mem_cons.mp a''nina'I
+    rw [← Environment.append, Type.TypeVar_open_TypeVar_subst_var_comm ane.symm]
+    apply ih a'' a''ninI _ _ rfl
+    all_goals rw [Environment.TypeVarNotInDom, Environment.TypeVarInDom, Environment.typeVarDom]
+    · exact List.not_mem_cons.mpr ⟨ane.symm, aninΔ'⟩
+    · exact List.not_mem_cons.mpr ⟨a'ne.symm, a'ninΔ'⟩
+  all_goals aesop (add safe constructors Kinding)
+
 theorem Type_open_preservation' {A : «Type»}
   (Aki : Kinding [[(Δ, a : K, Δ')]] (A.TypeVar_open a n) K') (h1: a ∉ Δ'.typeVarDom) (h2: ∀a ∈ Δ'.typeVarDom, a ∉ Δ.typeVarDom) (aninfvA : a ∉ A.freeTypeVars)
   (Bki : [[Δ ⊢ B : K]]) : Kinding [[(Δ, (Δ' [B / a]))]] (A.Type_open B n) K' := by
@@ -209,6 +342,146 @@ theorem Type_open_preservation' {A : «Type»}
 theorem Type_open_preservation {A : «Type»}
   (Aki : Kinding [[(Δ, a : K)]] (A.TypeVar_open a n) K') (aninfvA : a ∉ A.freeTypeVars)
   (Bki : [[Δ ⊢ B : K]]) : Kinding Δ (A.Type_open B n) K' := Type_open_preservation' (Δ' := [[ ε ]]) Aki (by simp_all [Environment.typeVarDom]) nofun aninfvA Bki
+
+theorem Type_open_preservation'' {A : «Type»}
+  (Aki : Kinding [[(Δ, a : K, Δ')]] (A.TypeVar_open a n) K') (ΔaΔ'wf : [[⊢ Δ, a : K, Δ']])
+  (aninfvA : a ∉ A.freeTypeVars) (Bki : [[Δ ⊢ B : K]])
+  : Kinding [[(Δ, (Δ'[B / a]))]] (A.Type_open B n) K' :=
+  Type_open_preservation' Aki (ΔaΔ'wf.append_typeVar_fresh_r _ <| .head _)
+    (ΔaΔ'wf.append_typeVar_fresh_l · · <| ·.tail _) aninfvA Bki
+
+private
+theorem foldr_injection
+  (h₀ : Kind.arr K₁' (List.foldr Kind.arr [[K₁ ↦ K₂]] Ks₁) = Kind.arr K₂' (List.foldr Kind.arr [[K₃ ↦ K₄]] Ks₂))
+  (h₁ : Ks₁.length = Ks₂.length) : K₁ = K₃ := by
+  induction Ks₁ generalizing K₁' K₂' Ks₂ with
+  | nil =>
+    rw [List.length_nil] at h₁
+    cases List.eq_nil_of_length_eq_zero h₁.symm
+    rw [List.foldr, List.foldr] at h₀
+    injections eq
+  | cons _ _ ih =>
+    rcases List.exists_cons_of_length_eq_add_one h₁.symm with ⟨List.length_cons_, _, rfl⟩
+    rw [List.foldr, List.foldr] at h₀
+    injection h₀ with _ h₀'
+    apply ih h₀'
+    rw [List.length_cons, List.length_cons] at h₁
+    injections h₁
+
+theorem arr_deterministic' (Aki₁ : Kinding Δ A (List.foldr Kind.arr [[K₁ ↦ K₂]] Ks₁))
+  (Aki₂ : Kinding Δ A (List.foldr Kind.arr [[K₃ ↦ K₄]] Ks₂))
+  (lengths_eq : Ks₁.length = Ks₂.length := by rfl) : K₁ = K₃ := by
+  rw [autoParam] at lengths_eq
+  cases Ks₁ <;> cases Ks₂ <;> try cases lengths_eq
+  case nil =>
+    rw [List.foldr] at Aki₁ Aki₂
+    cases Aki₁ <;> cases Aki₂
+    case var.var ain₁ ain₂ => exact And.left <| Kind.arr.inj <| ain₁.deterministic ain₂
+    case lam.lam => rfl
+    case app.app K'₁ _ _ A'ki₁ K'₂ _ A'ki₂ =>
+      exact A'ki₁.arr_deterministic' A'ki₂ rfl (Ks₁ := [K'₁]) (Ks₂ := [K'₂])
+    case scheme.scheme I A'ki₁ I' A'ki₂ =>
+      let ⟨a, anin⟩ := I ++ I' |>.exists_fresh
+      let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
+      exact A'ki₁ a aninI |>.arr_deterministic' (A'ki₂ a aninI') rfl (Ks₁ := []) (Ks₂ := [])
+  case cons K₁' Ks₁' K₂' Ks₂' =>
+    rw [List.foldr] at Aki₁ Aki₂
+    cases Aki₁ <;> cases Aki₂
+    case var.var ain₁ ain₂ =>
+      apply foldr_injection (ain₁.deterministic ain₂)
+      injections length_eq
+    case lam.lam I A'ki₁ I' A'ki₂ =>
+      let ⟨a, anin⟩ := I ++ I' |>.exists_fresh
+      let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
+      apply A'ki₁ a aninI |>.arr_deterministic' (A'ki₂ a aninI') _ (Ks₁ := Ks₁') (Ks₂ := Ks₂')
+      injections lengths_eq
+    case app.app K'₁ _ _ A'ki₁ K'₂ _ A'ki₂ =>
+      have : K'₁.arr (K₁'.arr (List.foldr Kind.arr [[K₁ ↦ K₂]] Ks₁')) =
+        List.foldr Kind.arr [[K₁ ↦ K₂]] (K'₁ :: K₁' :: Ks₁') := by
+        rw [List.foldr, List.foldr]
+      rw [this] at A'ki₁
+      have : K'₂.arr (K₂'.arr (List.foldr Kind.arr [[K₃ ↦ K₄]] Ks₂')) =
+        List.foldr Kind.arr [[K₃ ↦ K₄]] (K'₂ :: K₂' :: Ks₂') := by
+        rw [List.foldr, List.foldr]
+      rw [this] at A'ki₂
+      apply A'ki₁.arr_deterministic' A'ki₂ _ (Ks₁ := K'₁ :: K₁' :: Ks₁') (Ks₂ := K'₂ :: K₂' :: Ks₂')
+      simp_arith
+      injection lengths_eq
+    case scheme.scheme I A'ki₁ I' A'ki₂ =>
+      let ⟨a, anin⟩ := I ++ I' |>.exists_fresh
+      let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
+      exact A'ki₁ a aninI |>.arr_deterministic' (A'ki₂ a aninI') lengths_eq
+
+theorem arr_deterministic (Aki₁ : [[Δ ⊢ A : K₁ ↦ K₂]]) (Aki₂ : [[Δ ⊢ A : K₃ ↦ K₄]]) : K₁ = K₃ :=
+  arr_deterministic' Aki₁ Aki₂ (Ks₁ := []) (Ks₂ := []) rfl
+
+private
+theorem foldr_injection'
+  (h₀ : Kind.arr K₁' (List.foldr Kind.arr [[K₁ ↦ K₂]] Ks₁) = Kind.arr K₂' (List.foldr Kind.arr K₃ Ks₂))
+  (h₁ : Ks₁.length = Ks₂.length) : ∃ K₄, K₃ = [[K₁ ↦ K₄]] := by
+  induction Ks₁ generalizing K₁' K₂' Ks₂ with
+  | nil =>
+    rw [List.length_nil] at h₁
+    cases List.eq_nil_of_length_eq_zero h₁.symm
+    rw [List.foldr, List.foldr] at h₀
+    injection h₀ with _ h₀'
+    exact ⟨_, h₀'.symm⟩
+  | cons _ _ ih =>
+    rcases List.exists_cons_of_length_eq_add_one h₁.symm with ⟨List.length_cons_, _, rfl⟩
+    rw [List.foldr, List.foldr] at h₀
+    injection h₀ with _ h₀'
+    apply ih h₀'
+    rw [List.length_cons, List.length_cons] at h₁
+    injections h₁
+
+theorem arr_shape_deterministic' (Aki₁ : Kinding Δ A (List.foldr Kind.arr [[K₁ ↦ K₂]] Ks₁))
+  (Aki₂ : Kinding Δ A (List.foldr Kind.arr K₃ Ks₂))
+  (lengths_eq : Ks₁.length = Ks₂.length := by rfl) : ∃ K₄, K₃ = [[K₁ ↦ K₄]] := by
+  rw [autoParam] at lengths_eq
+  cases Ks₁ <;> cases Ks₂ <;> try cases lengths_eq
+  case nil =>
+    rw [List.foldr] at Aki₁ Aki₂
+    cases Aki₁ <;> cases Aki₂
+    case var.var ain₁ ain₂ => exact ⟨_, ain₁.deterministic ain₂ |>.symm⟩
+    case lam.lam => exact ⟨_, rfl⟩
+    case app.app K'₁ _ _ A'ki₁ K'₂ _ A'ki₂ =>
+      exact A'ki₁.arr_shape_deterministic' A'ki₂ rfl (Ks₁ := [K'₁]) (Ks₂ := [K'₂])
+    case scheme.scheme I A'ki₁ I' A'ki₂ =>
+      let ⟨a, anin⟩ := I ++ I' |>.exists_fresh
+      let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
+      exact A'ki₁ a aninI |>.arr_shape_deterministic' (A'ki₂ a aninI') rfl (Ks₁ := []) (Ks₂ := [])
+  case cons K₁' Ks₁' K₂' Ks₂' =>
+    rw [List.foldr] at Aki₁ Aki₂
+    cases Aki₁ <;> cases Aki₂
+    case var.var ain₁ ain₂ =>
+      apply foldr_injection' (ain₁.deterministic ain₂)
+      injections length_eq
+    case lam.lam I A'ki₁ I' A'ki₂ =>
+      let ⟨a, anin⟩ := I ++ I' |>.exists_fresh
+      let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
+      apply A'ki₁ a aninI |>.arr_shape_deterministic' (A'ki₂ a aninI') _ (Ks₁ := Ks₁') (Ks₂ := Ks₂')
+      injections lengths_eq
+    case app.app K'₁ _ _ A'ki₁ K'₂ _ A'ki₂ =>
+      have : K'₁.arr (K₁'.arr (List.foldr Kind.arr [[K₁ ↦ K₂]] Ks₁')) =
+        List.foldr Kind.arr [[K₁ ↦ K₂]] (K'₁ :: K₁' :: Ks₁') := by
+        rw [List.foldr, List.foldr]
+      rw [this] at A'ki₁
+      have : K'₂.arr (K₂'.arr (List.foldr Kind.arr K₃ Ks₂')) =
+        List.foldr Kind.arr K₃ (K'₂ :: K₂' :: Ks₂') := by
+        rw [List.foldr, List.foldr]
+      rw [this] at A'ki₂
+      apply A'ki₁.arr_shape_deterministic' A'ki₂ _ (Ks₁ := K'₁ :: K₁' :: Ks₁')
+        (Ks₂ := K'₂ :: K₂' :: Ks₂')
+      simp_arith
+      injection lengths_eq
+    case scheme.scheme I A'ki₁ I' A'ki₂ =>
+      let ⟨a, anin⟩ := I ++ I' |>.exists_fresh
+      let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
+      exact A'ki₁ a aninI |>.arr_shape_deterministic' (A'ki₂ a aninI') lengths_eq
+
+theorem arr_shape_deterministic (Aki₁ : [[Δ ⊢ A : K₁ ↦ K₂]]) (Aki₂ : [[Δ ⊢ A : K₃]])
+  : ∃ K₄, K₃ = [[K₁ ↦ K₄]] :=
+  arr_shape_deterministic' Aki₁ Aki₂ (Ks₁ := []) (Ks₂ := []) rfl
 
 end Kinding
 
@@ -318,6 +591,19 @@ theorem freeTypeVars_in_Δ
       specialize ih (by cases xAinΔ <;> simp_all)
       simp_all [TypeVarNotInDom, TypeVarInDom, typeVarDom]
 
+open Environment in
+theorem Kinding_of (xinΔ: [[ x : A ∈ Δ ]]) (wf: [[ ⊢ Δ ]]): [[ Δ ⊢ A : * ]] := by
+  induction xinΔ
+  . case head Δ =>
+    let .termVarExt _ _ AkiStar := wf
+    exact AkiStar.weakening (Δ' := [[ ε, x: A ]]) (Δ'' := [[ε]]) wf
+  . case typeVarExt Δ a K xinΔ ih =>
+    let .typeVarExt wf' aninΔ := wf
+    exact ih wf' |>.weakening (Δ' := [[ ε, a: K ]]) (Δ'' := [[ε]]) wf
+  . case termVarExt Δ x' A' xinΔ xnex' ih =>
+    let .termVarExt wf' xninΔ AkiStar := wf
+    exact ih wf' |>.weakening (Δ' := [[ ε, x': A' ]]) (Δ'' := [[ε]]) wf
+
 end TermVarInEnvironment
 
 namespace Kinding
@@ -340,6 +626,78 @@ theorem inv_list' (k: [[ Δ ⊢ { </ A@i // i in [:n] /> } : K ]]): ∃ K', K = 
       apply congrArg (f:= List.length) at Teq
       simp_all [List.length_map, Std.Range.length_toList]
     simp_all [Std.Range.mem_toList_of_mem]
+
+private
+theorem foldr_injection''
+  (h₀ : Kind.arr K₁' (List.foldr Kind.arr [[L K₁]] Ks₁) = Kind.arr K₂' (List.foldr Kind.arr K₃ Ks₂))
+  (h₁ : Ks₁.length = Ks₂.length) : ∃ K₄, K₃ = [[L K₄]] := by
+  induction Ks₁ generalizing K₁' K₂' Ks₂ with
+  | nil =>
+    rw [List.length_nil] at h₁
+    cases List.eq_nil_of_length_eq_zero h₁.symm
+    rw [List.foldr, List.foldr] at h₀
+    injection h₀ with _ h₀'
+    exact ⟨_, h₀'.symm⟩
+  | cons _ _ ih =>
+    rcases List.exists_cons_of_length_eq_add_one h₁.symm with ⟨List.length_cons_, _, rfl⟩
+    rw [List.foldr, List.foldr] at h₀
+    injection h₀ with _ h₀'
+    apply ih h₀'
+    rw [List.length_cons, List.length_cons] at h₁
+    injections h₁
+
+theorem list_shape_deterministic' (Aki₁ : Kinding Δ A (List.foldr Kind.arr [[L K₁]] Ks₁))
+  (Aki₂ : Kinding Δ A (List.foldr Kind.arr K₃ Ks₂))
+  (lengths_eq : Ks₁.length = Ks₂.length := by rfl) : ∃ K₄, K₃ = [[L K₄]] := by
+  rw [autoParam] at lengths_eq
+  cases Ks₁ <;> cases Ks₂ <;> try cases lengths_eq
+  case nil =>
+    rw [List.foldr] at Aki₁ Aki₂
+    cases Aki₁
+    case list =>
+      rcases inv_list' Aki₂ with ⟨_, rfl, _⟩
+      exact ⟨_, rfl⟩
+    all_goals cases Aki₂
+    case var.var ain₁ ain₂ => exact ⟨_, ain₁.deterministic ain₂ |>.symm⟩
+    case app.app K'₁ _ _ A'ki₁ K'₂ _ A'ki₂ =>
+      exact A'ki₁.list_shape_deterministic' A'ki₂ rfl (Ks₁ := [K'₁]) (Ks₂ := [K'₂])
+    case scheme.scheme I A'ki₁ I' A'ki₂ =>
+      let ⟨a, anin⟩ := I ++ I' |>.exists_fresh
+      let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
+      exact A'ki₁ a aninI |>.list_shape_deterministic' (A'ki₂ a aninI') rfl (Ks₁ := []) (Ks₂ := [])
+    case listApp.listApp => exact ⟨_, rfl⟩
+  case cons K₁' Ks₁' K₂' Ks₂' =>
+    rw [List.foldr] at Aki₁ Aki₂
+    cases Aki₁ <;> cases Aki₂
+    case var.var ain₁ ain₂ =>
+      apply foldr_injection'' (ain₁.deterministic ain₂)
+      injections length_eq
+    case lam.lam I A'ki₁ I' A'ki₂ =>
+      let ⟨a, anin⟩ := I ++ I' |>.exists_fresh
+      let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
+      apply A'ki₁ a aninI |>.list_shape_deterministic' (A'ki₂ a aninI') _ (Ks₁ := Ks₁') (Ks₂ := Ks₂')
+      injections lengths_eq
+    case app.app K'₁ _ _ A'ki₁ K'₂ _ A'ki₂ =>
+      have : K'₁.arr (K₁'.arr (List.foldr Kind.arr [[L K₁]] Ks₁')) =
+        List.foldr Kind.arr [[L K₁]] (K'₁ :: K₁' :: Ks₁') := by
+        rw [List.foldr, List.foldr]
+      rw [this] at A'ki₁
+      have : K'₂.arr (K₂'.arr (List.foldr Kind.arr K₃ Ks₂')) =
+        List.foldr Kind.arr K₃ (K'₂ :: K₂' :: Ks₂') := by
+        rw [List.foldr, List.foldr]
+      rw [this] at A'ki₂
+      apply A'ki₁.list_shape_deterministic' A'ki₂ _ (Ks₁ := K'₁ :: K₁' :: Ks₁')
+        (Ks₂ := K'₂ :: K₂' :: Ks₂')
+      simp_arith
+      injection lengths_eq
+    case scheme.scheme I A'ki₁ I' A'ki₂ =>
+      let ⟨a, anin⟩ := I ++ I' |>.exists_fresh
+      let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
+      exact A'ki₁ a aninI |>.list_shape_deterministic' (A'ki₂ a aninI') lengths_eq
+
+theorem list_shape_deterministic (Aki₁ : [[Δ ⊢ A : L K₁]]) (Aki₂ : [[Δ ⊢ A : K₂]])
+  : ∃ K₃, K₂ = [[L K₃]] :=
+  list_shape_deterministic' Aki₁ Aki₂ (Ks₁ := []) (Ks₂ := []) rfl
 
 theorem singleton_list (Aki : [[Δ ⊢ A : K]]) : [[Δ ⊢ {A} : L K]] := by
   have := list (Δ := Δ) (A := fun _ => A) (K := K) (n := 1) <| by
