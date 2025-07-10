@@ -554,10 +554,10 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γcw : [[⊢c �
       rw [Elc.weaken.TermVar_open_id, Elc.TermVar_open_id]
       exact Ety.weakening Δxxₐwf (Δ' := .termExt (.termExt .empty ..) ..) (Δ'' := .empty)
   | qual _ _ ψ₀γ₀ke ψ₁ke ψ₁₀ih γ₀₁ih =>
-    let .qual ψ₁ke' γ₁ke κe := σ₁ke
+    let .qual ψ₁ke' γ₁ke := σ₁ke
     cases ψ₁ke.deterministic ψ₁ke' |>.right
     rcases σ₀ke.deterministic ψ₀γ₀ke with ⟨rfl, rfl⟩
-    let .qual ψ₀ke γ₀ke κ'e := ψ₀γ₀ke
+    let .qual ψ₀ke γ₀ke := ψ₀γ₀ke
     rename TypeEnvironment => Γ
     apply Typing.lam Γ.termVarDom
     intro x xnin
@@ -576,7 +576,7 @@ theorem soundness (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]]) (Γcw : [[⊢c �
       exact ψ₁ke.soundness Γcw Γwe .constr |>.weakening Δxwf (Δ' := .termExt .empty ..)
         (Δ'' := .empty)
     apply Typing.app
-    · let Fty := γ₀₁ih Γcw Γwe γ₀ke γ₁ke κ'e
+    · let Fty := γ₀₁ih Γcw Γwe γ₀ke γ₁ke .star
       let Flc := Fty.TermVarLocallyClosed_of
       rw [Flc.weaken.TermVar_open_id, Flc.TermVar_open_id]
       exact Fty.weakening Δxxₐwf (Δ' := .termExt (.termExt .empty ..) ..) (Δ'' := .empty)

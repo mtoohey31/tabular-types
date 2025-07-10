@@ -23,7 +23,7 @@ theorem TypeScheme.KindingAndElaboration.deterministic (σke₀ : [[Γc; Γ ⊢ 
         τ₁₀ke.deterministic τ₁₁ke |>.right
       ⟩
     ⟩
-  | .qual ψ₀ke γ₀ke _, .qual ψ₁ke γ₁ke _ =>
+  | .qual ψ₀ke γ₀ke, .qual ψ₁ke γ₁ke =>
     let ⟨κeq, Beq⟩ := γ₀ke.deterministic γ₁ke
     ⟨κeq, Type.arr.injEq .. |>.mpr ⟨ψ₀ke.deterministic ψ₁ke |>.right, Beq⟩⟩
   | .scheme I₀ σ₀ke κ₀e (A := A₀), .scheme I₁ σ₁ke κ₁e (A := A₁) =>
@@ -39,7 +39,6 @@ theorem TypeScheme.KindingAndElaboration.deterministic (σke₀ : [[Γc; Γ ⊢ 
         Type.TypeVar_open_inj_of_not_mem_freeTypeVars aninA₀ aninA₁ Aopeq
       ⟩
     ⟩
-
   | .label, .label
   | .floor _, .floor _
   | .comm, .comm => ⟨rfl, rfl⟩
@@ -76,7 +75,6 @@ theorem TypeScheme.KindingAndElaboration.deterministic (σke₀ : [[Γc; Γ ⊢ 
         ρ₀ke.deterministic ρ₁ke |>.right
       ⟩
     ⟩
-
   | .contain _ ρ₀₀ke ρ₁₀ke κ₀e, .contain _ ρ₀₁ke ρ₁₁ke κ₁e => by
     let ⟨κeq, A₀eq⟩ := ρ₀₀ke.deterministic ρ₀₁ke
     let ⟨_, A₁eq⟩ := ρ₁₀ke.deterministic ρ₁₁ke
@@ -325,12 +323,13 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
     let .star := κe
     .arr (τ₀ke.soundness Γcw Γwe .star) (τ₁ke.soundness Γcw Γwe .star)
   | .quant κ' σ', .scheme I σ'ke κ'e =>
+    let .star := κe
     .scheme (I := Γ.typeVarDom ++ I) fun a anin =>
       let ⟨aninΓ, aninI⟩ := List.not_mem_append'.mp anin
-      σ'ke a aninI |>.soundness Γcw (Γwe.typeExt aninΓ κ'e) κe
-  | .qual (.qual ψ γ), .qual ϕke γke κe' => by
-    cases κe.deterministic κe'
-    exact .arr (ϕke.soundness Γcw Γwe .constr) (γke.soundness Γcw Γwe κe')
+      σ'ke a aninI |>.soundness Γcw (Γwe.typeExt aninΓ κ'e) .star
+  | .qual (.qual ψ γ), .qual ϕke γke => by
+    let .star := κe
+    exact .arr (ϕke.soundness Γcw Γwe .constr) (γke.soundness Γcw Γwe .star)
   | .qual (.mono (.label _)), .label => let .label := κe; .unit
   | .qual (.mono (.floor _)), .floor _ => let .star := κe; .unit
   | .qual (.mono (.comm _)), .comm => let .comm := κe; .unit

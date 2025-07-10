@@ -36,9 +36,9 @@ theorem to_Kinding (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (Γᵢw : [[Γc �
     let ⟨x, xnin⟩ := I ++ Γ.termVarDom |>.exists_fresh
     let ⟨xninI, xninΓ⟩ := List.not_mem_append'.mp xnin
     let ⟨_, γke⟩ := ih x xninI Γᵢw Γcw <| Γwe.constrExt xninΓ ψke
-    exact ⟨_, ψke.qual (γke.Constr_drop (Γ' := .empty)) .star⟩
+    exact ⟨_, ψke.qual (γke.Constr_drop (Γ' := .empty))⟩
   | qualE _ _ γih =>
-    let ⟨_, .qual _ γke _⟩ := γih Γᵢw Γcw Γwe
+    let ⟨_, .qual _ γke⟩ := γih Γᵢw Γcw Γwe
     exact ⟨_, γke⟩
   | schemeI I _ κe ih =>
     rename TypeScheme => σ'
@@ -208,7 +208,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     rcases σke.deterministic τ₁ke with ⟨_, rfl⟩
     exact .app (Mih arrke Γᵢw Γcw Γwe) (Nih τ₀ke Γᵢw Γcw Γwe)
   | qualI I ψke _ ih =>
-    let .qual ψke' γke κe := σke
+    let .qual ψke' γke := σke
     rcases ψke.deterministic ψke' with ⟨_, rfl⟩
     rename TypeEnvironment => Γ
     apply Typing.lam <| I ++ Γ.termVarDom
@@ -218,7 +218,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     let γke' := γke.weakening Γxwe (Γ' := .constrExt .empty ..) (Γ'' := .empty)
     exact ih _ xninI γke' Γᵢw Γcw Γxwe
   | qualE ψce Mte qualih =>
-    let ⟨_, qualke@(.qual ψke γke _)⟩ := Mte.to_Kinding Γᵢw Γcw Γwe
+    let ⟨_, qualke@(.qual ψke γke)⟩ := Mte.to_Kinding Γᵢw Γcw Γwe
     rcases σke.deterministic γke with ⟨_, rfl⟩
     exact .app (qualih qualke Γᵢw Γcw Γwe) (ψce.soundness ψke Γᵢw Γcw Γwe)
   | schemeI I _ κe ih =>
@@ -505,11 +505,11 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
         Bᵣlc.TypeVar_open_id]
     let keBₗ'' := keBₗ'.weakening Γaₗₜₚᵢₙwe (Γ' := .typeExt .empty ..) (Γ'' := .empty)
     rw [keBₗ''.soundness Γcw Γaₗₜₚᵢₙwe .constr |>.TypeVarLocallyClosed_of.TypeVar_open_id]
-    apply qual keBₗ'' _ .star
+    apply qual keBₗ''
     let keBᵣ'' := keBᵣ'.weakening Γaₗₜₚᵢₙwe (Γ' := .typeExt (.typeExt (.typeExt .empty ..) ..) ..)
       (Γ'' := .typeExt (.typeExt .empty ..) ..)
     let .qual (.mono ρlc) := ρke.TypeVarLocallyClosed_of
-    apply qual keBᵣ'' _ .star
+    apply qual keBᵣ''
     let aₗneaₙ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
       List.not_mem_of_not_mem_cons <| List.not_mem_of_not_mem_cons aₙninΓ
     let aₗneaᵢ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|

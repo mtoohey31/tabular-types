@@ -90,12 +90,12 @@ theorem weakening_r' (kT: [[ Δ, Δ'' ⊢ T: K ]]) (fresh: ∀ a ∈ Δ'.typeVar
     intro a notIn
     specialize @ih a (by simp_all) Δ (Δ''.typeExt a K1)
     simp_all [append]
-  case scheme Δ_ K1 T K2 I kT ih =>
+  case scheme Δ_ K T I kT ih =>
     subst Δ_
     have ⟨a, notIn⟩ := (I ++ T.freeTypeVars ++ Δ.typeVarDom ++ Δ'.typeVarDom ++ Δ''.typeVarDom).exists_fresh
     apply Kinding.scheme (I := I ++ Δ.typeVarDom ++ Δ'.typeVarDom ++ Δ''.typeVarDom)
     intro a notIn
-    specialize @ih a (by simp_all) Δ (Δ''.typeExt a K1)
+    specialize @ih a (by simp_all) Δ (Δ''.typeExt a K)
     simp_all [append]
   all_goals aesop (add safe constructors Kinding) (config := { enableSimp := false })
 
@@ -119,12 +119,12 @@ theorem TermVar_drop (kT: [[ Δ, x: T', Δ'' ⊢ T: K ]]): [[ Δ, Δ'' ⊢ T: K 
     intro a notIn
     specialize @ih a (by simp_all) Δ x T' (Δ''.typeExt a K1)
     simp_all [append]
-  case scheme Δ_ K1 T K2 I kT ih =>
+  case scheme Δ_ K T I kT ih =>
     subst Δ_
     have ⟨a, notIn⟩ := (I ++ T.freeTypeVars ++ Δ.typeVarDom ++ Δ''.typeVarDom).exists_fresh
     apply Kinding.scheme (I := I ++ Δ.typeVarDom ++ Δ''.typeVarDom)
     intro a notIn
-    specialize @ih a (by simp_all) Δ x T' (Δ''.typeExt a K1)
+    specialize @ih a (by simp_all) Δ x T' (Δ''.typeExt a K)
     simp_all [append]
   all_goals aesop (add safe constructors Kinding) (config := { enableSimp := false })
 
@@ -235,7 +235,7 @@ theorem substAux (kT: [[ Δ, a: K, Δ' ⊢ T: K' ]]) (h1: a ∉ Δ'.typeVarDom) 
     refine ih a' (by simp_all) ?_ ?_ (by rw [Environment.append_typeExt_assoc])
     . aesop (add simp [Environment.typeVarDom])
     . simp_all [Environment.typeVarDom]
-  case scheme Δ_ K1 T K2 I kind ih =>
+  case scheme Δ_ K T I kind ih =>
     subst Δ_
     refine .scheme (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom) (λ a' notIn => ?_)
     rw [<- kA.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm (by aesop)]
@@ -380,10 +380,6 @@ theorem arr_deterministic' (Aki₁ : Kinding Δ A (List.foldr Kind.arr [[K₁ �
     case lam.lam => rfl
     case app.app K'₁ _ _ A'ki₁ K'₂ _ A'ki₂ =>
       exact A'ki₁.arr_deterministic' A'ki₂ rfl (Ks₁ := [K'₁]) (Ks₂ := [K'₂])
-    case scheme.scheme I A'ki₁ I' A'ki₂ =>
-      let ⟨a, anin⟩ := I ++ I' |>.exists_fresh
-      let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
-      exact A'ki₁ a aninI |>.arr_deterministic' (A'ki₂ a aninI') rfl (Ks₁ := []) (Ks₂ := [])
   case cons K₁' Ks₁' K₂' Ks₂' =>
     rw [List.foldr] at Aki₁ Aki₂
     cases Aki₁ <;> cases Aki₂
@@ -407,10 +403,6 @@ theorem arr_deterministic' (Aki₁ : Kinding Δ A (List.foldr Kind.arr [[K₁ �
       apply A'ki₁.arr_deterministic' A'ki₂ _ (Ks₁ := K'₁ :: K₁' :: Ks₁') (Ks₂ := K'₂ :: K₂' :: Ks₂')
       simp_arith
       injection lengths_eq
-    case scheme.scheme I A'ki₁ I' A'ki₂ =>
-      let ⟨a, anin⟩ := I ++ I' |>.exists_fresh
-      let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
-      exact A'ki₁ a aninI |>.arr_deterministic' (A'ki₂ a aninI') lengths_eq
 
 theorem arr_deterministic (Aki₁ : [[Δ ⊢ A : K₁ ↦ K₂]]) (Aki₂ : [[Δ ⊢ A : K₃ ↦ K₄]]) : K₁ = K₃ :=
   arr_deterministic' Aki₁ Aki₂ (Ks₁ := []) (Ks₂ := []) rfl
@@ -446,10 +438,6 @@ theorem arr_shape_deterministic' (Aki₁ : Kinding Δ A (List.foldr Kind.arr [[K
     case lam.lam => exact ⟨_, rfl⟩
     case app.app K'₁ _ _ A'ki₁ K'₂ _ A'ki₂ =>
       exact A'ki₁.arr_shape_deterministic' A'ki₂ rfl (Ks₁ := [K'₁]) (Ks₂ := [K'₂])
-    case scheme.scheme I A'ki₁ I' A'ki₂ =>
-      let ⟨a, anin⟩ := I ++ I' |>.exists_fresh
-      let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
-      exact A'ki₁ a aninI |>.arr_shape_deterministic' (A'ki₂ a aninI') rfl (Ks₁ := []) (Ks₂ := [])
   case cons K₁' Ks₁' K₂' Ks₂' =>
     rw [List.foldr] at Aki₁ Aki₂
     cases Aki₁ <;> cases Aki₂
@@ -474,10 +462,6 @@ theorem arr_shape_deterministic' (Aki₁ : Kinding Δ A (List.foldr Kind.arr [[K
         (Ks₂ := K'₂ :: K₂' :: Ks₂')
       simp_arith
       injection lengths_eq
-    case scheme.scheme I A'ki₁ I' A'ki₂ =>
-      let ⟨a, anin⟩ := I ++ I' |>.exists_fresh
-      let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
-      exact A'ki₁ a aninI |>.arr_shape_deterministic' (A'ki₂ a aninI') lengths_eq
 
 theorem arr_shape_deterministic (Aki₁ : [[Δ ⊢ A : K₁ ↦ K₂]]) (Aki₂ : [[Δ ⊢ A : K₃]])
   : ∃ K₄, K₃ = [[K₁ ↦ K₄]] :=
@@ -556,7 +540,7 @@ theorem freeTypeVars_in_Δ (AkiK: [[ Δ ⊢ A: K ]]) (ainA: a ∈ A.freeTypeVars
     specialize AkiK2 a' (by simp_all)
     specialize ih a' (by simp_all) (Type.freeTypeVars_TypeVar_open ainA)
     aesop (add simp typeVarDom)
-  . case scheme Δ K1 A K2 I AkiK2 ih =>
+  . case scheme Δ K A I AkiK2 ih =>
     have ⟨a', a'nin⟩ := (a :: I).exists_fresh
     simp_all [freeTypeVars]
     specialize AkiK2 a' (by simp_all)
@@ -661,10 +645,6 @@ theorem list_shape_deterministic' (Aki₁ : Kinding Δ A (List.foldr Kind.arr [[
     case var.var ain₁ ain₂ => exact ⟨_, ain₁.deterministic ain₂ |>.symm⟩
     case app.app K'₁ _ _ A'ki₁ K'₂ _ A'ki₂ =>
       exact A'ki₁.list_shape_deterministic' A'ki₂ rfl (Ks₁ := [K'₁]) (Ks₂ := [K'₂])
-    case scheme.scheme I A'ki₁ I' A'ki₂ =>
-      let ⟨a, anin⟩ := I ++ I' |>.exists_fresh
-      let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
-      exact A'ki₁ a aninI |>.list_shape_deterministic' (A'ki₂ a aninI') rfl (Ks₁ := []) (Ks₂ := [])
     case listApp.listApp => exact ⟨_, rfl⟩
   case cons K₁' Ks₁' K₂' Ks₂' =>
     rw [List.foldr] at Aki₁ Aki₂
@@ -690,10 +670,6 @@ theorem list_shape_deterministic' (Aki₁ : Kinding Δ A (List.foldr Kind.arr [[
         (Ks₂ := K'₂ :: K₂' :: Ks₂')
       simp_arith
       injection lengths_eq
-    case scheme.scheme I A'ki₁ I' A'ki₂ =>
-      let ⟨a, anin⟩ := I ++ I' |>.exists_fresh
-      let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
-      exact A'ki₁ a aninI |>.list_shape_deterministic' (A'ki₂ a aninI') lengths_eq
 
 theorem list_shape_deterministic (Aki₁ : [[Δ ⊢ A : L K₁]]) (Aki₂ : [[Δ ⊢ A : K₂]])
   : ∃ K₃, K₂ = [[L K₃]] :=

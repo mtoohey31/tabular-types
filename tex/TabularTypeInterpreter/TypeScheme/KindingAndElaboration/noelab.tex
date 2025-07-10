@@ -15,13 +15,12 @@
 \lottinferencerulesep
 \lottinferencerule{qual}{
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ψ \, \kindingsym \, \lottkw{C}}\\
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, γ \, \kindingsym \, κ}\\
-\lotthypothesis{\lottsym{⊢} \, κ \, \lottsym{⇝} \, \targetpre \lottsym{\star} \targetpost}
-}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ψ \, \lottsym{⇒} \, γ \, \kindingsym \, κ}
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, γ \, \kindingsym \, \lottsym{\star}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ψ \, \lottsym{⇒} \, γ \, \kindingsym \, \lottsym{\star}}
 \lottinferencerulesep
 \lottinferencerule{scheme}{
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \lottsym{,} \, a \, \lottsym{:} \, κ₀ \, \lottsym{⊢} \, σ \, \kindingsym \, κ₁}
-}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottsym{∀} \, a \, \lottsym{:} \, κ₀ \lottsym{.} \, σ \, \kindingsym \, κ₁}
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \lottsym{,} \, a \, \lottsym{:} \, κ \, \lottsym{⊢} \, σ \, \kindingsym \, \lottsym{\star}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottsym{∀} \, a \, \lottsym{:} \, κ \lottsym{.} \, σ \, \kindingsym \, \lottsym{\star}}
 \lottinferencerulesep
 \lottinferencerule{label}{
 }{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ℓ \, \kindingsym \, \lottkw{L}}

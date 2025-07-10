@@ -37,11 +37,6 @@
 \lotthypothesis{\lottkw{value} \, \targetpre B \targetpost}
 }{\lottkw{value} \, \targetpre \targetpre \lottsym{(} \targetpre \targetpre A₀ \targetpost \, \targetpre A₁ \targetpost \targetpost \lottsym{)} \targetpost \, \targetpre B \targetpost \targetpost}
 \lottinferencerulesep
-\lottinferencerule{forallApp}{
-\lotthypothesis{\lottkw{value} \, \targetpre \lottsym{∀} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre A \targetpost \targetpost}\\
-\lotthypothesis{\lottkw{value} \, \targetpre B \targetpost}
-}{\lottkw{value} \, \targetpre \targetpre \lottsym{(} \targetpre \lottsym{∀} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre A \targetpost \targetpost \lottsym{)} \targetpost \, \targetpre B \targetpost \targetpost}
-\lottinferencerulesep
 \lottinferencerule{listAppVar}{
 \lotthypothesis{\targetpre A \targetpost \, \lottsym{≠} \, \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre \targetpre a \targetpost \targetpost \targetpost}\\
 \lotthypothesis{\lottkw{value} \, \targetpre A \targetpost}
@@ -52,10 +47,4 @@
 \lotthypothesis{\lottkw{value} \, \targetpre A \targetpost}\\
 \lotthypothesis{\lottkw{value} \, \targetpre \targetpre B₀ \targetpost \, \targetpre B₁ \targetpost \targetpost}
 }{\lottkw{value} \, \targetpre \targetpre A \targetpost \, \lottsym{⟦} \targetpre \targetpre B₀ \targetpost \, \targetpre B₁ \targetpost \targetpost \lottsym{⟧} \targetpost}
-\lottinferencerulesep
-\lottinferencerule{listAppForall}{
-\lotthypothesis{\targetpre A \targetpost \, \lottsym{≠} \, \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre \targetpre a \targetpost \targetpost \targetpost}\\
-\lotthypothesis{\lottkw{value} \, \targetpre A \targetpost}\\
-\lotthypothesis{\lottkw{value} \, \targetpre \lottsym{∀} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre B \targetpost \targetpost}
-}{\lottkw{value} \, \targetpre \targetpre A \targetpost \, \lottsym{⟦} \targetpre \lottsym{∀} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre B \targetpost \targetpost \lottsym{⟧} \targetpost}
 }

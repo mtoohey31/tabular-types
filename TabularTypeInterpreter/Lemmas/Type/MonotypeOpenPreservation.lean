@@ -1389,7 +1389,7 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
       rw [QualifiedType.TypeVar_open] at σke
       cases A <;> rw [Type.TypeVar_open] at σke
       case arr =>
-        let .qual ψke γ'ke κ₁e := σke
+        let .qual ψke γ'ke := σke
         rw [QualifiedType.Monotype_open, Type.Type_open]
         rw [← QualifiedType.TypeVar_open] at ψke
         rw [← TypeVar_open] at ψke γ'ke
@@ -1400,7 +1400,7 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
           (aninσ <| List.mem_append_right _ ·) (aninA <| List.mem_append_right _ ·) τke
         rw [Monotype_open] at ψke' γ'ke'
         rw [QualifiedType.Monotype_open] at ψke'
-        exact qual ψke' γ'ke' κ₁e
+        exact qual ψke' γ'ke'
       all_goals nomatch σke
   | .quant κ σ' =>
     rw [TypeVar_open] at σke

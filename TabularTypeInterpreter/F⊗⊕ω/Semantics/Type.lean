@@ -33,9 +33,9 @@ a : K ∈ Δ
 ─────────────── app
 Δ ⊢ A B : K₂
 
-∀ a ∉ I, Δ, a : K₁ ⊢ A^a : K₂
-───────────────────────────── scheme (I : List TypeVarId)
-Δ ⊢ ∀ a : K₁. A : K₂
+∀ a ∉ I, Δ, a : K ⊢ A^a : *
+─────────────────────────── scheme (I : List TypeVarId)
+Δ ⊢ ∀ a : K. A : *
 
 Δ ⊢ A : *
 Δ ⊢ B : *

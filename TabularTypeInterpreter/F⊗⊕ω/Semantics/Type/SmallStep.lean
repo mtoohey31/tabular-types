@@ -55,11 +55,6 @@ value B
 ─────────────── appApp
 value (A₀ A₁) B
 
-value ∀ a : K. A
-value B
-──────────────────── forallApp
-value (∀ a : K. A) B
-
 ∀ K, A ≠ λ a : K. a$0
 value A
 ───────────────────── listAppVar {a : TypeVarId}
@@ -70,12 +65,6 @@ value A
 value B₀ B₁
 ───────────────────── listAppApp
 value A ⟦B₀ B₁⟧
-
-∀ K, A ≠ λ a : K. a$0
-value A
-value ∀ a : K. B
-───────────────────── listAppForall
-value A ⟦∀ a : K. B⟧
 
 judgement_syntax Δ " ⊢ " A " -> " B : SmallStep
 

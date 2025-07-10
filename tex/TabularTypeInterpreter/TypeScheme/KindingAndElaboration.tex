@@ -15,14 +15,13 @@
 \lottinferencerulesep
 \lottinferencerule{qual}{
 \lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ψ \, \kindingsym \, \lottkw{C} \, \lottsym{⇝} \, \targetpre A \targetpost}\\
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, γ \, \kindingsym \, κ \, \lottsym{⇝} \, \targetpre B \targetpost}\\
-\lotthypothesis{\lottsym{⊢} \, κ \, \lottsym{⇝} \, \targetpre \lottsym{\star} \targetpost}
-}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ψ \, \lottsym{⇒} \, γ \, \kindingsym \, κ \, \lottsym{⇝} \, \targetpre \targetpre A \targetpost \, \lottsym{→} \, \targetpre B \targetpost \targetpost}
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, γ \, \kindingsym \, \lottsym{\star} \, \lottsym{⇝} \, \targetpre B \targetpost}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ψ \, \lottsym{⇒} \, γ \, \kindingsym \, \lottsym{\star} \, \lottsym{⇝} \, \targetpre \targetpre A \targetpost \, \lottsym{→} \, \targetpre B \targetpost \targetpost}
 \lottinferencerulesep
 \lottinferencerule{scheme}{
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \lottsym{,} \, a \, \lottsym{:} \, κ₀ \, \lottsym{⊢} \, σ \, \kindingsym \, κ₁ \, \lottsym{⇝} \, \targetpre \targetpre A \targetpost \targetpost}\\
-\lotthypothesis{\lottsym{⊢} \, κ₀ \, \lottsym{⇝} \, \targetpre K₀ \targetpost}
-}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottsym{∀} \, a \, \lottsym{:} \, κ₀ \lottsym{.} \, σ \, \kindingsym \, κ₁ \, \lottsym{⇝} \, \targetpre \lottsym{∀} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K₀ \targetpost \lottsym{.} \, \targetpre A \targetpost \targetpost}
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \lottsym{,} \, a \, \lottsym{:} \, κ \, \lottsym{⊢} \, σ \, \kindingsym \, \lottsym{\star} \, \lottsym{⇝} \, \targetpre \targetpre A \targetpost \targetpost}\\
+\lotthypothesis{\lottsym{⊢} \, κ \, \lottsym{⇝} \, \targetpre K \targetpost}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottsym{∀} \, a \, \lottsym{:} \, κ \lottsym{.} \, σ \, \kindingsym \, \lottsym{\star} \, \lottsym{⇝} \, \targetpre \lottsym{∀} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre A \targetpost \targetpost}
 \lottinferencerulesep
 \lottinferencerule{label}{
 }{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ℓ \, \kindingsym \, \lottkw{L} \, \lottsym{⇝} \, \targetpre \lottsym{⊗} \, \targetpre \lottsym{\{}  \lottsym{\}} \targetpost \targetpost}

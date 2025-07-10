@@ -97,15 +97,15 @@ theorem TypeScheme.SubtypingAndElaboration.to_Kinding (σse : [[Γc; Γ ⊢ σ�
     cases τ₁ke.deterministic τ₁ke' |>.left
     exact ⟨_, _, _, τ₀τ₁ke, τ₂ke.arr τ₃ke⟩
   | qual ψ₁₀se _ ψ₀γ₀ke ψ₁ke _ γ₀₁ih =>
-    let .qual _ γ₀ke κe := ψ₀γ₀ke
+    let .qual ψ₀ke γ₀ke := ψ₀γ₀ke
     let ⟨_, _, _, γ₀ke', γ₁ke⟩ := γ₀₁ih Γcw Γwe
     cases γ₀ke.deterministic γ₀ke' |>.left
-    exact ⟨_, _, _, ψ₀γ₀ke, ψ₁ke.qual γ₁ke κe⟩
+    exact ⟨.star, _, _, ψ₀ke.qual γ₀ke, ψ₁ke.qual γ₁ke⟩
   | scheme I _ κ₀e σ₀ke σ'ih =>
     rename Kind => κ₁
     rename TypeScheme => σ₁'
     rename TypeEnvironment => Γ
-    let .scheme I' σ₀'ke _ := σ₀ke
+    let .scheme I' σ₀'ke κ'e := σ₀ke
     let ⟨a, anin⟩ := I ++ I' ++ Γ.typeVarDom ++ σ₁'.freeTypeVars |>.exists_fresh
     let ⟨aninII'Γ, aninσ₁'⟩ := List.not_mem_append'.mp anin
     let ⟨aninII', aninΓ⟩ := List.not_mem_append'.mp aninII'Γ
@@ -113,11 +113,11 @@ theorem TypeScheme.SubtypingAndElaboration.to_Kinding (σse : [[Γc; Γ ⊢ σ�
     let Γawe := Γwe.typeExt aninΓ κ₀e
     let ⟨_, _, B, σ₀'ke', σ₁'ke⟩ := σ'ih a aninI Γcw Γawe
     cases σ₀'ke a aninI' |>.deterministic σ₀'ke' |>.left
-    exact ⟨_, _, _, σ₀ke, .scheme (a :: Γ.typeVarDom) (A := B.TypeVar_close a) (by
+    exact ⟨_, _, _, .scheme I' σ₀'ke κ'e, .scheme (a :: Γ.typeVarDom) (A := B.TypeVar_close a) (by
       intro a' a'nin
       let ⟨a'nea, a'ninΓ⟩ := List.not_mem_cons.mp a'nin
       let ⟨_, κ₁e⟩ := κ₁.Elaboration_total
-      rw [← σ₁'ke.soundness Γcw Γawe κ₁e |>.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_close_id
+      rw [← σ₁'ke.soundness Γcw Γawe .star |>.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_close_id
             (a := a)] at σ₁'ke
       let Γa'awe :=
         Γwe.typeExt a'ninΓ κ₀e |>.typeExt (List.not_mem_cons.mpr ⟨a'nea.symm, aninΓ⟩) κ₀e

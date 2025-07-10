@@ -1017,7 +1017,7 @@ theorem weakening (σke : [[Γc; Γ, Γ'' ⊢ σ : κ ⇝ A]])
     | .inr aκinΓ'' => aκinΓ''.append_inr.append_inr
   | app ϕke τke => exact app (ϕke.weakening ΓΓ'Γ''we) (τke.weakening ΓΓ'Γ''we)
   | arr τ₀ke τ₁ke => exact arr (τ₀ke.weakening ΓΓ'Γ''we) (τ₁ke.weakening ΓΓ'Γ''we)
-  | qual ψke γke κe => exact qual (ψke.weakening ΓΓ'Γ''we) (γke.weakening ΓΓ'Γ''we) κe
+  | qual ψke γke => exact qual (ψke.weakening ΓΓ'Γ''we) (γke.weakening ΓΓ'Γ''we)
   | scheme I σ'ke κ₀e =>
     apply scheme (I ++ [[(Γ, Γ', Γ'')]].typeVarDom) _ κ₀e
     intro a anin
@@ -1124,7 +1124,7 @@ theorem TermVar_drop (σke : [[Γc; Γ, x : σ₁, Γ' ⊢ σ₀ : κ ⇝ A]])
     | .inr aκinΓ' => aκinΓ'.append_inr
   | app ϕke τke => app ϕke.TermVar_drop τke.TermVar_drop
   | arr τ₀ke τ₁ke => arr τ₀ke.TermVar_drop τ₁ke.TermVar_drop
-  | qual ψke γke κe => qual ψke.TermVar_drop γke.TermVar_drop κe
+  | qual ψke γke => qual ψke.TermVar_drop γke.TermVar_drop
   | scheme I σ'ke κ₀e => by
     apply scheme I _ κ₀e
     intro a anin
@@ -1192,7 +1192,7 @@ theorem Constr_drop (σke : [[Γc; Γ, ψ ⇝ x, Γ' ⊢ σ : κ ⇝ A]])
     | .inr aκinΓ' => aκinΓ'.append_inr
   | app ϕke τke => app ϕke.Constr_drop τke.Constr_drop
   | arr τ₀ke τ₁ke => arr τ₀ke.Constr_drop τ₁ke.Constr_drop
-  | qual ψke γke κe => qual ψke.Constr_drop γke.Constr_drop κe
+  | qual ψke γke => qual ψke.Constr_drop γke.Constr_drop
   | scheme I σ'ke κ₀e => by
     apply scheme I _ κ₀e
     intro a anin
