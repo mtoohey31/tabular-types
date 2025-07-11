@@ -1130,6 +1130,7 @@ decreasing_by
 
 -- FALSE: Will have to change Kinding to satisfy this by requiring annotations on empty lists like
 -- in the source. As far as I can tell, this is necessary for `preservation_rev`.
+-- We leave this as future work.
 theorem _root_.TabularTypes.«F⊗⊕ω».Kinding.deterministic
   : [[Δ ⊢ A : K₁]] → [[Δ ⊢ A : K₂]] → K₁ = K₂ := sorry
 
@@ -1503,6 +1504,7 @@ theorem Equivalence_of (Amst : [[Δ ⊢ A ->* B]]) (Aki : [[Δ ⊢ A : K]]) : [[
   | refl => exact .refl
   | step Ast _ ih => exact .trans (Ast.Equivalence_of Aki) <| ih <| Ast.preservation Aki
 
+-- NOTE future work
 theorem normalization (Aki : [[Δ ⊢ A : K]]) : ∃ B, B.IsValue ∧ [[Δ ⊢ A ->* B]] := sorry
 
 theorem confluence (mst₀ : [[Δ ⊢ A ->* B₀]]) (mst₁ : [[Δ ⊢ A ->* B₁]])
@@ -2373,7 +2375,7 @@ theorem SmallStep.TypeVar_subst_in (Ast : [[Δ, a : K, Δ' ⊢ A -> A']])
     simp [TypeVar_subst]
     exact .sum <| A''st.TypeVar_subst_in A''ki Δwf Bki
 termination_by 0
-decreasing_by all_goals sorry
+decreasing_by all_goals sorry -- NOTE pen and paper proof: see appendix
 
 theorem EqSmallStep.lamApp (I : List TypeVarId) (Aki : ∀ a ∉ I, [[Δ, a : K₁ ⊢ A^a : K₂]])
   (Bki : [[Δ ⊢ B : K₁]]) (Δwf : [[⊢ Δ]]) : [[Δ ⊢ (λ a : K₁. A) B <->* A^^B]] := by
@@ -2531,7 +2533,7 @@ theorem EqSmallStep.lamApp (I : List TypeVarId) (Aki : ∀ a ∉ I, [[Δ, a : K�
               A''''lc.Type_open_TypeVar_close_eq_TypeVar_subst]
           exact st.TypeVar_subst_in Aki Δawf Bki (Δ' := .empty)
 termination_by 0
-decreasing_by all_goals sorry
+decreasing_by all_goals sorry -- NOTE pen and paper proof: see appendix
 
 theorem EqSmallStep.listAppComp (A₀ki : [[Δ ⊢ A₀ : K₂ ↦ K₃]]) (A₁ki : [[Δ ⊢ A₁ : K₁ ↦ K₂]])
   (B'ki : [[Δ ⊢ B' : L K₁]]) (Δwf : [[⊢ Δ]])
@@ -2878,7 +2880,7 @@ theorem EqSmallStep.listAppComp (A₀ki : [[Δ ⊢ A₀ : K₂ ↦ K₃]]) (A₁
             exact .app (A₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <|
               .app (A₁ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <| .var .head
 termination_by 0
-decreasing_by all_goals sorry
+decreasing_by all_goals sorry -- NOTE pen and paper proof: see appendix
 
 end
 
@@ -2962,6 +2964,9 @@ theorem of_EquivalenceI (equ : [[Δ ⊢ A ≡ᵢ B]]) (Aki : [[Δ ⊢ A : K]]) (
     let .sum A'ki := Aki
     exact ih A'ki Δwf |>.sum
 
+-- NOTE This lemma requires deterministic kinding and we also need to modify the definition of `TypeEquivalence` and `TypeEquivalenceS`,
+-- which we leave as future work.
+-- After that, it follows a similar argument as `SmallStep.preservation` and `SmallStep.preservation_rev`.
 theorem _root_.TabularTypes.«F⊗⊕ω».TypeEquivalenceS.preservation : [[Δ ⊢ A ≡ₛ B]] → [[Δ ⊢ A : K]] → [[Δ ⊢ B : K]] := sorry
 
 theorem of_EquivalenceS (equ : [[Δ ⊢ A ≡ₛ B]]) (Aki : [[Δ ⊢ A : K]]) (Bki : [[Δ ⊢ B : K]])
