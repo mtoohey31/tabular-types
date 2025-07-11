@@ -563,7 +563,6 @@ theorem aux_of : TypeVarLocallyClosed A → TypeVarLocallyClosed_aux A := by
   | .prod A'lcat => exact .prod A'lcat.aux_of
   | .sum A'lcat => exact .sum A'lcat.aux_of
 
--- thank you matthew!!!
 theorem aux_iff : (TypeVarLocallyClosed_aux A ↔ A.TypeVarLocallyClosed) := ⟨of_aux, aux_of⟩
 
 theorem not_mem_freeTypeVars_TypeVar_open_dec

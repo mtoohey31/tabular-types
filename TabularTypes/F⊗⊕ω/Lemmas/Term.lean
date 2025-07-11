@@ -590,7 +590,6 @@ theorem multi_app (Ety : [[Δ ⊢ E : A@0]]) (Fty : ∀ m < n, [[Δ ⊢ ! </ F@i
   | zero => rwa [Range.map, Range.toList, if_neg nofun, List.map_nil, Term.multi_app]
   | succ m ih => exact Fty _ Nat.le.refl <| ih <| (Fty · <| Nat.lt_add_right 1 ·)
 
--- TODO naming
 theorem Δext_TypeVarLocallyClosed_of' (EtyA : [[Δ, x: T, Δ' ⊢ E : A]]) : T.TypeVarLocallyClosed := by
   have wf := EtyA.WellFormedness_of; clear EtyA
   have fresh := wf.append_termVar_fresh_r x (by simp [Environment.termVarDom])
@@ -760,15 +759,6 @@ open Environment in
 theorem inv_arr' (Ety: [[Δ ⊢ λ x? : T. E : C ]]) (eqC: [[ Δ ⊢ C ≡ A → B ]]): [[ Δ ⊢ T ≡ A ]] ∧ (∃(I: List _), ∀x ∉ I, [[ Δ, x: T ⊢ E^x : B ]]) := by
   generalize T_eq : [[ λ x? : T. E ]] = T_ at Ety
   induction Ety <;> cases T_eq
-  -- . case lam.refl Δ B' I EtyB' _ =>
-  --   refine skolem ⟨I ++ Δ.termVarDom, λx nin => ?_⟩
-  --   specialize EtyB' x (by simp_all)
-  --   have .termVarExt wf _ TkiStar := EtyB'.WellFormedness_of
-  --   have B'kiStar := EtyB'.Kinding_of.TermVar_drop (Δ'' := [[ ε ]])
-  --   have ⟨eTA, eB'B⟩ := EqSmallStep.of_Equivalence eqC (TkiStar.arr B'kiStar) wf |>.inj_arr
-  --   refine ⟨eTA.Equivalence_of TkiStar, ?_⟩
-  --   refine .equiv EtyB' ?_
-  --   exact eB'B.Equivalence_of B'kiStar |>.weakening_term' (Δ' := [[ ε ]])
   . case lam.refl Δ B' I EtyB' _ =>
     have ⟨wf, TkiStar, B'kiStar⟩: _ ∧ _ ∧ _ := (
       have ⟨x, xnin⟩ := I.exists_fresh
@@ -816,11 +806,6 @@ theorem inv_prod' (Ety: [[ Δ ⊢ (</ E@i // i in [:n] />) : T ]]) (eqT: [[ Δ �
     have eqEE_ := Std.Range.eq_of_mem_of_map_eq eq; clear eq
     have Alc' := match Alc with | .prod Alc => Alc
     have ⟨eqn'n, eA_A⟩ := EqSmallStep.of_Equivalence eqT (by exact .prod (.list λ i iltn => EtyA i iltn |>.Kinding_of)) wf |>.inj_prod.inj_list
-    -- have ⟨eqn'n, eAA_⟩ := eqT.EqParallelReduction_of (by
-    --   refine .prod (.list λ T Tin => ?_)
-    --   have ⟨i, iltn, Teq⟩ := Std.Range.mem_of_mem_map Tin; subst Teq
-    --   exact EtyA i iltn |>.TypeVarLocallyClosed_of
-    -- ) wf |>.sym.inj_prod wf Alc |>.inj_list wf Alc'
     subst n'
     refine ⟨rfl, λ x xin => ?_⟩
     simp_all
@@ -829,26 +814,6 @@ theorem inv_prod' (Ety: [[ Δ ⊢ (</ E@i // i in [:n] />) : T ]]) (eqT: [[ Δ �
   . case equiv.refl _ _ _ eqA'B' _ ih => exact ih (eqA'B'.trans eqT) rfl
 
 theorem inv_prod (Ety: [[ Δ ⊢ (</ E@i // i in [:n] />) : ⊗ {</ A@i // i in [:n'] />} ]]) : n = n' ∧ [[ </ Δ ⊢ E@i : A@i // i in [:n] /> ]] := Ety.inv_prod' .refl Ety.TypeVarLocallyClosed_of
-
--- NOTE I believe this stronger version holds but idk how to prove it. For details, check the notes.
--- theorem inv_sum' (Ety: [[ Δ ⊢ ι n E : T ]]) (eqT: [[ Δ ⊢ T ≡ ⊕ {</ A@i // i in [:n'] />} ]]) (Alc: [[ ⊕ {</ A@i // i in [:n'] />} ]].TypeVarLocallyClosed) : n ∈ [0:n'] ∧ [[ Δ ⊢ E : A@n ]] ∧ [[ </ Δ ⊢ A@i : * // i in [:n'] /> ]] := by
---   generalize T_eq : [[ ι n E ]] = T_ at Ety
---   induction Ety <;> cases T_eq
---   . case sumIntro.refl n_ Δ A' A'kiStar nin EtyA' ih =>
---     clear ih
---     have wf := EtyA'.WellFormedness_of
---     have Alc' := match Alc with | .sum Alc => Alc
---     have ⟨eqn'n_, eAA'⟩ := eqT.EqParallelReduction_of.sym.inv_sum wf Alc |>.inv_list wf Alc'
---     subst n_
---     refine ⟨nin, ?_, ?_⟩
---     . exact .equiv EtyA' (eAA' n nin |>.sym.TypeEquivalence_of)
---     . refine λ i iin => ?_
---       have A'kiStar := A'kiStar i iin
---       have eAA' := eAA' i iin
---       -- NOTE this requires preservation of type equivalence (aka type parallelreduction), and idk how to prove this
---       sorry
-
--- theorem inv_sum (Ety: [[ Δ ⊢ ι n E : ⊕ {</ A@i // i in [:n'] />} ]]) : n ∈ [0:n'] ∧ [[ Δ ⊢ E : A@n ]] ∧ [[ </ Δ ⊢ A@i : * // i in [:n'] /> ]] := Ety.inv_sum' .refl Ety.Type_TypeVarLocallyClosed_of
 
 theorem inv_sum' (Ety: [[ Δ ⊢ ι n E : T ]]) (eqT: [[ Δ ⊢ T ≡ ⊕ {</ A@i // i in [:n'] />} ]]) (Alc: [[ ⊕ {</ A@i // i in [:n'] />} ]].TypeVarLocallyClosed) : n ∈ [0:n'] ∧ [[ Δ ⊢ E : A@n ]] := by
   generalize T_eq : [[ ι n E ]] = T_ at Ety

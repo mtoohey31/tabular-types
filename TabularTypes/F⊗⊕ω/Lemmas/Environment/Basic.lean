@@ -454,13 +454,8 @@ theorem append_intro_r (xinΔ': [[ x: T ∈ Δ' ]]): [[ x: T ∈ Δ, Δ' ]] := b
   | typeVarExt _ ih => exact .typeVarExt ih
   | termVarExt _ neq ih => exact .termVarExt ih neq
 
--- theorem TypeVar_subst: [[ a: K ∈ Δ[A/a'] ]] ↔ [[ a: K ∈ Δ ]] := by
---   induction Δ <;>
---     aesop (add norm Environment.TypeVar_subst, unsafe cases TypeVarInEnvironment, unsafe constructors TypeVarInEnvironment)
-
 end TermVarInEnvironment
 
--- TODO I need these definitions to prove Type lemma
 namespace EnvironmentWellFormedness
 open Environment in
 theorem append_typeVar_fresh_r: [[ ⊢ Δ, Δ' ]] → ∀a ∈ Δ.typeVarDom, a ∉ Δ'.typeVarDom := by

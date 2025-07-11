@@ -547,7 +547,6 @@ theorem preservation (EtyA: [[Δ ⊢ E : A]]) (EE': [[E -> E']]): [[Δ ⊢ E' : 
       have eqFF_ := Std.Range.eq_of_mem_of_map_eq eq; clear eq
       refine .sumElim (ih1 EE') (λ x xin => by simp_all) BkiStar
     . case sumElimR F_ F' V nl V' nr Fr FF' =>
-      -- TODO clean up
       simp_all
       obtain ⟨eqEV, eq⟩ := eqEF; subst E
       let G i := if i < nl then (V' i).val else if i = nl then F_ else Fr (i - nl - 1)
