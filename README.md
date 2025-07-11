@@ -8,7 +8,7 @@ The proofs can be checked by [installing Lean 4](https://lean-lang.org/install/)
 
 ## `sorry`s
 
-As mentioned in the paper, there are currently three places that require additional work:
+There are currently three places that require additional work:
 
 1. We haven't yet proven normalization for the small step rules for the target types (`TabularTypes.«F⊗⊕ω».MultiSmallStep.normalization`), as this is difficult to mechanize, but we believe it should hold since the type level language is not particularly complex.
 2. One substitution lemma (`TabularTypes.«F⊗⊕ω».SmallStep.TypeVar_subst_in`) needed to prove that the small step equivalence closure property is implied by stratified type equivalence is defined with a mutual recursion block which we have not yet been able to show is decreasing in Lean. Instead, we provide a pen-and-paper proof in the appendix of the paper.
