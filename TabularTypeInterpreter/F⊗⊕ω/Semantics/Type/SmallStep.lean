@@ -161,7 +161,7 @@ judgement MultiSmallStep where
 ───────────── step
 Δ ⊢ A₀ ->* A₂
 
-judgement_syntax Δ " ⊢ " A " <->* " B : EqSmallStep
+judgement_syntax Δ " ⊢ " A " <->* " B : EqSmallStep (tex := s!"{Δ} \\, \\lottsym\{⊢} \\, {A} \\, \\lottsym\{↔^*} \\, {B}")
 
 judgement EqSmallStep where
 
