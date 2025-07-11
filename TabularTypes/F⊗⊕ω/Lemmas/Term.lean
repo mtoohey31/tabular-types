@@ -753,7 +753,8 @@ theorem Kinding_of (EtyA : [[Δ ⊢ E : A]]) : [[ Δ ⊢ A: * ]] := by
     exact AkiStar i iltn
   . case sumIntro AkiStar _ => exact .sum <| .list AkiStar
   . case sumElim BkiStar _ _ => exact BkiStar
-  . case equiv Δ E A B EtyA eqAB ih => sorry -- TODO kinding preservation for TypeEq
+  . case equiv Δ E A B EtyA eqAB ih => 
+    exact eqAB.TypeEquivalenceS_of EtyA.TypeVarLocallyClosed_of EtyA.WellFormedness_of |>.preservation ih
 
 open Environment in
 theorem inv_arr' (Ety: [[Δ ⊢ λ x? : T. E : C ]]) (eqC: [[ Δ ⊢ C ≡ A → B ]]): [[ Δ ⊢ T ≡ A ]] ∧ (∃(I: List _), ∀x ∉ I, [[ Δ, x: T ⊢ E^x : B ]]) := by
