@@ -1,0 +1,23 @@
+type Vector = \r : R *. Π(N) (Lift (Const Int) r)
+
+type Matrix = \r1 r2 : R *. Π(N) (Lift (Const (Vector r2)) r1)
+
+def vmul : ∀ r : R *. Vector r → Int → Vector r =
+  \v i. ind Vector r (\l acc. acc ++ {l ▹ v/l * i}) {}
+
+def dot : ∀ r : R *. Vector r → Vector r → Int =
+  \v1 v2. ind (Const Int) r (\l acc. acc + v1/l * v2/l) 0
+
+def mvcat : ∀ r1 r2 r2' : R *, l : L, t : *.
+    r2 ⊙(N) ⟨l ▹ t⟩ ~ r2' ⇒ Matrix r1 r2 → ⌊l⌋ → Vector r1 → Matrix r1 r2' =
+  \m l v. ind (\a : R *. Matrix a r2') r1
+    (\l' acc. acc ++ {l' ▹ m/l' ++ {l ▹ v/l'}}) {}
+
+def mvmul : ∀ r1 r2 : R *. Matrix r1 r2 → Vector r2 → Vector r1 =
+  \m v. ind Vector r1 (\l acc. acc ++ {l ▹ dot m/l v}) {}
+
+def col : ∀ r1 r2 : R *, l : L. Matrix r1 r2 → ⌊l⌋ → Vector r1 =
+  \m l. ind Vector r1 (\l' acc. acc ++ {l' ▹ m/l/l'}) {}
+
+def mmul : ∀ r1 r2 r3 : R *. Matrix r1 r2 → Matrix r2 r3 → Matrix r1 r3 =
+  \m1 m2. ind (Matrix r1) r3 (\l acc. mvcat acc (mvmul m1 (col m2 l))) {}
