@@ -8,10 +8,10 @@ namespace TabularTypeInterpreter.«F⊗⊕ω»
 namespace TypeEquivalenceI
 
 local instance : Inhabited «Type» where
-  default := .list []
+  default := .list [] none
 in
 def list' (As Bs: List «Type») (length_eq: As.length = Bs.length) (h : ∀A B, ⟨A, B⟩ ∈ As.zip Bs → [[ Δ ⊢ A ≡ᵢ B ]] )
-  : TypeEquivalenceI Δ (.list As) (.list Bs) := by
+  : TypeEquivalenceI Δ (.list As (Option.someIf K b)) (.list Bs (Option.someIf K b)) := by
   rw [← Std.Range.map_get!_eq (as := As), ← Std.Range.map_get!_eq (as := Bs), ← length_eq]
   apply list
   intro i mem
@@ -44,10 +44,22 @@ theorem subst_rename' {a': TypeVarId}
       rw [← append_type_assoc] at wf ⊢
       refine wf.strengthen_type (by simp_all [typeVarDom, typeVarDom_append])
     exact BkiK'.subst' wf' (.var .head)
-  . case listAppList A n B Alc =>
+  . case listAppList A n B Aki =>
     unfold Function.comp
     simp_all [Type.TypeVar_subst]
-    exact .listAppList (Alc.TypeVar_subst a'lc)
+    apply listAppList
+    rw [← append_type_assoc] at Aki
+    let a'ninΔ : [[a' ∉ dom(Δ)]] := by
+      rw [typeVarDom_append, typeVarDom] at fresh
+      exact And.right <| List.not_mem_cons.mp <| And.right <| List.not_mem_append'.mp fresh
+    let Aki' := Aki.weakening_r' (Δ' := .typeExt .empty a' K) fun | _, .head _ => a'ninΔ
+    rw [Environment.append_type_assoc, Environment.append_type_assoc] at Aki'
+    have wf' : [[ ⊢ ((Δ, a': K , a : K) , Δ') ]] := by
+      rw [← append_type_assoc] at wf ⊢
+      apply wf.strengthen_type
+      rw [typeVarDom_append, typeVarDom] at fresh
+      simp_all [typeVarDom, typeVarDom_append]
+    exact Aki'.subst' wf' <| .var .head
   . case listAppId A K' AkiLK =>
     refine .listAppId ?_
     have AkiLK': [[((Δ, a': K , a : K) , Δ') ⊢ A : L K']] := by
@@ -102,9 +114,14 @@ theorem weakening_type' (h: [[ Δ, Δ' ⊢ A ≡ᵢ B ]]) (fresh: a ∉ Δ.typeV
     refine .lamApp ?_
     rw [← Environment.append_type_assoc]
     exact BkiK'.weakening_r' (by simp_all [Environment.typeVarDom])
+  · case listAppList Aki =>
+    apply listAppList
+    rw [← Environment.append_type_assoc]
+    exact Kinding.weakening_r' (fresh := by simp_all [Environment.typeVarDom]) Aki
   . case listAppId AkiLK =>
     refine .listAppId ?_
-    . rw [<- Environment.append_type_assoc]; exact Kinding.weakening_r' (fresh := by simp_all [Environment.typeVarDom]) AkiLK
+    rw [← Environment.append_type_assoc]
+    exact Kinding.weakening_r' (fresh := by simp_all [Environment.typeVarDom]) AkiLK
   . case listAppComp A₀ A₁ K₁ K₂ B A₀lc A₁kiK₁K₂ =>
     refine .listAppComp A₀lc ?_ (K₁ := K₁) (K₂ := K₂)
     rw [← Environment.append_type_assoc]
@@ -166,10 +183,10 @@ theorem preserve_lc_rev (h: [[ Δ ⊢ A ≡ᵢ B ]]) (Blc: B.TypeVarLocallyClose
     apply TypeVar_close_inc (a := a) at Abody
     rw [TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars (by simp_all)] at Abody
     exact Abody.lam.app Blc
-  case listAppList A Δ n B Alc =>
+  case listAppList A Δ n B _ Aki =>
     match Blc with
     | .list ABlc =>
-      refine .listApp Alc (.list ?_)
+      refine .listApp Aki.TypeVarLocallyClosed_of (.list ?_)
       cases n
       . case zero => simp [Std.Range.map, Std.Range.toList]
       . case succ n _ =>
@@ -312,12 +329,16 @@ theorem TypeEquivalence.preserve_lc (h: [[ Δ ⊢ A ≡ B ]]): A.TypeVarLocallyC
       apply TypeVar_close_inc (a := a) at Abody
       rw [TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars (by simp_all)] at Abody
       exact Abody.lam.app Blc
-  case listAppList A Δ n B Alc =>
-    refine ⟨λ (.listApp Alc (.list Blc)) => .list λ T Tin => ?_, λ (.list ABlc) => .listApp Alc (.list ?_)⟩
+  case listAppList A Δ n B _ Aki =>
+    refine ⟨
+      λ (.listApp Aki (.list Blc)) => .list λ T Tin => ?_,
+      λ (.list ABlc) => .listApp Aki.TypeVarLocallyClosed_of (.list ?_)
+    ⟩
     . have ⟨i, iltn, Teq⟩ := Std.Range.mem_of_mem_map Tin; subst Teq
-      exact Alc.app <| Blc _ (Std.Range.mem_map_of_mem iltn)
+      exact Aki.app <| Blc _ (Std.Range.mem_map_of_mem iltn)
     . cases n
-      . case zero => simp [Std.Range.map, Std.Range.toList]
+      . case zero =>
+        simp [Std.Range.map, Std.Range.toList]
       . case succ n _ =>
         simp_all [Std.Range.mem_map_of_mem, Std.Range.mem_of_mem_toList]
         intro i iltSn
@@ -372,7 +393,7 @@ theorem TypeEquivalence.TypeEquivalenceS_of (h: [[Δ ⊢ A ≡ B]]) (Alc: A.Type
   . case refl => exact .base .refl
   · case eta A'lc => exact .base <| .eta A'lc
   . case lamApp BkiK => exact .base (.lamApp BkiK)
-  . case listAppList Alc_ => exact .base (.listAppList Alc_)
+  . case listAppList Aki_ => exact .base (.listAppList Aki_)
   . case listAppId Alc_ => exact .base (.listAppId Alc_)
   . case listAppComp A₀lc A₁lc => exact .base (.listAppComp A₀lc A₁lc)
   . case lam Δ K A B I h ih =>
@@ -391,7 +412,7 @@ theorem TypeEquivalence.TypeEquivalenceS_of (h: [[Δ ⊢ A ≡ B]]) (Alc: A.Type
     exact .scheme_intro_ex a (by simp_all) ih wf' Abody
   . case arr ih1 ih2 =>
     match Alc with | .arr A1lc B1lc => exact ih1 A1lc wf |>.arr <| ih2 B1lc wf
-  . case list n Δ A B h ih =>
+  . case list n Δ A B _ _ h ih =>
     clear h
     have : ([:n].map fun i => B i) = ([:n - n].map fun i => A i) ++ [n - n:n].map fun i => B i := by
       have : ([:0].map fun i => A i) = [] := by
@@ -473,6 +494,10 @@ theorem weakening_type' (equiv: [[ Δ, Δ' ⊢ A ≡ B ]]) (freshΔ: a ∉ Δ.ty
     refine .lamApp ?_
     rw [<- Environment.append_type_assoc]
     refine Kinding.weakening_r' (fresh := by simp_all [Environment.typeVarDom]) BkiK'
+  case listAppList Aki =>
+    apply listAppList
+    rw [← Environment.append_type_assoc]
+    refine Kinding.weakening_r' (fresh := by simp_all [Environment.typeVarDom]) Aki
   case listAppId AkiLK =>
     refine .listAppId ?_
     rw [<- Environment.append_type_assoc]
@@ -498,6 +523,10 @@ theorem weakening_term' (equiv: [[ Δ, Δ' ⊢ A ≡ B ]]) : [[ Δ, x: T, Δ' �
     refine .lamApp ?_
     rw [<- Environment.append_term_assoc]
     refine Kinding.weakening_r' (fresh := by simp_all [Environment.typeVarDom]) BkiK'
+  case listAppList Aki =>
+    apply listAppList
+    rw [<- Environment.append_term_assoc]
+    refine Kinding.weakening_r' (fresh := by simp_all [Environment.typeVarDom]) Aki
   case listAppId AkiLK =>
     refine .listAppId ?_
     rw [<- Environment.append_term_assoc]
@@ -551,10 +580,10 @@ theorem subst' {A T T' : «Type»} (equiv : [[ Δ, a: K, Δ' ⊢ T ≡ T' ]]) (T
   . case lamApp T₂ K' T₁ T₂kiK' =>
     rw [AkiK.TypeVarLocallyClosed_of.Type_open_TypeVar_subst_dist]
     refine .lamApp <| T₂kiK'.subst' wf AkiK
-  . case listAppList T₁ n T₂i T₁lc =>
+  . case listAppList T₁ n T₂i T₁ki =>
     unfold Function.comp
     simp [Type.TypeVar_subst]
-    refine .listAppList <| T₁lc.TypeVar_subst AkiK.TypeVarLocallyClosed_of
+    exact listAppList <| T₁ki.subst' wf AkiK
   . case listAppId T K' TkiLK' => exact .listAppId <| TkiLK'.subst' wf AkiK
   . case listAppComp T₀ T₁ K₁ K₂ T₂ T₀lc T₀kiK₁K₂ => exact .listAppComp (T₀lc.TypeVar_subst AkiK.TypeVarLocallyClosed_of) (T₀kiK₁K₂.subst' wf AkiK)
   . case lam K' T T' I TT' ih =>
@@ -611,9 +640,9 @@ theorem TermVar_drop (equiv: [[ Δ, x: T, Δ'' ⊢ A ≡ B ]]): [[ Δ, Δ'' ⊢ 
   all_goals aesop (add unsafe constructors TypeEquivalence, safe forward Kinding.TermVar_drop)
 
 local instance : Inhabited «Type» where
-  default := .list []
+  default := .list [] none
 
-theorem listAppEmptyL (Alc : A.TypeVarLocallyClosed) : [[Δ ⊢ A ⟦{ }⟧ ≡ { }]] := by
+theorem listAppEmptyL (Aki : [[Δ ⊢ A : K₁ ↦ K₂]]) : [[Δ ⊢ A ⟦{ : K₁ }⟧ ≡ { : K₂ }]] := by
   let B (i : Nat) := [[{ }]]
   rw [← Std.Range.map_get!_eq (as := []), List.length_nil]
   rw (occs := .pos [1]) [Std.Range.map_eq_of_eq_of_mem'' (by
@@ -626,9 +655,10 @@ theorem listAppEmptyL (Alc : A.TypeVarLocallyClosed) : [[Δ ⊢ A ⟦{ }⟧ ≡ 
     show _ = [[A B@i]]
     nomatch mem
   )]
-  exact listAppList Alc
+  rw [← Option.someIf_true]
+  exact listAppList Aki
 
-theorem listAppEmptyR (Alc : A.TypeVarLocallyClosed) : [[Δ ⊢ { } ≡ A ⟦{ }⟧]] := by
+theorem listAppEmptyR (Aki : [[Δ ⊢ A : K₁ ↦ K₂]]) : [[Δ ⊢ { : K₂ } ≡ A ⟦{ : K₁ }⟧]] := by
   let B (i : Nat) := [[{ }]]
   rw [← Std.Range.map_get!_eq (as := []), List.length_nil]
   rw (occs := .pos [1]) [Std.Range.map_eq_of_eq_of_mem'' (by
@@ -641,9 +671,11 @@ theorem listAppEmptyR (Alc : A.TypeVarLocallyClosed) : [[Δ ⊢ { } ≡ A ⟦{ }
     show _ = B i
     nomatch mem
   )]
-  exact symm <| listAppList Alc
+  apply symm
+  rw [← Option.someIf_true]
+  exact listAppList Aki
 
-theorem listAppSingletonL (Alc : A.TypeVarLocallyClosed) : [[Δ ⊢ A ⟦{B}⟧ ≡ {A B}]] := by
+theorem listAppSingletonL (Aki : [[Δ ⊢ A : K₁ ↦ K₂]]) : [[Δ ⊢ A ⟦{B}⟧ ≡ {A B}]] := by
   let B' (i : Nat) := B
   rw [← Std.Range.map_get!_eq (as := [_]), ← Std.Range.map_get!_eq (as := [ [[A B]]])]
   rw (occs := .pos [1]) [Std.Range.map_eq_of_eq_of_mem'' (by
@@ -660,9 +692,13 @@ theorem listAppSingletonL (Alc : A.TypeVarLocallyClosed) : [[Δ ⊢ A ⟦{B}⟧ 
     dsimp [B']
     rw [List.get!_cons_zero]
   )]
-  exact listAppList Alc
+  have : none = Option.someIf K₁ false := rfl
+  rw (occs := .pos [1]) [this]
+  have : none = Option.someIf K₂ false := rfl
+  rw [this]
+  exact listAppList Aki
 
-theorem listAppSingletonR (Alc: A.TypeVarLocallyClosed) : [[Δ ⊢ {A B} ≡ A ⟦{B}⟧]] := by
+theorem listAppSingletonR (Aki : [[Δ ⊢ A : K₁ ↦ K₂]]) : [[Δ ⊢ {A B} ≡ A ⟦{B}⟧]] := by
   let B' (i : Nat) := B
   rw [← Std.Range.map_get!_eq (as := [_]), ← Std.Range.map_get!_eq (as := [B])]
   rw (occs := .pos [1]) [Std.Range.map_eq_of_eq_of_mem'' (by
@@ -679,7 +715,12 @@ theorem listAppSingletonR (Alc: A.TypeVarLocallyClosed) : [[Δ ⊢ {A B} ≡ A �
     dsimp [B']
     rw [List.get!_cons_zero]
   )]
-  exact symm <| listAppList Alc
+  apply symm
+  have : none = Option.someIf K₁ false := rfl
+  rw (occs := .pos [1]) [this]
+  have : none = Option.someIf K₂ false := rfl
+  rw [this]
+  exact listAppList Aki
 
 theorem listSingleton (AequB : [[Δ ⊢ A ≡ B]]) : [[Δ ⊢ {A} ≡ {B}]] := by
   let A' (i : Nat) := A
@@ -699,6 +740,8 @@ theorem listSingleton (AequB : [[Δ ⊢ A ≡ B]]) : [[Δ ⊢ {A} ≡ {B}]] := b
       dsimp [B']
       rw [List.get!_cons_zero]
   )]
+  have : none = Option.someIf Kind.star false := rfl
+  rw [this]
   apply list
   intro i mem
   cases Nat.eq_of_le_of_lt_succ mem.lower mem.upper

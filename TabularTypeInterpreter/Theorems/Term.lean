@@ -16,7 +16,7 @@ instance : Inhabited Monotype where
   default := .row [] none
 in
 instance : Inhabited «Type» where
-  default := .list []
+  default := .list [] none
 in
 theorem to_Kinding (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (Γᵢw : [[Γc ⊢ Γᵢ]]) (Γcw : [[⊢c Γc]])
   (Γwe : [[Γc ⊢ Γ ⇝ Δ]]) : ∃ A, [[Γc; Γ ⊢ σ : * ⇝ A]] := by
@@ -157,38 +157,6 @@ theorem to_Kinding (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (Γᵢw : [[Γc �
     rw [← QualifiedType.TypeVar_open, ← TypeScheme.TypeVar_open] at τke'
     exact ⟨_, τke'.Monotype_open_preservation Γcw Γawe nofun aninτ aninB ρke (Γ' := .empty)⟩
 
-theorem _root_.TabularTypeInterpreter.«F⊗⊕ω».Type.eq_forall_of_TypeVar_open_eq_forall
-  (eq : Type.TypeVar_open A a n = .forall K B)
-  : ∃ A', Type.TypeVar_open A' a (n + 1) = B ∧ A = .forall K A' := by
-  cases A <;> rw [Type.TypeVar_open] at eq
-  case «forall» =>
-    rcases Type.forall.inj eq with ⟨rfl, rfl⟩
-    exact ⟨_, rfl, rfl⟩
-  all_goals nomatch eq
-
-theorem _root_.TabularTypeInterpreter.«F⊗⊕ω».Type.eq_arr_of_TypeVar_open_eq_arr
-  (eq : Type.TypeVar_open A a n = .arr A' B)
-  : ∃ A'' B', Type.TypeVar_open A'' a n = A' ∧ Type.TypeVar_open B' a n = B ∧ A = .arr A'' B' := by
-  cases A <;> rw [Type.TypeVar_open] at eq
-  case arr =>
-    rcases Type.arr.inj eq with ⟨rfl, rfl⟩
-    exact ⟨_, _, rfl, rfl, rfl⟩
-  all_goals nomatch eq
-
-theorem _root_.TabularTypeInterpreter.«F⊗⊕ω».Type.eq_unit_of_TypeVar_open_eq_unit
-  (eq : Type.TypeVar_open A a n = .prod (.list [])) : A = .prod (.list []) := by
-  cases A <;> rw [Type.TypeVar_open] at eq
-  case prod =>
-    rename «Type» => A
-    cases A <;> rw [Type.TypeVar_open] at eq
-    case list =>
-      rename List «Type» => A
-      rw [List.mapMem_eq_map] at eq
-      cases List.map_eq_nil_iff.mp <| Type.list.inj <| Type.prod.inj eq
-      rfl
-    all_goals nomatch eq
-  all_goals nomatch eq
-
 theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ ⊢ σ : * ⇝ A]])
   (Γᵢw : [[Γc ⊢ Γᵢ]]) (Γcw : [[⊢c Γc]]) (Γwe : [[Γc ⊢ Γ ⇝ Δ]]) : [[Δ ⊢ E : A]] := by
   induction Mte generalizing Δ A with
@@ -256,7 +224,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
   | annot _ ih => exact ih σke Γᵢw Γcw Γwe
   | label =>
     let .floor _ := σke
-    exact .prodIntro' (Γwe.soundness Γcw) nofun rfl
+    exact .prodIntro' (Γwe.soundness Γcw) (by simp) (.inr rfl) rfl
   | prod _ _ _ ih =>
     let .prod _ rowke := σke
     rcases rowke.singleton_row_inversion with ⟨_, _, κeq, _, rfl, τke⟩
@@ -268,7 +236,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     cases Kind.row.inj κeq
     rw [← Range.map_get!_eq (as := [_]), List.length_singleton]
     let mem : 0 ∈ [0:1] := ⟨Nat.le.refl, Nat.one_pos, Nat.mod_one _⟩
-    apply Typing.sumIntro mem <| ih τke Γᵢw Γcw Γwe
+    apply Typing.sumIntro mem (ih τke Γᵢw Γcw Γwe) _ (.inl nofun) (b := false)
     intro i mem
     let 0 := i
     rw [List.get!_cons_zero]
@@ -278,7 +246,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     rcases rowke.singleton_row_inversion with ⟨_, _, κeq, _, rfl, τke⟩
     cases Kind.row.inj κeq
     rcases σke.deterministic τke with ⟨_, rfl⟩
-    apply Typing.prodElim _ ⟨Nat.le.refl, Nat.one_pos, Nat.mod_one _⟩ (A := fun _ => A)
+    apply Typing.prodElim _ ⟨Nat.le.refl, Nat.one_pos, Nat.mod_one _⟩ (A := fun _ => A) (b := false)
     rw [Range.map, Range.toList, if_pos Nat.one_pos, Range.toList, Nat.zero_add,
         if_neg (Nat.not_lt_of_le Nat.le.refl), List.map_singleton]
     exact ih prodke Γᵢw Γcw Γwe
@@ -288,7 +256,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     cases Kind.row.inj κeq
     rcases σke.deterministic τke with ⟨_, rfl⟩
     rcases σke.deterministic τke' with ⟨_, rfl⟩
-    apply Typing.sumElim' (ih sumke Γᵢw Γcw Γwe) _ (τke.soundness Γcw Γwe .star) <| by
+    apply Typing.sumElim' (ih sumke Γᵢw Γcw Γwe) _ (τke.soundness Γcw Γwe .star) (b := false) <| by
       rw [List.length_singleton, List.length_singleton]
     intro _ mem
     rw [List.zip_cons_cons, List.zip_nil_left] at mem
@@ -301,7 +269,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     let .prod _ ρ₁ke := σke
     let Fty := containce.soundness (.contain μke ρ₁ke ρ₀ke .star) Γᵢw Γcw Γwe
     rw [← Range.map_get!_eq (as := [_, _])] at Fty
-    let πty := Fty.prodElim ⟨Nat.le.refl, Nat.two_pos, Nat.mod_one _⟩
+    let πty := Fty.prodElim ⟨Nat.le.refl, Nat.two_pos, Nat.mod_one _⟩ (b := false)
     rw [List.length_cons, List.length_singleton, List.get!_cons_zero] at πty
     simp only at πty
     have := πty.typeApp .id (B := [[λ a : *. a$0]])
@@ -322,7 +290,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     let Fty := concatce.soundness (.concat μke ρ₀ke ρ₁ke ρ₂ke .star (.contain μke ρ₀ke ρ₂ke .star)
       (.contain μke ρ₁ke ρ₂ke .star)) Γᵢw Γcw Γwe
     rw [← Range.map_get!_eq (as := [_, _, _, _])] at Fty
-    let πty := Fty.prodElim ⟨Nat.le.refl, Nat.le.refl.step.step.step, Nat.mod_one _⟩
+    let πty := Fty.prodElim ⟨Nat.le.refl, Nat.le.refl.step.step.step, Nat.mod_one _⟩ (b := false)
     rw [List.length_cons, List.length_cons, List.length_cons, List.length_singleton,
         List.get!_cons_zero] at πty
     simp only at πty
@@ -341,7 +309,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     let .sum _ ρ₁ke := σke
     let Fty := containce.soundness (.contain μke ρ₀ke ρ₁ke .star) Γᵢw Γcw Γwe
     rw [← Range.map_get!_eq (as := [_, _])] at Fty
-    let πty := Fty.prodElim ⟨Nat.le.refl.step, Nat.le.refl, Nat.mod_one _⟩
+    let πty := Fty.prodElim ⟨Nat.le.refl.step, Nat.le.refl, Nat.mod_one _⟩ (b := false)
     rw [List.length_cons, List.length_singleton, List.get!_cons_succ, List.get!_cons_zero] at πty
     simp only at πty
     have := πty.typeApp .id (B := [[λ a : *. a$0]])
@@ -365,7 +333,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     let Fty := concatce.soundness (.concat μke ρ₀ke ρ₁ke ρ₂ke .star (.contain μke ρ₀ke ρ₂ke .star)
       (.contain μke ρ₁ke ρ₂ke .star)) Γᵢw Γcw Γwe
     rw [← Range.map_get!_eq (as := [_, _, _, _])] at Fty
-    let πty := Fty.prodElim ⟨Nat.le.refl.step, Nat.le.refl.step.step, Nat.mod_one _⟩
+    let πty := Fty.prodElim ⟨Nat.le.refl.step, Nat.le.refl.step.step, Nat.mod_one _⟩ (b := false)
     rw [List.length_cons, List.length_cons, List.length_cons, List.length_singleton,
         List.get!_cons_succ, List.get!_cons_zero] at πty
     simp only at πty
@@ -410,7 +378,7 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     let Ety := TCce.soundness TCke Γᵢw Γcw Γwe
     rw [← Range.map_get!_eq (as := _ :: _)] at Ety
     let πty := Ety.prodElim
-      ⟨Nat.le.refl, by rw [List.length_cons]; exact Nat.succ_pos _, Nat.mod_one _⟩
+      ⟨Nat.le.refl, by rw [List.length_cons]; exact Nat.succ_pos _, Nat.mod_one _⟩ (b := false)
     rw [List.length_cons, List.length_map, Range.length_toList, Nat.sub_zero,
         List.get!_cons_zero] at πty
     simp only at πty
@@ -426,8 +394,8 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     rw [← QualifiedType.TypeVar_open, ← TypeScheme.TypeVar_open] at τke'
     let τopρke := τke'.Monotype_open_preservation Γcw Γawe nofun aninτ aninB ρke (Γ' := .empty)
     rcases τopρke.deterministic σke with ⟨_, rfl⟩
-    let τopemptyke := τke'.Monotype_open_preservation Γcw Γawe nofun aninτ aninB .empty_row
-      (Γ' := .empty)
+    let τopemptyke := τke'.Monotype_open_preservation Γcw Γawe nofun aninτ aninB (Γ' := .empty)
+      <| .empty_row κe
     apply Typing.app _ <| Nih τopemptyke Γᵢw Γcw Γwe
     let ⟨_, indke@(.ind I₀ I₁ ρke' κe' keBₗ keBᵣ)⟩ := indce.to_Kinding Γᵢw Γcw Γwe
     rename_i Bₗ Bᵣ _ _ _

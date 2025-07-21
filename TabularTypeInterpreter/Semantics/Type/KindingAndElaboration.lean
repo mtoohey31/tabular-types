@@ -1,6 +1,4 @@
 import Lott.Elab.JudgementComprehension
-import Lott.Elab.OrJudgement
-import Lott.Elab.UniversalJudgement
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Type
 import TabularTypeInterpreter.Semantics.Kind
 import TabularTypeInterpreter.Semantics.TypeEnvironment.Basic
@@ -70,22 +68,23 @@ notex for noelab ⊢ κ ⇝ K
 ───────────────────────────────────── scheme (I : List TypeVarId)
 Γc; Γ ⊢ ∀ a : κ. σ : * ⇝ ∀ a : K. A
 
-───────────────────── label
-Γc; Γ ⊢ ℓ : L ⇝ ⊗ { }
+───────────────────────── label
+Γc; Γ ⊢ ℓ : L ⇝ ⊗ { : * }
 
 Γc; Γ ⊢ ξ : L
-─────────────────────── floor
-Γc; Γ ⊢ ⌊ξ⌋ : * ⇝ ⊗ { }
+─────────────────────────── floor
+Γc; Γ ⊢ ⌊ξ⌋ : * ⇝ ⊗ { : * }
 
-───────────────────── comm
-Γc; Γ ⊢ u : U ⇝ ⊗ { }
+───────────────────────── comm
+Γc; Γ ⊢ u : U ⇝ ⊗ { : * }
 
 </ Γc; Γ ⊢ ξ@i : L // i in [:n] notex />
 unique(</ ξ@i // i in [:n] notex />)
 </ Γc; Γ ⊢ τ@i : κ ⇝ A@i // i in [:n] notex />
+notex ⊢ κ ⇝ K
 notex n ≠ 0 ∨ b
-────────────────────────────────────────────────────────────────────────────────────────────────── row
-Γc; Γ ⊢ ⟨</ ξ@i ▹ τ@i // i in [:n] notex /> </ : κ // b />⟩ : R κ ⇝ {</ A@i // i in [:n] notex />}
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────── row
+Γc; Γ ⊢ ⟨</ ξ@i ▹ τ@i // i in [:n] notex /> </ : κ // b />⟩ : R κ ⇝ {</ A@i // i in [:n] notex /> </ : K // b />}
 
 Γc; Γ ⊢ μ : U
 Γc; Γ ⊢ ρ : R * ⇝ A
@@ -137,9 +136,9 @@ notex for noelab ⊢ κ ⇝ K
 notex for noelab ⊢ κ ⇝ K
 notex for noelab ∀ aₗ ∉ I₀, ∀ aₜ ∉ aₗ :: I₀, ∀ aₚ ∉ aₜ :: aₗ :: I₀, ∀ aᵢ ∉ aₚ :: aₜ :: aₗ :: I₀, Γc; Γ, aₗ : L, aₜ : κ, aₚ : R κ, aᵢ : R κ ⊢ aₚ ⊙(N) ⟨aₗ ▹ aₜ⟩ ~ aᵢ : C ⇝ Bₗ^aₗ#4^aₜ#3^aₚ#2^aᵢ#1
 notex for noelab ∀ aᵢ ∉ I₁, ∀ aₙ ∉ aᵢ :: I₁, Γc; Γ, aᵢ : R κ, aₙ : R κ ⊢ aᵢ ⊙(N) aₙ ~ ρ : C ⇝ Bᵣ^aᵢ#1^aₙ
-notex for noelab Aₛ := ∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bₗ → Bᵣ → (⊗ { }) → (aₘ$5 aₚ$2) → aₘ$5 aᵢ$1
+notex for noelab Aₛ := ∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bₗ → Bᵣ → (⊗ { : * }) → (aₘ$5 aₚ$2) → aₘ$5 aᵢ$1
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── ind (I₀ I₁)
-Γc; Γ ⊢ Ind ρ : C ⇝ ∀ aₘ : (L K) ↦ *. Aₛ → (aₘ$0 { }) → aₘ$0 A
+Γc; Γ ⊢ Ind ρ : C ⇝ ∀ aₘ : (L K) ↦ *. Aₛ → (aₘ$0 { : K }) → aₘ$0 A
 
 Γc; Γ ⊢ (Lift (λ a : κ. τ) ρ₀) ⊙(C) ρ₁ ~ ρ₂ : C ⇝ A
 ─────────────────────────────────────────────────── split

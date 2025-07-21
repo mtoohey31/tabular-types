@@ -55,10 +55,10 @@ local instance : Inhabited TypeClass where
   default := .zero
 in
 local instance : Inhabited ClassEnvironmentEntrySuper where
-  default := .mk default <| .list []
+  default := .mk default <| .list [] none
 in
 local instance : Inhabited «F⊗⊕ω».Type where
-  default := .list []
+  default := .list [] none
 in
 theorem WellFormedness.In_append_inl (ΓcΓc'w : [[⊢c Γc, Γc']]) (γcin : [[γc ∈ Γc]])
   : [[γc ∈ Γc, Γc']] := by

@@ -31,12 +31,12 @@ notex for noelab Fₛ := Λ a : K ↦ *. λ x : ⊕ (a$0 ⟦A₀⟧). Fₛ₁₂
 p_ permutes [:n]
 notex for noelab p_' permutes [:n]
 notex for noelab p_ inverts p_' on [:n]
-Γc; Γ ⊢ ⟨</ ξ@i ▹ τ@i // i in [:n] /> </ : κ // b notex />⟩ : R κ ⇝ {</ A@i // i in [:n] />}
+Γc; Γ ⊢ ⟨</ ξ@i ▹ τ@i // i in [:n] /> </ : κ // b />⟩ : R κ ⇝ {</ A@i // i in [:n] /> </ : K // b />}
 notex for noelab ⊢ κ ⇝ K
-notex for noelab Fₚ := Λ a : K ↦ *. λ x : ⊗ (a$0 ⟦{</ A@i // i in [:n] />}⟧). (</ π i x$0 // (tex := "i \\in p") i in p_ />)
-notex for noelab Fₛ := Λ a : K ↦ *. λ x : ⊕ (a$0 ⟦{</ A@i // i in [:n] />}⟧). case x$0 {</ λ x' : a$0 A@i. ι j x'$0 // (tex := "i \\in [:n], j \\in p'") (i, j) in [:n].toList.zip p_' />}
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── comm
-Γc; Γ ⊢ ⟨</ ξ@i ▹ τ@i // i in [:n] /> </ : κ // b notex />⟩ ≡(C) ⟨</ ξ@i ▹ τ@i // (tex := "i \\in p") i in p_ /> </ : κ // b notex />⟩ ⇝ Fₚ, Fₛ
+notex for noelab Fₚ := Λ a : K ↦ *. λ x : ⊗ (a$0 ⟦{</ A@i // i in [:n] /> </ : K // b />}⟧). (</ π i x$0 // (tex := "i \\in p") i in p_ />)
+notex for noelab Fₛ := Λ a : K ↦ *. λ x : ⊕ (a$0 ⟦{</ A@i // i in [:n] /> </ : K // b />}⟧). case x$0 {</ λ x' : a$0 A@i. ι j x'$0 // (tex := "i \\in [:n], j \\in p'") (i, j) in [:n].toList.zip p_' />}
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── comm
+Γc; Γ ⊢ ⟨</ ξ@i ▹ τ@i // i in [:n] /> </ : κ // b />⟩ ≡(C) ⟨</ ξ@i ▹ τ@i // (tex := "i \\in p") i in p_ /> </ : κ // b />⟩ ⇝ Fₚ, Fₛ
 
 Γc; Γ ⊢ Lift (λ a : κ₀. τ') ⟨</ ξ@i ▹ τ@i // i in [:n] notex /> </ : κ₀ // b notex />⟩ : R κ₁ ⇝ A
 notex for noelab ⊢ κ₁ ⇝ K

@@ -9,7 +9,7 @@ def rec_uniform {motive : «Type» → Prop} (var : ∀ a : TypeVar, motive (var
   (lam : ∀ K A, motive A → motive (lam K A)) (app : ∀ A B, motive A → motive B → motive (app A B))
   («forall» : ∀ K A, motive A → motive («forall» K A))
   (arr : ∀ A B, motive A → motive B → motive (arr A B))
-  (list : ∀ As, (∀ A ∈ As, motive A) → motive (list As))
+  (list : ∀ As K?, (∀ A ∈ As, motive A) → motive (list As K?))
   (listApp : ∀ A B, motive A → motive B → motive (listApp A B))
   (prod : ∀ A, motive A → motive (prod A)) (sum : ∀ A, motive A → motive (sum A)) (A : «Type»)
   : motive A :=
@@ -53,26 +53,27 @@ theorem TypeVar_open_sizeOf (A : «Type») : sizeOf (A.TypeVar_open a n) = sizeO
     simp only
     rw [← _sizeOf_1, ← _sizeOf_1, ← _sizeOf_1, ← _sizeOf_1, rev (A'.TypeVar_open _ _),
         rev (B.TypeVar_open _ _), rev A', rev B, A'.TypeVar_open_sizeOf, B.TypeVar_open_sizeOf]
-  | list A's =>
+  | list A's K? =>
     match A's with
     | [] =>
       rw [TypeVar_open]
-      show sizeOf (list []) = _
+      show sizeOf (list [] _) = _
       dsimp only [sizeOf]
     | A' :: A's' =>
       rw [TypeVar_open]
-      show sizeOf (list (_ :: _)) = _
+      show sizeOf (list (_ :: _) _) = _
       dsimp only [sizeOf]
       rw [_sizeOf_1, _sizeOf_1]
       simp only
       rw [← _sizeOf_1, ← _sizeOf_1, ← _sizeOf_2, ← _sizeOf_2, rev (A'.TypeVar_open _ _), rev A',
           A'.TypeVar_open_sizeOf]
-      have h := (list A's').TypeVar_open_sizeOf (a := a) (n := n)
+      have h := (list A's' K?).TypeVar_open_sizeOf (a := a) (n := n)
       dsimp only [sizeOf] at h
       rw [TypeVar_open, _sizeOf_1, _sizeOf_1] at h
       simp only at h
-      rw [← _sizeOf_2, ← _sizeOf_2, Nat.add_comm, Nat.add_comm (m := _sizeOf_2 A's')] at h
-      rw [Nat.add_one_inj.mp h]
+      rw [← _sizeOf_2, ← _sizeOf_2, Nat.add_assoc, Nat.add_assoc, Nat.add_comm 1,
+          Nat.add_comm 1] at h
+      rw [Nat.add_left_inj.mp <| Nat.add_one_inj.mp h]
   | listApp A' B =>
     dsimp only [sizeOf]
     rw [TypeVar_open, _sizeOf_1, _sizeOf_1]
@@ -241,7 +242,7 @@ theorem Type_open_drop (h : m < n) (Aoplc : (Type_open A B m).TypeVarLocallyClos
     rw [Type_open] at Aoplc
     let .arr A'oplc Boplc := Aoplc
     exact arr (A'oplc.Type_open_drop h) (Boplc.Type_open_drop h)
-  | .list A's =>
+  | .list A's K? =>
     rw [Type_open] at Aoplc
     match h' : A's with
     | [] => exact .list nofun
@@ -252,7 +253,7 @@ theorem Type_open_drop (h : m < n) (Aoplc : (Type_open A B m).TypeVarLocallyClos
       match A''in with
       | .head _ => exact A'oplc (A''.Type_open _ _) (.head _) |>.Type_open_drop h
       | .tail _ A''inA's' =>
-        have := list <| fun A''' A'''in => A'oplc A''' <| .tail _ A'''in
+        have := @list K? _ _ <| fun A''' A'''in => A'oplc A''' <| .tail _ A'''in
         rw [← Type_open] at this
         let .list A's'lc := this.Type_open_drop h
         exact A's'lc A'' A''inA's'
@@ -272,6 +273,7 @@ termination_by sizeOf A
 decreasing_by
   all_goals simp_arith
   · apply Nat.le_of_lt
+    apply Nat.lt_add_right
     apply List.sizeOf_lt_of_mem
     have : A's = A' :: A's' := by assumption
     cases this
@@ -306,7 +308,7 @@ theorem TypeVar_open_drop {A : «Type»} (h : m < n)
     rw [TypeVar_open] at Aoplc
     let .arr A'oplc Boplc := Aoplc
     exact arr (A'oplc.TypeVar_open_drop h) (Boplc.TypeVar_open_drop h)
-  | .list A's =>
+  | .list A's K? =>
     rw [TypeVar_open] at Aoplc
     match h' : A's with
     | [] => exact .list nofun
@@ -317,7 +319,7 @@ theorem TypeVar_open_drop {A : «Type»} (h : m < n)
       match A''in with
       | .head _ => exact A'oplc (A''.TypeVar_open _ _) (.head _) |>.TypeVar_open_drop h
       | .tail _ A''inA's' =>
-        have := list <| fun A''' A'''in => A'oplc A''' <| .tail _ A'''in
+        have := @list K? _ _ <| fun A''' A'''in => A'oplc A''' <| .tail _ A'''in
         rw [← TypeVar_open] at this
         let .list A's'lc := this.TypeVar_open_drop h
         exact A's'lc A'' A''inA's'
@@ -337,6 +339,7 @@ termination_by sizeOf A
 decreasing_by
   all_goals simp_arith
   · apply Nat.le_of_lt
+    apply Nat.lt_add_right
     apply List.sizeOf_lt_of_mem
     have : A's = A' :: A's' := by assumption
     cases this

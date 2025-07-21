@@ -20,7 +20,7 @@ theorem contain_evidence_eq_inversion (aninA : a ∉ A.freeTypeVars)
     let eq' := prod.inj eq
     cases A <;> rw [TypeVar_open] at *
     case list =>
-      let eq'' := list.inj eq'
+      rcases list.inj eq' with ⟨eq'', rfl⟩
       rw [List.mapMem_eq_map] at *
       rename List _ => As
       match As with
@@ -183,7 +183,7 @@ theorem concat_evidence_eq_inversion
     let eq' := prod.inj eq
     cases A <;> rw [TypeVar_open] at *
     case list =>
-      let eq'' := list.inj eq'
+      rcases list.inj eq' with ⟨eq'', rfl⟩
       rw [List.mapMem_eq_map] at *
       rename List _ => As
       match As with
@@ -453,7 +453,7 @@ theorem concat_evidence_eq_inversion
   all_goals nomatch eq
 
 local instance : Inhabited «Type» where
-  default := .list []
+  default := .list [] none
 in
 theorem tc_evidence_eq_inversion (aninA : a ∉ A.freeTypeVars)
   (A'oplc : (A'.TypeVar_open a').TypeVarLocallyClosed)
@@ -469,7 +469,7 @@ theorem tc_evidence_eq_inversion (aninA : a ∉ A.freeTypeVars)
     let eq' := prod.inj eq
     cases A <;> rw [TypeVar_open] at *
     case list =>
-      let eq'' := list.inj eq'
+      rcases list.inj eq' with ⟨eq'', rfl⟩
       rw [List.mapMem_eq_map] at *
       rename List _ => As
       match As with
@@ -517,11 +517,11 @@ theorem tc_evidence_eq_inversion (aninA : a ∉ A.freeTypeVars)
 
 private
 theorem ind_evidence_inversion
-  (eq : A.TypeVar_open a n = [[∀ aₘ : (L K) ↦ *. (∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bₗ → Bᵣ → (⊗ { }) → (aₘ$5 aₚ$2) → aₘ$5 aᵢ$1) → (aₘ$0 { }) → aₘ$0 A']])
+  (eq : A.TypeVar_open a n = [[∀ aₘ : (L K) ↦ *. (∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bₗ → Bᵣ → (⊗ { : * }) → (aₘ$5 aₚ$2) → aₘ$5 aᵢ$1) → (aₘ$0 { : K }) → aₘ$0 A']])
   : ∃ Bₗ' Bᵣ' A'',
     Bₗ = Bₗ'.TypeVar_open a (n + 6) ∧ Bᵣ = Bᵣ'.TypeVar_open a (n + 6) ∧
     A' = A''.TypeVar_open a (n + 1) ∧
-    A = [[∀ aₘ : (L K) ↦ *. (∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bₗ' → Bᵣ' → (⊗ { }) → (aₘ$5 aₚ$2) → aₘ$5 aᵢ$1) → (aₘ$0 { }) → aₘ$0 A'']] := by
+    A = [[∀ aₘ : (L K) ↦ *. (∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bₗ' → Bᵣ' → (⊗ { : * }) → (aₘ$5 aₚ$2) → aₘ$5 aᵢ$1) → (aₘ$0 { : K }) → aₘ$0 A'']] := by
   cases A <;> rw [TypeVar_open] at eq
   case «forall» A =>
     rcases forall.inj eq with ⟨rfl, eq'⟩
@@ -557,7 +557,7 @@ theorem ind_evidence_inversion
                         let eq₀₀' := prod.inj eq₀₀
                         cases A₀₀ <;> rw [TypeVar_open] at eq₀₀'
                         case list =>
-                          let eq₀₀'' := list.inj eq₀₀'
+                          rcases list.inj eq₀₀' with ⟨eq₀₀'', rfl⟩
                           rw [List.mapMem_eq_map] at eq₀₀''
                           cases List.map_eq_nil_iff.mp eq₀₀''
                           cases A₀₁ <;> rw [TypeVar_open] at eq₀₁
@@ -617,7 +617,7 @@ theorem ind_evidence_inversion
                                                                   cases eq₁₀₀
                                                                   cases A₁₀₁ <;> rw [TypeVar_open] at eq₁₀₁
                                                                   case list A₁₀₁ =>
-                                                                    let eq₁₀₁' := list.inj eq₁₀₁
+                                                                    rcases list.inj eq₁₀₁ with ⟨eq₁₀₁', rfl⟩
                                                                     rw [List.mapMem_eq_map] at eq₁₀₁'
                                                                     cases List.map_eq_nil_iff.mp eq₁₀₁'
                                                                     cases A₁₁ <;> rw [TypeVar_open] at eq₁₁
@@ -672,7 +672,7 @@ local instance : Inhabited Monotype where
   default := .row [] none
 in
 local instance : Inhabited «Type» where
-  default := .list []
+  default := .list [] none
 in
 set_option maxHeartbeats 2000000 in
 open TypeScheme in
@@ -811,15 +811,15 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
         generalize ξτs'eq
           : (ξτs.map fun (ξ, τ) => (ξ.TypeVar_open a m, τ.TypeVar_open a m)) = ξτs' at σke
         generalize A'eq : A.TypeVar_open a n = A' at σke
-        let .row ξ'ke uni τ'ke h' := σke
-        rename_i B' _ _ _ _ _ _
+        let .row ξ'ke uni τ'ke κ'e h' := σke
+        rename_i B' _ _ _ _ _ _ _
         cases A <;> rw [Type.TypeVar_open] at A'eq
         case list =>
           rename List _ => A
           rw [List.mapMem_eq_map] at A'eq
-          let A'eq := Type.list.inj A'eq
+          rcases Type.list.inj A'eq with ⟨A'eq', rfl⟩
           let ξτslength_eq : List.length (List.map ..) = List.length _ := by rw [ξτs'eq]
-          let Alength_eq : List.length (List.map ..) = List.length _ := by rw [A'eq]
+          let Alength_eq : List.length (List.map ..) = List.length _ := by rw [A'eq']
           rw [List.length_map, List.length_map, Range.length_toList,
               Nat.sub_zero] at ξτslength_eq Alength_eq
           let ξ' i := ξτs.get! i |>.fst.Monotype_open τ m
@@ -849,7 +849,7 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
             apply List.not_mem_flatten.mp aninσ
             apply List.mem_map.mpr
             exact ⟨_, List.get!_mem ilt, rfl⟩
-          apply row _ _ _ h'
+          apply row _ _ _ κ'e h'
           · exact fun i => ((B' i).TypeVar_close a m).Type_open B m
           · intro i mem
             dsimp only [ξ']
@@ -891,8 +891,8 @@ theorem TypeScheme.KindingAndElaboration.Monotype_open_preservation
             have := Range.eq_of_mem_of_map_eq ξτs'eq i mem
             simp only [Function.comp] at this
             rw [← Prod.mk.inj this |>.right, ← QualifiedType.TypeVar_open, ← TypeVar_open] at τike
-            rw [← Range.map_get!_eq (as := A), Range.map, List.map_map, Alength_eq] at A'eq
-            have := Range.eq_of_mem_of_map_eq A'eq i mem
+            rw [← Range.map_get!_eq (as := A), Range.map, List.map_map, Alength_eq] at A'eq'
+            have := Range.eq_of_mem_of_map_eq A'eq' i mem
             simp only [Function.comp] at this
             rw [← this] at τike
             rw [Type.freeTypeVars, List.mapMem_eq_map] at aninA

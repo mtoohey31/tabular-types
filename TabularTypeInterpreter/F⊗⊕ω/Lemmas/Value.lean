@@ -96,8 +96,8 @@ theorem canonical_form_of_forall (Vty : [[ε ⊢ V : ∀ a? : K. A]])
 local instance : Inhabited Term where
   default := .prodIntro []
 in
-theorem canonical_form_of_prod (Vty : [[ε ⊢ V : ⊗ {</ A@i // i in [:n] />}]])
-  : ∃ V' : Nat → Value, V.1 = [[(</ V'@i // i in [:n] />)]] := by
+theorem canonical_form_of_prod (Vty : [[ε ⊢ V : ⊗ {</ A@i // i in [:n] /> </ : K // b />}]])
+  : ∃ V' : Nat → Value, V.1 = [[(</ V'@i // i in [:n] />)]] ∧ if b then K = .star else n ≠ 0 := by
   obtain ⟨E, isV⟩ := V
   cases isV <;> simp_all
   . case lam T E =>
@@ -114,8 +114,9 @@ theorem canonical_form_of_prod (Vty : [[ε ⊢ V : ⊗ {</ A@i // i in [:n] />}]
     simp_all
   . case prodIntro E isV =>
     rw [← Std.Range.map_get!_eq (as := E)] at Vty
-    have ⟨eq_len, _⟩ := Vty.inv_prod; subst n
-    refine ⟨λ i => ⟨E.get! i, ?_⟩, ?_⟩
+    have ⟨eq_len, _, _, eq, h⟩ := Vty.inv_prod; subst n
+    cases Option.someIf_eq eq
+    refine ⟨⟨λ i => ⟨E.get! i, ?_⟩, ?_⟩, ?_⟩
     . simp [default, getElem?, decidableGetElem?]
       split
       . case isTrue h => simp_all
@@ -123,6 +124,19 @@ theorem canonical_form_of_prod (Vty : [[ε ⊢ V : ⊗ {</ A@i // i in [:n] />}]
     . simp_all only
       eta_reduce
       rw [Std.Range.map_get!_eq (as := E)]
+    · split
+      · case isTrue h' =>
+        cases h'
+        rw [Option.someIf_true] at eq
+        exact Option.eq_of_someIf_eq_some eq.symm |>.left
+      · case isFalse h' =>
+        rw [Bool.not_eq_true _ |>.mp h', Option.someIf_false, Option.someIf] at eq
+        split at eq
+        case isTrue => nomatch eq
+        case isFalse h'' =>
+        match h with
+        | .inl ne => exact ne
+        | .inr h''' => nomatch h' h'''
   . case sumIntro n E isV =>
     have ⟨T, Eeq⟩ := TypeEq_sum_of_sumIntro Vty
     have ⟨U, mredProd, mredSum⟩ := Eeq.common_reduct_of .empty Vty.Kinding_of
@@ -130,8 +144,8 @@ theorem canonical_form_of_prod (Vty : [[ε ⊢ V : ⊗ {</ A@i // i in [:n] />}]
     have := mredProd.preserve_shape_prod; rcases this
     simp_all
 
-theorem canonical_form_of_sum (Vty : [[ε ⊢ V : ⊕ {</ A@i // i in [:n'] />}]])
-  : ∃ n ∈ [0:n'], ∃ V', V.1 = [[ι n V']] := by
+theorem canonical_form_of_sum (Vty : [[ε ⊢ V : ⊕ {</ A@i // i in [:n'] /> </ : K // b />}]])
+  : ∃ n ∈ [0:n'], ∃ V', V.1 = [[ι n V']]∧ if b then K = .star else n' ≠ 0 := by
   obtain ⟨E, isV⟩ := V
   cases isV <;> simp_all
   . case lam T E =>
@@ -153,7 +167,20 @@ theorem canonical_form_of_sum (Vty : [[ε ⊢ V : ⊕ {</ A@i // i in [:n'] />}]
     have := mredSum.preserve_shape_sum; rcases this
     simp_all
   . case sumIntro n E isV =>
-    have ⟨nin, _⟩ := Vty.inv_sum
-    exact ⟨nin, ⟨E, isV⟩, rfl⟩
+    have ⟨nin, _, _, eq, h⟩ := Vty.inv_sum
+    refine ⟨nin, ⟨⟨E, isV⟩, rfl⟩, ?_⟩
+    split
+    · case isTrue h' =>
+      cases h'
+      rw [Option.someIf_true] at eq
+      exact Option.eq_of_someIf_eq_some eq |>.left.symm
+    · case isFalse h' =>
+      rw [Bool.not_eq_true _ |>.mp h', Option.someIf_false, Option.someIf] at eq
+      split at eq
+      case isTrue => nomatch eq
+      case isFalse h'' =>
+      match h with
+      | .inl ne => exact ne
+      | .inr h''' => nomatch h'' h'''
 
 end Value

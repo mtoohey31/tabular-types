@@ -1,5 +1,6 @@
 import Lott.Data.Range
 import Lott.Elab.JudgementComprehension
+import Lott.Elab.OrJudgement
 import Lott.Elab.UniversalJudgement
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Environment.Basic
 import TabularTypeInterpreter.RuleSets
@@ -43,8 +44,9 @@ a : K ∈ Δ
 Δ ⊢ A → B : *
 
 </ Δ ⊢ A@i : K // i in [:n] notex />
-──────────────────────────────────────── list
-Δ ⊢ {</ A@i // i in [:n] notex />} : L K
+notex n ≠ 0 ∨ b
+─────────────────────────────────────────────────────── list
+Δ ⊢ {</ A@i // i in [:n] notex /> </ : K // b />} : L K
 
 Δ ⊢ A : K₁ ↦ K₂
 Δ ⊢ B : L K₁
@@ -99,9 +101,9 @@ lc_ A
 ─────────────────────────── lamApp
 Δ ⊢ (λ a : K. A) B ≡ A^^B/a
 
-notex lc_ A   -- NOTE this is for preserve_lc when n = 0
-───────────────────────────────────────────────────────────────── listAppList
-Δ ⊢ A ⟦{ </ B@i // i in [:n] notex /> }⟧ ≡ { </ A B@i // i in [:n] notex /> }
+Δ ⊢ A : K₁ ↦ K₂
+───────────────────────────────────────────────────────────────────────────────────────────────────────────── listAppList
+Δ ⊢ A ⟦{ </ B@i // i in [:n] notex /> </ : K₁ // b /> }⟧ ≡ { </ A B@i // i in [:n] notex /> </ : K₂ // b /> }
 
 Δ ⊢ A: L K
 ────────────────────────── listAppId
@@ -131,8 +133,8 @@ notex lc_ A₀
 Δ ⊢ A₁ → B₁ ≡ A₂ → B₂
 
 </ Δ ⊢ A@i ≡ B@i // i in [:n] notex />
-─────────────────────────────────────────────────────────────────── list
-Δ ⊢ {</ A@i // i in [:n] notex />} ≡ {</ B@i // i in [:n] notex />}
+───────────────────────────────────────────────────────────────────────────────────────────────── list
+Δ ⊢ {</ A@i // i in [:n] notex /> </ : K // b />} ≡ {</ B@i // i in [:n] notex /> </ : K // b />}
 
 Δ ⊢ A₁ ≡ A₂
 Δ ⊢ B₁ ≡ B₂
@@ -184,9 +186,9 @@ lc_ A
 ─────────────────────────── lamApp
 Δ ⊢ (λ a : K. A) B ≡ᵢ A^^B/a
 
-notex lc_ A   -- NOTE this is for preserve_lc when n = 0
-───────────────────────────────────────────────────────────────── listAppList
-Δ ⊢ A ⟦{ </ B@i // i in [:n] notex /> }⟧ ≡ᵢ { </ A B@i // i in [:n] notex /> }
+Δ ⊢ A : K₁ ↦ K₂
+────────────────────────────────────────────────────────────────────────────────────────────────────────────── listAppList
+Δ ⊢ A ⟦{ </ B@i // i in [:n] notex /> </ : K₁ // b /> }⟧ ≡ᵢ { </ A B@i // i in [:n] notex /> </ : K₂ // b /> }
 
 Δ ⊢ A: L K
 ────────────────────────── listAppId
@@ -216,8 +218,8 @@ notex lc_ A₀
 Δ ⊢ A₁ → B₁ ≡ᵢ A₂ → B₂
 
 </ Δ ⊢ A@i ≡ᵢ B@i // i in [:n] notex />
-─────────────────────────────────────────────────────── list
-Δ ⊢ {</ A@i // i in [:n] notex />} ≡ᵢ {</ B@i // i in [:n] notex />}
+────────────────────────────────────────────────────────────────────────────────────────────────── list
+Δ ⊢ {</ A@i // i in [:n] notex /> </ : K // b />} ≡ᵢ {</ B@i // i in [:n] notex /> </ : K // b />}
 
 Δ ⊢ A₁ ≡ᵢ A₂
 Δ ⊢ B₁ ≡ᵢ B₂
