@@ -764,7 +764,9 @@ theorem Kinding_of (EtyA : [[Δ ⊢ E : A]]) : [[ Δ ⊢ A: * ]] := by
   . case sumIntro AkiStar h _ => exact .sum <| .list AkiStar h
   . case sumElim BkiStar _ _ =>
     exact BkiStar
-  . case equiv Δ E A B EtyA eqAB ih => sorry -- TODO kinding preservation for TypeEq
+  . case equiv Δ E A B EtyA eqAB ih =>
+    exact eqAB.TypeEquivalenceS_of ih.TypeVarLocallyClosed_of EtyA.WellFormedness_of
+      |>.preservation.mp ih
 
 open Environment in
 theorem inv_arr' (Ety: [[Δ ⊢ λ x? : T. E : C ]]) (eqC: [[ Δ ⊢ C ≡ A → B ]]): [[ Δ ⊢ T ≡ A ]] ∧ (∃(I: List _), ∀x ∉ I, [[ Δ, x: T ⊢ E^x : B ]]) := by
@@ -787,10 +789,10 @@ theorem inv_arr' (Ety: [[Δ ⊢ λ x? : T. E : C ]]) (eqC: [[ Δ ⊢ C ≡ A →
       ⟨wf, TkiStar, B'kiStar⟩
     )
     have ⟨eTA, eB'B⟩ := EqSmallStep.of_Equivalence eqC (TkiStar.arr B'kiStar) wf |>.inj_arr
-    refine ⟨eTA.Equivalence_of TkiStar, ?_⟩
+    refine ⟨eTA.Equivalence_of, ?_⟩
     refine ⟨I, λ x xnin => ?_⟩
     refine .equiv (EtyB' x (by simp_all)) ?_
-    exact eB'B.Equivalence_of B'kiStar |>.weakening_term' (Δ' := [[ ε ]])
+    exact eB'B.Equivalence_of.weakening_term' (Δ' := [[ ε ]])
   . case equiv.refl _ _ _ eqA'B' _ ih => exact ih (eqA'B'.trans eqC) rfl
 
 theorem inv_arr (Ety: [[Δ ⊢ λ x? : T. E : A → B ]]) : [[ Δ ⊢ T ≡ A ]] ∧ (∃(I: List _), ∀x ∉ I, [[ Δ, x: T ⊢ E^x : B ]]) := Ety.inv_arr' .refl
@@ -811,7 +813,7 @@ theorem inv_forall' (Ety: [[Δ ⊢ Λ a? : K. E : T ]]) (eqT: [[ Δ ⊢ T ≡ �
     have .scheme I'' A'kiStar := A'kiStar
     refine ⟨I ++ I', λ a anin => ?_⟩
     refine .equiv (EtyA' a (by simp_all)) ?_
-    exact eA'A a (by simp_all) |>.Equivalence_of <| EtyA' a (by simp_all) |>.Kinding_of
+    exact eA'A a (by simp_all) |>.Equivalence_of
   . case equiv.refl _ _ _ eqA'B' _ ih => exact ih (eqA'B'.trans eqT) rfl
 
 theorem inv_forall (Ety: [[Δ ⊢ Λ a? : K. E : ∀ a?: K'. A ]]) : K = K' ∧ (∃(I: List _), ∀a ∉ I, [[ Δ, a: K ⊢ E^a : A^a ]]) := Ety.inv_forall' .refl
@@ -830,7 +832,7 @@ theorem inv_prod' (Ety: [[ Δ ⊢ (</ E@i // i in [:n] />) : T ]]) (eqT: TypeEqu
     refine ⟨rfl, λ x xin => ?_, _, K?eq, h⟩
     simp_all
     refine .equiv (EtyA x xin) ?_
-    exact eA_A x xin |>.Equivalence_of (EtyA x xin |>.Kinding_of)
+    exact eA_A x xin |>.Equivalence_of
   . case equiv.refl _ _ _ eqA'B' _ ih => exact ih (eqA'B'.trans eqT) rfl
 
 theorem inv_prod
@@ -867,7 +869,7 @@ theorem inv_sum' (Ety: [[ Δ ⊢ ι n E : T ]]) (eqT: TypeEquivalence Δ T (.sum
     have Alc' := match Alc with | .sum Alc => Alc
     have ⟨eqn'n_, eA'A, K?eq⟩ := EqSmallStep.of_Equivalence eqT (K := [[ * ]]) (by exact .sum (.list (λ i iltn => A'kiStar i iltn) h)) wf |>.inj_sum.inj_list
     subst n_
-    exact ⟨nin, .equiv EtyA' <| eA'A n nin |>.Equivalence_of <| A'kiStar n nin, _, K?eq, h⟩
+    exact ⟨nin, .equiv EtyA' <| eA'A n nin |>.Equivalence_of, _, K?eq, h⟩
   . case equiv.refl _ _ _ eqA'B' _ ih => exact ih (eqA'B'.trans eqT) rfl
 
 theorem inv_sum (Ety: Typing Δ [[ι n E]] (.sum (.list ([:n'].map fun i => A i) K?)))

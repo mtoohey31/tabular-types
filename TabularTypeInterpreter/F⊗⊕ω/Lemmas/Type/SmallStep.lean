@@ -1379,31 +1379,21 @@ decreasing_by
   apply List.sizeOf_lt_of_mem
   exact List.mem_append.mpr <| .inr <| .head _
 
-theorem Equivalence_of : [[Δ ⊢ A -> B]] → [[Δ ⊢ A : K]] → [[Δ ⊢ A ≡ B]]
-  | .eta _ A'ki _, _ => .eta A'ki.TypeVarLocallyClosed_of
-  | .lamApp .., .app (.lam I _) B'ki => .lamApp B'ki
-  | .listAppList _ A'ki .., .listApp .. => .listAppList A'ki
-  | .listAppId _ _, .listApp (.lam I aki) A'ki => .listAppId A'ki
-  | .listAppComp _ A₁ki .., .listApp A₀ki (.listApp _ B'ki) =>
-    .listAppComp A₀ki.TypeVarLocallyClosed_of A₁ki
-  | .lam I A'st, .lam I' A'ki => by
-    refine .lam (I ++ I') ?_
-    intro a anin
-    let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
-    exact A'st a aninI |>.Equivalence_of <| A'ki a aninI'
-  | .appl A'st, .app A'ki B'ki => .app (A'st.Equivalence_of A'ki) .refl
-  | .appr _ B'st, .app A'ki B'ki => .app .refl (B'st.Equivalence_of B'ki)
-  | .arrl A'st, .arr A'ki B'ki => .arr (A'st.Equivalence_of A'ki) .refl
-  | .arrr _ B'st, .arr A'ki B'ki => .arr .refl (B'st.Equivalence_of B'ki)
-  | .forall I A'st, .scheme I' A'ki => by
-    refine .scheme (I ++ I') ?_
-    intro a anin
-    let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
-    exact A'st a aninI |>.Equivalence_of <| A'ki a aninI'
-  | .list _ A'st (m := m) (n := n), ki => by
+theorem Equivalence_of : [[Δ ⊢ A -> B]] → [[Δ ⊢ A ≡ B]]
+  | .eta _ A'ki _ => .eta A'ki
+  | .lamApp A'ki B'ki .. => .lamApp A'ki B'ki
+  | .listAppList _ A'ki .. => .listAppList A'ki
+  | .listAppId A'ki _ => .listAppId A'ki
+  | .listAppComp _ A₁ki A₀v _ => .listAppComp A₀v.TypeVarLocallyClosed_of A₁ki
+  | .lam I A'st => .lam I (A'st · · |>.Equivalence_of)
+  | .appl A'st => .app A'st.Equivalence_of .refl
+  | .appr _ B'st => .app .refl B'st.Equivalence_of
+  | .arrl A'st => .arr A'st.Equivalence_of .refl
+  | .arrr _ B'st => .arr .refl B'st.Equivalence_of
+  | .forall I A'st => .scheme I (A'st · · |>.Equivalence_of)
+  | .list _ A'st (m := m) (n := n) => by
     rw (occs := .pos [2]) [← Range.map_get!_eq (as := _ ++ _ :: _)]
-    rw [← Range.map_get!_eq (as := _ ++ _ :: _)] at ki ⊢
-    rcases ki.inv_list' with ⟨_, rfl, A'ki, _⟩
+    rw [← Range.map_get!_eq (as := _ ++ _ :: _)]
     rw [List.length_append, Range.map.eq_def (r := [:m]), List.length_map, Range.length_toList,
         List.length_cons, Range.map.eq_def (r := [:n]), List.length_map, Range.length_toList,
         Nat.sub_zero, Nat.sub_zero, List.length_append, List.length_map, Range.length_toList,
@@ -1414,13 +1404,13 @@ theorem Equivalence_of : [[Δ ⊢ A -> B]] → [[Δ ⊢ A : K]] → [[Δ ⊢ A �
     simp
     rw [List.getElem?_append]
     split
-    · case isTrue h =>
+    · case a.isTrue h =>
       rw [List.getElem?_append_left h, List.getElem?_eq_getElem h]
       simp
       rw [List.length_map, Range.length_toList] at h
       rw [Range.getElem_toList h, Nat.zero_add]
       exact .refl
-    · case isFalse h =>
+    · case a.isFalse h =>
       rw [List.getElem?_append_right (Nat.le_of_not_lt h)]
       rw [List.getElem?_cons]
       split
@@ -1428,21 +1418,14 @@ theorem Equivalence_of : [[Δ ⊢ A -> B]] → [[Δ ⊢ A : K]] → [[Δ ⊢ A �
         simp
         rw [List.length_map] at h'
         rw [h', List.getElem?_cons_zero, Option.getD]
-        apply A'st.Equivalence_of
-        rw [List.length_append, List.length_map, Range.length_toList, List.length_cons,
-            List.length_map, Range.length_toList] at A'ki
-        specialize A'ki i mem
-        simp at A'ki
-        rw [List.getElem?_append_right (Nat.le_of_not_lt h), List.length_map, h',
-            List.getElem?_cons_zero, Option.getD] at A'ki
-        exact A'ki
+        exact A'st.Equivalence_of
       · case isFalse h' =>
         rw [List.getElem?_cons, if_neg h']
         exact .refl
-  | .listAppl A'st, .listApp A'ki B'ki => .listApp (A'st.Equivalence_of A'ki) .refl
-  | .listAppr _ B'st, .listApp A'ki B'ki => .listApp .refl (B'st.Equivalence_of B'ki)
-  | .prod A'st, .prod A'ki => .prod <| A'st.Equivalence_of A'ki
-  | .sum A'st, .sum A'ki => .sum <| A'st.Equivalence_of A'ki
+  | .listAppl A'st => .listApp A'st.Equivalence_of .refl
+  | .listAppr _ B'st => .listApp .refl B'st.Equivalence_of
+  | .prod A'st => .prod A'st.Equivalence_of
+  | .sum A'st => .sum A'st.Equivalence_of
 termination_by sizeOf A
 decreasing_by
   all_goals simp_arith
@@ -1602,10 +1585,10 @@ theorem EqSmallStep_of (Amst : [[Δ ⊢ A ->* B]]) : [[Δ ⊢ A <->* B]] := by
   | refl => rfl
   | step Ast _ ih => exact .trans (.step Ast) ih
 
-theorem Equivalence_of (Amst : [[Δ ⊢ A ->* B]]) (Aki : [[Δ ⊢ A : K]]) : [[Δ ⊢ A ≡ B]] := by
+theorem Equivalence_of (Amst : [[Δ ⊢ A ->* B]]) : [[Δ ⊢ A ≡ B]] := by
   induction Amst with
   | refl => exact .refl
-  | step Ast _ ih => exact .trans (Ast.Equivalence_of Aki) <| ih <| Ast.preservation Aki
+  | step Ast _ ih => exact .trans Ast.Equivalence_of ih
 
 theorem normalization (Aki : [[Δ ⊢ A : K]]) : ∃ B, B.IsValue ∧ [[Δ ⊢ A ->* B]] := sorry
 
@@ -3014,19 +2997,19 @@ theorem of_EquivalenceI (equ : [[Δ ⊢ A ≡ᵢ B]]) (Aki : [[Δ ⊢ A : K]]) (
   : [[Δ ⊢ A <->* B]] := by
   induction equ generalizing K with
   | refl => rfl
-  | eta A'lc =>
+  | eta A'ki =>
     rename_i A' _ _
     let .lam I A'aki := Aki
     let ⟨a, anin⟩ := A'.freeTypeVars ++ I |>.exists_fresh
     let ⟨aninA', aninI⟩ := List.not_mem_append'.mp anin
     specialize A'aki a aninI
-    simp [Type.TypeVar_open, A'lc.TypeVar_open_id] at A'aki
+    simp [Type.TypeVar_open, A'ki.TypeVarLocallyClosed_of.TypeVar_open_id] at A'aki
     let .app A'ki (.var .head) := A'aki
     exact eta (A'ki.TypeVar_drop_of_not_mem_freeTypeVars aninA' (Δ' := .empty)) Δwf
-  | lamApp B'ki =>
-    let .app (.lam I A'ki) B'ki' := Aki
+  | lamApp A'ki B'ki =>
+    let .app (.lam I A'ki') B'ki' := Aki
     cases B'ki.deterministic B'ki'
-    exact lamApp I A'ki B'ki Δwf
+    exact lamApp I A'ki' B'ki Δwf
   | listAppList A'ki =>
     let .listApp A'ki' B'ki := Aki
     cases A'ki.deterministic A'ki'
@@ -3099,19 +3082,17 @@ theorem of_EquivalenceI (equ : [[Δ ⊢ A ≡ᵢ B]]) (Aki : [[Δ ⊢ A : K]]) (
     let .sum A'ki := Aki
     exact ih A'ki Δwf |>.sum
 
-theorem _root_.TabularTypeInterpreter.«F⊗⊕ω».TypeEquivalenceS.preservation : [[Δ ⊢ A ≡ₛ B]] → [[Δ ⊢ A : K]] → [[Δ ⊢ B : K]] := sorry
-
 theorem of_EquivalenceS (equ : [[Δ ⊢ A ≡ₛ B]]) (Aki : [[Δ ⊢ A : K]]) (Bki : [[Δ ⊢ B : K]])
   (Δwf : [[⊢ Δ]]) : [[Δ ⊢ A <->* B]] := by
   induction equ with
   | base equ' => exact .of_EquivalenceI equ' Aki Δwf
   | symm equ' => exact .symm <| .of_EquivalenceI equ' Bki Δwf
   | trans equ' _ ih₀ ih₁ =>
-    exact .trans (ih₀ Aki (equ'.preservation Aki)) (ih₁ (equ'.preservation Aki) Bki)
+    exact .trans (ih₀ Aki (equ'.preservation.mp Aki)) (ih₁ (equ'.preservation.mp Aki) Bki)
 
 theorem of_Equivalence (equ : [[Δ ⊢ A ≡ B]]) (Aki : [[Δ ⊢ A : K]]) (Δwf : [[⊢ Δ]]) : [[Δ ⊢ A <->* B]] :=
   have eqs := equ.TypeEquivalenceS_of Aki.TypeVarLocallyClosed_of Δwf
-  of_EquivalenceS eqs Aki (eqs.preservation Aki) Δwf
+  of_EquivalenceS eqs Aki (eqs.preservation.mp Aki) Δwf
 
 theorem preservation (Aest : [[Δ ⊢ A <->* B]]) : [[Δ ⊢ A : K]] ↔ [[Δ ⊢ B : K]] := by
   induction Aest with
@@ -3120,12 +3101,12 @@ theorem preservation (Aest : [[Δ ⊢ A <->* B]]) : [[Δ ⊢ A : K]] ↔ [[Δ �
   | symm _ ih => exact .symm ih
   | trans _ _ ih₀ ih₁ => exact ⟨(ih₁.mp <| ih₀.mp ·), (ih₀.mpr <| ih₁.mpr ·)⟩
 
-theorem Equivalence_of (Aest : [[Δ ⊢ A <->* B]]) (Aki : [[Δ ⊢ A : K]]) : [[Δ ⊢ A ≡ B]] := by
+theorem Equivalence_of (Aest : [[Δ ⊢ A <->* B]]) : [[Δ ⊢ A ≡ B]] := by
   induction Aest with
   | refl => exact .refl
-  | step A'st => exact A'st.Equivalence_of Aki
-  | symm B'st ih => exact .symm <| ih <| symm B'st |>.preservation |>.mp Aki
-  | trans A'st _ ih₀ ih₁ => exact .trans (ih₀ Aki) <| ih₁ <| A'st.preservation |>.mp Aki
+  | step A'st => exact A'st.Equivalence_of
+  | symm B'st ih => exact .symm ih
+  | trans A'st _ ih₀ ih₁ => exact .trans ih₀ ih₁
 
 theorem common_reduct (est : [[Δ ⊢ A <->* B]]) : ∃ C, [[Δ ⊢ A ->* C]] ∧ [[Δ ⊢ B ->* C]] := by
   induction est with

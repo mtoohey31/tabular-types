@@ -408,8 +408,15 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
       τke a aninI |>.soundness Γcw (Γwe.typeExt aninΓ κe.row) .star
     simp [Type.Type_open] at this
     rw [ρke.soundness Γcw Γwe κe.row |>.TypeVarLocallyClosed_of.Type_open_id] at this
-    apply Typing.app <| this.equiv <| .arr .refl <| .arr (.lamApp .empty_list) <| .lamApp <|
-      ρke'.soundness Γcw Γwe κe.row
+    apply Typing.app <| this.equiv <| .arr .refl <| .arr (.lamApp (.lam (Iₘ ++ Γ.typeVarDom) (by
+      intro a anin
+      let ⟨aninIₘ, aninΓ⟩ := List.not_mem_append'.mp anin
+      exact τke a aninIₘ |>.soundness Γcw (Γwe.typeExt aninΓ κe.row) .star
+    )) .empty_list) <| .lamApp (.lam (Iₘ ++ Γ.typeVarDom) (by
+      intro a anin
+      let ⟨aninIₘ, aninΓ⟩ := List.not_mem_append'.mp anin
+      exact τke a aninIₘ |>.soundness Γcw (Γwe.typeExt aninΓ κe.row) .star
+    )) <| ρke'.soundness Γcw Γwe κe.row
     apply Typing.typeLam <| Γ.typeVarDom ++ I₀ ++ Iₛ
     intro aₗ aₗnin
     let ⟨aₗninΓI₀, aₗninIₛ⟩ := List.not_mem_append'.mp aₗnin
@@ -450,8 +457,36 @@ theorem soundness (Mte : [[Γᵢ; Γc; Γ ⊢ M : σ ⇝ E]]) (σke : [[Γc; Γ 
     let aᵢneaₙ := List.ne_of_not_mem_cons aₙninΓ
     symm at aₚneaᵢ aₚneaₙ aᵢneaₙ
     apply Typing.equiv _ <| .arr .refl <| .arr .refl <| .arr .refl <| .arr
-      (.symm <| .lamApp <| .var <| .typeVarExt (.typeVarExt .head aₚneaᵢ) aₚneaₙ)
-      (.symm <| .lamApp <| .var <| .typeVarExt .head aᵢneaₙ)
+      (.symm <| .lamApp (.lam
+        ((aₙ :: aᵢ :: aₚ :: aₜ :: aₗ :: Δ.typeVarDom) ++ B.freeTypeVars ++ ↑Iₘ ++ ↑Γ.typeVarDom) (by
+      intro a anin
+      let ⟨aninΔBIₘ, aninΓ⟩ := List.not_mem_append'.mp anin
+      let ⟨aninΔB, aninIₘ⟩ := List.not_mem_append'.mp aninΔBIₘ
+      let ⟨aninΔ, aninB⟩ := List.not_mem_append'.mp aninΔB
+      let Bki := τke a aninIₘ |>.soundness Γcw (Γwe.typeExt aninΓ κe.row) .star
+      let Blc := Bki.TypeVarLocallyClosed_of.TypeVar_close_inc (a := a)
+      rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars aninB] at Blc
+      rw [Blc.weaken (n := 4).TypeVar_open_id, Blc.weaken (n := 3).TypeVar_open_id,
+          Blc.weaken (n := 2).TypeVar_open_id, Blc.weaken (n := 1).TypeVar_open_id,
+          Blc.TypeVar_open_id]
+      exact Bki.weakening (Γaₗₜₚᵢₙwe.soundness Γcw |>.typeVarExt aninΔ) (Δ'' := .typeExt .empty ..)
+        (Δ' := .typeExt (.typeExt (.typeExt (.typeExt (.typeExt .empty ..) ..) ..) ..) ..)
+    )) <| .var <| .typeVarExt (.typeVarExt .head aₚneaᵢ) aₚneaₙ)
+      (.symm <| .lamApp (.lam
+        ((aₙ :: aᵢ :: aₚ :: aₜ :: aₗ :: Δ.typeVarDom) ++ B.freeTypeVars ++ ↑Iₘ ++ ↑Γ.typeVarDom) (by
+      intro a anin
+      let ⟨aninΔBIₘ, aninΓ⟩ := List.not_mem_append'.mp anin
+      let ⟨aninΔB, aninIₘ⟩ := List.not_mem_append'.mp aninΔBIₘ
+      let ⟨aninΔ, aninB⟩ := List.not_mem_append'.mp aninΔB
+      let Bki := τke a aninIₘ |>.soundness Γcw (Γwe.typeExt aninΓ κe.row) .star
+      let Blc := Bki.TypeVarLocallyClosed_of.TypeVar_close_inc (a := a)
+      rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars aninB] at Blc
+      rw [Blc.weaken (n := 4).TypeVar_open_id, Blc.weaken (n := 3).TypeVar_open_id,
+          Blc.weaken (n := 2).TypeVar_open_id, Blc.weaken (n := 1).TypeVar_open_id,
+          Blc.TypeVar_open_id]
+      exact Bki.weakening (Γaₗₜₚᵢₙwe.soundness Γcw |>.typeVarExt aninΔ) (Δ'' := .typeExt .empty ..)
+        (Δ' := .typeExt (.typeExt (.typeExt (.typeExt (.typeExt .empty ..) ..) ..) ..) ..)
+    )) <| .var <| .typeVarExt .head aᵢneaₙ)
     apply Mih _ aₗninIₛ _ aₜninIₛ _ aₚninIₛ _ aᵢninIₛ _ aₙninIₛ _ Γᵢw Γcw Γaₗₜₚᵢₙwe
     open TypeScheme.KindingAndElaboration in
     let keBₗ' := keBₗ _ aₗninI₀ _ aₜninI₀ _ aₚninI₀ _ aᵢninI₀

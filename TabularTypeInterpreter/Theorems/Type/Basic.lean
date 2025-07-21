@@ -386,7 +386,7 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (�
         let A''ki := τke i imem |>.soundness Γcw Γwe κ₀e |>.weakening Δawf
           (Δ' := .typeExt .empty ..) (Δ'' := .empty)
         rw [← A''ki.TypeVarLocallyClosed_of.TypeVar_open_id (a := a)] at A''ki
-        apply TypeEquivalence.app .refl <| .trans (.lamApp A''ki) _
+        apply TypeEquivalence.app .refl <| .trans (.lamApp A'ki A''ki) _
         let .list A'opslc := ρ₁ke.soundness Γcw Γwe κe.row |>.TypeVarLocallyClosed_of
         let A''ilc := τke i imem |>.soundness Γcw Γwe κ₀e |>.TypeVarLocallyClosed_of
         rw [A''ilc.TypeVar_open_id, A'opslc (A'.Type_open (A'' i)) (Range.mem_map_of_mem imem)
@@ -410,7 +410,7 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (�
         let A''ki := τke i imem |>.soundness Γcw Γwe κ₀e |>.weakening Δawf
           (Δ' := .typeExt .empty ..) (Δ'' := .empty)
         rw [← A''ki.TypeVarLocallyClosed_of.TypeVar_open_id (a := a)] at A''ki
-        apply TypeEquivalence.app .refl <| .trans (.lamApp A''ki) _
+        apply TypeEquivalence.app .refl <| .trans (.lamApp A'ki A''ki) _
         let .list A'opslc := ρ₁ke.soundness Γcw Γwe κe.row |>.TypeVarLocallyClosed_of
         let A''ilc := τke i imem |>.soundness Γcw Γwe κ₀e |>.TypeVarLocallyClosed_of
         rw [A''ilc.TypeVar_open_id, A'opslc (A'.Type_open (A'' i)) (Range.mem_map_of_mem imem)
@@ -462,7 +462,7 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (�
         let A''ki := τke i imem |>.soundness Γcw Γwe κ₀e |>.weakening Δawf
           (Δ' := .typeExt .empty ..) (Δ'' := .empty)
         rw [← A''ki.TypeVarLocallyClosed_of.TypeVar_open_id (a := a)] at A''ki
-        apply TypeEquivalence.app .refl <| .trans (.lamApp A''ki) _
+        apply TypeEquivalence.app .refl <| .trans (.lamApp A'ki A''ki) _
         let .list A'opslc := ρ₀ke.soundness Γcw Γwe κe.row |>.TypeVarLocallyClosed_of
         let A''ilc := τke i imem |>.soundness Γcw Γwe κ₀e |>.TypeVarLocallyClosed_of
         rw [A''ilc.TypeVar_open_id, A'opslc (A'.Type_open (A'' i)) (Range.mem_map_of_mem imem)
@@ -486,7 +486,7 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (�
         let A''ki := τke i imem |>.soundness Γcw Γwe κ₀e |>.weakening Δawf
           (Δ' := .typeExt .empty ..) (Δ'' := .empty)
         rw [← A''ki.TypeVarLocallyClosed_of.TypeVar_open_id (a := a)] at A''ki
-        apply TypeEquivalence.app .refl <| .trans (.lamApp A''ki) _
+        apply TypeEquivalence.app .refl <| .trans (.lamApp A'ki A''ki) _
         let .list A'opslc := ρ₀ke.soundness Γcw Γwe κe.row |>.TypeVarLocallyClosed_of
         let A''ilc := τke i imem |>.soundness Γcw Γwe κ₀e |>.TypeVarLocallyClosed_of
         rw [A''ilc.TypeVar_open_id, A'opslc (A'.Type_open (A'' i)) (Range.mem_map_of_mem imem)
