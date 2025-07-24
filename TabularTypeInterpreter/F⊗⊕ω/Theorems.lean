@@ -384,8 +384,7 @@ theorem type_subst' (EtyA: [[ Δ, a: K, Δ' ⊢ E: A ]]) (BkiK : [[ Δ ⊢ B: K 
   . case prodElim Δ_ E n A _ i EtyA iRange ih =>
     subst Δ_
     specialize ih rfl
-    unfold Function.comp at ih
-    simp_all
+    rw [Range.map_eq_of_eq_of_mem (fun _ _ => Function.comp.eq_def ..)] at ih
     have ⟨A', A'eq⟩: ∃A': ℕ → «Type», ∀i, A' i = (A i).TypeVar_subst a B := ⟨λi => (A i).TypeVar_subst a B, λi => by simp⟩
     rw [<- A'eq i]; rw [<- funext (λi => A'eq i)] at ih
     refine .prodElim (n := n) ih iRange

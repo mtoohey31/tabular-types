@@ -589,6 +589,8 @@ theorem not_mem_freeTypeVars_TypeVar_open_dec
           Nat.lt_of_le_of_ne (Nat.le_of_lt_succ h') (h <| TypeVar.bound.injEq .. |>.mpr ·.symm)
   all_goals aesop (add simp [TypeVar_open, freeTypeVars], unsafe cases TypeVarLocallyClosed, safe constructors TypeVarLocallyClosed)
 
+theorem id : TypeVarLocallyClosed [[λ a : K. a$0]] := .lam <| .var_bound Nat.one_pos
+
 end TypeVarLocallyClosed
 
 theorem freeTypeVars_TypeVar_open {T: «Type»} : a ∈ T.freeTypeVars -> a ∈ (T.TypeVar_open a' n).freeTypeVars := by

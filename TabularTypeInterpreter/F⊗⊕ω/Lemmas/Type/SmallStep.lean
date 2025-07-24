@@ -1,15 +1,13 @@
+import TabularTypeInterpreter.Data.List
+import TabularTypeInterpreter.Logic.Relation
 import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Type.Equivalence
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Type.SmallStep
 import TabularTypeInterpreter.«F⊗⊕ω».Tactics.Basic
+import Thesis.Newman
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
 
 open Std
-
-attribute [refl] MultiSmallStep.refl EqSmallStep.refl
-
-@[symm]
-theorem EqSmallStep.symm' {Δ} A B : [[Δ ⊢ A <->* B]] → [[Δ ⊢ B <->* A]] := symm
 
 namespace Type.IsValue
 
@@ -169,10 +167,7 @@ theorem TypeVar_open_swap (v : IsValue (TypeVar_open A a)) (aninA : a ∉ A.free
 theorem not_step (v : IsValue A) : ¬[[Δ ⊢ A -> B]] := by
   intro st
   cases v <;> try cases st
-  · case lam.eta I Bav _ _ h =>
-    let ⟨a, anin⟩ := I.exists_fresh
-    let .app Blc _ := Bav a anin |>.TypeVarLocallyClosed_of
-    nomatch h _ rfl Blc
+  · case lam.eta Bki _ h => nomatch h _ rfl Bki.TypeVarLocallyClosed_of
   · case lam.lam I v' _ _ I' st' =>
     let ⟨a, anin⟩ := I ++ I' |>.exists_fresh
     let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
@@ -184,10 +179,10 @@ theorem not_step (v : IsValue A) : ¬[[Δ ⊢ A -> B]] := by
     apply v' a aninI |>.not_step
     exact st' a aninI'
   · case arr.arrl v' _ _ st' => exact not_step v' st'
-  · case arr.arrr _ v' _ _ st' => exact not_step v' st'
+  · case arr.arrr _ v' _ st' => exact not_step v' st'
   · case list n _ _ _ v' =>
     generalize Aseq : [:n].map _ = As, Option.someIf .. = K' at st
-    let .list A₀v A₁st (m := m) := st
+    let .list A₁st (m := m) := st
     let lengths_eq : List.length ([:_].map _) = _ := by rw [Aseq]
     rw [List.length_map, Range.length_toList, Nat.sub_zero, List.length_append, List.length_cons,
         List.length_map, Range.length_toList, Nat.sub_zero, List.length_map, Range.length_toList,
@@ -226,15 +221,15 @@ theorem not_step (v : IsValue A) : ¬[[Δ ⊢ A -> B]] := by
   · case prod v' _ st' => exact not_step v' st'
   · case sum v' _ st' => exact not_step v' st'
   · case varApp.appl st' => exact not_step var st'
-  · case varApp.appr v' _ _ st' => exact not_step v' st'
+  · case varApp.appr v' _ st' => exact not_step v' st'
   · case appApp.appl v' _ _ st' => exact not_step v' st'
-  · case appApp.appr v' _ _ st' => exact not_step v' st'
-  · case listAppVar.listAppId K' ne _ _ _ => nomatch ne K'
+  · case appApp.appr v' _ st' => exact not_step v' st'
+  · case listAppVar.listAppId K' ne _ _ => nomatch ne K'
   · case listAppVar.listAppl v' _ st' => exact not_step v' st'
   · case listAppVar.listAppr st' => exact not_step var st'
-  · case listAppApp.listAppId K' ne _ _ _ => nomatch ne K'
+  · case listAppApp.listAppId K' ne _ _ => nomatch ne K'
   · case listAppApp.listAppl v' _ _ st' => exact not_step v' st'
-  · case listAppApp.listAppr v' _ _ st' => exact not_step v' st'
+  · case listAppApp.listAppr v' _ st' => exact not_step v' st'
 termination_by sizeOf A
 decreasing_by
   all_goals try (
@@ -256,13 +251,19 @@ local
 instance : Inhabited «Type» where
   default := .list [] none
 
+local
+instance : Inhabited Kind where
+  default := .star
+
 namespace SmallStep
 
-theorem list' (A₀v : ∀ A ∈ A₀, A.IsValue) (A₁st : [[Δ ⊢ A₁ -> A₁']])
-  : SmallStep Δ (.list (A₀ ++ A₁ :: A₂) (Option.someIf K b))
-      (.list (A₀ ++ A₁' :: A₂) (Option.someIf K b)) := by
+instance : Coe [[Δ ⊢ A -> B]] [[Δ ⊢ A ->* B]] where
+  coe := .single
+
+theorem list' (A₁st : [[Δ ⊢ A₁ -> A₁']]) : SmallStep Δ (.list (A₀ ++ A₁ :: A₂) (Option.someIf K b))
+    (.list (A₀ ++ A₁' :: A₂) (Option.someIf K b)) := by
   rw [← Range.map_get!_eq (as := A₀), ← Range.map_get!_eq (as := A₂)]
-  exact list (fun i mem => A₀v (A₀.get! i) <| List.get!_mem mem.upper) A₁st
+  exact list A₁st
 
 theorem preserve_not_mem_freeTypeVars (st : [[Δ ⊢ A -> B]]) (aninA : a ∉ A.freeTypeVars)
   : a ∉ B.freeTypeVars := by
@@ -286,10 +287,7 @@ theorem preserve_not_mem_freeTypeVars (st : [[Δ ⊢ A -> B]]) (aninA : a ∉ A.
   all_goals aesop (add simp [Type.freeTypeVars])
 
 theorem preserve_lc : [[Δ ⊢ A -> B]] → A.TypeVarLocallyClosed → B.TypeVarLocallyClosed
-  | eta I _ Bav, _ =>
-    let ⟨a, anin⟩ := I.exists_fresh
-    let .app Bv _ := Bav a anin |>.TypeVarLocallyClosed_of
-    Bv
+  | eta Bki, _ => Bki.TypeVarLocallyClosed_of
   | lamApp .., .app (.lam A'lc) B'lc => A'lc.Type_open_dec B'lc
   | listAppList .., .listApp A'lc (.list B'lc) => by
     apply Type.TypeVarLocallyClosed.list
@@ -308,7 +306,7 @@ theorem preserve_lc : [[Δ ⊢ A -> B]] → A.TypeVarLocallyClosed → B.TypeVar
     rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars aninA''] at A''lc
     exact .lam A''lc
   | appl A'st, .app A'lc B'lc => .app (A'st.preserve_lc A'lc) B'lc
-  | appr _ B'st, .app A'lc B'lc => .app A'lc (B'st.preserve_lc B'lc)
+  | appr B'st, .app A'lc B'lc => .app A'lc (B'st.preserve_lc B'lc)
   | .forall I A'st (A' := A''), .forall A'lc => by
     let ⟨a, anin⟩ := A''.freeTypeVars ++ I |>.exists_fresh
     let ⟨aninA'', aninI⟩ := List.not_mem_append'.mp anin
@@ -318,8 +316,8 @@ theorem preserve_lc : [[Δ ⊢ A -> B]] → A.TypeVarLocallyClosed → B.TypeVar
     rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars aninA''] at A''lc
     exact .forall A''lc
   | arrl A'st, .arr A'lc B'lc => .arr (A'st.preserve_lc A'lc) B'lc
-  | arrr _ B'st, .arr A'lc B'lc => .arr A'lc (B'st.preserve_lc B'lc)
-  | list _ A'st, .list A'lc => by
+  | arrr B'st, .arr A'lc B'lc => .arr A'lc (B'st.preserve_lc B'lc)
+  | list A'st, .list A'lc => by
     apply Type.TypeVarLocallyClosed.list
     intro A' mem
     match List.mem_append.mp mem with
@@ -327,24 +325,23 @@ theorem preserve_lc : [[Δ ⊢ A -> B]] → A.TypeVarLocallyClosed → B.TypeVar
     | .inr (.head _) => exact A'st.preserve_lc <| A'lc _ <| List.mem_append.mpr <| .inr <| .head ..
     | .inr (.tail _ mem') => exact A'lc _ <| List.mem_append.mpr <| .inr <| mem'.tail _
   | listAppl A'st, .listApp A'lc B'lc => .listApp (A'st.preserve_lc A'lc) B'lc
-  | listAppr _ B'st, .listApp A'lc B'lc => .listApp A'lc (B'st.preserve_lc B'lc)
+  | listAppr B'st, .listApp A'lc B'lc => .listApp A'lc (B'st.preserve_lc B'lc)
   | prod A'st, .prod A'lc => .prod <| A'st.preserve_lc A'lc
   | sum A'st, .sum A'lc => .sum <| A'st.preserve_lc A'lc
 
 theorem preserve_lc_rev : [[Δ ⊢ A -> B]] → B.TypeVarLocallyClosed → A.TypeVarLocallyClosed
   | eta .., Blc => .lam <| .app Blc.weaken <| .var_bound Nat.one_pos
-  | lamApp _ _ _ B'v .., Blc =>
+  | lamApp _ B'v, Blc =>
     .app (.lam (Blc.weaken (n := 1).Type_open_drop Nat.one_pos)) B'v.TypeVarLocallyClosed_of
-  | listAppList _ A'v .., .list Blc' => by
-    refine .listApp A'v.TypeVarLocallyClosed_of <| .list ?_
+  | listAppList A'ki, .list Blc' => by
+    refine .listApp A'ki.TypeVarLocallyClosed_of <| .list ?_
     intro _ mem
     rcases Range.mem_of_mem_map mem with ⟨_, mem', rfl⟩
     let .app _ B'lc := Blc' _ <| Range.mem_map_of_mem mem'
     exact B'lc
   | listAppId .., A'lc => .listApp (.lam (.var_bound Nat.one_pos)) A'lc
-  | listAppComp _ _ A₀v A₁B'v, .listApp (.lam (.app A₀lc (.app A₁lc _))) B'lc =>
-    let .listApp A₁lc _ := A₁B'v.TypeVarLocallyClosed_of
-    .listApp A₀v.TypeVarLocallyClosed_of <| .listApp A₁lc B'lc
+  | listAppComp A₀lc A₁ki, .listApp (.lam (.app _ (.app _ _))) B'lc =>
+    .listApp A₀lc <| .listApp A₁ki.TypeVarLocallyClosed_of B'lc
   | lam I A'st (A := A'), .lam A'lc => by
     let ⟨a, anin⟩ := A'.freeTypeVars ++ I |>.exists_fresh
     let ⟨aninA', aninI⟩ := List.not_mem_append'.mp anin
@@ -354,7 +351,7 @@ theorem preserve_lc_rev : [[Δ ⊢ A -> B]] → B.TypeVarLocallyClosed → A.Typ
     rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars aninA'] at A'lc
     exact .lam A'lc
   | appl A'st, .app A'lc B'lc => .app (A'st.preserve_lc_rev A'lc) B'lc
-  | appr _ B'st, .app A'lc B'lc => .app A'lc (B'st.preserve_lc_rev B'lc)
+  | appr B'st, .app A'lc B'lc => .app A'lc (B'st.preserve_lc_rev B'lc)
   | .forall I A'st (A := A'), .forall A'lc => by
     let ⟨a, anin⟩ := A'.freeTypeVars ++ I |>.exists_fresh
     let ⟨aninA', aninI⟩ := List.not_mem_append'.mp anin
@@ -364,8 +361,8 @@ theorem preserve_lc_rev : [[Δ ⊢ A -> B]] → B.TypeVarLocallyClosed → A.Typ
     rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars aninA'] at A'lc
     exact .forall A'lc
   | arrl A'st, .arr A'lc B'lc => .arr (A'st.preserve_lc_rev A'lc) B'lc
-  | arrr _ B'st, .arr A'lc B'lc => .arr A'lc (B'st.preserve_lc_rev B'lc)
-  | list _ A'st, .list A'lc => by
+  | arrr B'st, .arr A'lc B'lc => .arr A'lc (B'st.preserve_lc_rev B'lc)
+  | list A'st, .list A'lc => by
     apply Type.TypeVarLocallyClosed.list
     intro A' mem
     match List.mem_append.mp mem with
@@ -374,7 +371,7 @@ theorem preserve_lc_rev : [[Δ ⊢ A -> B]] → B.TypeVarLocallyClosed → A.Typ
       exact A'st.preserve_lc_rev <| A'lc _ <| List.mem_append.mpr <| .inr <| .head ..
     | .inr (.tail _ mem') => exact A'lc _ <| List.mem_append.mpr <| .inr <| mem'.tail _
   | listAppl A'st, .listApp A'lc B'lc => .listApp (A'st.preserve_lc_rev A'lc) B'lc
-  | listAppr _ B'st, .listApp A'lc B'lc => .listApp A'lc (B'st.preserve_lc_rev B'lc)
+  | listAppr B'st, .listApp A'lc B'lc => .listApp A'lc (B'st.preserve_lc_rev B'lc)
   | prod A'st, .prod A'lc => .prod <| A'st.preserve_lc_rev A'lc
   | sum A'st, .sum A'lc => .sum <| A'st.preserve_lc_rev A'lc
 
@@ -382,22 +379,15 @@ open «Type» in
 theorem TypeVar_subst_var (Ast : [[Δ, a : K, Δ' ⊢ A -> B]]) (a'ninΔ : [[a' ∉ dom(Δ)]])
   (aninΔ' : [[a ∉ dom(Δ')]] := by nofun) (a'ninΔ' : [[a' ∉ dom(Δ')]] := by nofun)
   : [[Δ, a' : K, Δ' ⊢ A[a' / a] -> B[a' / a] ]] := by match Ast with
-  | eta I Bki Bav (K₂ := K₂) =>
+  | eta Bki =>
     rw [TypeVar_subst, TypeVar_subst, TypeVar_subst, if_neg nofun]
-    apply eta (a :: I) _ (K₂ := K₂)
-    · intro a'' a''nin
-      let ⟨ane, a''ninI⟩ := List.not_mem_cons.mp a''nin
-      let Bav' := Bav a'' a''ninI |>.TypeVar_subst_var (a := a) (a' := a')
-      rw [TypeVar_subst, TypeVar_subst, if_neg (ane.symm <| TypeVar.free.inj ·)] at Bav'
-      exact Bav'
-    · exact Bki.TypeVar_subst_var a'ninΔ aninΔ' a'ninΔ'
-  | lamApp A'ki B'ki A'v B'v =>
+    exact eta <| Bki.TypeVar_subst_var a'ninΔ aninΔ' a'ninΔ'
+  | lamApp A'ki B'ki =>
     rw [TypeVar_subst, TypeVarLocallyClosed.Type_open_TypeVar_subst_dist .var_free]
-    let A'v' := A'v.TypeVar_subst_var (a := a) (a' := a')
     let A'ki' := A'ki.TypeVar_subst_var a'ninΔ aninΔ' a'ninΔ'
-    rw [TypeVar_subst] at A'v' A'ki' ⊢
-    exact lamApp A'ki' (B'ki.TypeVar_subst_var a'ninΔ aninΔ' a'ninΔ') A'v' B'v.TypeVar_subst_var
-  | listAppList ne A'ki A'v B'v (K₁ := K₁) (K₂ := K₂) =>
+    rw [TypeVar_subst] at A'ki' ⊢
+    exact lamApp A'ki' (B'ki.TypeVar_subst_var a'ninΔ aninΔ' a'ninΔ')
+  | listAppList A'ki (K₁ := K₁) (K₂ := K₂) =>
     rename_i A' _ B' _
     rw [TypeVar_subst, TypeVar_subst, TypeVar_subst, List.mapMem_eq_map, List.mapMem_eq_map,
         List.map_map, List.map_map, ← Range.map, ← Range.map, Range.map_eq_of_eq_of_mem'' (by
@@ -409,18 +399,15 @@ theorem TypeVar_subst_var (Ast : [[Δ, a : K, Δ' ⊢ A -> B]]) (a'ninΔ : [[a' 
       show _ = (A'.TypeVar_subst a (.var a')).app ((B' i).TypeVar_subst a (.var a'))
       simp [TypeVar_subst]
     )]
-    exact listAppList (ne_preservation ne) (A'ki.TypeVar_subst_var a'ninΔ aninΔ' a'ninΔ')
-      A'v.TypeVar_subst_var (B'v · · |>.TypeVar_subst_var)
-  | listAppId A'ki A'v =>
+    exact listAppList (A'ki.TypeVar_subst_var a'ninΔ aninΔ' a'ninΔ')
+  | listAppId A'ki =>
     rw [TypeVar_subst, TypeVar_subst, TypeVar_subst, if_neg nofun]
-    exact listAppId (A'ki.TypeVar_subst_var a'ninΔ aninΔ' a'ninΔ') A'v.TypeVar_subst_var
-  | listAppComp ne A₁ki A₀v A₁B'v =>
+    exact listAppId <| A'ki.TypeVar_subst_var a'ninΔ aninΔ' a'ninΔ'
+  | listAppComp A₀lc A₁ki =>
     rw [TypeVar_subst, TypeVar_subst, TypeVar_subst, TypeVar_subst, TypeVar_subst, TypeVar_subst,
         TypeVar_subst]
-    apply Type.IsValue.TypeVar_subst_var at A₁B'v
-    rw [TypeVar_subst] at A₁B'v
-    exact listAppComp (ne_preservation ne) (A₁ki.TypeVar_subst_var a'ninΔ aninΔ' a'ninΔ')
-      A₀v.TypeVar_subst_var A₁B'v
+    exact listAppComp (A₀lc.TypeVar_subst .var_free) <|
+      A₁ki.TypeVar_subst_var a'ninΔ aninΔ' a'ninΔ'
   | lam I A'v =>
     rw [TypeVar_subst, TypeVar_subst]
     apply lam <| a :: a' :: I
@@ -437,42 +424,39 @@ theorem TypeVar_subst_var (Ast : [[Δ, a : K, Δ' ⊢ A -> B]]) (a'ninΔ : [[a' 
   | appl A'st =>
     rw [TypeVar_subst, TypeVar_subst]
     exact appl <| A'st.TypeVar_subst_var a'ninΔ aninΔ' a'ninΔ'
-  | appr A'v B'st =>
+  | appr B'st =>
     rw [TypeVar_subst, TypeVar_subst]
-    exact appr A'v.TypeVar_subst_var <| B'st.TypeVar_subst_var a'ninΔ aninΔ' a'ninΔ'
-  | .forall I A'v =>
+    exact appr <| B'st.TypeVar_subst_var a'ninΔ aninΔ' a'ninΔ'
+  | .forall I A'st =>
     rw [TypeVar_subst, TypeVar_subst]
     apply «forall» <| a :: a' :: I
     intro a'' a''nin
     let ⟨ane, a''nina'I⟩ := List.not_mem_cons.mp a''nin
     let ⟨a'ne, a''ninI⟩ := List.not_mem_cons.mp a''nina'I
     rw [TypeVar_open_TypeVar_subst_var_comm ane.symm, TypeVar_open_TypeVar_subst_var_comm ane.symm]
-    specialize A'v a'' a''ninI
-    rw [← Environment.append] at A'v ⊢
-    apply A'v.TypeVar_subst_var a'ninΔ _ _
+    specialize A'st a'' a''ninI
+    rw [← Environment.append] at A'st ⊢
+    apply A'st.TypeVar_subst_var a'ninΔ _ _
     all_goals rw [Environment.TypeVarNotInDom, Environment.TypeVarInDom, Environment.typeVarDom]
     · exact List.not_mem_cons.mpr ⟨ane.symm, aninΔ'⟩
     · exact List.not_mem_cons.mpr ⟨a'ne.symm, a'ninΔ'⟩
   | arrl A'st =>
     rw [TypeVar_subst, TypeVar_subst]
     exact arrl <| A'st.TypeVar_subst_var a'ninΔ aninΔ' a'ninΔ'
-  | arrr A'v B'st =>
+  | arrr B'st =>
     rw [TypeVar_subst, TypeVar_subst]
-    exact arrr A'v.TypeVar_subst_var <| B'st.TypeVar_subst_var a'ninΔ aninΔ' a'ninΔ'
-  | list A₀v A₁st =>
+    exact arrr <| B'st.TypeVar_subst_var a'ninΔ aninΔ' a'ninΔ'
+  | list A₁st =>
     rw [TypeVar_subst, List.mapMem_eq_map, List.map_append, List.map_cons, List.map_map,
         List.map_map, ← Range.map, ← Range.map, TypeVar_subst, List.mapMem_eq_map, List.map_append,
         List.map_cons, List.map_map, List.map_map, ← Range.map, ← Range.map]
-    apply list _ <| A₁st.TypeVar_subst_var a'ninΔ aninΔ' a'ninΔ'
-    intro i mem
-    simp
-    exact A₀v i mem |>.TypeVar_subst_var
+    exact list <| A₁st.TypeVar_subst_var a'ninΔ aninΔ' a'ninΔ'
   | listAppl A'st =>
     rw [TypeVar_subst, TypeVar_subst]
     exact listAppl <| A'st.TypeVar_subst_var a'ninΔ aninΔ' a'ninΔ'
-  | listAppr A'v B'st =>
+  | listAppr B'st =>
     rw [TypeVar_subst, TypeVar_subst]
-    exact listAppr A'v.TypeVar_subst_var <| B'st.TypeVar_subst_var a'ninΔ aninΔ' a'ninΔ'
+    exact listAppr <| B'st.TypeVar_subst_var a'ninΔ aninΔ' a'ninΔ'
   | prod A'st =>
     rw [TypeVar_subst, TypeVar_subst]
     exact prod <| A'st.TypeVar_subst_var a'ninΔ aninΔ' a'ninΔ'
@@ -484,10 +468,6 @@ decreasing_by
   all_goals simp_arith
   exact Nat.le_of_lt <| Nat.lt_add_right _ <| List.sizeOf_lt_of_mem <| List.mem_append.mpr <|
     .inr <| .head _
-where
-  ne_preservation {A a a'} : (∀ K, A ≠ [[λ a : K. a$0]]) →
-    ∀ K, A.TypeVar_subst a (.var (.free a')) ≠ [[λ a : K. a$0]] :=
-    IsValue.TypeVar_subst_var.ne_preservation
 
 theorem TypeVar_open_swap (Ast : [[Δ, a' : K ⊢ A^a' -> A']]) (Alc : A.TypeVarLocallyClosed 1)
   (a'ninA : a' ∉ A.freeTypeVars) (aninΔ : [[a ∉ dom(Δ)]]) : [[Δ, a : K ⊢ A^a -> (\a'^A')^a]] := by
@@ -506,11 +486,11 @@ theorem TypeVar_open_swap (Ast : [[Δ, a' : K ⊢ A^a' -> A']]) (Alc : A.TypeVar
   exact Ast.TypeVar_subst_var aninΔ nofun nofun (Δ' := .empty)
 
 theorem weakening (ΔΔ'Δ''wf : [[⊢ Δ, Δ', Δ'']]) : [[Δ, Δ'' ⊢ A -> B]] → [[Δ, Δ', Δ'' ⊢ A -> B]]
-  | eta I A'ki A'av => eta I (A'ki.weakening ΔΔ'Δ''wf) A'av
-  | lamApp A'ki B'ki A'v B'v => lamApp (A'ki.weakening ΔΔ'Δ''wf) (B'ki.weakening ΔΔ'Δ''wf) A'v B'v
-  | listAppList ne A'ki A'v B'v => listAppList ne (A'ki.weakening ΔΔ'Δ''wf) A'v B'v
-  | listAppId A'ki A'v => listAppId (A'ki.weakening ΔΔ'Δ''wf) A'v
-  | listAppComp ne A₁ki A₀v A₁B'v => listAppComp ne (A₁ki.weakening ΔΔ'Δ''wf) A₀v A₁B'v
+  | eta A'ki => eta <| A'ki.weakening ΔΔ'Δ''wf
+  | lamApp A'ki B'ki => lamApp (A'ki.weakening ΔΔ'Δ''wf) (B'ki.weakening ΔΔ'Δ''wf)
+  | listAppList A'ki => listAppList <| A'ki.weakening ΔΔ'Δ''wf
+  | listAppId A'ki => listAppId <| A'ki.weakening ΔΔ'Δ''wf
+  | listAppComp A₀lc A₁ki => listAppComp A₀lc <| A₁ki.weakening ΔΔ'Δ''wf
   | lam I A'st (K := K) => by
     apply lam <| I ++ [[Δ, Δ', Δ'']].typeVarDom
     intro a anin
@@ -521,7 +501,7 @@ theorem weakening (ΔΔ'Δ''wf : [[⊢ Δ, Δ', Δ'']]) : [[Δ, Δ'' ⊢ A -> B]
     rw [← Environment.append] at A'st ΔΔ'Δ''awf ⊢
     exact A'st.weakening ΔΔ'Δ''awf
   | appl A'st => appl <| A'st.weakening ΔΔ'Δ''wf
-  | appr A'v B'st => appr A'v <| B'st.weakening ΔΔ'Δ''wf
+  | appr B'st => appr <| B'st.weakening ΔΔ'Δ''wf
   | «forall» I A'st (K := K) => by
     apply «forall» <| I ++ [[Δ, Δ', Δ'']].typeVarDom
     intro a anin
@@ -532,10 +512,10 @@ theorem weakening (ΔΔ'Δ''wf : [[⊢ Δ, Δ', Δ'']]) : [[Δ, Δ'' ⊢ A -> B]
     rw [← Environment.append] at A'st ΔΔ'Δ''awf ⊢
     exact A'st.weakening ΔΔ'Δ''awf
   | arrl A'st => arrl <| A'st.weakening ΔΔ'Δ''wf
-  | arrr A'v B'st => arrr A'v <| B'st.weakening ΔΔ'Δ''wf
-  | list A₀v A₁st => list A₀v <| A₁st.weakening ΔΔ'Δ''wf
+  | arrr B'st => arrr <| B'st.weakening ΔΔ'Δ''wf
+  | list A₁st => list <| A₁st.weakening ΔΔ'Δ''wf
   | listAppl A'st => listAppl <| A'st.weakening ΔΔ'Δ''wf
-  | listAppr A'v B'st => listAppr A'v <| B'st.weakening ΔΔ'Δ''wf
+  | listAppr B'st => listAppr <| B'st.weakening ΔΔ'Δ''wf
   | prod A'st => prod <| A'st.weakening ΔΔ'Δ''wf
   | sum A'st => sum <| A'st.weakening ΔΔ'Δ''wf
 termination_by sizeOf A
@@ -547,12 +527,12 @@ decreasing_by
   exact List.mem_append.mpr <| .inr <| .head _
 
 theorem Environment_TypeVar_subst_swap : [[Δ, Δ'[B / a] ⊢ A -> A']] → [[Δ, Δ'[B' / a] ⊢ A -> A']]
-  | eta I A'ki A'av => eta I A'ki.Environment_TypeVar_subst_swap A'av
-  | lamApp A'ki B'ki A'v B'v =>
-    lamApp A'ki.Environment_TypeVar_subst_swap B'ki.Environment_TypeVar_subst_swap A'v B'v
-  | listAppList ne A'ki A'v B'v => listAppList ne A'ki.Environment_TypeVar_subst_swap A'v B'v
-  | listAppId A'ki A'v => listAppId A'ki.Environment_TypeVar_subst_swap A'v
-  | listAppComp ne A₁ki A₀v A₁B'v => listAppComp ne A₁ki.Environment_TypeVar_subst_swap A₀v A₁B'v
+  | eta A'ki => eta A'ki.Environment_TypeVar_subst_swap
+  | lamApp A'ki B'ki =>
+    lamApp A'ki.Environment_TypeVar_subst_swap B'ki.Environment_TypeVar_subst_swap
+  | listAppList A'ki => listAppList A'ki.Environment_TypeVar_subst_swap
+  | listAppId A'ki => listAppId A'ki.Environment_TypeVar_subst_swap
+  | listAppComp A₀lc A₁ki => listAppComp A₀lc A₁ki.Environment_TypeVar_subst_swap
   | lam I A'st => by
     apply lam I
     intro a' a'nin
@@ -560,7 +540,7 @@ theorem Environment_TypeVar_subst_swap : [[Δ, Δ'[B / a] ⊢ A -> A']] → [[Δ
     rw [← Environment.append, ← Environment.TypeVar_subst] at A'st ⊢
     exact A'st.Environment_TypeVar_subst_swap
   | appl A'st => appl A'st.Environment_TypeVar_subst_swap
-  | appr A'v B'st => appr A'v B'st.Environment_TypeVar_subst_swap
+  | appr B'st => appr B'st.Environment_TypeVar_subst_swap
   | «forall» I A'st => by
     apply «forall» I
     intro a' a'nin
@@ -568,10 +548,10 @@ theorem Environment_TypeVar_subst_swap : [[Δ, Δ'[B / a] ⊢ A -> A']] → [[Δ
     rw [← Environment.append, ← Environment.TypeVar_subst] at A'st ⊢
     exact A'st.Environment_TypeVar_subst_swap
   | arrl A'st => arrl A'st.Environment_TypeVar_subst_swap
-  | arrr A'v B'st => arrr A'v B'st.Environment_TypeVar_subst_swap
-  | list A₀v A₁st => list A₀v A₁st.Environment_TypeVar_subst_swap
+  | arrr B'st => arrr B'st.Environment_TypeVar_subst_swap
+  | list A₁st => list A₁st.Environment_TypeVar_subst_swap
   | listAppl A'st => listAppl A'st.Environment_TypeVar_subst_swap
-  | listAppr A'v B'st => listAppr A'v B'st.Environment_TypeVar_subst_swap
+  | listAppr B'st => listAppr B'st.Environment_TypeVar_subst_swap
   | prod A'st => prod A'st.Environment_TypeVar_subst_swap
   | sum A'st => sum A'st.Environment_TypeVar_subst_swap
 termination_by sizeOf A
@@ -585,18 +565,18 @@ decreasing_by
 theorem TypeVar_drop_of_not_mem_freeTypeVars (aninA : a ∉ A.freeTypeVars)
   (st : [[Δ, a : K, Δ' ⊢ A -> B]]) : [[Δ, Δ' ⊢ A -> B]] := by
   cases st <;> simp [Type.freeTypeVars] at aninA
-  · case eta I A'av A'ki => exact eta I (A'ki.TypeVar_drop_of_not_mem_freeTypeVars aninA) A'av
-  · case lamApp A'v B'v A'ki B'ki =>
+  · case eta A'ki => exact eta <| A'ki.TypeVar_drop_of_not_mem_freeTypeVars aninA
+  · case lamApp A'ki B'ki =>
     let ⟨aninA', aninB'⟩ := aninA
     apply lamApp (A'ki.TypeVar_drop_of_not_mem_freeTypeVars _)
-      (B'ki.TypeVar_drop_of_not_mem_freeTypeVars aninB') A'v B'v
+      (B'ki.TypeVar_drop_of_not_mem_freeTypeVars aninB')
     simp [Type.freeTypeVars]
     exact aninA'
-  · case listAppList ne A'v B'v A'ki =>
-    exact listAppList ne (A'ki.TypeVar_drop_of_not_mem_freeTypeVars aninA.left) A'v B'v
-  · case listAppId A'v A'ki => exact listAppId (A'ki.TypeVar_drop_of_not_mem_freeTypeVars aninA) A'v
-  · case listAppComp ne A₀v A₁B'v A₁ki =>
-    exact listAppComp ne (A₁ki.TypeVar_drop_of_not_mem_freeTypeVars aninA.right.left) A₀v A₁B'v
+  · case listAppList A'ki =>
+    exact listAppList <| A'ki.TypeVar_drop_of_not_mem_freeTypeVars aninA.left
+  · case listAppId A'ki => exact listAppId <| A'ki.TypeVar_drop_of_not_mem_freeTypeVars aninA
+  · case listAppComp A₀lc A₁ki =>
+    exact listAppComp A₀lc <| A₁ki.TypeVar_drop_of_not_mem_freeTypeVars aninA.right.left
   · case lam I A'st =>
     apply lam <| a :: I
     intro a' a'nin
@@ -606,7 +586,7 @@ theorem TypeVar_drop_of_not_mem_freeTypeVars (aninA : a ∉ A.freeTypeVars)
     apply A'st.TypeVar_drop_of_not_mem_freeTypeVars <|
       Type.not_mem_freeTypeVars_TypeVar_open_intro aninA ane.symm
   · case appl A'st => exact appl <| A'st.TypeVar_drop_of_not_mem_freeTypeVars aninA.left
-  · case appr A'v B'st => exact appr A'v <| B'st.TypeVar_drop_of_not_mem_freeTypeVars aninA.right
+  · case appr B'st => exact appr <| B'st.TypeVar_drop_of_not_mem_freeTypeVars aninA.right
   · case «forall» I A'st =>
     apply «forall» <| a :: I
     intro a' a'nin
@@ -616,12 +596,12 @@ theorem TypeVar_drop_of_not_mem_freeTypeVars (aninA : a ∉ A.freeTypeVars)
     apply A'st.TypeVar_drop_of_not_mem_freeTypeVars <|
       Type.not_mem_freeTypeVars_TypeVar_open_intro aninA ane.symm
   · case arrl A'st => exact arrl <| A'st.TypeVar_drop_of_not_mem_freeTypeVars aninA.left
-  · case arrr A'v B'st => exact arrr A'v <| B'st.TypeVar_drop_of_not_mem_freeTypeVars aninA.right
-  · case list A₀v A₁st =>
-    exact list A₀v <| A₁st.TypeVar_drop_of_not_mem_freeTypeVars aninA.right.left
+  · case arrr B'st => exact arrr <| B'st.TypeVar_drop_of_not_mem_freeTypeVars aninA.right
+  · case list A₁st =>
+    exact list <| A₁st.TypeVar_drop_of_not_mem_freeTypeVars aninA.right.left
   · case listAppl A'st => exact listAppl <| A'st.TypeVar_drop_of_not_mem_freeTypeVars aninA.left
-  · case listAppr A'v B'st =>
-    exact listAppr A'v <| B'st.TypeVar_drop_of_not_mem_freeTypeVars aninA.right
+  · case listAppr B'st =>
+    exact listAppr <| B'st.TypeVar_drop_of_not_mem_freeTypeVars aninA.right
   · case prod A'st => exact prod <| A'st.TypeVar_drop_of_not_mem_freeTypeVars aninA
   · case sum A'st => exact sum <| A'st.TypeVar_drop_of_not_mem_freeTypeVars aninA
 termination_by sizeOf A
@@ -635,212 +615,6 @@ decreasing_by
   apply Nat.lt_add_right
   apply List.sizeOf_lt_of_mem
   exact List.mem_append.mpr <| .inr <| .head _
-
-theorem deterministic : [[Δ ⊢ A -> B]] → [[Δ ⊢ A -> C]] → B = C
-  | .eta .., .eta .. => rfl
-  | .eta I _ Bav, .lam I' A'st => by
-    let ⟨a, anin⟩ := I ++ I' |>.exists_fresh
-    let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
-    specialize Bav a aninI
-    specialize A'st a aninI'
-    let .app Blc _ := Bav.TypeVarLocallyClosed_of
-    rw [Type.TypeVar_open, Type.TypeVar_open, if_pos rfl, Blc.TypeVar_open_id] at A'st
-    nomatch Bav.not_step A'st
-  | .lamApp _ _ A'v B'v, st => match st with
-    | .appl A'st => nomatch A'v.not_step A'st
-    | .appr _ B'st => nomatch B'v.not_step B'st
-    | .lamApp _ _ _ _ => rfl
-  | .listAppList ne A'ki A'v B'v (n := n) (b := b), st => by
-    generalize Bseq : [:n].map _ = Bs, K'eq : Option.someIf .. = K' at st
-    match st with
-    | .listAppList _ A'ki' _ _ (b := b') =>
-      let lengths_eq : ([:n].map _).length = _ := by rw [Bseq]
-      rw [List.length_map, List.length_map, Range.length_toList, Range.length_toList,
-          Nat.sub_zero, Nat.sub_zero] at lengths_eq
-      cases lengths_eq
-      cases A'ki.deterministic A'ki'
-      match b with
-      | false =>
-        rw [Option.someIf_false, Option.someIf] at K'eq
-        split at K'eq
-        case isTrue => nomatch K'eq
-        case isFalse h' =>
-        cases b'
-        case true => nomatch h'
-        apply Type.list.injEq .. |>.mpr ⟨_, rfl⟩
-        rw [Range.map, Range.map]
-        apply Range.map_eq_of_eq_of_mem
-        intro i mem
-        apply Type.app.injEq .. |>.mpr ⟨rfl, _⟩
-        exact Range.eq_of_mem_of_map_eq Bseq i mem
-      | true =>
-        rw [Option.someIf_true] at K'eq
-        cases Option.eq_of_someIf_eq_some K'eq.symm |>.right
-        apply Type.list.injEq .. |>.mpr ⟨_, rfl⟩
-        rw [Range.map, Range.map]
-        apply Range.map_eq_of_eq_of_mem
-        intro i mem
-        apply Type.app.injEq .. |>.mpr ⟨rfl, _⟩
-        exact Range.eq_of_mem_of_map_eq Bseq i mem
-    | .listAppId _ _ (K := K) => nomatch ne K
-    | .listAppl A'st => nomatch A'v.not_step A'st
-    | .listAppr _ B'st =>
-      cases Bseq
-      cases K'eq
-      nomatch Type.IsValue.not_step (.list B'v) B'st
-  | .listAppId _ B'v (K := K), st => match st with
-    | .listAppList ne _ _ _ => nomatch ne K
-    | .listAppId _ _ => rfl
-    | .listAppComp ne _ _ _ => nomatch ne K
-    | .listAppl A'st => nomatch Type.IsValue.not_step .id A'st
-    | .listAppr _ B'st => nomatch B'v.not_step B'st
-  | .listAppComp ne A₁ki A₀v A₁Bv, st => match st with
-    | .listAppId _ _ (K := K') => nomatch ne K'
-    | .listAppComp _ A₁ki' .. => by
-      cases A₁ki.deterministic A₁ki'
-      rfl
-    | .listAppl A₀st => nomatch A₀v.not_step A₀st
-    | .listAppr _ A₁Bst => nomatch A₁Bv.not_step A₁Bst
-  | .lam I' A'st, .eta I _ Bav => by
-    let ⟨a, anin⟩ := I ++ I' |>.exists_fresh
-    let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
-    specialize Bav a aninI
-    specialize A'st a aninI'
-    let .app Blc _ := Bav.TypeVarLocallyClosed_of
-    rw [Type.TypeVar_open, Type.TypeVar_open, if_pos rfl, Blc.TypeVar_open_id] at A'st
-    nomatch Bav.not_step A'st
-  | .lam I A'st, .lam I' A''st => by
-    rename_i A' A''
-    let ⟨a, anin⟩ := A'.freeTypeVars ++ A''.freeTypeVars ++ I ++ I' |>.exists_fresh
-    let ⟨aninA'A''I, aninI'⟩ := List.not_mem_append'.mp anin
-    let ⟨aninA'A'', aninI⟩ := List.not_mem_append'.mp aninA'A''I
-    let ⟨aninA', aninA''⟩ := List.not_mem_append'.mp aninA'A''
-    exact Type.lam.injEq .. |>.mpr ⟨
-      rfl,
-      Type.TypeVar_open_inj_of_not_mem_freeTypeVars aninA' aninA'' <|
-        A'st a aninI |>.deterministic <| A''st a aninI'
-    ⟩
-  | .appl A'st, st => match st with
-    | .appl A'st' => Type.app.injEq .. |>.mpr ⟨A'st.deterministic A'st', rfl⟩
-    | .appr A'v _ => nomatch A'v.not_step A'st
-    | .lamApp _ _ A'v _ => nomatch A'v.not_step A'st
-  | .appr A'v B'st, st => match st with
-    | .appl A'st => nomatch A'v.not_step A'st
-    | .appr _ B'st' => Type.app.injEq .. |>.mpr ⟨rfl, B'st.deterministic B'st'⟩
-    | .lamApp _ _ _ B'v => nomatch B'v.not_step B'st
-  | .forall I A'st, .forall I' A''st => by
-    rename_i A' A''
-    let ⟨a, anin⟩ := A'.freeTypeVars ++ A''.freeTypeVars ++ I ++ I' |>.exists_fresh
-    let ⟨aninA'A''I, aninI'⟩ := List.not_mem_append'.mp anin
-    let ⟨aninA'A'', aninI⟩ := List.not_mem_append'.mp aninA'A''I
-    let ⟨aninA', aninA''⟩ := List.not_mem_append'.mp aninA'A''
-    exact Type.forall.injEq .. |>.mpr ⟨
-      rfl,
-      Type.TypeVar_open_inj_of_not_mem_freeTypeVars aninA' aninA'' <|
-        A'st a aninI |>.deterministic <| A''st a aninI'
-    ⟩
-  | .arrl A'st, st => match st with
-    | .arrl A'st' => Type.arr.injEq .. |>.mpr ⟨A'st.deterministic A'st', rfl⟩
-    | .arrr A'v _ => nomatch A'v.not_step A'st
-  | .arrr A'v B'st, st => match st with
-    | .arrl A'st => nomatch A'v.not_step A'st
-    | .arrr _ B'st' => Type.arr.injEq .. |>.mpr ⟨rfl, B'st.deterministic B'st'⟩
-  | .list A₀v A₁st (m := m) (n := n), st => by
-    generalize A'seq : _ ++ _ :: _ = A's, Option.someIf .. = K' at st
-    let .list A₀v' A₁st' (m := m') (n := n') := st
-    apply Type.list.injEq .. |>.mpr ⟨_, rfl⟩
-    match Nat.lt_trichotomy m m' with
-    | .inl mlt =>
-      exfalso
-      apply Type.IsValue.not_step _ A₁st
-      convert A₀v' m ⟨Nat.zero_le _, mlt, Nat.mod_one _⟩
-      match List.append_eq_append_iff.mp A'seq with
-      | .inl h =>
-        rcases h with ⟨A''s, eq₀, eq₁⟩
-        let lengths_eq : List.length ([:_].map _) = _ := by rw [eq₀]
-        rw [List.length_append, List.length_map, List.length_map, Range.length_toList,
-            Range.length_toList, Nat.sub_zero, Nat.sub_zero] at lengths_eq
-        have : m < m + A''s.length := by
-          rwa [lengths_eq] at mlt
-        rcases List.exists_cons_of_length_pos <| Nat.pos_of_lt_add_right this with ⟨_, _, rfl⟩
-        rw [List.cons_append] at eq₁
-        rw [Range.map, Range.map, ← Range.map_append (Nat.zero_le _) mlt.le] at eq₀
-        let eq₀' := And.right <| List.append_inj eq₀ <| by
-          rw [List.length_map, List.length_map, Range.length_toList]
-        rw [← Range.map, Range.map_eq_cons_of_lt mlt] at eq₀'
-        rcases List.cons.inj eq₀' with ⟨rfl, _⟩
-        exact List.cons.inj eq₁ |>.left
-      | .inr h =>
-        rcases h with ⟨A''s, eq₀, eq₁⟩
-        let lengths_eq : List.length ([:_].map _) = _ := by rw [eq₀]
-        rw [List.length_append, List.length_map, List.length_map, Range.length_toList,
-            Range.length_toList, Nat.sub_zero, Nat.sub_zero] at lengths_eq
-        nomatch Nat.not_le.mpr mlt <| Nat.le_of_add_right_le <| Nat.le_of_eq lengths_eq.symm
-    | .inr (.inl meq) =>
-      cases meq
-      cases List.append_eq_append_iff.mp A'seq
-      all_goals (
-        case _ h =>
-        rcases h with ⟨A''s, eq₀, eq₁⟩
-        let lengths_eq : List.length ([:_].map _) = _ := by rw [eq₀]
-        rw [List.length_append, List.length_map, List.length_map, Range.length_toList,
-            Nat.sub_zero] at lengths_eq
-        cases List.eq_nil_of_length_eq_zero <| Nat.add_eq_left.mp lengths_eq.symm
-        rw [List.append_nil] at eq₀
-        rw [List.nil_append] at eq₁
-        rcases List.cons.inj eq₁ with ⟨rfl, eq₁'⟩
-        refine List.append_eq_append ?_ <| List.cons.injEq .. |>.mpr ⟨A₁st.deterministic A₁st', ?_⟩
-        all_goals simp [eq₀, eq₁']
-      )
-    | .inr (.inr m'lt) =>
-      exfalso
-      apply Type.IsValue.not_step _ A₁st'
-      convert A₀v m' ⟨Nat.zero_le _, m'lt, Nat.mod_one _⟩
-      match List.append_eq_append_iff.mp A'seq with
-      | .inl h =>
-        rcases h with ⟨A''s, eq₀, eq₁⟩
-        let lengths_eq : List.length ([:_].map _) = _ := by rw [eq₀]
-        rw [List.length_append, List.length_map, List.length_map, Range.length_toList,
-            Range.length_toList, Nat.sub_zero, Nat.sub_zero] at lengths_eq
-        nomatch Nat.not_le.mpr m'lt <| Nat.le_of_add_right_le <| Nat.le_of_eq lengths_eq.symm
-      | .inr h =>
-        rcases h with ⟨A''s, eq₀, eq₁⟩
-        let lengths_eq : List.length ([:_].map _) = _ := by rw [eq₀]
-        rw [List.length_append, List.length_map, List.length_map, Range.length_toList,
-            Range.length_toList, Nat.sub_zero, Nat.sub_zero] at lengths_eq
-        have : m' < m' + A''s.length := by
-          rwa [lengths_eq] at m'lt
-        rcases List.exists_cons_of_length_pos <| Nat.pos_of_lt_add_right this with ⟨_, _, rfl⟩
-        rw [List.cons_append] at eq₁
-        rw [Range.map, Range.map, ← Range.map_append (Nat.zero_le _) m'lt.le] at eq₀
-        let eq₀' := And.right <| List.append_inj eq₀ <| by
-          rw [List.length_map, List.length_map, Range.length_toList]
-        rw [← Range.map, Range.map_eq_cons_of_lt m'lt] at eq₀'
-        rcases List.cons.inj eq₀' with ⟨rfl, _⟩
-        exact List.cons.inj eq₁ |>.left
-  | .listAppl A'st, st => match st with
-    | .listAppList _ _ A'v _ => nomatch A'v.not_step A'st
-    | .listAppId _ B'v => nomatch Type.IsValue.not_step .id A'st
-    | .listAppComp _ _ A'v _ => nomatch A'v.not_step A'st
-    | .listAppl A'st' => Type.listApp.injEq .. |>.mpr ⟨A'st.deterministic A'st', rfl⟩
-    | .listAppr A'v _ => nomatch A'v.not_step A'st
-  | .listAppr A'v B'st, st => match st with
-    | .listAppList _ _ _ B'v => nomatch Type.IsValue.not_step (.list B'v) B'st
-    | .listAppId _ B'v => nomatch B'v.not_step B'st
-    | .listAppComp _ _ _ B'v => nomatch B'v.not_step B'st
-    | .listAppl A'st => nomatch A'v.not_step A'st
-    | .listAppr _ B'st' => Type.listApp.injEq .. |>.mpr ⟨rfl, B'st.deterministic B'st'⟩
-  | .prod st, .prod st' => Type.prod.injEq .. |>.mpr <| st.deterministic st'
-  | .sum st, .sum st' => Type.sum.injEq .. |>.mpr <| st.deterministic st'
-termination_by sizeOf A
-decreasing_by
-  all_goals simp_arith
-  · exact Nat.le_of_lt <| Nat.lt_add_right _ <| List.sizeOf_lt_of_mem <| List.mem_append.mpr <|
-      .inr <| .head _
-  · rename (_ : «Type») = _ => eq
-    cases eq
-    exact Nat.le_of_lt <| Nat.lt_add_right _ <| List.sizeOf_lt_of_mem <| List.mem_append.mpr <|
-      .inr <| .head _
 
 end SmallStep
 
@@ -882,9 +656,6 @@ end «Type»
 
 namespace SmallStep
 
-local instance : Inhabited Kind where
-  default := .star
-in
 theorem progress (Aki : [[Δ ⊢ A : K]]) : A.IsValue ∨ ∃ B, [[Δ ⊢ A -> B]] := match A, Aki with
   | .var _, .var _ => .inl .var
   | .lam K A', .lam I A'ki => by
@@ -899,15 +670,7 @@ theorem progress (Aki : [[Δ ⊢ A : K]]) : A.IsValue ∨ ∃ B, [[Δ ⊢ A -> B
         rw [Type.TypeVar_open, Type.TypeVar_open, if_pos rfl, A''lc.TypeVar_open_id] at A'ki
         let .app A''ki (.var .head) := A'ki
         simp [Type.freeTypeVars] at aninA'
-        refine .inr ⟨
-          _,
-          .eta [] (A''ki.TypeVar_drop_of_not_mem_freeTypeVars aninA' (Δ' := .empty)) ?_
-        ⟩
-        intro a' _
-        apply Type.IsValue.TypeVar_subst_var (a := a) (a' := a') at A'v
-        simp [Type.TypeVar_open, A''lc.TypeVar_open_id, Type.TypeVar_subst,
-              Type.TypeVar_subst_id_of_not_mem_freeTypeVars aninA'] at A'v
-        exact A'v
+        exact .inr ⟨_, .eta (A''ki.TypeVar_drop_of_not_mem_freeTypeVars aninA' (Δ' := .empty))⟩
       · case neg h =>
         refine .inl <| .lam [] (fun _ _ => A'v.TypeVar_open_swap aninA') ?_
         apply not_exists.mp at h
@@ -934,9 +697,9 @@ theorem progress (Aki : [[Δ ⊢ A : K]]) : A.IsValue ∨ ∃ B, [[Δ ⊢ A -> B
       | .inl B'v => by
         cases A'ki with
         | var => exact .inl <| .varApp B'v
-        | lam I A''ki => exact .inr ⟨_, .lamApp (.lam I A''ki) B'ki A'v B'v⟩
+        | lam I A''ki => exact .inr ⟨_, .lamApp (.lam I A''ki) B'ki⟩
         | app => exact .inl <| .appApp A'v B'v
-      | .inr ⟨B'', B'st⟩ => .inr ⟨_, .appr A'v B'st⟩
+      | .inr ⟨B'', B'st⟩ => .inr ⟨_, .appr B'st⟩
     | .inr ⟨A'', A'st⟩ => .inr ⟨_, .appl A'st⟩
   | .forall K A', .scheme I A'ki => by
     let ⟨a, anin⟩ := A'.freeTypeVars ++ I |>.exists_fresh
@@ -958,7 +721,7 @@ theorem progress (Aki : [[Δ ⊢ A : K]]) : A.IsValue ∨ ∃ B, [[Δ ⊢ A -> B
   | .arr A' B', .arr A'ki B'ki => match progress A'ki with
     | .inl A'v => match progress B'ki with
       | .inl B'v => .inl <| .arr A'v B'v
-      | .inr ⟨B'', B'st⟩ => .inr ⟨_, .arrr A'v B'st⟩
+      | .inr ⟨B'', B'st⟩ => .inr ⟨_, .arrr B'st⟩
     | .inr ⟨A'', A'st⟩ => .inr ⟨_, .arrl A'st⟩
   | .list A's K?, Aki => by
     rw [← Range.map_get!_eq (as := A's), ← Option.someIf_get!_eq (x? := K?)] at Aki
@@ -1018,23 +781,16 @@ theorem progress (Aki : [[Δ ⊢ A : K]]) : A.IsValue ∨ ∃ B, [[Δ ⊢ A -> B
           right
           refine ⟨.list (A's'.reverse ++ [A''']) K?, ?_⟩
           rw [List.reverse_cons, ← Option.someIf_get!_eq (x? := K?)]
-          apply list' _ A''st
-          intro _ mem
-          rw [A's''eq] at mem
-          rcases Range.mem_of_mem_map mem with ⟨_, mem', rfl⟩
-          exact A's'v _ mem'
+          exact list' A''st
       | .inr ⟨A's'', A's'st⟩ =>
         right
         generalize A's'''eq : A's'.reverse = A's''', Option.someIf .. = K'' at A's'st
         cases A's'st
-        case list m A₀ _ A₁' n A₂ K''' b A₀v A₁st =>
+        case list A₁' m A₀ n A₂ K''' b A₁st =>
         refine ⟨[[{</ A₀@i // i in [:m] />, A₁', </ A₂@j // j in [:n] />, A'' </ : K?.get! // K?.isSome />}]], ?_⟩
         rw [List.reverse_cons, A's'''eq, List.append_assoc, List.cons_append]
         rw (occs := .pos [1]) [← Option.someIf_get!_eq (x? := K?)]
-        apply list' _ A₁st
-        intro A₀ mem
-        rcases Range.mem_of_mem_map mem with ⟨_, mem', rfl⟩
-        exact A₀v _ mem'
+        exact list' A₁st
   | .listApp A' B', .listApp A'ki B'ki => match progress A'ki with
     | .inl A'v => match progress B'ki with
       | .inl B'v => by
@@ -1042,15 +798,15 @@ theorem progress (Aki : [[Δ ⊢ A : K]]) : A.IsValue ∨ ∃ B, [[Δ ⊢ A -> B
         · case pos h =>
           rcases h with ⟨_, rfl⟩
           let .lam .. := A'ki
-          exact .inr ⟨_, .listAppId B'ki B'v⟩
+          exact .inr ⟨_, .listAppId B'ki⟩
         · case neg ne =>
           apply not_exists.mp at ne
           cases B'ki with
           | var => exact .inl <| .listAppVar ne A'v
           | app => exact .inl <| .listAppApp ne A'v B'v
-          | list => exact .inr ⟨_, .listAppList ne A'ki A'v B'v.list_inversion⟩
-          | listApp B''ki => exact .inr ⟨_, .listAppComp ne B''ki A'v B'v⟩
-      | .inr ⟨B'', B'st⟩ => .inr ⟨_, .listAppr A'v B'st⟩
+          | list => exact .inr ⟨_, .listAppList A'ki⟩
+          | listApp B''ki => exact .inr ⟨_, .listAppComp A'ki.TypeVarLocallyClosed_of B''ki⟩
+      | .inr ⟨B'', B'st⟩ => .inr ⟨_, .listAppr B'st⟩
     | .inr ⟨A'', A'st⟩ => .inr ⟨_, .listAppl A'st⟩
   | .prod A', .prod A'ki => match progress A'ki with
     | .inl A'v => .inl <| .prod A'v
@@ -1072,34 +828,31 @@ decreasing_by
     simp_arith
 
 theorem preservation : [[Δ ⊢ A -> B]] → [[Δ ⊢ A : K]] → [[Δ ⊢ B : K]]
-  | .eta I _ Bav, .lam I' Baki => by
-    let ⟨a, anin⟩ := B.freeTypeVars ++ I ++ I' |>.exists_fresh
-    let ⟨aninBI, aninI'⟩ := List.not_mem_append'.mp anin
-    let ⟨aninB, aninI⟩ := List.not_mem_append'.mp aninBI
-    specialize Bav a aninI
-    let .app Blc _ := Bav.TypeVarLocallyClosed_of
-    specialize Baki a aninI'
-    simp [Type.TypeVar_open, Blc.TypeVar_open_id] at Baki
+  | .eta Bki, .lam I Baki => by
+    let ⟨a, anin⟩ := B.freeTypeVars ++ I |>.exists_fresh
+    let ⟨aninB, aninI⟩ := List.not_mem_append'.mp anin
+    specialize Baki a aninI
+    simp [Type.TypeVar_open, Bki.TypeVarLocallyClosed_of.TypeVar_open_id] at Baki
     let .app Bki (.var .head) := Baki
     exact Bki.TypeVar_drop_of_not_mem_freeTypeVars aninB (Δ' := .empty)
-  | .lamApp _ _ A'v B'v (A := A'), .app (.lam I A'ki) B'ki =>
+  | .lamApp _ _ (A := A'), .app (.lam I A'ki) B'ki =>
     let ⟨a, anin⟩ := A'.freeTypeVars ++ I |>.exists_fresh
     let ⟨aninA', aninI⟩ := List.not_mem_append'.mp anin
     A'ki a aninI |>.Type_open_preservation aninA' B'ki
-  | .listAppList _ A'ki A'v B'v (b := b), .listApp A'ki' B'ki => by
+  | .listAppList A'ki (b := b), .listApp A'ki' B'ki => by
     cases A'ki.deterministic A'ki'
     let ⟨B'ki', h⟩ := B'ki.inv_list
     apply Kinding.list (.app A'ki <| B'ki' · ·)
     split at h
     · case isTrue h' => exact .inr h'
     · case isFalse => exact .inl h
-  | .listAppId _ A'v, .listApp (.lam I aki) A'ki => by
+  | .listAppId _, .listApp (.lam I aki) A'ki => by
     let ⟨a, anin⟩ := I.exists_fresh
     specialize aki a anin
     rw [Type.TypeVar_open, if_pos rfl] at aki
     let .var .head := aki
     exact A'ki
-  | .listAppComp _ A₁ki A₀v A₁B'v, .listApp A₀ki (.listApp A₁ki' Bki) => by
+  | .listAppComp A₀lc A₁ki, .listApp A₀ki (.listApp A₁ki' Bki) => by
     cases A₁ki.deterministic A₁ki'
     refine .listApp (.lam Δ.typeVarDom (fun a anin => ?_)) Bki
     rw [Type.TypeVar_open, A₀ki.TypeVarLocallyClosed_of.TypeVar_open_id, Type.TypeVar_open,
@@ -1120,15 +873,15 @@ theorem preservation : [[Δ ⊢ A -> B]] → [[Δ ⊢ A : K]] → [[Δ ⊢ B : K
       let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp aninII'
       exact preservation (A'st a aninI) <| A'ki a aninI'
   | .appl A'st, .app A'ki B'ki => .app (A'st.preservation A'ki) B'ki
-  | .appr _ B'st, .app A'ki B'ki => .app A'ki <| B'st.preservation B'ki
+  | .appr B'st, .app A'ki B'ki => .app A'ki <| B'st.preservation B'ki
   | .arrl A'st, .arr A'ki B'ki => .arr (A'st.preservation A'ki) B'ki
-  | .arrr _ B'st, .arr A'ki B'ki => .arr A'ki <| B'st.preservation B'ki
+  | .arrr B'st, .arr A'ki B'ki => .arr A'ki <| B'st.preservation B'ki
   | .forall I A'st, .scheme I' A'ki => .scheme (I ++ I' ++ Δ.typeVarDom) <| by
       intro a anin
       let ⟨aninII', aninΔ⟩ := List.not_mem_append'.mp anin
       let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp aninII'
       exact preservation (A'st a aninI) <| A'ki a aninI'
-  | .list A₀v A₁st (m := m) (n := n) (K := K) (b := b), Aki => by
+  | .list A₁st (m := m) (n := n) (K := K) (b := b), Aki => by
     rw [← Range.map_get!_eq (as := _ ++ _ :: _)] at Aki ⊢
     rcases Aki.inv_list' with ⟨K', rfl, Aki', h⟩
     have : Option.someIf K b = Option.someIf K' b := by
@@ -1206,7 +959,7 @@ theorem preservation : [[Δ ⊢ A -> B]] → [[Δ ⊢ A : K]] → [[Δ ⊢ B : K
         rw [Range.getElem_toList ltn, Nat.zero_add] at Aki'
         exact Aki'
   | .listAppl A'st, .listApp A'ki B'ki => .listApp (A'st.preservation A'ki) B'ki
-  | .listAppr _ B'st, .listApp A'ki B'ki => .listApp A'ki <| B'st.preservation B'ki
+  | .listAppr B'st, .listApp A'ki B'ki => .listApp A'ki <| B'st.preservation B'ki
   | .prod A'st, .prod A'ki => .prod <| A'st.preservation A'ki
   | .sum A'st, .sum A'ki => .sum <| A'st.preservation A'ki
 termination_by sizeOf A
@@ -1218,7 +971,7 @@ decreasing_by
   exact List.mem_append.mpr <| .inr <| .head _
 
 theorem preservation_rev : [[Δ ⊢ A -> B]] → [[Δ ⊢ B : K]] → [[Δ ⊢ A : K]]
-  | .eta I Bki Bav, Bki' => by
+  | .eta Bki, Bki' => by
     cases Bki.deterministic Bki'
     apply Kinding.lam Δ.typeVarDom
     intro a anin
@@ -1230,12 +983,12 @@ theorem preservation_rev : [[Δ ⊢ A -> B]] → [[Δ ⊢ B : K]] → [[Δ ⊢ A
     rw [Environment.typeVarDom, Environment.typeVarDom] at mem
     let .head _ := mem
     exact anin
-  | .lamApp (.lam I A'ki) B'ki _ _ (A := A'), Bki => by
+  | .lamApp (.lam I A'ki) B'ki (A := A'), Bki => by
     let ⟨a, anin⟩ := A'.freeTypeVars ++ I |>.exists_fresh
     let ⟨aninA', aninI⟩ := List.not_mem_append'.mp anin
     cases A'ki a aninI |>.Type_open_preservation aninA' B'ki |>.deterministic Bki
     exact .app (.lam I A'ki) B'ki
-  | .listAppList _ A'ki _ _ (K₂ := K₂) (n := n), ki => by
+  | .listAppList A'ki (K₂ := K₂) (n := n), ki => by
     rcases ki.inv_list' with ⟨_, rfl, ki', h⟩
     match n with
     | 0 =>
@@ -1260,18 +1013,18 @@ theorem preservation_rev : [[Δ ⊢ A -> B]] → [[Δ ⊢ B : K]] → [[Δ ⊢ A
       · split at h
         · case isTrue h' => exact .inr h'
         · case isFalse => exact .inl h
-  | .listAppId Bki _, Bki' => by
+  | .listAppId Bki, Bki' => by
     cases Bki.deterministic Bki'
     exact .listApp .id Bki'
-  | .listAppComp _ A₁ki A₀v A₁B'v (A₀ := A₀) (A₁ := A₁), .listApp (.lam I A₀A₁ki) B'ki => by
+  | .listAppComp A₀lc A₁ki (A₀ := A₀) (A₁ := A₁), .listApp (.lam I A₀A₁ki) B'ki => by
     let ⟨a, anin⟩ := A₀.freeTypeVars ++ A₁.freeTypeVars ++ I |>.exists_fresh
     let ⟨aninA₀A₁, aninI⟩ := List.not_mem_append'.mp anin
     let ⟨aninA₀, aninA₁⟩ := List.not_mem_append'.mp aninA₀A₁
     specialize A₀A₁ki a aninI
     simp [Type.TypeVar_open] at A₀A₁ki
     let .app A₀ki (.app A₁ki' (.var .head)) := A₀A₁ki
-    rw [A₀v.TypeVarLocallyClosed_of.TypeVar_open_id] at A₀ki
-    rw [A₁B'v.listApp_inversion.left.TypeVarLocallyClosed_of.TypeVar_open_id] at A₁ki'
+    rw [A₀lc.TypeVar_open_id] at A₀ki
+    rw [A₁ki.TypeVarLocallyClosed_of.TypeVar_open_id] at A₁ki'
     apply (Kinding.TypeVar_drop_of_not_mem_freeTypeVars · aninA₁ (Δ' := .empty)) at A₁ki'
     cases A₁ki.deterministic A₁ki'
     exact A₀ki.TypeVar_drop_of_not_mem_freeTypeVars aninA₀ (Δ' := .empty) |>.listApp <|
@@ -1282,15 +1035,15 @@ theorem preservation_rev : [[Δ ⊢ A -> B]] → [[Δ ⊢ B : K]] → [[Δ ⊢ A
       let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp aninII'
       exact preservation_rev (A'st a aninI) <| A'ki a aninI'
   | .appl A'st, .app A'ki B'ki => .app (A'st.preservation_rev A'ki) B'ki
-  | .appr _ B'st, .app A'ki B'ki => .app A'ki <| B'st.preservation_rev B'ki
+  | .appr B'st, .app A'ki B'ki => .app A'ki <| B'st.preservation_rev B'ki
   | .arrl A'st, .arr A'ki B'ki => .arr (A'st.preservation_rev A'ki) B'ki
-  | .arrr _ B'st, .arr A'ki B'ki => .arr A'ki <| B'st.preservation_rev B'ki
+  | .arrr B'st, .arr A'ki B'ki => .arr A'ki <| B'st.preservation_rev B'ki
   | .forall I A'st, .scheme I' A'ki => .scheme (I ++ I' ++ Δ.typeVarDom) <| by
       intro a anin
       let ⟨aninII', aninΔ⟩ := List.not_mem_append'.mp anin
       let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp aninII'
       exact preservation_rev (A'st a aninI) <| A'ki a aninI'
-  | .list _ A₁st (m := m) (n := n) (K := K) (b := b), Aki => by
+  | .list A₁st (m := m) (n := n) (K := K) (b := b), Aki => by
     rw [← Range.map_get!_eq (as := _ ++ _ :: _)] at Aki ⊢
     rcases Aki.inv_list' with ⟨K', rfl, Aki', h⟩
     have : Option.someIf K b = Option.someIf K' b := by
@@ -1368,7 +1121,7 @@ theorem preservation_rev : [[Δ ⊢ A -> B]] → [[Δ ⊢ B : K]] → [[Δ ⊢ A
         rw [Range.getElem_toList ltn, Nat.zero_add] at Aki'
         exact Aki'
   | .listAppl A'st, .listApp A'ki B'ki => .listApp (A'st.preservation_rev A'ki) B'ki
-  | .listAppr _ B'st, .listApp A'ki B'ki => .listApp A'ki <| B'st.preservation_rev B'ki
+  | .listAppr B'st, .listApp A'ki B'ki => .listApp A'ki <| B'st.preservation_rev B'ki
   | .prod A'st, .prod A'ki => .prod <| A'st.preservation_rev A'ki
   | .sum A'st, .sum A'ki => .sum <| A'st.preservation_rev A'ki
 termination_by sizeOf A
@@ -1380,18 +1133,18 @@ decreasing_by
   exact List.mem_append.mpr <| .inr <| .head _
 
 theorem Equivalence_of : [[Δ ⊢ A -> B]] → [[Δ ⊢ A ≡ B]]
-  | .eta _ A'ki _ => .eta A'ki
+  | .eta A'ki => .eta A'ki
   | .lamApp A'ki B'ki .. => .lamApp A'ki B'ki
-  | .listAppList _ A'ki .. => .listAppList A'ki
-  | .listAppId A'ki _ => .listAppId A'ki
-  | .listAppComp _ A₁ki A₀v _ => .listAppComp A₀v.TypeVarLocallyClosed_of A₁ki
+  | .listAppList A'ki => .listAppList A'ki
+  | .listAppId A'ki => .listAppId A'ki
+  | .listAppComp A₀lc A₁ki => .listAppComp A₀lc A₁ki
   | .lam I A'st => .lam I (A'st · · |>.Equivalence_of)
   | .appl A'st => .app A'st.Equivalence_of .refl
-  | .appr _ B'st => .app .refl B'st.Equivalence_of
+  | .appr B'st => .app .refl B'st.Equivalence_of
   | .arrl A'st => .arr A'st.Equivalence_of .refl
-  | .arrr _ B'st => .arr .refl B'st.Equivalence_of
+  | .arrr B'st => .arr .refl B'st.Equivalence_of
   | .forall I A'st => .scheme I (A'st · · |>.Equivalence_of)
-  | .list _ A'st (m := m) (n := n) => by
+  | .list A'st (m := m) (n := n) => by
     rw (occs := .pos [2]) [← Range.map_get!_eq (as := _ ++ _ :: _)]
     rw [← Range.map_get!_eq (as := _ ++ _ :: _)]
     rw [List.length_append, Range.map.eq_def (r := [:m]), List.length_map, Range.length_toList,
@@ -1423,7 +1176,7 @@ theorem Equivalence_of : [[Δ ⊢ A -> B]] → [[Δ ⊢ A ≡ B]]
         rw [List.getElem?_cons, if_neg h']
         exact .refl
   | .listAppl A'st => .listApp A'st.Equivalence_of .refl
-  | .listAppr _ B'st => .listApp .refl B'st.Equivalence_of
+  | .listAppr B'st => .listApp .refl B'st.Equivalence_of
   | .prod A'st => .prod A'st.Equivalence_of
   | .sum A'st => .sum A'st.Equivalence_of
 termination_by sizeOf A
@@ -1438,16 +1191,17 @@ decreasing_by
 
 -- the conclusion should be the reflexive closure of st but we can use this weaker version.
 theorem inv_arr (ArBst: [[ Δ ⊢ (A → B) -> T ]]): ∃ A' B', T = [[ (A' → B') ]] ∧ [[ Δ ⊢ A ->* A' ]] ∧ [[ Δ ⊢ B ->* B' ]] := by
-  cases ArBst <;> aesop (add unsafe constructors [MultiSmallStep, SmallStep])
+  cases ArBst <;> aesop (add unsafe constructors [Relation.ReflTransGen, SmallStep])
 
 theorem inv_forall (Ast: [[ Δ ⊢ (∀ a? : K. A) -> T ]]): ∃ A', T = [[∀ a : K. A']] ∧ ∃I: List _, ∀a ∉ I, [[ Δ, a : K ⊢ A^a ->* A'^a ]] := by
-  cases Ast ; aesop (add unsafe tactic guessI, unsafe constructors [MultiSmallStep, SmallStep])
+  cases Ast
+  aesop (add unsafe tactic guessI, unsafe constructors [Relation.ReflTransGen, SmallStep])
 
 theorem inv_prod (Ast: [[ Δ ⊢ ⊗A -> T ]]): ∃ A', T = [[⊗A']] ∧ [[ Δ ⊢ A ->* A' ]] := by
-  cases Ast ; aesop (add unsafe constructors [MultiSmallStep, SmallStep])
+  cases Ast; aesop (add unsafe constructors [Relation.ReflTransGen, SmallStep])
 
 theorem inv_sum (Ast: [[ Δ ⊢ ⊕A -> T ]]): ∃ A', T = [[⊕A']] ∧ [[ Δ ⊢ A ->* A' ]] := by
-  cases Ast ; aesop (add unsafe constructors [MultiSmallStep, SmallStep])
+  cases Ast; aesop (add unsafe constructors [Relation.ReflTransGen, SmallStep])
 
 private
 theorem sandwich {f : Nat → α} (h : i < n) : [0:n].map (fun j => f j) =
@@ -1480,7 +1234,7 @@ macro "rwomega" equality:term : tactic => `(tactic | (have _eq : $equality := (b
 theorem inv_list (Ast: [[ Δ ⊢ { </ A@i // i in [:n] /> </ : K // b /> } -> T ]] ): ∃ B, T = [[{ </ B@i // i in [:n] /> </ : K // b /> }]] ∧ [[ </ Δ ⊢ A@i ->* B@i // i in [:n] /> ]] := by
   generalize T_eq : [[{ </ A@i // i in [:n] /> </ : K // b /> } ]] = T_ at Ast
   cases Ast <;> try cases T_eq
-  . case list n₀ A₀i A₁ A₁' n₂ A₂i _ b A₀V A₁st =>
+  . case list A₁ A₁' n₀ A₀i n₂ A₂i _ b A₁st =>
     injection T_eq with eq eq'
     have nlen: n = n₀ + 1 + n₂ := by
       apply congrArg List.length at eq
@@ -1505,7 +1259,7 @@ theorem inv_list (Ast: [[ Δ ⊢ { </ A@i // i in [:n] /> </ : K // b /> } -> T 
       . case _ _ ieqn₀ =>
         subst ieqn₀
         rw [A₁eq]
-        exact .step A₁st .refl
+        exact .single A₁st
       . case _ Niltn₀ Nieqn₀ =>
         specialize A₂eq (i - n₀ - 1) (by simp_all [Membership.mem] ; omega)
         rw [← A₂eq]
@@ -1515,27 +1269,19 @@ end SmallStep
 
 namespace MultiSmallStep
 
-theorem trans (A₀mst : [[Δ ⊢ A₀ ->* A₁]]) (A₁mst : [[Δ ⊢ A₁ ->* A₂]]) : [[Δ ⊢ A₀ ->* A₂]] := by
-  induction A₀mst with
-  | refl => exact A₁mst
-  | step A₀st _ ih => exact step A₀st <| ih A₁mst
-
-theorem est_of (st : [[Δ ⊢ A ->* B]]) : [[Δ ⊢ A <->* B]] := by
-  induction st with
-  | refl => rfl
-  | step Ast _ ih => exact EqSmallStep.step Ast |>.trans ih
+theorem est_of : [[Δ ⊢ A ->* B]] → [[Δ ⊢ A <->* B]] := Relation.ReflTransGen.to_eqvGen
 
 theorem preserve_lc (st : [[Δ ⊢ A ->* B]]) (Alc : A.TypeVarLocallyClosed) : B.TypeVarLocallyClosed := by
   induction st with
   | refl => exact Alc
-  | step st _ ih => exact ih <| st.preserve_lc Alc
+  | tail _ st ih => exact st.preserve_lc ih
 
 open «Type» in
 theorem TypeVar_subst_var (Amst : [[Δ, a : K ⊢ A ->* B]]) (a'ninΔ : [[a' ∉ dom(Δ)]])
   : [[Δ, a' : K ⊢ A[a' / a] ->* B[a' / a] ]] := by
   induction Amst with
   | refl => rfl
-  | step st _ ih => exact step (st.TypeVar_subst_var (Δ' := .empty) a'ninΔ) ih
+  | tail _ st ih => exact .tail ih <| st.TypeVar_subst_var a'ninΔ (Δ' := .empty)
 
 theorem TypeVar_open_swap (Amst : [[Δ, a' : K ⊢ A^a' ->* A']]) (Alc : A.TypeVarLocallyClosed 1)
   (a'ninA : a' ∉ A.freeTypeVars) (aninΔ : [[a ∉ dom(Δ)]]) : [[Δ, a : K ⊢ A^a ->* (\a'^A')^a]] := by
@@ -1560,9 +1306,9 @@ theorem weakening (mst : [[Δ, Δ'' ⊢ A ->* B]]) (ΔΔ'Δ''wf : [[⊢ Δ, Δ',
   | refl =>
     cases Δ'''eq
     rfl
-  | step st _ ih =>
+  | tail _ st ih =>
     cases Δ'''eq
-    exact step (st.weakening ΔΔ'Δ''wf) ih
+    exact .tail ih <| st.weakening ΔΔ'Δ''wf
 
 theorem Environment_TypeVar_subst_swap (mst : [[Δ, Δ'[B / a] ⊢ A ->* A']])
   : [[Δ, Δ'[B' / a] ⊢ A ->* A']] := by
@@ -1571,125 +1317,1352 @@ theorem Environment_TypeVar_subst_swap (mst : [[Δ, Δ'[B / a] ⊢ A ->* A']])
   | refl =>
     cases Δ''eq
     rfl
-  | step st _ ih =>
+  | tail _ st ih =>
     cases Δ''eq
-    exact step st.Environment_TypeVar_subst_swap ih
+    exact .tail ih st.Environment_TypeVar_subst_swap
 
 theorem preservation (Amst : [[Δ ⊢ A ->* B]]) (Aki : [[Δ ⊢ A : K]]) : [[Δ ⊢ B : K]] := by
   induction Amst with
   | refl => exact Aki
-  | step Ast _ ih => exact ih <| Ast.preservation Aki
+  | tail _ st ih => exact st.preservation ih
 
-theorem EqSmallStep_of (Amst : [[Δ ⊢ A ->* B]]) : [[Δ ⊢ A <->* B]] := by
-  induction Amst with
-  | refl => rfl
-  | step Ast _ ih => exact .trans (.step Ast) ih
+theorem EqSmallStep_of : [[Δ ⊢ A ->* B]] → [[Δ ⊢ A <->* B]] := Relation.ReflTransGen.to_eqvGen
 
 theorem Equivalence_of (Amst : [[Δ ⊢ A ->* B]]) : [[Δ ⊢ A ≡ B]] := by
   induction Amst with
   | refl => exact .refl
-  | step Ast _ ih => exact .trans Ast.Equivalence_of ih
+  | tail _ st ih => exact ih.trans <| st.Equivalence_of
 
-theorem normalization (Aki : [[Δ ⊢ A : K]]) : ∃ B, B.IsValue ∧ [[Δ ⊢ A ->* B]] := sorry
+theorem lam (I : List TypeVarId) (Alc : A.TypeVarLocallyClosed 1)
+  (Amst : ∀ a ∉ I, [[Δ, a : K ⊢ A^a ->* A'^a]]) : [[Δ ⊢ λ a : K. A ->* λ a : K. A']] := by
+  let ⟨a, anin⟩ := A.freeTypeVars ++ A'.freeTypeVars ++ I |>.exists_fresh
+  let ⟨aninAA', aninI⟩ := List.not_mem_append'.mp anin
+  let ⟨aninA, aninA'⟩ := List.not_mem_append'.mp aninAA'
+  specialize Amst a aninI
+  generalize A''eq : A.TypeVar_open a = A'', A'''eq : A'.TypeVar_open a = A''' at Amst
+  clear anin aninAA'
+  induction Amst using Relation.ReflTransGen.trans_induction_on generalizing A A' with
+  | ih₁ =>
+    cases A''eq
+    cases Type.TypeVar_open_inj_of_not_mem_freeTypeVars aninA' aninA A'''eq
+    rfl
+  | ih₂ st =>
+    cases A''eq
+    cases A'''eq
+    apply Relation.ReflTransGen.single
+    apply SmallStep.lam <| I ++ Δ.typeVarDom
+    intro a' a'nin
+    let ⟨a'ninI, a'ninΔ⟩ := List.not_mem_append'.mp a'nin
+    replace st := st.TypeVar_open_swap Alc aninA a'ninΔ
+    rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars aninA'] at st
+    exact st
+  | ih₃ mst _ ih₀ ih₁ =>
+    cases A''eq
+    cases A'''eq
+    let Alc' := Alc.Type_open_dec .var_free (B := .var (.free a))
+    rw [← Type.Type_open_var] at Alc'
+    let Blc := preserve_lc mst Alc'
+    exact .trans
+      (ih₀ Alc aninA Type.not_mem_freeTypeVars_TypeVar_close rfl
+        (Type.TypeVarLocallyClosed.TypeVar_open_TypeVar_close_id Blc)) <|
+      ih₁ Blc.TypeVar_close_inc Type.not_mem_freeTypeVars_TypeVar_close aninA'
+        (Type.TypeVarLocallyClosed.TypeVar_open_TypeVar_close_id Blc) rfl
 
-theorem confluence (mst₀ : [[Δ ⊢ A ->* B₀]]) (mst₁ : [[Δ ⊢ A ->* B₁]])
-  : ∃ C, [[Δ ⊢ B₀ ->* C]] ∧ [[Δ ⊢ B₁ ->* C]] := by
-  induction mst₀ generalizing B₁ with
-  | refl => exact ⟨_, mst₁, refl⟩
-  | step st mst₀' ih => cases mst₁ with
-    | refl => exact ⟨_, refl, step st mst₀'⟩
-    | step st' mst₁' =>
-      cases st.deterministic st'
-      apply ih mst₁'
+theorem app : [[Δ ⊢ A ->* A']] → [[Δ ⊢ B ->* B']] → [[Δ ⊢ A B ->* A' B']] :=
+  Relation.ReflTransGen.map₂ .appl .appr
+
+theorem «forall» (I : List TypeVarId) (Alc : A.TypeVarLocallyClosed 1)
+  (Amst : ∀ a ∉ I, [[Δ, a : K ⊢ A^a ->* A'^a]]) : [[Δ ⊢ ∀ a : K. A ->* ∀ a : K. A']] := by
+  let ⟨a, anin⟩ := A.freeTypeVars ++ A'.freeTypeVars ++ I |>.exists_fresh
+  let ⟨aninAA', aninI⟩ := List.not_mem_append'.mp anin
+  let ⟨aninA, aninA'⟩ := List.not_mem_append'.mp aninAA'
+  specialize Amst a aninI
+  generalize A''eq : A.TypeVar_open a = A'', A'''eq : A'.TypeVar_open a = A''' at Amst
+  clear anin aninAA'
+  induction Amst using Relation.ReflTransGen.trans_induction_on generalizing A A' with
+  | ih₁ =>
+    cases A''eq
+    cases Type.TypeVar_open_inj_of_not_mem_freeTypeVars aninA' aninA A'''eq
+    rfl
+  | ih₂ st =>
+    cases A''eq
+    cases A'''eq
+    apply Relation.ReflTransGen.single
+    apply SmallStep.forall <| I ++ Δ.typeVarDom
+    intro a' a'nin
+    let ⟨a'ninI, a'ninΔ⟩ := List.not_mem_append'.mp a'nin
+    replace st := st.TypeVar_open_swap Alc aninA a'ninΔ
+    rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars aninA'] at st
+    exact st
+  | ih₃ mst _ ih₀ ih₁ =>
+    cases A''eq
+    cases A'''eq
+    let Alc' := Alc.Type_open_dec .var_free (B := .var (.free a))
+    rw [← Type.Type_open_var] at Alc'
+    let Blc := preserve_lc mst Alc'
+    exact .trans
+      (ih₀ Alc aninA Type.not_mem_freeTypeVars_TypeVar_close rfl
+        (Type.TypeVarLocallyClosed.TypeVar_open_TypeVar_close_id Blc)) <|
+      ih₁ Blc.TypeVar_close_inc Type.not_mem_freeTypeVars_TypeVar_close aninA'
+        (Type.TypeVarLocallyClosed.TypeVar_open_TypeVar_close_id Blc) rfl
+
+theorem arr : [[Δ ⊢ A ->* A']] → [[Δ ⊢ B ->* B']] → [[Δ ⊢ A → B ->* A' → B']] :=
+  Relation.ReflTransGen.map₂ .arrl .arrr
+
+theorem list (Amst : ∀ i ∈ [:n], [[Δ ⊢ A@i ->* A'@i]])
+  : [[Δ ⊢ {</ A@i // i in [:n] /> </ : K // b />} ->* {</ A'@i // i in [:n] /> </ : K // b />}]] := by
+  rw (occs := .pos [2]) [Range.map]
+  rw [← Range.map_append (Nat.zero_le _) Nat.le.refl, ← Range.map, ← Range.map]
+  rw (occs := .pos [3]) [Range.map_eq_of_eq_of_mem'' (by
+    intro i mem
+    show _ = A i
+    nomatch Nat.not_lt_of_le mem.lower mem.upper
+  )]
+  generalize meq : n = m
+  rw (occs := .pos [1, 4]) [← meq]
+  let mlen := Nat.le_refl n
+  rw (occs := .pos [1]) [meq] at mlen
+  clear meq
+  induction m with
+  | zero => rw [Range.map_same_eq_nil, List.nil_append]
+  | succ m' ih =>
+    refine .trans (ih (Nat.le_of_succ_le mlen)) ?_
+    rw [Range.map_eq_cons_of_lt <| Nat.lt_of_succ_le mlen,
+        Range.map_eq_snoc_of_lt (Nat.zero_lt_succ _), Nat.succ_sub_one,
+        List.append_assoc, List.singleton_append,
+        ← Range.map_shift (m := m' + 1) (j := m' + 1) Nat.le.refl,
+        Nat.sub_self]
+    specialize Amst m' ⟨Nat.zero_le _, Nat.lt_of_succ_le mlen, Nat.mod_one _⟩
+    generalize A''eq : A m' = A'', A'''eq : A' m' = A'''
+    rw [A''eq, A'''eq] at Amst
+    clear A''eq A'''eq
+    induction Amst with
+    | refl => rfl
+    | tail _ st ih => exact ih.tail <| .list st
+
+theorem list' (A₁mst : [[Δ ⊢ A₁ ->* A₁']])
+  : [[Δ ⊢ {</ A₀@i // i in [:m] />, A₁, </ A₂@j // j in [:n] /> </ : K // b />} ->* {</ A₀@i // i in [:m] />, A₁', </ A₂@j // j in [:n] /> </ : K // b />}]] := by
+  induction A₁mst with
+  | refl => rfl
+  | tail _ st ih => exact ih.tail <| .list st
+
+theorem listApp : [[Δ ⊢ A ->* A']] → [[Δ ⊢ B ->* B']] → [[Δ ⊢ A ⟦B⟧ ->* A' ⟦B'⟧]] :=
+  Relation.ReflTransGen.map₂ .listAppl .listAppr
+
+theorem prod : [[Δ ⊢ A ->* A']] → [[Δ ⊢ ⊗ A ->* ⊗ A']] := Relation.ReflTransGen.map .prod
+
+theorem sum : [[Δ ⊢ A ->* A']] → [[Δ ⊢ ⊕ A ->* ⊕ A']] := Relation.ReflTransGen.map .sum
+
+end MultiSmallStep
+
+namespace SmallStep
+
+theorem TypeVar_subst_out (Bst : [[Δ ⊢ B -> B']]) (Alc : A.TypeVarLocallyClosed)
+  (Bki : [[Δ ⊢ B : K]]) (Δwf : [[⊢ Δ]]) : [[Δ ⊢ A[B / a] ->* A[B' / a] ]] := by
+  cases A <;> simp [Type.TypeVar_subst]
+  · case var =>
+    split
+    · case isTrue h =>
+      cases h
+      exact ↑Bst
+    · case isFalse h => rfl
+  · case lam K _ =>
+    let .lam A'lc := Alc
+    let Blc := Bki.TypeVarLocallyClosed_of
+    apply MultiSmallStep.lam (a :: Δ.typeVarDom) <| A'lc.TypeVar_subst Blc.weaken
+    intro a' a'nin
+    let ⟨ane, a'ninΔ⟩ := List.not_mem_cons.mp a'nin
+    rw [← Blc.TypeVar_open_TypeVar_subst_comm ane.symm,
+        ← Bst.preserve_lc Blc |>.TypeVar_open_TypeVar_subst_comm ane.symm]
+    let Δawf := Δwf.typeVarExt a'ninΔ (K := K)
+    replace A'lc := A'lc.Type_open_dec .var_free (B := .var (.free a'))
+    rw [← Type.Type_open_var] at A'lc
+    exact TypeVar_subst_out (Bst.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) A'lc
+      (Bki.weakening_r (fun | _, .head _ => a'ninΔ) (Δ' := .typeExt .empty ..)) Δawf
+  · case app =>
+    let .app A'lc B''lc := Alc
+    exact .app (TypeVar_subst_out Bst A'lc Bki Δwf) (TypeVar_subst_out Bst B''lc Bki Δwf)
+  · case «forall» K _ =>
+    let .forall A'lc := Alc
+    let Blc := Bki.TypeVarLocallyClosed_of
+    apply MultiSmallStep.forall (a :: Δ.typeVarDom) <| A'lc.TypeVar_subst Blc.weaken
+    intro a' a'nin
+    let ⟨ane, a'ninΔ⟩ := List.not_mem_cons.mp a'nin
+    rw [← Blc.TypeVar_open_TypeVar_subst_comm ane.symm,
+        ← Bst.preserve_lc Blc |>.TypeVar_open_TypeVar_subst_comm ane.symm]
+    let Δawf := Δwf.typeVarExt a'ninΔ (K := K)
+    replace A'lc := A'lc.Type_open_dec .var_free (B := .var (.free a'))
+    rw [← Type.Type_open_var] at A'lc
+    exact TypeVar_subst_out (Bst.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) A'lc
+      (Bki.weakening_r (fun | _, .head _ => a'ninΔ) (Δ' := .typeExt .empty ..)) Δawf
+  · case arr =>
+    let .arr A'lc B''lc := Alc
+    exact .arr (TypeVar_subst_out Bst A'lc Bki Δwf) (TypeVar_subst_out Bst B''lc Bki Δwf)
+  · case list A's K? =>
+    let .list Alc' := Alc
+    rw [← Range.map_get!_eq (as := A's), List.map_map, List.map_map,
+        ← Option.someIf_get!_eq (x? := K?), ← Range.map, ← Range.map]
+    apply MultiSmallStep.list
+    intro i mem
+    exact TypeVar_subst_out Bst (Alc' _ <| List.get!_mem mem.upper) Bki Δwf
+  · case listApp =>
+    let .listApp A'lc B''lc := Alc
+    exact .listApp (TypeVar_subst_out Bst A'lc Bki Δwf) (TypeVar_subst_out Bst B''lc Bki Δwf)
+  · case prod =>
+    let .prod A'lc := Alc
+    exact .prod <| TypeVar_subst_out Bst A'lc Bki Δwf
+  · case sum =>
+    let .sum A'lc := Alc
+    exact .sum <| TypeVar_subst_out Bst A'lc Bki Δwf
+termination_by sizeOf A
+decreasing_by
+  all_goals (
+    rename A = _ => eq
+    cases eq
+    simp_arith
+  )
+  apply Nat.le_of_lt
+  apply Nat.lt_add_right
+  apply List.sizeOf_lt_of_mem
+  rw [List.getElem?_eq_getElem mem.upper, Option.getD]
+  exact List.getElem_mem mem.upper
+
+theorem Type_open_out (Bst : [[Δ ⊢ B -> B']]) (Alc : A.TypeVarLocallyClosed 1)
+  (Bki : [[Δ ⊢ B : K]]) (Δwf : [[⊢ Δ]]) : [[Δ ⊢ A^^B ->* A^^B']] := by
+  let ⟨a, anin⟩ := A.freeTypeVars.exists_fresh
+  rw [← Type.TypeVar_open_TypeVar_subst_eq_Type_open_of_not_mem_freeTypeVars anin,
+      ← Type.TypeVar_open_TypeVar_subst_eq_Type_open_of_not_mem_freeTypeVars anin]
+  let Alc' := Alc.Type_open_dec .var_free (B := .var (.free a))
+  rw [← Type.Type_open_var] at Alc'
+  exact TypeVar_subst_out Bst Alc' Bki Δwf
+
+theorem TypeVar_subst_in (Ast : [[Δ, a : K, Δ' ⊢ A -> A']]) (Alc : A.TypeVarLocallyClosed)
+  (Δwf : [[⊢ Δ, a : K, Δ']]) (Bki : [[Δ ⊢ B : K]])
+  : [[Δ, Δ'[B / a] ⊢ A[B / a] ->* A'[B / a] ]] := by
+  cases Ast <;> simp [Type.TypeVar_subst]
+  · case eta A'ki => exact .single <| eta (A'ki.subst' Δwf Bki)
+  · case lamApp A'ki B'ki =>
+    rw [Bki.TypeVarLocallyClosed_of.Type_open_TypeVar_subst_dist]
+    replace A'ki := A'ki.subst' Δwf Bki
+    rw [Type.TypeVar_subst] at A'ki
+    exact .single <| lamApp A'ki (B'ki.subst' Δwf Bki)
+  · case listAppList A' _ _ _ B' _ A'ki =>
+    rw [Range.map_eq_of_eq_of_mem (by
+      intro i mem
+      show _ = [[(B'@i[B / a])]]
+      simp [Type.TypeVar_subst]
+    ), ← Range.map, Range.map_eq_of_eq_of_mem (by
+      intro i mem
+      show _ = [[(A'[B/ a] B'@i[B / a])]]
+      simp [Type.TypeVar_subst]
+    ), ← Range.map]
+    exact .single <| listAppList (A'ki.subst' Δwf Bki)
+  · case listAppId A'ki => exact .single <| listAppId (A'ki.subst' Δwf Bki)
+  · case listAppComp A₀lc A₁ki =>
+    exact .single <|
+      listAppComp (A₀lc.TypeVar_subst Bki.TypeVarLocallyClosed_of) (A₁ki.subst' Δwf Bki)
+  · case lam I A'st =>
+    let .lam A'lc := Alc
+    apply MultiSmallStep.lam (a :: I ++ [[Δ, a : K, Δ']].typeVarDom) <|
+      A'lc.TypeVar_subst Bki.TypeVarLocallyClosed_of.weaken
+    intro a' a'nin
+    let ⟨a'ninaI, a'ninΔ⟩ := List.not_mem_append'.mp a'nin
+    let ⟨ane, a'ninI⟩ := List.not_mem_cons.mp a'ninaI
+    specialize A'st a' a'ninI
+    rw [← Bki.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm ane.symm,
+        ← Bki.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm ane.symm,
+        ← Environment.append, ← Environment.TypeVar_subst]
+    rw [← Environment.append] at A'st
+    replace A'lc := A'lc.Type_open_dec .var_free (B := .var (.free a'))
+    rw [← Type.Type_open_var] at A'lc
+    exact TypeVar_subst_in A'st A'lc (Δwf.typeVarExt a'ninΔ) Bki
+  · case appl A'st =>
+    let .app A'lc _ := Alc
+    exact .app (TypeVar_subst_in A'st A'lc Δwf Bki) .refl
+  · case appr B'st =>
+    let .app _ B'lc := Alc
+    exact .app .refl <| TypeVar_subst_in B'st B'lc Δwf Bki
+  · case «forall» I A'st =>
+    let .forall A'lc := Alc
+    apply MultiSmallStep.forall (a :: I ++ [[Δ, a : K, Δ']].typeVarDom) <|
+      A'lc.TypeVar_subst Bki.TypeVarLocallyClosed_of.weaken
+    intro a' a'nin
+    let ⟨a'ninaI, a'ninΔ⟩ := List.not_mem_append'.mp a'nin
+    let ⟨ane, a'ninI⟩ := List.not_mem_cons.mp a'ninaI
+    specialize A'st a' a'ninI
+    rw [← Bki.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm ane.symm,
+        ← Bki.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm ane.symm,
+        ← Environment.append, ← Environment.TypeVar_subst]
+    rw [← Environment.append] at A'st
+    replace A'lc := A'lc.Type_open_dec .var_free (B := .var (.free a'))
+    rw [← Type.Type_open_var] at A'lc
+    exact TypeVar_subst_in A'st A'lc (Δwf.typeVarExt a'ninΔ) Bki
+  · case arrl A'st =>
+    let .arr A'lc _ := Alc
+    exact .arr (TypeVar_subst_in A'st A'lc Δwf Bki) .refl
+  · case arrr B'st =>
+    let .arr _ B'lc := Alc
+    exact .arr .refl <| TypeVar_subst_in B'st B'lc Δwf Bki
+  · case list A₁st =>
+    rw [← Range.map_get!_eq (as := _ ++ _ :: _), List.length_append, List.length_map,
+        Range.length_toList, Nat.sub_zero, List.length_cons, List.length_map, Range.length_toList,
+        Nat.sub_zero]
+    rw (occs := .pos [2]) [← Range.map_get!_eq (as := _ ++ _ :: _)]
+    rw [List.length_append, List.length_map, Range.length_toList, Nat.sub_zero, List.length_cons,
+        List.length_map, Range.length_toList, Nat.sub_zero, ← Range.map, ← Range.map]
+    refine .list ?_
+    intro i mem
+    simp
+    rw [List.getElem?_append]
+    split
+    · case isTrue h => rw [List.getElem?_append_left h]
+    · case isFalse h =>
+      rw [List.getElem?_append_right <| Nat.le_of_not_lt h]
+      rw [List.getElem?_cons]
+      split
+      · case isTrue h' =>
+        rw [h']
+        simp
+        let .list Alc' := Alc
+        exact TypeVar_subst_in A₁st (Alc' _ <| List.mem_append.mpr <| .inr <| .head _) Δwf Bki
+      · case isFalse h' =>
+        let ⟨_, eq⟩ := Nat.exists_add_one_eq.mpr <| Nat.pos_of_ne_zero h'
+        rw [← eq, List.getElem?_cons_succ]
+        rfl
+  · case listAppl A'st =>
+    let .listApp A'lc _ := Alc
+    exact .listApp (TypeVar_subst_in A'st A'lc Δwf Bki) .refl
+  · case listAppr B'st =>
+    let .listApp _ B'lc := Alc
+    exact .listApp .refl <| TypeVar_subst_in B'st B'lc Δwf Bki
+  · case prod A'st =>
+    let .prod A'lc := Alc
+    exact .prod <| TypeVar_subst_in A'st A'lc Δwf Bki
+  · case sum A'st =>
+    let .sum A'lc := Alc
+    exact .sum <| TypeVar_subst_in A'st A'lc Δwf Bki
+termination_by sizeOf A
+decreasing_by
+  all_goals (
+    rename A = _ => eq
+    cases eq
+    simp_arith
+  )
+  exact Nat.le_of_lt <| Nat.lt_add_right _ <| List.sizeOf_lt_of_mem <| List.mem_append.mpr <|
+    .inr <| .head _
+
+theorem Type_open_in (Ast : [[Δ, a : K, Δ' ⊢ A^a -> A'^a]]) (Alc : A.TypeVarLocallyClosed 1)
+  (Bki : [[Δ ⊢ B : K]]) (Δwf : [[⊢ Δ, a : K, Δ']]) (aninA : a ∉ A.freeTypeVars)
+  (aninA' : a ∉ A'.freeTypeVars) : [[Δ, Δ'[B / a] ⊢ A^^B ->* A'^^B]] := by
+  rw [← Type.TypeVar_open_TypeVar_subst_eq_Type_open_of_not_mem_freeTypeVars aninA,
+      ← Type.TypeVar_open_TypeVar_subst_eq_Type_open_of_not_mem_freeTypeVars aninA']
+  let Alc' := Alc.Type_open_dec .var_free (B := .var (.free a))
+  rw [← Type.Type_open_var] at Alc'
+  exact TypeVar_subst_in Ast Alc' Δwf Bki
+
+theorem local_confluence (AstB₀ : [[Δ ⊢ A -> B₀]]) (AstB₁ : [[Δ ⊢ A -> B₁]]) (Aki : [[Δ ⊢ A : K]])
+  (Δwf : [[⊢ Δ]]) : ∃ C, [[Δ ⊢ B₀ ->* C]] ∧ [[Δ ⊢ B₁ ->* C]] := by
+  match AstB₀, AstB₁, Aki with
+  | .eta .., .eta .., _ => exact of_eq
+  | .eta B₀ki, .lam I B₀st (A' := B₀'), _ =>
+    let ⟨a, anin⟩ := B₀.freeTypeVars ++ B₀'.freeTypeVars ++ I |>.exists_fresh
+    let ⟨aninB₀B₀', aninI⟩ := List.not_mem_append'.mp anin
+    let ⟨aninB₀, aninB₀'⟩ := List.not_mem_append'.mp aninB₀B₀'
+    specialize B₀st a aninI
+    simp [Type.TypeVar_open, B₀ki.TypeVarLocallyClosed_of.TypeVar_open_id] at B₀st
+    generalize B₀''eq : B₀'.TypeVar_open a = B₀'' at B₀st
+    match B₀st with
+    | lamApp _ (.var .head) =>
+      apply of_eq
+      rw [← Type.Type_open_var] at B₀''eq
+      rw [Type.freeTypeVars] at aninB₀
+      cases Type.TypeVar_open_inj_of_not_mem_freeTypeVars aninB₀' aninB₀ B₀''eq
+      rfl
+    | appl B₀st =>
+      rename «Type» => B₀'''
+      cases B₀'
+      all_goals rw [Type.TypeVar_open] at B₀''eq
+      case app B₀'''' B₀''''' =>
+        cases B₀'''''
+        all_goals rw [Type.TypeVar_open] at B₀''eq
+        case var =>
+          split at B₀''eq
+          case isFalse h =>
+            cases B₀''eq
+            simp [Type.freeTypeVars] at aninB₀'
+          case isTrue h =>
+          cases h
+          simp [Type.freeTypeVars] at aninB₀'
+          cases B₀''eq
+          let B₀''''lc := B₀st.preserve_lc B₀ki.TypeVarLocallyClosed_of
+            |>.TypeVar_close_inc (a := a)
+          rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars aninB₀'] at B₀''''lc
+          replace B₀''''lc := B₀''''lc.not_mem_freeTypeVars_TypeVar_open_dec <|
+            B₀st.preserve_not_mem_freeTypeVars aninB₀
+          rw [B₀''''lc.TypeVar_open_id] at B₀st
+          replace B₀st := B₀st.TypeVar_drop_of_not_mem_freeTypeVars aninB₀ (Δ' := .empty)
+          rw [Environment.append] at B₀st
+          exact ⟨B₀'''', B₀st, eta <| B₀st.preservation B₀ki⟩
+        all_goals nomatch B₀''eq
+      all_goals nomatch B₀''eq
+  | .lamApp A'ki B'ki (A := A'), st, _ =>
+    let .lam A'lc := A'ki.TypeVarLocallyClosed_of
+    match st with
+    | .appl A'st => match A'st with
+      | .eta A'ki' =>
+        simp [Type.Type_open, A'ki'.TypeVarLocallyClosed_of.Type_open_id]
+        exact ⟨_, .refl⟩
+      | .lam I A'st' (A' := A'') =>
+        let ⟨a, anin⟩ := A'.freeTypeVars ++ A''.freeTypeVars ++ I ++ Δ.typeVarDom |>.exists_fresh
+        let ⟨aninA'A''I, aninΔ⟩ := List.not_mem_append'.mp anin
+        let ⟨aninA'A'', aninI⟩ := List.not_mem_append'.mp aninA'A''I
+        let ⟨aninA', aninA''⟩ := List.not_mem_append'.mp aninA'A''
+        exact ⟨
+          _,
+          Type_open_in (A'st' a aninI) A'lc B'ki (Δwf.typeVarExt aninΔ) aninA' aninA''
+            (Δ' := .empty),
+          .single <| lamApp (preservation (.lam I A'st') A'ki) B'ki
+        ⟩
+    | .appr B'st =>
+      exact ⟨_, Type_open_out B'st A'lc B'ki Δwf, lamApp A'ki (B'st.preservation B'ki)⟩
+    | .lamApp _ _ => exact of_eq
+  | .listAppList A'ki (A := A') (n := n) (b := b) (K₂ := K₂) (B := B'), st, _ =>
+    generalize Bseq : [:n].map _ = Bs, K'eq : Option.someIf .. = K' at st
+    match st with
+    | .listAppList A'ki' =>
+      apply of_eq
+      let lengths_eq : ([:n].map _).length = _ := by rw [Bseq]
+      rw [List.length_map, List.length_map, Range.length_toList, Range.length_toList,
+          Nat.sub_zero, Nat.sub_zero] at lengths_eq
+      cases lengths_eq
+      cases A'ki.deterministic A'ki'
+      cases Option.someIf_eq K'eq
+      rw [Range.map_eq_of_eq_of_mem'' (by
+        intro i mem
+        rw [Range.eq_of_mem_of_map_eq Bseq i mem]
+      )]
+    | .listAppId B'ki =>
+      cases Bseq
+      cases K'eq
+      let .lam I aki := A'ki
+      let ⟨a, anin⟩ := I.exists_fresh
+      specialize aki a anin
+      simp [Type.TypeVar_open] at aki
+      let .var mem := aki
+      cases mem
+      case typeVarExt ne => nomatch ne
+      let ⟨B'ki', _⟩ := B'ki.inv_list
+      apply Exists.intro [[{</ B'@i // i in [:n] /> </ : K₂ // b />}]]
+      constructor
+      · apply MultiSmallStep.list
+        intro i mem
+        have : B' i = Type.Type_open (.var (.bound 0)) (B' i) := by rw [Type.Type_open, if_pos rfl]
+        rw (occs := .pos [2]) [this]
+        exact .single <| .lamApp .id <| B'ki' i mem
+      · rfl
+    | .listAppl A'st =>
+      cases Bseq
+      cases K'eq
+      apply Exists.intro _
+      constructor
+      swap
+      exact .single <| .listAppList <| A'st.preservation A'ki
+      apply MultiSmallStep.list
+      intro i mem
+      exact .app A'st .refl
+    | .listAppr B'st =>
+      let .list B₁st (A₀ := B₀) (A₁ := B₁) (A₁' := B₁') (A₂ := B₂) (m := m) (n := n') := B'st
+      apply Exists.intro [[{</ A' B₀@i // i in [:m] />, A' B₁', </ A' B₂@j // j in [:n'] /> </ : K₂ // b />}]]
+      let lengths_eq := congrArg List.length Bseq
+      simp [Range.length_toList] at lengths_eq
+      rw [← Range.map_get!_eq (as := _ ++ _ :: _), List.length_append, List.length_map,
+          Range.length_toList, Nat.sub_zero, List.length_cons, List.length_map, Range.length_toList,
+          Nat.sub_zero, ← lengths_eq] at Bseq
+      have map_map : ∀ {m n} {f : _ → _}, [m:n].map (fun i => A'.app (f i)) =
+        List.map A'.app ([m:n].map fun i => f i) := by
+        intros
+        rw [Range.map, List.map_map, ← Range.map, ← Range.map,
+            Range.map_eq_of_eq_of_mem'' (fun _ _ => Function.comp.eq_def _ _ _)]
+      constructor
+      · rw [Range.map_eq_of_eq_of_mem'' (by
+          intro i mem
+          show _ = (([:m].map fun i => A'.app (B₀ i)) ++
+            A'.app B₁ :: [:n'].map fun j => A'.app (B₂ j)).get! i
+          rw [Range.eq_of_mem_of_map_eq Bseq i mem, map_map, map_map, ← List.map_cons,
+              ← List.map_append]
+          rw (occs := .pos [2]) [List.get!_eq_getElem!]
+          rw [List.getElem!_eq_getElem?_getD, List.getElem?_map, List.getElem?_eq_getElem,
+              Option.map, Option.getD, List.get!_eq_getElem!, List.getElem!_eq_getElem?_getD,
+              List.getElem?_eq_getElem, Option.getD]
+          simp [Range.length_toList, ← lengths_eq, mem.upper]
+        )]
+        have : n = (([:m].map fun i => A'.app (B₀ i)) ++
+            A'.app B₁ :: [:n'].map fun j => A'.app (B₂ j)).length := by
+          simp [Range.length_toList, lengths_eq]
+        rw (occs := .pos [1]) [this, Range.map_get!_eq]
+        exact .single <| .list <| .appr B₁st
+      · rw [← Range.map_get!_eq (as := _ ++ _ :: _), ← Range.map_get!_eq (as := _ ++ _ :: _),
+            ← K'eq]
+        convert Relation.ReflTransGen.single <| SmallStep.listAppList A'ki
+        simp [Range.length_toList, lengths_eq]
+        rw (occs := .pos [3]) [Range.map_eq_of_eq_of_mem'' (by
+          intro i mem
+          rw [List.getElem?_eq_getElem (by rw [Range.length_toList]; exact mem.upper),
+              Range.getElem_toList mem.upper, Option.map, Option.getD, Nat.zero_add]
+        )]
+        rw [map_map, map_map, map_map]
+        have : m + (n' + 1) =
+            (([:m].map fun i => B₀ i) ++ B₁' :: [:n'].map fun j => B₂ j).length := by
+          simp [Range.length_toList, lengths_eq]
+        rw (occs := .pos [1]) [this, Range.map_get!_eq]
+        rw [← List.map_cons, List.map_append]
+  | .listAppId B'ki (K := K), st, _ => match st with
+    | .listAppList A'ki (B := B') (n := n) (b := b) =>
+      let .lam I aki := A'ki
+      let ⟨a, anin⟩ := I.exists_fresh
+      specialize aki a anin
+      simp [Type.TypeVar_open] at aki
+      let .var mem := aki
+      cases mem
+      case typeVarExt ne => nomatch ne
+      let ⟨B'ki', _⟩ := B'ki.inv_list
+      apply Exists.intro [[{</ B'@i // i in [:n] /> </ : K // b />}]]
+      constructor
+      · rfl
+      · apply MultiSmallStep.list
+        intro i mem
+        have : B' i = Type.Type_open (.var (.bound 0)) (B' i) := by rw [Type.Type_open, if_pos rfl]
+        rw (occs := .pos [2]) [this]
+        exact .single <| .lamApp .id <| B'ki' i mem
+    | .listAppId .. => exact of_eq
+    | .listAppComp _ A₁ki (A₁ := A₁) =>
+      let .listApp A₁ki' _ := B'ki
+      cases A₁ki.deterministic A₁ki'
+      apply Exists.intro _
+      apply And.intro .refl
+      refine .listApp ?_ .refl
+      apply Relation.ReflTransGen.trans (.single _) <| .single <| .eta A₁ki
+      apply SmallStep.lam Δ.typeVarDom
+      intro a anin
+      simp [Type.TypeVar_open, A₁ki.TypeVarLocallyClosed_of.TypeVar_open_id]
+      have : [[(A₁ a)]] = Type.Type_open [[(a$0)]] [[(A₁ a)]] := by rw [Type.Type_open, if_pos rfl]
+      rw (occs := .pos [2]) [this]
+      exact .lamApp .id <|
+        .app (A₁ki.weakening_r (fun | _, .head _ => anin) (Δ' := .typeExt .empty a _)) <|
+        .var <| .head
+    | .listAppl A'st => nomatch Type.IsValue.id.not_step A'st
+    | .listAppr B'st => exact ⟨_, .single B'st, .single <| .listAppId <| B'st.preservation B'ki⟩
+  | .listAppComp A₀lc A₁ki (A₀ := A₀) (A₁ := A₁) (B := B') (K₁ := K₁) (K₂ := K₂), st,
+    .listApp A₀ki (.listApp A₁ki' B'ki) (K₂ := K₃) =>
+    cases A₁ki.deterministic A₁ki'
+    match st with
+    | .listAppId A₁B'ki =>
+      let .listApp A₁ki' _ := A₁B'ki
+      cases A₁ki.deterministic A₁ki'
+      apply Exists.intro _
+      apply And.intro _ .refl
+      refine .listApp ?_ .refl
+      apply Relation.ReflTransGen.trans (.single _) <| .single <| .eta A₁ki
+      apply SmallStep.lam Δ.typeVarDom
+      intro a anin
+      simp [Type.TypeVar_open, A₁ki.TypeVarLocallyClosed_of.TypeVar_open_id]
+      have : [[(A₁ a)]] = Type.Type_open [[(a$0)]] [[(A₁ a)]] := by rw [Type.Type_open, if_pos rfl]
+      rw (occs := .pos [2]) [this]
+      exact .lamApp .id <|
+        .app (A₁ki.weakening_r (fun | _, .head _ => anin) (Δ' := .typeExt .empty a _)) <|
+        .var <| .head
+    | .listAppComp _ A₁ki' =>
+      cases A₁ki.deterministic A₁ki'
+      exact of_eq
+    | .listAppl A₀st (A' := A₀') =>
+      apply Exists.intro [[(λ a : K₁. A₀' (A₁ a$0)) ⟦B'⟧]]
+      constructor
+      · refine .listApp ?_ .refl
+        apply MultiSmallStep.lam Δ.typeVarDom <|
+          A₀lc.weaken (n := 1).app <| A₁ki.TypeVarLocallyClosed_of.weaken (n := 1).app <|
+          .var_bound Nat.one_pos
+        intro a anin
+        simp [Type.TypeVar_open, A₀lc.TypeVar_open_id, A₀st.preserve_lc A₀lc |>.TypeVar_open_id,
+              A₁ki.TypeVarLocallyClosed_of.TypeVar_open_id]
+        refine .app ?_ .refl
+        exact .single <| A₀st.weakening (Δwf.typeVarExt anin) (Δ' := .typeExt .empty ..)
+          (Δ'' := .empty)
+      · exact .single <| listAppComp (A₀st.preserve_lc A₀lc) A₁ki
+    | .listAppr A₁B'st => match A₁B'st with
+      | .listAppList A₁ki'' (B := B') (n := n) (b := b) =>
+        cases A₁ki.deterministic A₁ki''
+        apply Exists.intro [[{</ A₀ (A₁ B'@i) // i in [:n] /> </ : K₃ // b />}]]
+        constructor
+        · calc
+            [[Δ ⊢ (λ a : K₁. A₀ (A₁ a$0)) ⟦{</ B'@i // i in [:n] /> </ : K₁ // b />}⟧ ->* {</ (λ a : K₁. A₀ (A₁ a$0)) B'@i // i in [:n] /> </ : K₃ // b />}]] := by
+              refine .single <| .listAppList ?_
+              apply Kinding.lam Δ.typeVarDom
+              intro a anin
+              simp [Type.TypeVar_open, A₀lc.TypeVar_open_id,
+                    A₁ki.TypeVarLocallyClosed_of.TypeVar_open_id]
+              let Δawf := Δwf.typeVarExt anin (K := K₁)
+              exact A₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)
+                |>.app <| A₁ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)
+                |>.app <| .var .head
+            [[Δ ⊢ {</ (λ a : K₁. A₀ (A₁ a$0)) B'@i // i in [:n] /> </ : K₃ // b />} ->* {</ A₀ (A₁ B'@i) // i in [:n] /> </ : K₃ // b />}]] := by
+              refine .list ?_
+              intro i mem
+              have : [[(A₀ (A₁ (B'@i)))]] = [[((A₀ (A₁ a$0))^^B'@i)]] := by
+                simp [Type.Type_open, A₀lc.Type_open_id,
+                      A₁ki.TypeVarLocallyClosed_of.Type_open_id]
+              rw [this]
+              refine .single <| .lamApp ?_ (B'ki.inv_list.left i mem) (K₂ := K₃)
+              apply Kinding.lam Δ.typeVarDom
+              intro a anin
+              simp [Type.TypeVar_open, A₀lc.TypeVar_open_id,
+                    A₁ki.TypeVarLocallyClosed_of.TypeVar_open_id]
+              let Δawf := Δwf.typeVarExt anin (K := K₁)
+              exact A₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)
+                |>.app <| A₁ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)
+                |>.app <| .var .head
+        · exact .single <| .listAppList A₀ki
+      | .listAppId B'ki (A := B') (K := K) =>
+        let .lam I aki := A₁ki
+        let ⟨a, anin⟩ := I.exists_fresh
+        specialize aki a anin
+        simp [Type.TypeVar_open] at aki
+        let .var mem := aki
+        cases mem
+        case typeVarExt ne => nomatch ne
+        apply Exists.intro [[A₀ ⟦B'⟧]]
+        constructor
+        · calc
+            [[Δ ⊢ (λ a : K₂. A₀ ((λ a : K₂. a$0) a$0)) ⟦B'⟧ ->* (λ a : K₂. A₀ a$0) ⟦B'⟧]] := by
+              refine .listApp ?_ .refl
+              apply MultiSmallStep.lam [] <|
+                A₀lc.weaken (n := 1).app <| .app (.weaken .id) <| .var_bound Nat.one_pos
+              intro a _
+              simp [Type.TypeVar_open, A₀lc.TypeVar_open_id]
+              refine .app .refl ?_
+              have : Type.var (.free a) = Type.Type_open (.var (.bound 0)) (.var (.free a)) := by
+                rw [Type.Type_open, if_pos rfl]
+              rw (occs := .pos [2]) [this]
+              exact .single <| .lamApp .id <| .var .head
+            [[Δ ⊢ (λ a : K₂. A₀ a$0) ⟦B'⟧ ->* A₀ ⟦B'⟧]] := .listApp (.single <| eta A₀ki) .refl
+        · rfl
+      | .listAppComp _ B₀ki (A₁ := B₀) (B := B₁) (K₁ := K₀) =>
+        let .listApp B₀ki' B₁ki := B'ki
+        cases B₀ki.deterministic B₀ki'
+        let A₁lc := A₁ki.TypeVarLocallyClosed_of
+        let B₀lc := B₀ki.TypeVarLocallyClosed_of
+        apply Exists.intro [[(λ a : K₀. A₀ (A₁ (B₀ a$0))) ⟦B₁⟧]]
+        constructor
+        · calc
+            [[Δ ⊢ (λ a : K₁. A₀ (A₁ a$0)) ⟦B₀ ⟦B₁⟧⟧ ->* (λ a : K₀. (λ a : K₁. A₀ (A₁ a$0)) (B₀ a$0)) ⟦B₁⟧]] :=
+              .single <| .listAppComp
+                (.lam (.app A₀lc.weaken (.app A₁lc.weaken
+                  (.var_bound Nat.one_pos))))
+                B₀ki
+            [[Δ ⊢ (λ a : K₀. (λ a : K₁. A₀ (A₁ a$0)) (B₀ a$0)) ⟦B₁⟧ ->* (λ a : K₀. A₀ (A₁ (B₀ a$0))) ⟦B₁⟧]] := by
+              refine .listApp ?_ .refl
+              refine .lam Δ.typeVarDom ?_ ?_
+              · exact .app
+                  (.lam (.app
+                    (A₀lc.weaken (n := 2))
+                    (.app (A₁lc.weaken (n := 2)) (.var_bound Nat.two_pos))))
+                  (.app (B₀ki.TypeVarLocallyClosed_of.weaken (n := 1)) (.var_bound Nat.one_pos))
+              · intro a anin
+                let Δawf := Δwf.typeVarExt anin (K := K₀)
+                simp [Type.TypeVar_open, A₀lc.TypeVar_open_id, A₀lc.weaken (n := 1).TypeVar_open_id,
+                      A₁lc.TypeVar_open_id, A₁lc.weaken (n := 1).TypeVar_open_id,
+                      B₀lc.TypeVar_open_id]
+                have : [[(A₀ (A₁ (B₀ a)))]] = [[((A₀ (A₁ a$0))^^(B₀ a))]] := by
+                  simp [Type.Type_open, A₀lc.Type_open_id, A₁lc.Type_open_id]
+                rw [this]
+                refine .single ?_
+                apply SmallStep.lamApp
+                · apply Kinding.lam <| a :: Δ.typeVarDom
+                  intro a' a'nin
+                  let Δaa'wf := Δawf.typeVarExt a'nin (K := K₁)
+                  simp [Type.TypeVar_open, A₀lc.TypeVar_open_id, A₁lc.TypeVar_open_id]
+                  exact A₀ki.weakening Δaa'wf (Δ' := .typeExt (.typeExt .empty ..) ..)
+                    (Δ'' := .empty) |>.app <| A₁ki.weakening Δaa'wf
+                      (Δ' := .typeExt (.typeExt .empty ..) ..) (Δ'' := .empty) |>.app <| .var .head
+                · exact B₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty) |>.app <|
+                    .var .head
+        · calc
+            [[Δ ⊢ A₀ ⟦(λ a : K₀. A₁ (B₀ a$0)) ⟦B₁⟧⟧ ->* (λ a : K₀. A₀ ((λ a : K₀. A₁ (B₀ a$0)) a$0)) ⟦B₁⟧]] := by
+              refine .single <| .listAppComp A₀lc ?_ (K₂ := K₂)
+              apply Kinding.lam Δ.typeVarDom
+              intro a anin
+              simp [Type.TypeVar_open, A₁lc.TypeVar_open_id, B₀lc.TypeVar_open_id]
+              let Δawf := Δwf.typeVarExt anin (K := K₀)
+              exact A₁ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty) |>.app <|
+                B₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty) |>.app <| .var .head
+            [[Δ ⊢ (λ a : K₀. A₀ ((λ a : K₀. A₁ (B₀ a$0)) a$0)) ⟦B₁⟧ ->* (λ a : K₀. A₀ (A₁ (B₀ a$0))) ⟦B₁⟧]] := by
+              refine .listApp ?_ .refl
+              refine .lam Δ.typeVarDom ?_ ?_
+              · exact .app (A₀lc.weaken (n := 1)) <|
+                  .app
+                    (.lam (.app (A₁lc.weaken (n := 2))
+                      (.app (B₀lc.weaken (n := 2)) (.var_bound Nat.two_pos)))) <|
+                    .var_bound Nat.one_pos
+              · intro a anin
+                let Δawf := Δwf.typeVarExt anin (K := K₀)
+                simp [Type.TypeVar_open, A₀lc.TypeVar_open_id, A₁lc.TypeVar_open_id,
+                      A₁lc.weaken (n := 1).TypeVar_open_id, B₀lc.TypeVar_open_id,
+                      B₀lc.weaken (n := 1).TypeVar_open_id]
+                refine .app .refl ?_
+                have : [[A₁ (B₀ a)]] = [[((A₁ (B₀ a$0))^^a)]] := by
+                  simp [Type.Type_open, A₁lc.Type_open_id, B₀lc.Type_open_id]
+                rw [this]
+                refine .single ?_
+                apply SmallStep.lamApp _ <| .var .head
+                swap
+                apply Kinding.lam <| a :: Δ.typeVarDom
+                intro a' a'nin
+                let Δaa'wf := Δawf.typeVarExt a'nin (K := K₀)
+                simp [Type.TypeVar_open, A₁lc.TypeVar_open_id, B₀lc.TypeVar_open_id]
+                exact A₁ki.weakening Δaa'wf (Δ' := .typeExt (.typeExt .empty ..) ..) (Δ'' := .empty)
+                  |>.app <| B₀ki.weakening Δaa'wf (Δ' := .typeExt (.typeExt .empty ..) ..)
+                    (Δ'' := .empty) |>.app <| .var .head
+      | .listAppl A₁st (A' := A₁') =>
+        apply Exists.intro [[(λ a : K₁. A₀ (A₁' a$0)) ⟦B'⟧]]
+        let A₁lc := A₁ki.TypeVarLocallyClosed_of
+        constructor
+        · refine .listApp ?_ .refl
+          refine .lam Δ.typeVarDom ?_ ?_
+          · exact A₀lc.weaken (n := 1).app <| A₁lc.weaken (n := 1).app <| .var_bound Nat.one_pos
+          · intro a anin
+            simp [Type.TypeVar_open, A₀lc.TypeVar_open_id, A₁lc.TypeVar_open_id,
+                  A₁st.preserve_lc A₁lc |>.TypeVar_open_id]
+            refine .app .refl <| .app (.single ?_) .refl
+            exact A₁st.weakening (Δwf.typeVarExt anin) (Δ' := .typeExt .empty ..) (Δ'' := .empty)
+        · exact .single <| .listAppComp A₀lc <| A₁st.preservation A₁ki
+      | .listAppr B'st (B' := B'') =>
+        apply Exists.intro [[(λ a : K₁. A₀ (A₁ a$0)) ⟦B''⟧]]
+        constructor
+        · exact .listApp .refl <| .single B'st
+        · exact .single <| .listAppComp A₀lc A₁ki
+  | .lam I B₁st (A' := B₁'), .eta B₁ki, _ =>
+    let ⟨a, anin⟩ := B₁.freeTypeVars ++ B₁'.freeTypeVars ++ I |>.exists_fresh
+    let ⟨aninB₁B₁', aninI⟩ := List.not_mem_append'.mp anin
+    let ⟨aninB₁, aninB₁'⟩ := List.not_mem_append'.mp aninB₁B₁'
+    specialize B₁st a aninI
+    simp [Type.TypeVar_open, B₁ki.TypeVarLocallyClosed_of.TypeVar_open_id] at B₁st
+    generalize B₁''eq : B₁'.TypeVar_open a = B₁'' at B₁st
+    match B₁st with
+    | lamApp _ (.var .head) =>
+      apply of_eq
+      rw [← Type.Type_open_var] at B₁''eq
+      rw [Type.freeTypeVars] at aninB₁
+      cases Type.TypeVar_open_inj_of_not_mem_freeTypeVars aninB₁' aninB₁ B₁''eq
+      rfl
+    | appl B₁st =>
+      rename «Type» => B₁'''
+      cases B₁'
+      all_goals rw [Type.TypeVar_open] at B₁''eq
+      case app B₁'''' B₁''''' =>
+        cases B₁'''''
+        all_goals rw [Type.TypeVar_open] at B₁''eq
+        case var =>
+          split at B₁''eq
+          case isFalse h =>
+            cases B₁''eq
+            simp [Type.freeTypeVars] at aninB₁'
+          case isTrue h =>
+          cases h
+          simp [Type.freeTypeVars] at aninB₁'
+          cases B₁''eq
+          let B₁''''lc := B₁st.preserve_lc B₁ki.TypeVarLocallyClosed_of
+            |>.TypeVar_close_inc (a := a)
+          rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars aninB₁'] at B₁''''lc
+          replace B₁''''lc := B₁''''lc.not_mem_freeTypeVars_TypeVar_open_dec <|
+            B₁st.preserve_not_mem_freeTypeVars aninB₁
+          rw [B₁''''lc.TypeVar_open_id] at B₁st
+          replace B₁st := B₁st.TypeVar_drop_of_not_mem_freeTypeVars aninB₁ (Δ' := .empty)
+          rw [Environment.append] at B₁st
+          exact ⟨B₁'''', eta <| B₁st.preservation B₁ki, B₁st⟩
+        all_goals nomatch B₁''eq
+      all_goals nomatch B₁''eq
+  | .lam I A'st, .lam I' A''st, .lam I'' A'''ki =>
+    rename_i A' A'' _
+    let ⟨a, anin⟩ := A'.freeTypeVars ++ A''.freeTypeVars ++ I ++ I' ++ I'' ++ Δ.typeVarDom
+      |>.exists_fresh
+    let ⟨aninA'A''II'I'', aninΔ⟩ := List.not_mem_append'.mp anin
+    let ⟨aninA'A''II', aninI''⟩ := List.not_mem_append'.mp aninA'A''II'I''
+    let ⟨aninA'A''I, aninI'⟩ := List.not_mem_append'.mp aninA'A''II'
+    let ⟨aninA'A'', aninI⟩ := List.not_mem_append'.mp aninA'A''I
+    let ⟨aninA', aninA''⟩ := List.not_mem_append'.mp aninA'A''
+    specialize A'st a aninI
+    specialize A''st a aninI'
+    specialize A'''ki a aninI''
+    let A'''lc' := A'''ki.TypeVarLocallyClosed_of
+    let ⟨C, A'mst, A''mst⟩ := A'st.local_confluence A''st A'''ki <| Δwf.typeVarExt aninΔ
+    let A'lc := A'st.preserve_lc A'''lc' |>.TypeVar_close_inc (a := a)
+    let A''lc := A''st.preserve_lc A'''lc' |>.TypeVar_close_inc (a := a)
+    rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars aninA'] at A'lc
+    rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars aninA''] at A''lc
+    refine ⟨
+      _,
+      .lam Δ.typeVarDom A'lc fun _ a'nin => A'mst.TypeVar_open_swap A'lc aninA' a'nin,
+      .lam Δ.typeVarDom A''lc fun _ a'nin => A''mst.TypeVar_open_swap A''lc aninA'' a'nin
+    ⟩
+  | .appl A'st, st, .app A'ki _ => match st with
+    | .appl A'st' =>
+      let ⟨_, A'mst, A'mst'⟩ := A'st.local_confluence A'st' A'ki Δwf
+      exact ⟨_, .app A'mst .refl, .app A'mst' .refl⟩
+    | .appr B'st => exact ⟨_, .app .refl <| .single B'st, .app (.single A'st) .refl⟩
+    | .lamApp A'ki B'ki => match A'st, A'ki with
+      | .eta A'ki, _ =>
+        simp [Type.Type_open, A'ki.TypeVarLocallyClosed_of.Type_open_id]
+        exact ⟨_, .refl⟩
+      | .lam I A'st' (A := A'') (A' := A'''), .lam I' A'ki' =>
+        let ⟨a, anin⟩ := A''.freeTypeVars ++ A'''.freeTypeVars ++ I ++ I' ++ Δ.typeVarDom
+          |>.exists_fresh
+        let ⟨aninA''A'''II', aninΔ⟩ := List.not_mem_append'.mp anin
+        let ⟨aninA''A'''I, aninI'⟩ := List.not_mem_append'.mp aninA''A'''II'
+        let ⟨aninA''A''', aninI⟩ := List.not_mem_append'.mp aninA''A'''I
+        let ⟨aninA'', aninA'''⟩ := List.not_mem_append'.mp aninA''A'''
+        let A'lc' := A'ki' a aninI' |>.TypeVarLocallyClosed_of.TypeVar_close_inc (a := a)
+        rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars aninA''] at A'lc'
+        exact ⟨
+          _,
+          .single <| .lamApp (preservation (.lam I A'st') (.lam I' A'ki')) B'ki,
+          Type_open_in (A'st' a aninI) A'lc' B'ki (Δwf.typeVarExt aninΔ) aninA'' aninA'''
+            (Δ' := .empty)
+        ⟩
+  | .appr B'st, st, .app A'ki B'ki => match st with
+    | .appl A'st => exact ⟨_, .app (.single A'st) .refl, .app .refl <| .single B'st⟩
+    | .appr B'st' =>
+      let ⟨_, B'mst, B'mst'⟩ := B'st.local_confluence B'st' B'ki Δwf
+      exact ⟨_, .app .refl B'mst, .app .refl B'mst'⟩
+    | .lamApp A'ki B'ki (A := A') =>
+      let .lam I A'ki' := A'ki
+      let ⟨a, anin⟩ := A'.freeTypeVars ++ I |>.exists_fresh
+      let ⟨aninA', aninI⟩ := List.not_mem_append'.mp anin
+      let A'lc' := A'ki' a aninI |>.TypeVarLocallyClosed_of.TypeVar_close_inc (a := a)
+      rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars aninA'] at A'lc'
+      exact ⟨
+        _,
+        .single <| .lamApp A'ki <| B'st.preservation B'ki,
+        Type_open_out B'st A'lc' B'ki Δwf
+      ⟩
+  | .forall I A'st, .forall I' A''st, .scheme I'' A'''ki =>
+    rename_i A' A''
+    let ⟨a, anin⟩ := A'.freeTypeVars ++ A''.freeTypeVars ++ I ++ I' ++ I'' ++ Δ.typeVarDom
+      |>.exists_fresh
+    let ⟨aninA'A''II'I'', aninΔ⟩ := List.not_mem_append'.mp anin
+    let ⟨aninA'A''II', aninI''⟩ := List.not_mem_append'.mp aninA'A''II'I''
+    let ⟨aninA'A''I, aninI'⟩ := List.not_mem_append'.mp aninA'A''II'
+    let ⟨aninA'A'', aninI⟩ := List.not_mem_append'.mp aninA'A''I
+    let ⟨aninA', aninA''⟩ := List.not_mem_append'.mp aninA'A''
+    specialize A'st a aninI
+    specialize A''st a aninI'
+    specialize A'''ki a aninI''
+    let A'''lc' := A'''ki.TypeVarLocallyClosed_of
+    let ⟨C, A'mst, A''mst⟩ := A'st.local_confluence A''st A'''ki <| Δwf.typeVarExt aninΔ
+    let A'lc := A'st.preserve_lc A'''lc' |>.TypeVar_close_inc (a := a)
+    let A''lc := A''st.preserve_lc A'''lc' |>.TypeVar_close_inc (a := a)
+    rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars aninA'] at A'lc
+    rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars aninA''] at A''lc
+    refine ⟨
+      _,
+      .forall Δ.typeVarDom A'lc fun _ a'nin => A'mst.TypeVar_open_swap A'lc aninA' a'nin,
+      .forall Δ.typeVarDom A''lc fun _ a'nin => A''mst.TypeVar_open_swap A''lc aninA'' a'nin
+    ⟩
+  | .arrl A'st, st, .arr A'lc _ => match st with
+    | .arrl A'st' =>
+      let ⟨_, A'mst, A'mst'⟩ := A'st.local_confluence A'st' A'lc Δwf
+      exact ⟨_, .arr A'mst .refl, .arr A'mst' .refl⟩
+    | .arrr B'st => exact ⟨_, .single <| arrr B'st, .single <| arrl A'st⟩
+  | .arrr B'st, st, .arr _ B'lc => match st with
+    | .arrl A'st => exact ⟨_, .single <| arrl A'st, .single <| arrr B'st⟩
+    | .arrr B'st' =>
+      let ⟨_, B'mst, B'mst'⟩ := B'st.local_confluence B'st' B'lc Δwf
+      exact ⟨_, .arr .refl B'mst, .arr .refl B'mst'⟩
+  | .list A₁st (m := m) (n := n) (A₀ := A₀) (A₁ := A₁) (A₁' := A₁') (A₂ := A₂) (K := K) (b := b),
+    st, Aki =>
+    rw [← Range.map_get!_eq (as := _ ++ _ :: _)] at Aki
+    rcases Aki.inv_list' with ⟨_, rfl, Aki', h⟩
+    generalize A'seq : _ ++ _ :: _ = A's, K'eq : Option.someIf .. = K' at st
+    let .list A₁st' (m := m') (n := n') (A₁' := A₁'') := st
+    match Nat.lt_trichotomy m m' with
+    | .inl mltm' =>
+      rcases List.of_length_lt_of_append_eq_append (by simp [Range.length_toList, mltm']) A'seq with
+        ⟨_, A₃, A₀eq, A₁A₂eq⟩
+      rcases List.cons.inj A₁A₂eq with ⟨rfl, A₂eq⟩
+      let m'eq := congrArg List.length A₀eq
+      let neq := congrArg List.length A₂eq
+      simp_arith [Range.length_toList] at m'eq neq
+      rw [Nat.add_assoc, Nat.add_comm _ 1, ← Nat.add_assoc] at neq
+      let m'le := Nat.le_of_eq m'eq.symm
+      rw [Nat.add_assoc, Nat.add_comm] at m'le
+      apply Nat.le_of_add_right_le at m'le
+      let nle := Nat.le_of_add_right_le <| Nat.le_of_eq neq.symm
+      let A₂eq' := A₂eq
+      rw [Range.map, ← Range.map_append (Nat.zero_le _) nle, ← Range.map, ← Range.map,
+          ← List.singleton_append, List.append_eq, ← List.append_assoc] at A₂eq'
+      let ⟨A₂eq₀, A₂eq₁⟩ := List.of_length_eq_of_append_eq_append (by simp [Range.length_toList])
+        A₂eq'
+      rw [neq] at A₂eq₁
+      apply Exists.intro [[{</ A₀@i // i in [:m] />, A₁', </ A₃.get!@k // k in [:A₃.length] />, A₁'', </ A₂@j // j in [m' - m:n] /> </ : K // b />}]]
+      constructor
+      · rw [← K'eq, A₂eq, Range.map_get!_eq, List.append_eq, ← List.cons_append,
+            ← List.append_assoc, ← List.cons_append, ← List.append_assoc, m'eq, neq,
+            Nat.sub_add_comm (Nat.le_add_right ..), Nat.sub_add_comm Nat.le.refl, Nat.sub_self,
+            Nat.zero_add, A₂eq₁]
+        rw (occs := .pos [2]) [← Range.map_get!_eq (as := _ ++ _ :: _)]
+        rw (occs := .pos [5]) [← Range.map_get!_eq (as := _ ++ _ :: _)]
+        exact .single <| .list A₁st'
+      · rw [← K'eq, A₀eq, Range.map_get!_eq, List.append_assoc, List.cons_append, m'eq, neq,
+            Nat.sub_add_comm (Nat.le_add_right ..), Nat.sub_add_comm Nat.le.refl, Nat.sub_self,
+            Nat.zero_add, A₂eq₁]
+        rw (occs := .pos [2]) [← Range.map_get!_eq (as := _ ++ _ :: _)]
+        rw (occs := .pos [5]) [← Range.map_get!_eq (as := _ ++ _ :: _)]
+        exact .single <| .list A₁st
+    | .inr (.inl meqm') =>
+      cases meqm'
+      let lengths_eq := congrArg List.length A'seq
+      simp [Range.length_toList] at lengths_eq
+      cases lengths_eq
+      let ⟨A₀seq, A₁A₂seq⟩ := List.of_length_eq_of_append_eq_append (by simp [Range.length_toList])
+        A'seq
+      rcases List.cons.inj A₁A₂seq with ⟨rfl, A₂seq⟩
+      specialize Aki' m
+      simp [Range.length_toList] at Aki'
+      specialize Aki' ⟨Nat.zero_le _, Nat.lt_add_of_pos_right (Nat.succ_pos _), Nat.mod_one _⟩
+      rw [List.getElem_append_right (by simp [Range.length_toList])] at Aki'
+      simp [Range.length_toList] at Aki'
+      let ⟨A₁''', A₁'mst, A₁''mst⟩ := A₁st.local_confluence A₁st' Aki' Δwf
+      apply Exists.intro [[{</ A₀@i // i in [:m] />, A₁''', </ A₂@j // j in [:n] /> </ : K // b />}]]
+      constructor
+      · rw [← K'eq]
+        exact .list' A₁'mst
+      · rw [← A₀seq, ← A₂seq, ← K'eq]
+        exact .list' A₁''mst
+    | .inr (.inr m'ltm) =>
+      rcases List.of_length_lt_of_append_eq_append (by simp [Range.length_toList, m'ltm]) A'seq.symm
+        with ⟨_, A₃, A₀eq, A₁A₂eq⟩
+      rcases List.cons.inj A₁A₂eq with ⟨rfl, A₂eq⟩
+      rw [List.append_eq] at A₂eq
+      let meq := congrArg List.length A₀eq
+      let n'eq := congrArg List.length A₂eq
+      simp_arith [Range.length_toList] at meq n'eq
+      rw [Nat.add_assoc, Nat.add_comm _ 1, ← Nat.add_assoc] at n'eq
+      let mle := Nat.le_of_eq meq.symm
+      rw [Nat.add_assoc] at mle
+      let mle' := Nat.le_of_add_right_le mle
+      rw [Nat.add_comm] at mle
+      apply Nat.le_of_add_right_le at mle
+      let n'le := Nat.le_of_add_right_le <| Nat.le_of_eq n'eq.symm
+      let A₀eq' := A₀eq
+      let A₂eq' := A₂eq
+      rw [Range.map, ← Range.map_append (Nat.zero_le _) mle', ← Range.map, ← Range.map] at A₀eq'
+      rw [Range.map, ← Range.map_append (Nat.zero_le _) n'le, ← Range.map, ← Range.map,
+          ← List.singleton_append, ← List.append_assoc] at A₂eq'
+      let ⟨A₀eq₀, A₀eq₁⟩ := List.of_length_eq_of_append_eq_append (by simp [Range.length_toList])
+        A₀eq'
+      let ⟨A₂eq₀, A₂eq₁⟩ := List.of_length_eq_of_append_eq_append (by simp [Range.length_toList])
+        A₂eq'
+      rw [n'eq] at A₂eq₁
+      apply Exists.intro [[{</ A₀@i // i in [:m'] />, A₁'', </ A₃.get!@k // k in [:A₃.length] />, A₁', </ A₂@j // j in [:n] /> </ : K // b />}]]
+      constructor
+      · rw [← K'eq, A₀eq, Range.map_get!_eq, List.append_assoc, List.cons_append, ← A₀eq₀]
+        rw (occs := .pos [2]) [← Range.map_get!_eq (as := _ ++ _ :: _)]
+        rw (occs := .pos [5]) [← Range.map_get!_eq (as := _ ++ _ :: _)]
+        exact .single <| .list A₁st'
+      · rw [← K'eq, A₂eq, Range.map_get!_eq, ← List.cons_append, ← List.cons_append,
+            ← List.append_assoc, ← List.append_assoc, ← A₀eq₀]
+        rw (occs := .pos [2]) [← Range.map_get!_eq (as := _ ++ _ :: _)]
+        rw (occs := .pos [5]) [← Range.map_get!_eq (as := _ ++ _ :: _)]
+        exact .single <| .list A₁st
+  | .listAppl A'st (A' := A''), st, .listApp A'ki _ => match st with
+    | .listAppList A'ki =>
+      apply Exists.intro _
+      constructor
+      exact .single <| .listAppList <| A'st.preservation A'ki
+      apply MultiSmallStep.list
+      intro i mem
+      exact .app A'st .refl
+    | .listAppId _ => nomatch Type.IsValue.id.not_step A'st
+    | .listAppComp A₀lc A₁ki (A₁ := A₁) (B := B') (K₁ := K₁) =>
+      rename' A'' => A₀'
+      rename' A'st => A₀st
+      apply Exists.intro [[(λ a : K₁. A₀' (A₁ a$0)) ⟦B'⟧]]
+      constructor
+      · exact .single <| listAppComp (A₀st.preserve_lc A₀lc) A₁ki
+      · refine .listApp ?_ .refl
+        apply MultiSmallStep.lam Δ.typeVarDom <|
+          A₀lc.weaken (n := 1).app <| A₁ki.TypeVarLocallyClosed_of.weaken (n := 1).app <|
+          .var_bound Nat.one_pos
+        intro a anin
+        simp [Type.TypeVar_open, A₀lc.TypeVar_open_id, A₀st.preserve_lc A₀lc |>.TypeVar_open_id,
+              A₁ki.TypeVarLocallyClosed_of.TypeVar_open_id]
+        refine .app ?_ .refl
+        exact .single <| A₀st.weakening (Δwf.typeVarExt anin) (Δ' := .typeExt .empty ..)
+          (Δ'' := .empty)
+    | .listAppl A'st' =>
+      let ⟨_, A'mst, A'mst'⟩ := A'st.local_confluence A'st' A'ki Δwf
+      exact ⟨_, .listApp A'mst .refl, .listApp A'mst' .refl⟩
+    | .listAppr B'st => exact ⟨_, .listApp .refl (.single B'st), .listApp (.single A'st) .refl⟩
+  | .listAppr B'st, st, .listApp A'ki B'ki (K₁ := K₂) (K₂ := K₃) => match st with
+    | .listAppList A'ki (A := A') (n := n) (b := b) (K₂ := K₂) (B := B') =>
+      generalize Bseq : [:n].map _ = Bs, K'eq : Option.someIf .. = K' at B'st
+      let .list B₁st (A₀ := B₀) (A₁ := B₁) (A₁' := B₁') (A₂ := B₂) (m := m) (n := n') := B'st
+      apply Exists.intro [[{</ A' B₀@i // i in [:m] />, A' B₁', </ A' B₂@j // j in [:n'] /> </ : K₂ // b />}]]
+      let lengths_eq := congrArg List.length Bseq
+      simp [Range.length_toList] at lengths_eq
+      rw [← Range.map_get!_eq (as := _ ++ _ :: _), List.length_append, List.length_map,
+          Range.length_toList, Nat.sub_zero, List.length_cons, List.length_map, Range.length_toList,
+          Nat.sub_zero, ← lengths_eq] at Bseq
+      have map_map : ∀ {m n} {f : _ → _}, [m:n].map (fun i => A'.app (f i)) =
+        List.map A'.app ([m:n].map fun i => f i) := by
+        intros
+        rw [Range.map, List.map_map, ← Range.map, ← Range.map,
+            Range.map_eq_of_eq_of_mem'' (fun _ _ => Function.comp.eq_def _ _ _)]
+      constructor
+      · rw [← Range.map_get!_eq (as := _ ++ _ :: _), ← Range.map_get!_eq (as := _ ++ _ :: _),
+            ← K'eq]
+        convert Relation.ReflTransGen.single <| SmallStep.listAppList A'ki
+        simp [Range.length_toList, lengths_eq]
+        rw (occs := .pos [3]) [Range.map_eq_of_eq_of_mem'' (by
+          intro i mem
+          rw [List.getElem?_eq_getElem (by rw [Range.length_toList]; exact mem.upper),
+              Range.getElem_toList mem.upper, Option.map, Option.getD, Nat.zero_add]
+        )]
+        rw [map_map, map_map, map_map]
+        have : m + (n' + 1) =
+            (([:m].map fun i => B₀ i) ++ B₁' :: [:n'].map fun j => B₂ j).length := by
+          simp [Range.length_toList, lengths_eq]
+        rw (occs := .pos [1]) [this, Range.map_get!_eq]
+        rw [← List.map_cons, List.map_append]
+      · rw [Range.map_eq_of_eq_of_mem'' (by
+          intro i mem
+          show _ = (([:m].map fun i => A'.app (B₀ i)) ++
+            A'.app B₁ :: [:n'].map fun j => A'.app (B₂ j)).get! i
+          rw [Range.eq_of_mem_of_map_eq Bseq i mem, map_map, map_map, ← List.map_cons,
+              ← List.map_append]
+          rw (occs := .pos [2]) [List.get!_eq_getElem!]
+          rw [List.getElem!_eq_getElem?_getD, List.getElem?_map, List.getElem?_eq_getElem,
+              Option.map, Option.getD, List.get!_eq_getElem!, List.getElem!_eq_getElem?_getD,
+              List.getElem?_eq_getElem, Option.getD]
+          simp [Range.length_toList, ← lengths_eq, mem.upper]
+        )]
+        have : n = (([:m].map fun i => A'.app (B₀ i)) ++
+            A'.app B₁ :: [:n'].map fun j => A'.app (B₂ j)).length := by
+          simp [Range.length_toList, lengths_eq]
+        rw (occs := .pos [1]) [this, Range.map_get!_eq]
+        exact .single <| .list <| .appr B₁st
+    | .listAppId B'ki => exact ⟨_, .single <| .listAppId <| B'st.preservation B'ki, .single B'st⟩
+    | .listAppComp A₀lc A₁ki (A₀ := A₀) (A₁ := A₁) (B := B') (K₁ := K₁) (K₂ := K₂) =>
+      rename' A'ki => A₀ki
+      rename' B'st => A₁B'st
+      let .listApp A₁ki' B'ki := B'ki
+      cases A₁ki.deterministic A₁ki'
+      match A₁B'st with
+      | .listAppList A₁ki'' (B := B') (n := n) (b := b) =>
+        cases A₁ki.deterministic A₁ki''
+        apply Exists.intro [[{</ A₀ (A₁ B'@i) // i in [:n] /> </ : K₃ // b />}]]
+        constructor
+        · exact .single <| .listAppList A₀ki
+        · calc
+            [[Δ ⊢ (λ a : K₁. A₀ (A₁ a$0)) ⟦{</ B'@i // i in [:n] /> </ : K₁ // b />}⟧ ->* {</ (λ a : K₁. A₀ (A₁ a$0)) B'@i // i in [:n] /> </ : K₃ // b />}]] := by
+              refine .single <| .listAppList ?_
+              apply Kinding.lam Δ.typeVarDom
+              intro a anin
+              simp [Type.TypeVar_open, A₀lc.TypeVar_open_id,
+                    A₁ki.TypeVarLocallyClosed_of.TypeVar_open_id]
+              let Δawf := Δwf.typeVarExt anin (K := K₁)
+              exact A₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)
+                |>.app <| A₁ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)
+                |>.app <| .var .head
+            [[Δ ⊢ {</ (λ a : K₁. A₀ (A₁ a$0)) B'@i // i in [:n] /> </ : K₃ // b />} ->* {</ A₀ (A₁ B'@i) // i in [:n] /> </ : K₃ // b />}]] := by
+              refine .list ?_
+              intro i mem
+              have : [[(A₀ (A₁ (B'@i)))]] = [[((A₀ (A₁ a$0))^^B'@i)]] := by
+                simp [Type.Type_open, A₀lc.Type_open_id,
+                      A₁ki.TypeVarLocallyClosed_of.Type_open_id]
+              rw [this]
+              refine .single <| .lamApp ?_ (B'ki.inv_list.left i mem) (K₂ := K₃)
+              apply Kinding.lam Δ.typeVarDom
+              intro a anin
+              simp [Type.TypeVar_open, A₀lc.TypeVar_open_id,
+                    A₁ki.TypeVarLocallyClosed_of.TypeVar_open_id]
+              let Δawf := Δwf.typeVarExt anin (K := K₁)
+              exact A₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)
+                |>.app <| A₁ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)
+                |>.app <| .var .head
+      | .listAppId B'ki (A := B') (K := K) =>
+        let .lam I aki := A₁ki
+        let ⟨a, anin⟩ := I.exists_fresh
+        specialize aki a anin
+        simp [Type.TypeVar_open] at aki
+        let .var mem := aki
+        cases mem
+        case typeVarExt ne => nomatch ne
+        apply Exists.intro [[A₀ ⟦B'⟧]]
+        constructor
+        · rfl
+        · calc
+            [[Δ ⊢ (λ a : K₂. A₀ ((λ a : K₂. a$0) a$0)) ⟦B'⟧ ->* (λ a : K₂. A₀ a$0) ⟦B'⟧]] := by
+              refine .listApp ?_ .refl
+              apply MultiSmallStep.lam [] <|
+                A₀lc.weaken (n := 1).app <| .app (.weaken .id) <| .var_bound Nat.one_pos
+              intro a _
+              simp [Type.TypeVar_open, A₀lc.TypeVar_open_id]
+              refine .app .refl ?_
+              have : Type.var (.free a) = Type.Type_open (.var (.bound 0)) (.var (.free a)) := by
+                rw [Type.Type_open, if_pos rfl]
+              rw (occs := .pos [2]) [this]
+              exact .single <| .lamApp .id <| .var .head
+            [[Δ ⊢ (λ a : K₂. A₀ a$0) ⟦B'⟧ ->* A₀ ⟦B'⟧]] := .listApp (.single <| eta A₀ki) .refl
+      | .listAppComp _ B₀ki (A₁ := B₀) (B := B₁) (K₁ := K₀) =>
+        let .listApp B₀ki' B₁ki := B'ki
+        cases B₀ki.deterministic B₀ki'
+        let A₁lc := A₁ki.TypeVarLocallyClosed_of
+        let B₀lc := B₀ki.TypeVarLocallyClosed_of
+        apply Exists.intro [[(λ a : K₀. A₀ (A₁ (B₀ a$0))) ⟦B₁⟧]]
+        constructor
+        · calc
+            [[Δ ⊢ A₀ ⟦(λ a : K₀. A₁ (B₀ a$0)) ⟦B₁⟧⟧ ->* (λ a : K₀. A₀ ((λ a : K₀. A₁ (B₀ a$0)) a$0)) ⟦B₁⟧]] := by
+              refine .single <| .listAppComp A₀lc ?_ (K₂ := K₂)
+              apply Kinding.lam Δ.typeVarDom
+              intro a anin
+              simp [Type.TypeVar_open, A₁lc.TypeVar_open_id, B₀lc.TypeVar_open_id]
+              let Δawf := Δwf.typeVarExt anin (K := K₀)
+              exact A₁ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty) |>.app <|
+                B₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty) |>.app <| .var .head
+            [[Δ ⊢ (λ a : K₀. A₀ ((λ a : K₀. A₁ (B₀ a$0)) a$0)) ⟦B₁⟧ ->* (λ a : K₀. A₀ (A₁ (B₀ a$0))) ⟦B₁⟧]] := by
+              refine .listApp ?_ .refl
+              refine .lam Δ.typeVarDom ?_ ?_
+              · exact .app (A₀lc.weaken (n := 1)) <|
+                  .app
+                    (.lam (.app (A₁lc.weaken (n := 2))
+                      (.app (B₀lc.weaken (n := 2)) (.var_bound Nat.two_pos)))) <|
+                    .var_bound Nat.one_pos
+              · intro a anin
+                let Δawf := Δwf.typeVarExt anin (K := K₀)
+                simp [Type.TypeVar_open, A₀lc.TypeVar_open_id, A₁lc.TypeVar_open_id,
+                      A₁lc.weaken (n := 1).TypeVar_open_id, B₀lc.TypeVar_open_id,
+                      B₀lc.weaken (n := 1).TypeVar_open_id]
+                refine .app .refl ?_
+                have : [[A₁ (B₀ a)]] = [[((A₁ (B₀ a$0))^^a)]] := by
+                  simp [Type.Type_open, A₁lc.Type_open_id, B₀lc.Type_open_id]
+                rw [this]
+                refine .single ?_
+                apply SmallStep.lamApp _ <| .var .head
+                swap
+                apply Kinding.lam <| a :: Δ.typeVarDom
+                intro a' a'nin
+                let Δaa'wf := Δawf.typeVarExt a'nin (K := K₀)
+                simp [Type.TypeVar_open, A₁lc.TypeVar_open_id, B₀lc.TypeVar_open_id]
+                exact A₁ki.weakening Δaa'wf (Δ' := .typeExt (.typeExt .empty ..) ..) (Δ'' := .empty)
+                  |>.app <| B₀ki.weakening Δaa'wf (Δ' := .typeExt (.typeExt .empty ..) ..)
+                    (Δ'' := .empty) |>.app <| .var .head
+        · calc
+            [[Δ ⊢ (λ a : K₁. A₀ (A₁ a$0)) ⟦B₀ ⟦B₁⟧⟧ ->* (λ a : K₀. (λ a : K₁. A₀ (A₁ a$0)) (B₀ a$0)) ⟦B₁⟧]] :=
+              .single <| .listAppComp
+                (.lam (.app A₀lc.weaken (.app A₁lc.weaken
+                  (.var_bound Nat.one_pos))))
+                B₀ki
+            [[Δ ⊢ (λ a : K₀. (λ a : K₁. A₀ (A₁ a$0)) (B₀ a$0)) ⟦B₁⟧ ->* (λ a : K₀. A₀ (A₁ (B₀ a$0))) ⟦B₁⟧]] := by
+              refine .listApp ?_ .refl
+              refine .lam Δ.typeVarDom ?_ ?_
+              · exact .app
+                  (.lam (.app
+                    (A₀lc.weaken (n := 2))
+                    (.app (A₁lc.weaken (n := 2)) (.var_bound Nat.two_pos))))
+                  (.app (B₀ki.TypeVarLocallyClosed_of.weaken (n := 1)) (.var_bound Nat.one_pos))
+              · intro a anin
+                let Δawf := Δwf.typeVarExt anin (K := K₀)
+                simp [Type.TypeVar_open, A₀lc.TypeVar_open_id, A₀lc.weaken (n := 1).TypeVar_open_id,
+                      A₁lc.TypeVar_open_id, A₁lc.weaken (n := 1).TypeVar_open_id,
+                      B₀lc.TypeVar_open_id]
+                have : [[(A₀ (A₁ (B₀ a)))]] = [[((A₀ (A₁ a$0))^^(B₀ a))]] := by
+                  simp [Type.Type_open, A₀lc.Type_open_id, A₁lc.Type_open_id]
+                rw [this]
+                refine .single ?_
+                apply SmallStep.lamApp
+                · apply Kinding.lam <| a :: Δ.typeVarDom
+                  intro a' a'nin
+                  let Δaa'wf := Δawf.typeVarExt a'nin (K := K₁)
+                  simp [Type.TypeVar_open, A₀lc.TypeVar_open_id, A₁lc.TypeVar_open_id]
+                  exact A₀ki.weakening Δaa'wf (Δ' := .typeExt (.typeExt .empty ..) ..)
+                    (Δ'' := .empty) |>.app <| A₁ki.weakening Δaa'wf
+                      (Δ' := .typeExt (.typeExt .empty ..) ..) (Δ'' := .empty) |>.app <| .var .head
+                · exact B₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty) |>.app <|
+                    .var .head
+      | .listAppl A₁st (A' := A₁') =>
+        apply Exists.intro [[(λ a : K₁. A₀ (A₁' a$0)) ⟦B'⟧]]
+        let A₁lc := A₁ki.TypeVarLocallyClosed_of
+        constructor
+        · exact .single <| .listAppComp A₀lc <| A₁st.preservation A₁ki
+        · refine .listApp ?_ .refl
+          refine .lam Δ.typeVarDom ?_ ?_
+          · exact A₀lc.weaken (n := 1).app <| A₁lc.weaken (n := 1).app <| .var_bound Nat.one_pos
+          · intro a anin
+            simp [Type.TypeVar_open, A₀lc.TypeVar_open_id, A₁lc.TypeVar_open_id,
+                  A₁st.preserve_lc A₁lc |>.TypeVar_open_id]
+            refine .app .refl <| .app (.single ?_) .refl
+            exact A₁st.weakening (Δwf.typeVarExt anin) (Δ' := .typeExt .empty ..) (Δ'' := .empty)
+      | .listAppr B'st (B' := B'') =>
+        apply Exists.intro [[(λ a : K₁. A₀ (A₁ a$0)) ⟦B''⟧]]
+        constructor
+        · exact .single <| .listAppComp A₀lc A₁ki
+        · exact .listApp .refl <| .single B'st
+    | .listAppl A'st => exact ⟨_, .listApp (.single A'st) .refl, .listApp .refl (.single B'st)⟩
+    | .listAppr B'st' =>
+      let ⟨_, B'mst, B'mst'⟩ := B'st.local_confluence B'st' B'ki Δwf
+      exact ⟨_, .listApp .refl B'mst, .listApp .refl B'mst'⟩
+  | .prod A'st, .prod A'st', .prod A'lc =>
+    let ⟨_, A'mst, A'mst'⟩ := A'st.local_confluence A'st' A'lc Δwf
+    exact ⟨_, .prod A'mst, .prod A'mst'⟩
+  | .sum A'st, .sum A'st', .sum A'lc =>
+    let ⟨_, A'mst, A'mst'⟩ := A'st.local_confluence A'st' A'lc Δwf
+    exact ⟨_, .sum A'mst, .sum A'mst'⟩
+termination_by sizeOf A
+decreasing_by
+  all_goals simp_arith
+  · exact Nat.le_of_lt <| Nat.lt_add_right _ <| List.sizeOf_lt_of_mem <| List.mem_append.mpr <|
+      .inr <| .head _
+where
+  of_eq {B₀ B₁} (eq : B₀ = B₁ := by rfl) : ∃ C, [[Δ ⊢ B₀ ->* C]] ∧ [[Δ ⊢ B₁ ->* C]] := by
+    rw [eq]
+    exact ⟨_, .refl, .refl⟩
+
+end SmallStep
+
+def SmallStepWithKinding Δ K A B := [[Δ ⊢ A : K]] ∧ [[Δ ⊢ A -> B]]
+
+namespace MultiSmallStep
+
+theorem add_kinding (Amst : [[Δ ⊢ A ->* B]]) (Aki : [[Δ ⊢ A : K]])
+  : (SmallStepWithKinding Δ K)∗ A B := go <| Amst.preservation Aki
+where
+  go (Bki : [[Δ ⊢ B : K]]) : (SmallStepWithKinding Δ K)∗ A B := by
+    induction Amst with
+    | refl => rfl
+    | tail _ st ih =>
+      apply st.preservation_rev at Bki
+      exact .tail (ih Bki) ⟨Bki, st⟩
+
+theorem remove_kinding (h : (SmallStepWithKinding Δ K)∗ A B) : [[Δ ⊢ A ->* B]] := by
+  induction h with
+  | refl => rfl
+  | tail _ kist ih => exact .tail ih kist.right
+
+end MultiSmallStep
+
+namespace SmallStepWithKinding
+
+theorem strongly_normalizing : Thesis.strongly_normalizing (SmallStepWithKinding Δ K) := sorry
+
+theorem local_confluence (Δwf : [[⊢ Δ]]) :
+  Thesis.weakly_confluent (SmallStepWithKinding Δ K) := by
+  rintro _ _ _ ⟨⟨ki₀, st₀⟩, ⟨ki₁, st₁⟩⟩
+  let ⟨_, mst₀, mst₁⟩ := st₀.local_confluence st₁ ki₀ Δwf
+  exact ⟨_, mst₀.add_kinding <| st₀.preservation ki₀, mst₁.add_kinding <| st₁.preservation ki₁⟩
+
+end SmallStepWithKinding
+
+namespace MultiSmallStep
+
+theorem confluence (mst₀ : [[Δ ⊢ A ->* B₀]]) (mst₁ : [[Δ ⊢ A ->* B₁]]) (Aki : [[Δ ⊢ A : K]])
+  (Δwf : [[⊢ Δ]]) : ∃ C, [[Δ ⊢ B₀ ->* C]] ∧ [[Δ ⊢ B₁ ->* C]] := by
+  let ⟨_, mst₀', mst₁'⟩ := Thesis.Newman.newman (r := SmallStepWithKinding Δ K)
+    SmallStepWithKinding.strongly_normalizing (SmallStepWithKinding.local_confluence Δwf)
+    ⟨add_kinding mst₀ Aki, add_kinding mst₁ Aki⟩
+  exact ⟨_, remove_kinding mst₀', remove_kinding mst₁'⟩
 
 -- Shape Preservation
 theorem preserve_shape_arr (ArBmst: [[ Δ ⊢ (A → B) ->* T ]]): ∃ A' B', T = [[ (A' → B') ]] ∧ [[ Δ ⊢ A ->* A' ]] ∧ [[ Δ ⊢ B ->* B' ]] := by
   generalize ArBeq : [[ A → B ]] = ArB at ArBmst
-  induction ArBmst generalizing A B
-  . case refl ArB =>
+  induction ArBmst using Relation.ReflTransGen.head_induction_on generalizing A B
+  . case refl =>
     exact ⟨A, B, ArBeq.symm, .refl, .refl⟩
-  . case step ArB A0rB0 ArB' ArBst Tmst ih =>
+  . case head ArBst Tmst ih =>
     subst ArBeq
     have ⟨A0, B0, A0rB0eq, Amst, Bmst⟩ := ArBst.inv_arr
     specialize ih A0rB0eq.symm
-    aesop (add unsafe apply MultiSmallStep.trans)
+    aesop (add unsafe apply Relation.ReflTransGen.trans)
 
 theorem preserve_shape_forall (Amst: [[ Δ ⊢ (∀ a? : K. A) ->* T ]]): ∃ A', T = [[∀ a? : K. A']] ∧ (∃I, ∀a ∉ (I: List _), [[ Δ, a : K ⊢ A^a ->* A'^a ]]) :=
 by
   generalize LamAeq : [[(∀ a : K. A)]] = LamA at Amst
-  induction Amst generalizing A
-  . case refl => aesop (add unsafe tactic guessI, unsafe constructors [MultiSmallStep, SmallStep])
-  . case step T1 T2 T3 red mred ih =>
+  induction Amst using Relation.ReflTransGen.head_induction_on generalizing A
+  . case refl => aesop (add unsafe tactic guessI, unsafe constructors [SmallStep])
+  . case head red mred ih =>
     subst LamAeq
     have ⟨A', eqT2, I, AA'⟩ := red.inv_forall
     have ⟨A'', ih⟩ := ih eqT2.symm
     exists A''
-    aesop (add unsafe tactic guessI, unsafe apply MultiSmallStep.trans)
+    aesop (add unsafe tactic guessI, unsafe apply Relation.ReflTransGen.trans)
 
 theorem preserve_shape_prod (Amst: [[ Δ ⊢ ⊗A ->* T ]]): ∃ A', T = [[⊗A']] ∧ [[ Δ ⊢ A ->* A' ]] :=
 by
   generalize ProdAeq : [[(⊗A)]] = ProdA at Amst
-  induction Amst generalizing A
-  . case refl => aesop (add unsafe constructors [MultiSmallStep, SmallStep])
-  . case step T1 T2 T3 red mred ih =>
+  induction Amst using Relation.ReflTransGen.head_induction_on generalizing A
+  . case refl => aesop (add unsafe constructors [Relation.ReflTransGen, SmallStep])
+  . case head red mred ih =>
     subst ProdAeq
     have := red.inv_prod
-    aesop (add unsafe apply MultiSmallStep.trans)
+    aesop (add unsafe apply Relation.ReflTransGen.trans)
 
 theorem preserve_shape_sum (Amst: [[ Δ ⊢ ⊕A ->* T ]]): ∃ A', T = [[⊕A']] ∧ [[ Δ ⊢ A ->* A' ]] :=
 by
   generalize SumAeq : [[(⊕A)]] = SumA at Amst
-  induction Amst generalizing A
-  . case refl => aesop (add unsafe constructors [MultiSmallStep, SmallStep])
-  . case step T1 T2 T3 red mred ih =>
+  induction Amst using Relation.ReflTransGen.head_induction_on generalizing A
+  . case refl => aesop (add unsafe constructors [Relation.ReflTransGen, SmallStep])
+  . case head red mred ih =>
     subst SumAeq
     have := red.inv_sum
-    aesop (add unsafe apply MultiSmallStep.trans)
+    aesop (add unsafe apply Relation.ReflTransGen.trans)
 
 theorem preserve_shape_list (Amst: [[ Δ ⊢ { </ A@i // i in [:n] /> </ : K // b /> } ->* T ]] ): ∃ B, T = [[{ </ B@i // i in [:n] /> </ : K // b /> }]] ∧ [[ </ Δ ⊢ A@i ->* B@i // i in [:n] /> ]] := by
   generalize ListAeq : [[{ </ A@i // i in [:n] /> </ : K // b /> }]] = ListA at Amst
-  induction Amst generalizing A
-  . case refl => aesop (add unsafe constructors [MultiSmallStep, SmallStep])
-  . case step T1 T2 T3 red mred ih =>
+  induction Amst using Relation.ReflTransGen.head_induction_on generalizing A
+  . case refl => aesop (add unsafe constructors [Relation.ReflTransGen, SmallStep])
+  . case head red mred ih =>
     subst ListAeq
     have ⟨B, eqT2, AB⟩ := red.inv_list
     have ⟨B', ih⟩ := ih eqT2.symm
     exists B'
-    aesop (add unsafe apply MultiSmallStep.trans)
+    aesop (add unsafe apply Relation.ReflTransGen.trans)
 
 end MultiSmallStep
 
 namespace EqSmallStep
 
-theorem preserve_lc (est : [[Δ ⊢ A <->* B]]) : A.TypeVarLocallyClosed ↔ B.TypeVarLocallyClosed := by
-  induction est with
-  | refl => rfl
-  | step st => exact ⟨st.preserve_lc, st.preserve_lc_rev⟩
-  | symm _ ih => exact ih.symm
-  | trans _ _ ih₀ ih₁ => exact ⟨(ih₁.mp <| ih₀.mp ·), (ih₀.mpr <| ih₁.mpr ·)⟩
+instance : IsSymm «Type» (EqSmallStep Δ) where
+  symm := .symm
+
+def _root_.Iff.equiv {P : α → Prop} : Equivalence (P · ↔ P ·) := ⟨fun _ => ⟨id, id⟩, .symm, .trans⟩
+
+theorem preserve_lc (est : [[Δ ⊢ A <->* B]])
+  : A.TypeVarLocallyClosed ↔ B.TypeVarLocallyClosed :=
+  Equivalence.eqvGen_iff Iff.equiv |>.mp <|
+    Relation.EqvGen.mono (fun _ _ st => ⟨st.preserve_lc, st.preserve_lc_rev⟩) est
 
 theorem Environment_TypeVar_subst_swap (est : [[Δ, Δ'[B / a] ⊢ A <->* A']])
-  : [[Δ, Δ'[B' / a] ⊢ A <->* A']] := by
-  generalize Δ''eq : [[Δ, Δ'[B / a] ]] = Δ'' at est
-  induction est with
-  | refl =>
-    cases Δ''eq
-    rfl
-  | step st =>
-    cases Δ''eq
-    exact step st.Environment_TypeVar_subst_swap
-  | symm _ ih =>
-    cases Δ''eq
-    exact symm ih
-  | trans _ _ ih₀ ih₁ =>
-    cases Δ''eq
-    exact trans ih₀ ih₁
-
-instance : Trans (EqSmallStep Δ) (EqSmallStep Δ) (EqSmallStep Δ) where
-  trans := trans
+  : [[Δ, Δ'[B' / a] ⊢ A <->* A']] :=
+  Relation.EqvGen.mono (fun _ _ => SmallStep.Environment_TypeVar_subst_swap) est
 
 instance : Coe (MultiSmallStep Δ A B) (EqSmallStep Δ A B) where
   coe := MultiSmallStep.EqSmallStep_of
+
+theorem eta (Aki : [[Δ ⊢ A : K₁ ↦ K₂]]) : [[Δ ⊢ λ a : K₁. A a$0 <->* A]] :=
+  .rel _ _ <| .eta Aki
+
+theorem lamApp (Aki : [[Δ ⊢ λ a : K₁. A : K₁ ↦ K₂]]) (Bki : [[Δ ⊢ B : K₁]])
+  : [[Δ ⊢ (λ a : K₁. A) B <->* A^^B]] :=
+  .rel _ _ <| .lamApp Aki Bki
+
+theorem listAppList {b : Bool} (Aki : [[Δ ⊢ A : K₁ ↦ K₂]])
+  : [[Δ ⊢ A ⟦{</ B@i // i in [:n] /> </ : K₁ // b />}⟧ <->* {</ A B@i // i in [:n] /> </ : K₂ // b />}]] :=
+  .rel _ _ <| .listAppList Aki
+
+theorem listAppId (Aki : [[Δ ⊢ A : L K]]) : [[Δ ⊢ (λ a : K. a$0) ⟦A⟧ <->* A]] :=
+  .rel _ _ <| .listAppId Aki
+
+theorem listAppComp (A₀lc : A₀.TypeVarLocallyClosed) (A₁ki : [[Δ ⊢ A₁ : K₁ ↦ K₂]])
+  : [[Δ ⊢ A₀ ⟦A₁ ⟦B⟧⟧ <->* (λ a : K₁. A₀ (A₁ a$0)) ⟦B⟧]] :=
+  .rel _ _ <| .listAppComp A₀lc A₁ki
 
 theorem lam (I : List TypeVarId) (Aest : ∀ a ∉ I, [[Δ, a : K ⊢ A^a <->* A'^a]])
   (Alc : A.TypeVarLocallyClosed 1) : [[Δ ⊢ λ a : K. A <->* λ a : K. A']] := by
@@ -1704,122 +2677,37 @@ theorem lam (I : List TypeVarId) (Aest : ∀ a ∉ I, [[Δ, a : K ⊢ A^a <->* A
     cases A''eq
     cases Type.TypeVar_open_inj_of_not_mem_freeTypeVars aninA' aninA A'''eq
     rfl
-  | step st =>
+  | rel _ _ st =>
     cases A''eq
     cases A'''eq
-    apply step <| .lam Δ.typeVarDom _
+    refine .rel _ _ <| .lam Δ.typeVarDom ?_
     intro a' a'nin
-    have : A.TypeVar_open a' = (A.TypeVar_open a).TypeVar_subst a (.var a') := by
-      rw [Type.Type_open_var, Type.Type_open_var,
-          Type.TypeVarLocallyClosed.Type_open_TypeVar_subst_dist .var_free, Type.TypeVar_subst,
-          if_pos rfl, Type.TypeVar_subst_id_of_not_mem_freeTypeVars aninA]
-    rw [this]
-    have : A'.TypeVar_open a' = (A'.TypeVar_open a).TypeVar_subst a (.var a') := by
-      rw [Type.Type_open_var, Type.Type_open_var,
-          Type.TypeVarLocallyClosed.Type_open_TypeVar_subst_dist .var_free, Type.TypeVar_subst,
-          if_pos rfl, Type.TypeVar_subst_id_of_not_mem_freeTypeVars aninA']
-    rw [this]
-    exact SmallStep.TypeVar_subst_var st a'nin (Δ' := .empty)
-  | symm est ih =>
-    let Aoplc := Alc.Type_open_dec .var_free (B := .var (.free a))
-    rw [← Type.Type_open_var, A''eq] at Aoplc
-    let A'oplc := est.symm.preserve_lc.mp Aoplc
-    rw [← A'''eq] at A'oplc
-    let A'lc := A'oplc.TypeVar_close_inc (a := a)
-    rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars aninA'] at A'lc
-    exact symm <| ih A'lc aninA' aninA A'''eq A''eq
-  | trans est₀ est₁ ih₀ ih₁ =>
-    rename_i _ A'''' _
-    let Aoplc := Alc.Type_open_dec .var_free (B := .var (.free a))
-    rw [← Type.Type_open_var, A''eq] at Aoplc
-    let A''''lc := est₀.preserve_lc.mp Aoplc
-    exact trans
-      (ih₀ Alc aninA Type.not_mem_freeTypeVars_TypeVar_close A''eq
-        A''''lc.TypeVar_open_TypeVar_close_id)
-      (ih₁ A''''lc.TypeVar_close_inc Type.not_mem_freeTypeVars_TypeVar_close aninA'
-        A''''lc.TypeVar_open_TypeVar_close_id A'''eq)
-
-theorem app (Aki : [[Δ ⊢ A : K]]) (Aest : [[Δ ⊢ A <->* A']]) (Best : [[Δ ⊢ B <->* B']])
-  : [[Δ ⊢ A B <->* A' B']] := by
-  let ⟨A'', A''v, A''mst⟩ := MultiSmallStep.normalization Aki
-  clear Aki
-  calc
-    [[Δ ⊢ A B <->* A'' B]] := by
-      clear Aest A''v
-      induction A''mst with
-      | refl => rfl
-      | step st _ ih =>
-        exact trans (step (.appl st)) ih
-    [[Δ ⊢ A'' B <->* A'' B']] := by
-      induction Best with
-      | refl => rfl
-      | step st => exact step <| .appr A''v st
-      | symm _ ih => exact symm ih
-      | trans _ _ ih₀ ih₁ => exact trans ih₀ ih₁
-    [[Δ ⊢ A'' B' <->* A B']] := by
-      symm
-      clear Aest A''v
-      induction A''mst with
-      | refl => rfl
-      | step st _ ih =>
-        exact trans (step (.appl st)) ih
-    [[Δ ⊢ A B' <->* A' B']] := by
-      clear A''mst
-      induction Aest with
-      | refl => rfl
-      | step st => exact step <| .appl st
-      | symm _ ih => exact symm ih
-      | trans _ _ ih₀ ih₁ => exact trans ih₀ ih₁
-
-theorem eta (Aki : [[Δ ⊢ A : K₁ ↦ K₂]]) (Δwf : [[⊢ Δ]]) : [[Δ ⊢ λ a : K₁. A a$0 <->* A]] := by
-  let ⟨(a : TypeVarId), anin⟩ := A.freeTypeVars ++ Δ.typeVarDom |>.exists_fresh
-  let ⟨aninA, aninΔ⟩ := List.not_mem_append'.mp anin
-  clear anin
-  let Aki' := Aki.weakening_r (fun | _, .head _ => aninΔ) (Δ' := .typeExt .empty a K₁)
-  let ⟨A', A'v, A'mst⟩ := MultiSmallStep.normalization (A := [[A a]]) <| .app Aki' <| .var .head
-  generalize A''eq : [[A a]] = A'' at A'mst
-  induction A'mst generalizing A with
-  | refl =>
+    replace st := st.TypeVar_open_swap Alc (a := a') aninA a'nin
+    rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars aninA'] at st
+    exact st
+  | symm _ _ est ih =>
     cases A''eq
-    apply step <| .eta [] Aki ..
-    intro a' _
-    apply Type.IsValue.TypeVar_subst_var (a := a) (a' := a') at A'v
-    rw [Type.TypeVar_subst, Type.TypeVar_subst, if_pos rfl,
-        Type.TypeVar_subst_id_of_not_mem_freeTypeVars aninA] at A'v
-    exact A'v
-  | step st _ ih =>
-    match st with
-    | .lamApp Aki'' _ A'v _ (A := A') =>
-      cases A''eq
-      cases Aki
-      case lam I _ A'ki =>
-      let ⟨a, anin⟩ := I.exists_fresh
-      let A'lc := A'ki a anin |>.TypeVarLocallyClosed_of.weaken (n := 1).TypeVar_open_drop
-        Nat.one_pos
-      apply lam Δ.typeVarDom _ <| .app (.lam A'lc.weaken) (.var_bound Nat.one_pos)
-      intro a' a'nin
-      simp [Type.TypeVar_open, A'lc.TypeVar_open_id]
-      rw [Type.Type_open_var]
-      apply step <| .lamApp (K₂ := K₂) (.lam I _) (.var .head) A'v .var
-      intro a'' a''nin
-      exact A'ki a'' a''nin |>.weakening_r' (fun | _, .head _ => a'nin) (Δ' := .typeExt .empty ..)
-        (Δ'' := .typeExt .empty ..)
-    | .appl st' (A' := A') =>
-      cases A''eq
-      apply SmallStep.TypeVar_drop_of_not_mem_freeTypeVars aninA (Δ' := .empty) at st'
-      calc
-        [[Δ ⊢ λ a : K₁. A a$0 <->* λ a : K₁. A' a$0]] := by
-          let Alc := Aki.TypeVarLocallyClosed_of
-          apply lam Δ.typeVarDom _ <| .app (Alc.weaken (n := 1)) <| .var_bound Nat.one_pos
-          intro a' a'nin
-          simp [Type.TypeVar_open]
-          let Alc := Aki.TypeVarLocallyClosed_of
-          rw [Alc.TypeVar_open_id, st'.preserve_lc Alc |>.TypeVar_open_id]
-          exact step <| st'.appl.weakening (Δ' := .typeExt .empty ..) (Δ'' := .empty) <|
-            Δwf.typeVarExt a'nin
-        [[Δ ⊢ λ a : K₁. A' a$0 <->* A']] := ih (st'.preservation Aki)
-          (st'.preserve_not_mem_freeTypeVars aninA) A'v rfl
-        [[Δ ⊢ A' <->* A]] := symm <| step st'
+    cases A'''eq
+    symm
+    replace Alc := Alc.Type_open_dec .var_free (B := .var (.free a))
+    rw [← Type.Type_open_var] at Alc
+    let A'lc := preserve_lc est |>.mpr Alc |>.TypeVar_close_inc (a := a)
+    rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars aninA'] at A'lc
+    exact ih A'lc aninA' aninA rfl rfl
+  | trans _ _ _ est₀ est₁ ih₀ ih₁ =>
+    cases A''eq
+    cases A'''eq
+    let Alc' := Alc.Type_open_dec .var_free (B := .var (.free a))
+    rw [← Type.Type_open_var] at Alc'
+    let A''''lc := preserve_lc est₀ |>.mp Alc'
+    exact Relation.EqvGen.trans _ _ _
+      (ih₀ Alc aninA Type.not_mem_freeTypeVars_TypeVar_close rfl
+        (Type.TypeVarLocallyClosed.TypeVar_open_TypeVar_close_id A''''lc)) <|
+      ih₁ A''''lc.TypeVar_close_inc Type.not_mem_freeTypeVars_TypeVar_close aninA'
+        (Type.TypeVarLocallyClosed.TypeVar_open_TypeVar_close_id A''''lc) rfl
+
+theorem app : [[Δ ⊢ A <->* A']] → [[Δ ⊢ B <->* B']] → [[Δ ⊢ A B <->* A' B']] :=
+  Relation.EqvGen.map₂ .appl .appr
 
 theorem «forall» (I : List TypeVarId) (Aest : ∀ a ∉ I, [[Δ, a : K ⊢ A^a <->* A'^a]])
   (Alc : A.TypeVarLocallyClosed 1) : [[Δ ⊢ ∀ a : K. A <->* ∀ a : K. A']] := by
@@ -1834,1164 +2722,77 @@ theorem «forall» (I : List TypeVarId) (Aest : ∀ a ∉ I, [[Δ, a : K ⊢ A^a
     cases A''eq
     cases Type.TypeVar_open_inj_of_not_mem_freeTypeVars aninA' aninA A'''eq
     rfl
-  | step st =>
+  | rel _ _ st =>
     cases A''eq
     cases A'''eq
-    apply step <| .forall Δ.typeVarDom _
+    refine .rel _ _ <| .forall Δ.typeVarDom ?_
     intro a' a'nin
-    have : A.TypeVar_open a' = (A.TypeVar_open a).TypeVar_subst a (.var a') := by
-      rw [Type.Type_open_var, Type.Type_open_var,
-          Type.TypeVarLocallyClosed.Type_open_TypeVar_subst_dist .var_free, Type.TypeVar_subst,
-          if_pos rfl, Type.TypeVar_subst_id_of_not_mem_freeTypeVars aninA]
-    rw [this]
-    have : A'.TypeVar_open a' = (A'.TypeVar_open a).TypeVar_subst a (.var a') := by
-      rw [Type.Type_open_var, Type.Type_open_var,
-          Type.TypeVarLocallyClosed.Type_open_TypeVar_subst_dist .var_free, Type.TypeVar_subst,
-          if_pos rfl, Type.TypeVar_subst_id_of_not_mem_freeTypeVars aninA']
-    rw [this]
-    exact SmallStep.TypeVar_subst_var st a'nin (Δ' := .empty)
-  | symm est ih =>
-    let Aoplc := Alc.Type_open_dec .var_free (B := .var (.free a))
-    rw [← Type.Type_open_var, A''eq] at Aoplc
-    let A'oplc := est.symm.preserve_lc.mp Aoplc
-    rw [← A'''eq] at A'oplc
-    let A'lc := A'oplc.TypeVar_close_inc (a := a)
+    replace st := st.TypeVar_open_swap Alc (a := a') aninA a'nin
+    rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars aninA'] at st
+    exact st
+  | symm _ _ est ih =>
+    cases A''eq
+    cases A'''eq
+    symm
+    replace Alc := Alc.Type_open_dec .var_free (B := .var (.free a))
+    rw [← Type.Type_open_var] at Alc
+    let A'lc := preserve_lc est |>.mpr Alc |>.TypeVar_close_inc (a := a)
     rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars aninA'] at A'lc
-    exact symm <| ih A'lc aninA' aninA A'''eq A''eq
-  | trans est₀ est₁ ih₀ ih₁ =>
-    rename_i _ A'''' _
-    let Aoplc := Alc.Type_open_dec .var_free (B := .var (.free a))
-    rw [← Type.Type_open_var, A''eq] at Aoplc
-    let A''''lc := est₀.preserve_lc.mp Aoplc
-    exact trans
-      (ih₀ Alc aninA Type.not_mem_freeTypeVars_TypeVar_close A''eq
-        A''''lc.TypeVar_open_TypeVar_close_id)
-      (ih₁ A''''lc.TypeVar_close_inc Type.not_mem_freeTypeVars_TypeVar_close aninA'
-        A''''lc.TypeVar_open_TypeVar_close_id A'''eq)
+    exact ih A'lc aninA' aninA rfl rfl
+  | trans _ _ _ est₀ est₁ ih₀ ih₁ =>
+    cases A''eq
+    cases A'''eq
+    let Alc' := Alc.Type_open_dec .var_free (B := .var (.free a))
+    rw [← Type.Type_open_var] at Alc'
+    let A''''lc := preserve_lc est₀ |>.mp Alc'
+    exact Relation.EqvGen.trans _ _ _
+      (ih₀ Alc aninA Type.not_mem_freeTypeVars_TypeVar_close rfl
+        (Type.TypeVarLocallyClosed.TypeVar_open_TypeVar_close_id A''''lc)) <|
+      ih₁ A''''lc.TypeVar_close_inc Type.not_mem_freeTypeVars_TypeVar_close aninA'
+        (Type.TypeVarLocallyClosed.TypeVar_open_TypeVar_close_id A''''lc) rfl
 
-theorem arr (Aki : [[Δ ⊢ A : K]]) (Aest : [[Δ ⊢ A <->* A']]) (Best : [[Δ ⊢ B <->* B']])
-  : [[Δ ⊢ A → B <->* A' → B']] := by
-  let ⟨A'', A''v, A''mst⟩ := MultiSmallStep.normalization Aki
-  clear Aki
-  calc
-    [[Δ ⊢ A → B <->* A'' → B]] := by
-      clear Aest A''v
-      induction A''mst with
-      | refl => rfl
-      | step st _ ih =>
-        exact trans (step (.arrl st)) ih
-    [[Δ ⊢ A'' → B <->* A'' → B']] := by
-      induction Best with
-      | refl => rfl
-      | step st => exact step <| .arrr A''v st
-      | symm _ ih => exact symm ih
-      | trans _ _ ih₀ ih₁ => exact trans ih₀ ih₁
-    [[Δ ⊢ A'' → B' <->* A → B']] := by
-      symm
-      clear Aest A''v
-      induction A''mst with
-      | refl => rfl
-      | step st _ ih =>
-        exact trans (step (.arrl st)) ih
-    [[Δ ⊢ A → B' <->* A' → B']] := by
-      clear A''mst
-      induction Aest with
-      | refl => rfl
-      | step st => exact step <| .arrl st
-      | symm _ ih => exact symm ih
-      | trans _ _ ih₀ ih₁ => exact trans ih₀ ih₁
+theorem arr : [[Δ ⊢ A <->* A']] → [[Δ ⊢ B <->* B']] → [[Δ ⊢ A → B <->* A' → B']] :=
+  Relation.EqvGen.map₂ .arrl .arrr
 
-theorem list (Aki : ∀ i ∈ [:n], [[Δ ⊢ A@i : K]]) (Aest : ∀ i ∈ [:n], [[Δ ⊢ A@i <->* A'@i]])
+theorem list (Aest : ∀ i ∈ [:n], [[Δ ⊢ A@i <->* A'@i]])
   : [[Δ ⊢ {</ A@i // i in [:n] /> </ : K // b />} <->* {</ A'@i // i in [:n] /> </ : K // b />}]] := by
-  let ⟨A'', A''vA''mst⟩ := Range.skolem (MultiSmallStep.normalization <| Aki · ·)
-  calc
-    [[Δ ⊢ {</ A@i // i in [:n] /> </ : K // b />} <->* {</ A''@i // i in [:n] /> </ : K // b />}]] := by
-      symm
-      rw [Range.map, ← Range.map_append (Nat.zero_le _) Nat.le.refl,
-          ← Range.map, ← Range.map]
-      rw (occs := .pos [2]) [Range.map_eq_of_eq_of_mem'' (by
-        intro i mem
-        show _ = A i
-        nomatch Nat.not_lt_of_le mem.lower mem.upper
-      )]
-      generalize meq : n = m
-      rw (occs := .pos [3, 4]) [← meq]
-      let mlen := Nat.le_refl n
-      rw (occs := .pos [1]) [meq] at mlen
-      clear meq
-      symm
-      induction m with
-      | zero => rw [Range.map_same_eq_nil, List.nil_append]
-      | succ m' ih =>
-        apply trans <| ih <| Nat.le_of_succ_le mlen
-        rw [Range.map_eq_cons_of_lt <| Nat.lt_of_succ_le mlen,
-            Range.map_eq_snoc_of_lt (Nat.zero_lt_succ _), Nat.succ_sub_one,
-            List.append_assoc, List.singleton_append,
-            ← Range.map_shift (m := m' + 1) (j := m' + 1) Nat.le.refl,
-            Nat.sub_self]
-        let A''mst := A''vA''mst m' ⟨Nat.zero_le _, Nat.lt_of_succ_le mlen, Nat.mod_one _⟩ |>.right
-        generalize A'''eq : A m' = A''', A''''eq : A'' m' = A''''
-        rw [A'''eq, A''''eq] at A''mst
-        clear A'''eq A''''eq
-        induction A''mst with
-        | refl => rfl
-        | step st _ ih =>
-          apply trans _ ih
-          exact step <| .list (A''vA''mst · ⟨
-              Nat.zero_le _,
-              Nat.lt_of_lt_of_le ·.upper (Nat.le_of_succ_le mlen),
-              Nat.mod_one _
-            ⟩ |>.left) st
-    [[Δ ⊢ {</ A''@i // i in [:n] /> </ : K // b />} <->* {</ A'@i // i in [:n] /> </ : K // b />}]] := by
-      symm
-      rw [Range.map, ← Range.map_append (Nat.zero_le _) (Nat.zero_le _),
-          ← Range.map, ← Range.map]
-      rw [Range.map_eq_of_eq_of_mem'' (by
-        intro i mem
-        show _ = A'' i
-        nomatch Nat.not_lt_of_le mem.lower mem.upper
-      )]
-      generalize meq : n = m
-      rw (occs := .pos [2, 3]) [← Nat.sub_self m]
-      rw (occs := .pos [1, 3, 5, 6]) [← meq]
-      let mlen := Nat.le_refl n
-      rw (occs := .pos [1]) [meq] at mlen
-      clear meq
-      induction m with
-      | zero => rw [Nat.sub_zero, Range.map_same_eq_nil, List.append_nil]
-      | succ m' ih =>
-        apply trans _ <| ih <| Nat.le_of_succ_le mlen
-        rw [Range.map_eq_cons_of_lt <| Nat.sub_lt (Nat.lt_of_lt_of_le (Nat.succ_pos _) mlen)
-              (Nat.succ_pos _), Nat.sub_add_eq,
-            Nat.sub_add_cancel <| Nat.le_sub_of_add_le (by rw [Nat.add_comm]; exact mlen),
-            Range.map_eq_snoc_of_lt <| Nat.zero_lt_sub_of_lt <| Nat.lt_of_succ_le mlen,
-            List.append_assoc, List.singleton_append,
-            ← Range.map_shift (m := n - m') (j := n - m') Nat.le.refl, Nat.sub_self]
-        specialize Aest (n - m' - 1) ⟨
-          Nat.zero_le _,
-          Nat.sub_lt_right_of_lt_add (Nat.le_sub_of_add_le (by rw [Nat.add_comm]; exact mlen))
-            (Nat.sub_lt_right_of_lt_add (Nat.le_of_succ_le mlen) (Nat.lt_add_right _ Nat.le.refl)),
-          Nat.mod_one _
-        ⟩
-        let A''mst := A''vA''mst (n - m' - 1) ⟨
-          Nat.zero_le _,
-          Nat.sub_lt_right_of_lt_add (Nat.le_sub_of_add_le (by rw [Nat.add_comm]; exact mlen))
-            (Nat.sub_lt_right_of_lt_add (Nat.le_of_succ_le mlen) (Nat.lt_add_right _ Nat.le.refl)),
-          Nat.mod_one _
-        ⟩ |>.right
-        let A'A''est := Aest.symm.trans A''mst.EqSmallStep_of
-        generalize A'''eq : A (n - m' - 1) = A''', A''''eq : A' (n - m' - 1) = A'''',
-          A'''''eq : A'' (n - m' - 1) = A'''''
-        rw [A''''eq, A'''''eq] at A'A''est
-        clear A'''eq A''''eq A'''''eq
-        induction A'A''est with
-        | refl => rfl
-        | step st =>
-          apply step <| .list _ st
-          intro i mem
-          apply A''vA''mst .. |>.left
-          exact ⟨
-            Nat.zero_le _,
-            Nat.lt_of_le_of_lt (by rw [Nat.add_assoc]; exact Nat.le_add_right ..)
-              (Nat.add_lt_of_lt_sub (Nat.add_lt_of_lt_sub mem.upper)),
-              Nat.mod_one _
-          ⟩
-        | symm _ ih => exact symm ih
-        | trans _ _ ih₀ ih₁ => exact trans ih₀ ih₁
+  rw (occs := .pos [2]) [Range.map]
+  rw [← Range.map_append (Nat.zero_le _) Nat.le.refl, ← Range.map, ← Range.map]
+  rw (occs := .pos [3]) [Range.map_eq_of_eq_of_mem'' (by
+    intro i mem
+    show _ = A i
+    nomatch Nat.not_lt_of_le mem.lower mem.upper
+  )]
+  generalize meq : n = m
+  rw (occs := .pos [1, 4]) [← meq]
+  let mlen := Nat.le_refl n
+  rw (occs := .pos [1]) [meq] at mlen
+  clear meq
+  induction m with
+  | zero => rw [Range.map_same_eq_nil, List.nil_append]
+  | succ m' ih =>
+    refine .trans _ _ _ (ih (Nat.le_of_succ_le mlen)) ?_
+    rw [Range.map_eq_cons_of_lt <| Nat.lt_of_succ_le mlen,
+        Range.map_eq_snoc_of_lt (Nat.zero_lt_succ _), Nat.succ_sub_one,
+        List.append_assoc, List.singleton_append,
+        ← Range.map_shift (m := m' + 1) (j := m' + 1) Nat.le.refl,
+        Nat.sub_self]
+    specialize Aest m' ⟨Nat.zero_le _, Nat.lt_of_succ_le mlen, Nat.mod_one _⟩
+    generalize A''eq : A m' = A'', A'''eq : A' m' = A'''
+    rw [A''eq, A'''eq] at Aest
+    clear A''eq A'''eq
+    induction Aest with
+    | refl => rfl
+    | rel _ _ st => exact .rel _ _ <| .list st
+    | symm _ _ _ ih => exact .symm _ _ ih
+    | trans _ _ _ _ _ ih₀ ih₁ => exact .trans _ _ _ ih₀ ih₁
 
-theorem listApp (Aki : [[Δ ⊢ A : K]]) (Aest : [[Δ ⊢ A <->* A']]) (Best : [[Δ ⊢ B <->* B']])
-  : [[Δ ⊢ A ⟦B⟧ <->* A' ⟦B'⟧]] := by
-  let ⟨A'', A''v, A''mst⟩ := MultiSmallStep.normalization Aki
-  clear Aki
-  calc
-    [[Δ ⊢ A ⟦B⟧ <->* A'' ⟦B⟧]] := by
-      clear Aest A''v
-      induction A''mst with
-      | refl => rfl
-      | step st _ ih =>
-        exact trans (step (.listAppl st)) ih
-    [[Δ ⊢ A'' ⟦B⟧ <->* A'' ⟦B'⟧]] := by
-      induction Best with
-      | refl => rfl
-      | step st => exact step <| .listAppr A''v st
-      | symm _ ih => exact symm ih
-      | trans _ _ ih₀ ih₁ => exact trans ih₀ ih₁
-    [[Δ ⊢ A'' ⟦B'⟧ <->* A ⟦B'⟧]] := by
-      symm
-      clear Aest A''v
-      induction A''mst with
-      | refl => rfl
-      | step st _ ih =>
-        exact trans (step (.listAppl st)) ih
-    [[Δ ⊢ A ⟦B'⟧ <->* A' ⟦B'⟧]] := by
-      clear A''mst
-      induction Aest with
-      | refl => rfl
-      | step st => exact step <| .listAppl st
-      | symm _ ih => exact symm ih
-      | trans _ _ ih₀ ih₁ => exact trans ih₀ ih₁
+theorem listApp : [[Δ ⊢ A <->* A']] → [[Δ ⊢ B <->* B']] → [[Δ ⊢ A ⟦B⟧ <->* A' ⟦B'⟧]] :=
+  Relation.EqvGen.map₂ .listAppl .listAppr
 
-theorem listAppList {b : Bool} (Aki : [[Δ ⊢ A : K₁ ↦ K₂]]) (Bki : ∀ i ∈ [:n], [[Δ ⊢ B@i : K₁]])
-  (h : n ≠ 0 ∨ b)
-  : [[Δ ⊢ A ⟦{</ B@i // i in [:n] /> </ : K₁ // b />}⟧ <->* {</ A B@i // i in [:n] /> </ : K₂ // b />}]] := by
-  let ⟨A', A'v, A'mst⟩ := MultiSmallStep.normalization Aki
-  let ⟨B', B'vB'mst⟩ := Range.skolem (MultiSmallStep.normalization <| Bki · ·)
-  by_cases ∃ K'', A' = [[λ a : K''. a$0]]
-  · case pos h =>
-    rcases h with ⟨K'', rfl⟩
-    let .lam I aki := A'mst.preservation Aki
-    let ⟨a, anin⟩ := I.exists_fresh
-    specialize aki a anin
-    rw [Type.TypeVar_open] at aki
-    let .var .head := aki
-    let B'ki i mem := B'vB'mst i mem |>.right.preservation <| Bki i mem
-    calc
-      [[Δ ⊢ A ⟦{</ B@i // i in [:n] /> </ : K'' // b />}⟧ <->* (λ a : K''. a$0) ⟦{</ B'@i // i in [:n] /> </ : K'' // b />}⟧]] :=
-        listApp Aki A'mst <| list Bki (B'vB'mst · · |>.right)
-      [[Δ ⊢ (λ a : K''. a$0) ⟦{</ B'@i // i in [:n] /> </ : K'' // b />}⟧ <->* {</ B'@i // i in [:n] /> </ : K'' // b />}]] :=
-        step <| .listAppId (.list B'ki h) <| .list (B'vB'mst · · |>.left)
-      [[Δ ⊢ {</ B'@i // i in [:n] /> </ : K'' // b />} <->* {</ (λ a : K''. a$0) B'@i // i in [:n] /> </ : K'' // b />}]] := by
-        apply list (fun i mem => B'vB'mst i mem |>.right.preservation <| Bki i mem)
-        intro i mem
-        have : B' i = Type.Type_open (.var (.bound 0)) (B' i) := by
-          rw [Type.Type_open, if_pos rfl]
-        rw (occs := .pos [1]) [this]
-        exact symm <| step <| .lamApp .id (B'ki i mem) .id <| B'vB'mst i mem |>.left
-      [[Δ ⊢ {</ (λ a : K''. a$0) B'@i // i in [:n] /> </ : K'' // b />} <->* {</ A B@i // i in [:n] /> </ : K'' // b />}]] :=
-        symm <| list (.app Aki <| Bki · ·) (app Aki A'mst <| B'vB'mst · · |>.right)
-  · case neg ne =>
-    calc
-      [[Δ ⊢ A ⟦{</ B@i // i in [:n] /> </ : K₁ // b />}⟧ <->* A' ⟦{</ B'@i // i in [:n] /> </ : K₁ // b />}⟧]] :=
-        listApp Aki A'mst <| list Bki (B'vB'mst · · |>.right)
-      [[Δ ⊢ A' ⟦{</ B'@i // i in [:n] /> </ : K₁ // b />}⟧ <->* {</ A' B'@i // i in [:n] /> </ : K₂ // b />}]] :=
-        step <| .listAppList (not_exists.mp ne) (A'mst.preservation Aki) A'v (B'vB'mst · · |>.left)
-      [[Δ ⊢ {</ A' B'@i // i in [:n] /> </ : K₂ // b />} <->* {</ A B@i // i in [:n] /> </ : K₂ // b />}]] :=
-        symm <| list (.app Aki <| Bki · ·) (app Aki A'mst <| B'vB'mst · · |>.right)
+theorem prod : [[Δ ⊢ A <->* B]] → [[Δ ⊢ ⊗ A <->* ⊗ B]] := Relation.EqvGen.map .prod
 
-theorem listAppId (Aki : [[Δ ⊢ A : L K]]) : [[Δ ⊢ (λ a : K. a$0) ⟦A⟧ <->* A]] := by
-  let ⟨A', A'v, A'mst⟩ := MultiSmallStep.normalization Aki
-  calc
-    [[Δ ⊢ (λ a : K. a$0) ⟦A⟧ <->* (λ a : K. a$0) ⟦A'⟧]] :=
-      listApp .id refl A'mst (Δ := Δ)
-    [[Δ ⊢ (λ a : K. a$0) ⟦A'⟧ <->* A']] := step <| .listAppId (A'mst.preservation Aki) A'v
-    [[Δ ⊢ A' <->* A]] := symm A'mst
-
-theorem prod (est : [[Δ ⊢ A <->* B]]) : [[Δ ⊢ ⊗ A <->* ⊗ B]] := by
-  induction est with
-  | refl => rfl
-  | step st => exact step st.prod
-  | symm _ ih => exact symm ih
-  | trans _ _ ih₀ ih₁ => exact trans ih₀ ih₁
-
-theorem sum (est : [[Δ ⊢ A <->* B]]) : [[Δ ⊢ ⊕ A <->* ⊕ B]] := by
-  induction est with
-  | refl => rfl
-  | step st => exact step st.sum
-  | symm _ ih => exact symm ih
-  | trans _ _ ih₀ ih₁ => exact trans ih₀ ih₁
-
-end EqSmallStep
-
-local instance : Inhabited Kind where
-  default := .star
-in
-open «Type» in
-theorem SmallStep.Type_open_out (Bst : [[Δ ⊢ B -> B']])
-  (Aki : Kinding [[Δ, a : K, Δ']] (Type.TypeVar_open A a n) K') (Δwf : [[⊢ Δ, a : K, Δ']])
-  (aninA : a ∉ A.freeTypeVars) (Bki : [[Δ ⊢ B : K]])
-  : EqSmallStep [[Δ, Δ'[B / a] ]] (A.Type_open B n) (A.Type_open B' n) := by
-  match A with
-  | .var _ =>
-    rw [Type_open]
-    split
-    · case isTrue h =>
-      cases h
-      rw [Type_open, if_pos rfl]
-      exact .step <| Bst.weakening (Δwf.subst Bki) (Δ'' := .empty)
-    · case isFalse h =>
-      rw [Type_open, if_neg h]
-  | .lam _ A' =>
-    simp [freeTypeVars] at aninA
-    rw [TypeVar_open] at Aki
-    let .lam I A'ki (K₁ := K₁) := Aki
-    rw [Type_open, Type_open]
-    let ⟨a', a'nin⟩ := a :: (A'.TypeVar_open a (n + 1)).freeTypeVars ++
-      (A'.Type_open B (n + 1)).freeTypeVars ++ I ++ [[Δ, a : K, Δ']].typeVarDom |>.exists_fresh
-    let ⟨a'ninaA'A'BI, a'ninΔ⟩ := List.not_mem_append'.mp a'nin
-    let ⟨a'ninaA'A'B, a'ninI⟩ := List.not_mem_append'.mp a'ninaA'A'BI
-    let ⟨a'ninaA', a'ninA'B⟩ := List.not_mem_append'.mp a'ninaA'A'B
-    let ⟨ane, a'ninA'⟩ := List.not_mem_cons.mp a'ninaA'
-    let A'ki' := A'ki a' a'ninI
-    let Δa'wf := Δwf.typeVarExt a'ninΔ (K := K₁)
-    rw [TypeVar_open_comm _ (Nat.add_one_ne_zero _)] at A'ki'
-    rw [← Environment.append] at A'ki' Δa'wf
-    let A'lc := A'ki'.Type_open_preservation'' Δa'wf
-      (not_mem_freeTypeVars_TypeVar_open_intro aninA ane.symm) Bki
-      |>.TypeVarLocallyClosed_of.TypeVar_close_inc (a := a')
-    rw [Type_open_TypeVar_open_comm Bki.TypeVarLocallyClosed_of (Nat.zero_ne_add_one _),
-        TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars a'ninA'B] at A'lc
-    apply EqSmallStep.lam (a :: I ++ [[Δ, a : K, Δ']].typeVarDom) _ A'lc
-    intro a'' a''nin
-    let ⟨a''ninaI, a''ninΔ⟩ := List.not_mem_append'.mp a''nin
-    let ⟨ane, a''ninI⟩ := List.not_mem_cons.mp a''ninaI
-    rw [← Type_open_TypeVar_open_comm Bki.TypeVarLocallyClosed_of (Nat.zero_ne_add_one _),
-        ← Type_open_TypeVar_open_comm (Bst.preserve_lc Bki.TypeVarLocallyClosed_of)
-          (Nat.zero_ne_add_one _)]
-    specialize A'ki a'' a''ninI
-    rw [Type_open_var, Type_open_TypeVar_open_comm .var_free (Nat.add_one_ne_zero _),
-        ← Type_open_var, ← Environment.append] at A'ki
-    exact Bst.Type_open_out A'ki (Δwf.typeVarExt a''ninΔ)
-      (not_mem_freeTypeVars_TypeVar_open_intro aninA ane.symm) Bki
-  | app .. =>
-    simp [freeTypeVars] at aninA
-    let ⟨aninA', aninB'⟩ := aninA
-    rw [TypeVar_open] at Aki
-    let .app A'ki B'ki := Aki
-    rw [Type_open, Type_open]
-    exact Bst.Type_open_out A'ki Δwf aninA' Bki |>.app
-      (A'ki.Type_open_preservation'' Δwf aninA' Bki) <|
-      Bst.Type_open_out B'ki Δwf aninB' Bki
-  | .forall _ A' =>
-    simp [freeTypeVars] at aninA
-    rw [TypeVar_open] at Aki
-    let .scheme I A'ki (K := K') := Aki
-    rw [Type_open, Type_open]
-    let ⟨a', a'nin⟩ := a :: (A'.TypeVar_open a (n + 1)).freeTypeVars ++
-      (A'.Type_open B (n + 1)).freeTypeVars ++ I ++ [[Δ, a : K, Δ']].typeVarDom |>.exists_fresh
-    let ⟨a'ninaA'A'BI, a'ninΔ⟩ := List.not_mem_append'.mp a'nin
-    let ⟨a'ninaA'A'B, a'ninI⟩ := List.not_mem_append'.mp a'ninaA'A'BI
-    let ⟨a'ninaA', a'ninA'B⟩ := List.not_mem_append'.mp a'ninaA'A'B
-    let ⟨ane, a'ninA'⟩ := List.not_mem_cons.mp a'ninaA'
-    let A'ki' := A'ki a' a'ninI
-    let Δa'wf := Δwf.typeVarExt a'ninΔ (K := K')
-    rw [TypeVar_open_comm _ (Nat.add_one_ne_zero _)] at A'ki'
-    rw [← Environment.append] at A'ki' Δa'wf
-    let A'lc := A'ki'.Type_open_preservation'' Δa'wf
-      (not_mem_freeTypeVars_TypeVar_open_intro aninA ane.symm) Bki
-      |>.TypeVarLocallyClosed_of.TypeVar_close_inc (a := a')
-    rw [Type_open_TypeVar_open_comm Bki.TypeVarLocallyClosed_of (Nat.zero_ne_add_one _),
-        TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars a'ninA'B] at A'lc
-    apply EqSmallStep.forall (a :: I ++ [[Δ, a : K, Δ']].typeVarDom) _ A'lc
-    intro a'' a''nin
-    let ⟨a''ninaI, a''ninΔ⟩ := List.not_mem_append'.mp a''nin
-    let ⟨ane, a''ninI⟩ := List.not_mem_cons.mp a''ninaI
-    rw [← Type_open_TypeVar_open_comm Bki.TypeVarLocallyClosed_of (Nat.zero_ne_add_one _),
-        ← Type_open_TypeVar_open_comm (Bst.preserve_lc Bki.TypeVarLocallyClosed_of)
-          (Nat.zero_ne_add_one _)]
-    specialize A'ki a'' a''ninI
-    rw [Type_open_var, Type_open_TypeVar_open_comm .var_free (Nat.add_one_ne_zero _),
-        ← Type_open_var, ← Environment.append] at A'ki
-    exact Bst.Type_open_out A'ki (Δwf.typeVarExt a''ninΔ)
-      (not_mem_freeTypeVars_TypeVar_open_intro aninA ane.symm) Bki
-  | arr .. =>
-    simp [freeTypeVars] at aninA
-    let ⟨aninA', aninB'⟩ := aninA
-    rw [TypeVar_open] at Aki
-    let .arr A'ki B'ki := Aki
-    rw [Type_open, Type_open]
-    exact Bst.Type_open_out A'ki Δwf aninA' Bki |>.arr
-      (A'ki.Type_open_preservation'' Δwf aninA' Bki) <|
-      Bst.Type_open_out B'ki Δwf aninB' Bki
-  | .list A's K? =>
-    rw [← Range.map_get!_eq (as := A's), ← Option.someIf_get!_eq (x? := K?)] at Aki aninA ⊢
-    simp [TypeVar_open, Type_open, freeTypeVars] at Aki aninA ⊢
-    rcases Aki.inv_list' with ⟨K'', rfl, A'ki, h⟩
-    rw [← Range.map, ← Range.map]
-    have : Option.someIf K?.get! K?.isSome = Option.someIf K'' K?.isSome := by
-      split at h
-      · case isTrue h' => rw [h', Option.someIf_true, Option.someIf_true, h]
-      · case isFalse h' => rw [Bool.not_eq_true _ |>.mp h', Option.someIf_false, Option.someIf_false]
-    rw [this]
-    apply EqSmallStep.list
-    · intro i mem
-      specialize A'ki i mem
-      specialize aninA i <| Range.mem_toList_of_mem mem
-      simp [List.getElem?_eq_getElem mem.upper] at A'ki aninA ⊢
-      exact A'ki.Type_open_preservation'' Δwf aninA Bki
-    · intro i mem
-      specialize A'ki i mem
-      specialize aninA i <| Range.mem_toList_of_mem mem
-      simp [List.getElem?_eq_getElem mem.upper] at A'ki aninA ⊢
-      exact Type_open_out Bst A'ki Δwf aninA Bki
-  | listApp .. =>
-    simp [freeTypeVars] at aninA
-    let ⟨aninA', aninB'⟩ := aninA
-    rw [TypeVar_open] at Aki
-    let .listApp A'ki B'ki := Aki
-    rw [Type_open, Type_open]
-    exact Bst.Type_open_out A'ki Δwf aninA' Bki |>.listApp
-      (A'ki.Type_open_preservation'' Δwf aninA' Bki) <|
-      Bst.Type_open_out B'ki Δwf aninB' Bki
-  | .prod A'st =>
-    rw [freeTypeVars] at aninA
-    rw [TypeVar_open] at Aki
-    let .prod A'ki := Aki
-    rw [Type_open, Type_open]
-    exact Bst.Type_open_out A'ki Δwf aninA Bki |>.prod
-  | .sum .. =>
-    rw [freeTypeVars] at aninA
-    rw [TypeVar_open] at Aki
-    let .sum A'ki := Aki
-    rw [Type_open, Type_open]
-    exact Bst.Type_open_out A'ki Δwf aninA Bki |>.sum
-termination_by sizeOf A
-decreasing_by
-  all_goals simp_arith
-  exact Nat.le_of_lt <| Nat.lt_add_right _ <| List.sizeOf_lt_of_mem <| List.getElem_mem mem.upper
-
-theorem MultiSmallStep.Type_open_out (Bst : [[Δ ⊢ B ->* B']])
-  (Aki : Kinding [[Δ, a : K, Δ']] (Type.TypeVar_open A a n) K') (ΔaΔ'wf : [[⊢ Δ, a : K, Δ']])
-  (aninA : a ∉ A.freeTypeVars) (Bki : [[Δ ⊢ B : K]])
-  : EqSmallStep [[Δ, Δ'[B / a] ]] (A.Type_open B n) (A.Type_open B' n) := by
-  induction Bst with
-  | refl => rfl
-  | step st _ ih =>
-    let .typeVarExt Δwf _ := ΔaΔ'wf.weakening
-    exact .trans (st.Type_open_out Aki ΔaΔ'wf aninA Bki)
-      (.Environment_TypeVar_subst_swap <| ih <| st.preservation Bki)
-
-set_option maxHeartbeats 4000000 in
-mutual
-
-theorem SmallStep.TypeVar_subst_in (Ast : [[Δ, a : K, Δ' ⊢ A -> A']])
-  (Aki : [[Δ, a : K, Δ' ⊢ A : K']]) (Δwf : [[⊢ Δ, a : K, Δ']]) (Bki : [[Δ ⊢ B : K]])
-  : [[Δ, Δ'[B / a] ⊢ A[B / a] <->* A'[B / a] ]] := by
-  open «Type» in
-  match A, Ast, Aki with
-  | .lam K'' (.app A'' _), .eta I A''ki _, .lam .. =>
-    simp [Type.TypeVar_subst]
-    exact .eta (A''ki.subst' Δwf Bki) (Δwf.subst Bki)
-  | .app (.lam K'' A'') B', .lamApp .., .app (.lam I A''ki) B'ki =>
-    simp [TypeVar_subst]
-    rw [Bki.TypeVarLocallyClosed_of.Type_open_TypeVar_subst_dist]
-    apply EqSmallStep.lamApp (a :: I ++ [[Δ, a : K, Δ']].typeVarDom) _ (B'ki.subst' Δwf Bki)
-      (Δwf.subst Bki) (K₂ := K')
-    intro a' a'nin
-    let ⟨a'ninaI, a'ninΔ⟩ := List.not_mem_append'.mp a'nin
-    let ⟨a'ne, a'ninI⟩ := List.not_mem_cons.mp a'ninaI
-    specialize A''ki a' a'ninI
-    rw [← Bki.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm a'ne.symm]
-    let Δa'wf := Δwf.typeVarExt a'ninΔ (K := K'')
-    rw [← Environment.append] at A''ki Δa'wf ⊢
-    rw [← Environment.TypeVar_subst]
-    exact A''ki.subst' Δa'wf Bki
-  | _, .listAppList ne A''ki A''v B'v, Aki =>
-    rename «Type» => A''
-    rename Nat → «Type» => B'
-    let .listApp A''ki' B'ki := Aki
-    cases A''ki.deterministic A''ki'
-    let ⟨B'ki', h⟩ := B'ki.inv_list
-    simp [TypeVar_subst]
-    rw [← Range.map, ← Range.map, Range.map, Range.map_eq_of_eq_of_mem'' (by
-      intro i mem
-      show _ = [[(A''[B / a] B'@i[B / a])]]
-      simp [TypeVar_subst]
-    ), Range.map]
-    apply EqSmallStep.listAppList (A''ki.subst' Δwf Bki)
-    · intro i mem
-      specialize B'ki' i mem
-      simp at B'ki' ⊢
-      exact B'ki'.subst' Δwf Bki
-    · split at h
-      · case isTrue h' => exact .inr h'
-      · case isFalse h' => exact .inl h
-  | .listApp _ A'', .listAppId A''ki A''v, .listApp _ A''ki' =>
-    cases A''ki.deterministic A''ki'
-    simp [TypeVar_subst]
-    exact .listAppId <| A''ki'.subst' Δwf Bki
-  | _, .listAppComp ne A₁ki _ B'v, .listApp A₀ki (.listApp A₁ki' B'ki) =>
-    cases A₁ki.deterministic A₁ki'
-    simp [TypeVar_subst]
-    let A₁ki'' := A₁ki.subst' Δwf Bki
-    let B'ki' := B'ki.subst' Δwf Bki
-    exact .listAppComp (A₀ki.subst' Δwf Bki) A₁ki'' B'ki' (Δwf.subst Bki)
-  | .lam K'' A'', .lam I A''st, .lam I' A''ki =>
-    simp [TypeVar_subst]
-    let ⟨a', a'nin⟩ := a :: [[(A'' [B / a])]].freeTypeVars ++ I' ++ [[Δ, a : K, Δ']].typeVarDom
-      |>.exists_fresh
-    let ⟨a'ninaA''I', a'ninΔ⟩ := List.not_mem_append'.mp a'nin
-    let ⟨a'ninaA'', a'ninI'⟩ := List.not_mem_append'.mp a'ninaA''I'
-    let ⟨ane, a'ninA''⟩ := List.not_mem_cons.mp a'ninaA''
-    let A''ki' := A''ki a' a'ninI'
-    rw [← Environment.append] at A''ki'
-    let A''lc := A''ki'.subst' (Δwf.typeVarExt a'ninΔ) Bki
-      |>.TypeVarLocallyClosed_of.TypeVar_close_inc (a := a')
-    rw [Bki.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm ane.symm,
-        TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars a'ninA''] at A''lc
-    apply EqSmallStep.lam (a :: I ++ I' ++ [[Δ, a : K, Δ']].typeVarDom) _ A''lc
-    intro a'' a''nin
-    let ⟨a''ninaII', a''ninΔ⟩ := List.not_mem_append'.mp a''nin
-    let ⟨a''ninaI, a''ninI'⟩ := List.not_mem_append'.mp a''ninaII'
-    let ⟨ane, a''ninI⟩ := List.not_mem_cons.mp a''ninaI
-    rw [← Bki.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm ane.symm,
-        ← Bki.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm ane.symm]
-    specialize A''ki a'' a''ninI'
-    specialize A''st a'' a''ninI
-    rw [← Environment.append] at A''ki A''st ⊢
-    rw [← Environment.TypeVar_subst]
-    exact A''st.TypeVar_subst_in A''ki (Δwf.typeVarExt a''ninΔ) Bki
-  | .app A'' B', .appl A''st, .app A''ki B'ki =>
-    simp [TypeVar_subst]
-    exact .app (A''ki.subst' Δwf Bki) (A''st.TypeVar_subst_in A''ki Δwf Bki) .refl
-  | .app A'' B', .appr _ B''st, .app A''ki B'ki =>
-    simp [TypeVar_subst]
-    exact .app (A''ki.subst' Δwf Bki) .refl (B''st.TypeVar_subst_in B'ki Δwf Bki)
-  | .forall K'' A'', .forall I A''st, .scheme I' A''ki =>
-    simp [TypeVar_subst]
-    let ⟨a', a'nin⟩ := a :: [[(A'' [B / a])]].freeTypeVars ++ I' ++ [[Δ, a : K, Δ']].typeVarDom
-      |>.exists_fresh
-    let ⟨a'ninaA''I', a'ninΔ⟩ := List.not_mem_append'.mp a'nin
-    let ⟨a'ninaA'', a'ninI'⟩ := List.not_mem_append'.mp a'ninaA''I'
-    let ⟨ane, a'ninA''⟩ := List.not_mem_cons.mp a'ninaA''
-    let A''ki' := A''ki a' a'ninI'
-    rw [← Environment.append] at A''ki'
-    let A''lc := A''ki'.subst' (Δwf.typeVarExt a'ninΔ) Bki
-      |>.TypeVarLocallyClosed_of.TypeVar_close_inc (a := a')
-    rw [Bki.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm ane.symm,
-        TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars a'ninA''] at A''lc
-    apply EqSmallStep.forall (a :: I ++ I' ++ [[Δ, a : K, Δ']].typeVarDom) _ A''lc
-    intro a'' a''nin
-    let ⟨a''ninaII', a''ninΔ⟩ := List.not_mem_append'.mp a''nin
-    let ⟨a''ninaI, a''ninI'⟩ := List.not_mem_append'.mp a''ninaII'
-    let ⟨ane, a''ninI⟩ := List.not_mem_cons.mp a''ninaI
-    rw [← Bki.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm ane.symm,
-        ← Bki.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm ane.symm]
-    specialize A''ki a'' a''ninI'
-    specialize A''st a'' a''ninI
-    rw [← Environment.append] at A''ki A''st ⊢
-    rw [← Environment.TypeVar_subst]
-    exact A''st.TypeVar_subst_in A''ki (Δwf.typeVarExt a''ninΔ) Bki
-  | .arr A'' B', .arrl A''st, .arr A''ki B'ki =>
-    simp [TypeVar_subst]
-    exact .arr (A''ki.subst' Δwf Bki) (A''st.TypeVar_subst_in A''ki Δwf Bki) .refl
-  | .arr A'' B', .arrr _ B''st, .arr A''ki B'ki =>
-    simp [TypeVar_subst]
-    exact .arr (A''ki.subst' Δwf Bki) .refl (B''st.TypeVar_subst_in B'ki Δwf Bki)
-  | .list A'' K?, Ast, Aki =>
-    cases Ast
-    case list K'' b _ A₁st =>
-    simp [TypeVar_subst]
-    rw [← Range.map, ← Range.map]
-    rw [← Range.map_get!_eq (as := _ ++ _ :: _)] at Aki ⊢
-    rw (occs := .pos [3]) [← Range.map_get!_eq (as := _ ++ _ :: _)]
-    rw [List.length_append, List.length_map, Range.length_toList, Nat.sub_zero, List.length_cons,
-        List.length_map, Range.length_toList, Nat.sub_zero] at Aki ⊢
-    rw [List.length_append, List.length_map, Range.length_toList, Nat.sub_zero, List.length_cons,
-        List.length_map, Range.length_toList, Nat.sub_zero]
-    rcases Aki.inv_list' with ⟨K''', rfl, A''ki, h⟩
-    have : Option.someIf K'' b = Option.someIf K''' b := by
-      split at h
-      · case isTrue h' => rw [h', Option.someIf_true, Option.someIf_true, h]
-      · case isFalse h' => rw [Bool.not_eq_true _ |>.mp h', Option.someIf_false, Option.someIf_false]
-    rw [this]
-    apply EqSmallStep.list
-    · intro i mem
-      specialize A''ki i mem
-      simp at A''ki ⊢
-      rw [List.getElem?_append]
-      split
-      · case isTrue h =>
-        simp [Range.length_toList] at h ⊢
-        rw [List.getElem?_append_left (by simp_arith [Range.length_toList, h])] at A''ki
-        simp at A''ki
-        rw [List.getElem?_eq_getElem (by simp_arith [Range.length_toList, h]),
-            Range.getElem_toList h] at A''ki ⊢
-        simp at A''ki ⊢
-        exact A''ki.subst' Δwf Bki
-      · case isFalse h =>
-        simp [Range.length_toList] at h ⊢
-        rw [List.getElem?_append_right (by simp_arith [Range.length_toList, h])] at A''ki
-        simp [Range.length_toList] at A''ki
-        rw [List.getElem?_cons]
-        split
-        · case isTrue h' =>
-          rw [h', List.getElem?_cons_zero] at A''ki
-          rw [Option.getD] at A''ki ⊢
-          exact A''ki.subst' Δwf Bki
-        · case isFalse h' =>
-          rw [List.getElem?_cons] at A''ki
-          split at A''ki
-          case isTrue h'' => nomatch h' h''
-          simp at A''ki ⊢
-          rw [List.getElem?_eq_getElem] at A''ki ⊢
-          repeat (
-            swap
-            rw [Range.length_toList, Nat.sub_zero]
-            apply Nat.sub_lt_left_of_lt_add (Nat.pos_of_ne_zero h')
-            apply Nat.sub_lt_left_of_lt_add h
-            rw [Nat.add_comm 1]
-            exact mem.upper
-          )
-          rw [Range.getElem_toList] at A''ki ⊢
-          repeat (
-            swap
-            rw [Nat.sub_zero]
-            apply Nat.sub_lt_left_of_lt_add (Nat.pos_of_ne_zero h')
-            apply Nat.sub_lt_left_of_lt_add h
-            rw [Nat.add_comm 1]
-            exact mem.upper
-          )
-          simp at A''ki ⊢
-          exact A''ki.subst' Δwf Bki
-    · intro i mem
-      simp
-      rw [List.getElem?_append]
-      split
-      · case isTrue h => rw [List.getElem?_append_left h]
-      · case isFalse h =>
-        rw [List.getElem?_append_right (Nat.le_of_not_lt h)]
-        simp [Range.length_toList] at h ⊢
-        rw [List.getElem?_cons]
-        split
-        · case isTrue h' =>
-          rw [h', List.getElem?_cons_zero, Option.getD, Option.getD]
-          apply A₁st.TypeVar_subst_in _ Δwf Bki (K' := K''')
-          specialize A''ki i mem
-          simp at A''ki
-          rw [List.getElem?_append_right (by simp_arith [Range.length_toList, h])] at A''ki
-          simp [Range.length_toList] at A''ki
-          rw [h', List.getElem?_cons_zero] at A''ki
-          rw [Option.getD] at A''ki
-          exact A''ki
-        · case isFalse h' =>
-          rw [List.getElem?_cons]
-          split
-          case isTrue h'' => nomatch h' h''
-          simp
-          rw [List.getElem?_eq_getElem, Range.getElem_toList]
-          rw [Nat.sub_zero]
-          apply Nat.sub_lt_left_of_lt_add (Nat.pos_of_ne_zero h')
-          apply Nat.sub_lt_left_of_lt_add h
-          rw [Nat.add_comm 1]
-          exact mem.upper
-  | .listApp A'' B', .listAppl A''st, .listApp A''ki B'ki =>
-    simp [TypeVar_subst]
-    exact .listApp (A''ki.subst' Δwf Bki) (A''st.TypeVar_subst_in A''ki Δwf Bki) .refl
-  | .listApp A'' B', .listAppr _ B''st, .listApp A''ki B'ki =>
-    simp [TypeVar_subst]
-    exact .listApp (A''ki.subst' Δwf Bki) .refl (B''st.TypeVar_subst_in B'ki Δwf Bki)
-  | .prod A'', .prod A''st, .prod A''ki =>
-    simp [TypeVar_subst]
-    exact .prod <| A''st.TypeVar_subst_in A''ki Δwf Bki
-  | .sum A'', .sum A''st, .sum A''ki =>
-    simp [TypeVar_subst]
-    exact .sum <| A''st.TypeVar_subst_in A''ki Δwf Bki
-termination_by 0
-decreasing_by all_goals sorry
-
-theorem EqSmallStep.lamApp (I : List TypeVarId) (Aki : ∀ a ∉ I, [[Δ, a : K₁ ⊢ A^a : K₂]])
-  (Bki : [[Δ ⊢ B : K₁]]) (Δwf : [[⊢ Δ]]) : [[Δ ⊢ (λ a : K₁. A) B <->* A^^B]] := by
-  open EqSmallStep in
-  replace Aki := fun a' (a'nin : a' ∉ I ++ Δ.typeVarDom) =>
-    Aki a' <| And.left <| List.not_mem_append'.mp a'nin
-  let ⟨(a : TypeVarId), anin⟩ := I ++ Δ.typeVarDom ++ A.freeTypeVars |>.exists_fresh
-  let ⟨aninIΔ, aninA⟩ := List.not_mem_append'.mp anin
-  let ⟨_, aninΔ⟩ := List.not_mem_append'.mp aninIΔ
-  let Alc := Aki a aninIΔ |>.TypeVarLocallyClosed_of.TypeVar_close_inc (a := a)
-  rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars aninA] at Alc
-  let ⟨A', A'v, A'mst⟩ := MultiSmallStep.normalization <| Aki a aninIΔ
-  let ⟨B', B'v, B'mst⟩ := MultiSmallStep.normalization Bki
-  by_cases ∃ A'', A' = [[A'' a]] ∧ a ∉ A''.freeTypeVars
-  · case pos h =>
-    rcases h with ⟨A'', rfl, aninA''⟩
-    let .app A''lc _ := A'v.TypeVarLocallyClosed_of
-    let A''aki := A'mst.preservation (Aki a aninIΔ)
-    calc
-      [[Δ ⊢ (λ a : K₁. A) B <->* (λ a : K₁. A'' a$0) B']] := by
-        apply app (.lam (I ++ Δ.typeVarDom) Aki) _ B'mst
-        apply lam Δ.typeVarDom _ Alc
-        intro a' a'nin
-        simp [Type.TypeVar_open, A''lc.TypeVar_open_id]
-        let A'mst' := A'mst.TypeVar_subst_var a'nin (a' := a')
-        simp [Type.TypeVar_subst] at A'mst'
-        rw [Type.Type_open_var, Type.TypeVarLocallyClosed.Type_open_TypeVar_subst_dist .var_free,
-            Type.TypeVar_subst_id_of_not_mem_freeTypeVars aninA''] at A'mst'
-        simp [Type.TypeVar_subst] at A'mst'
-        rw [Type.TypeVar_subst_id_of_not_mem_freeTypeVars aninA, ← Type.Type_open_var] at A'mst'
-        exact A'mst'.EqSmallStep_of
-      [[Δ ⊢ (λ a : K₁. A'' a$0) B' <->* A'' B']] := by
-        apply app _ _ refl (K := [[K₁ ↦ K₂]])
-        · apply Kinding.lam <| Δ.typeVarDom
-          intro a' a'nin
-          simp [Type.TypeVar_open, A''lc.TypeVar_open_id]
-          apply (Kinding.weakening_r' · (fun | _, .head _ => a'nin) (Δ := [[Δ]])
-            (Δ' := [[ε, a' : K₁]]) (Δ'' := [[ε, a : K₁]])) at A''aki
-          apply (Kinding.substAux · nofun nofun (.var .head) (Δ' := .empty)) at A''aki
-          simp [Type.TypeVar_subst, Type.TypeVar_subst_id_of_not_mem_freeTypeVars aninA''] at A''aki
-          exact A''aki
-        · apply step <| .eta (K₂ := K₂) [] ..
-          · let .app A''ki (.var .head) := A''aki
-            exact A''ki.TypeVar_drop_of_not_mem_freeTypeVars aninA'' (Δ' := .empty)
-          · intro a' a'nin
-            apply Type.IsValue.TypeVar_subst_var (a := a) (a' := a') at A'v
-            simp [Type.TypeVar_subst, Type.TypeVar_subst_id_of_not_mem_freeTypeVars aninA''] at A'v
-            exact A'v
-      [[Δ ⊢ A'' B' <->* A^^B]] := by
-        clear A''aki A''lc A'v anin B'v
-        generalize A'''eq : A.TypeVar_open a = A''', A''''eq : [[A'' a]] = A'''' at A'mst
-        induction A'mst generalizing A A'' with
-        | refl =>
-          cases A'''eq
-          cases A
-          all_goals rw [Type.TypeVar_open] at A''''eq
-          case app A'''''' A''''' =>
-            injection A''''eq with eq eq'
-            cases eq
-            cases A'''''
-            all_goals rw [Type.TypeVar_open] at eq'
-            case var =>
-              split at eq'
-              · case isTrue h =>
-                cases h
-                simp [Type.Type_open]
-                let .app A''lc _ := Alc
-                let A''lc' := A''lc.not_mem_freeTypeVars_TypeVar_open_dec aninA''
-                rw [A''lc'.TypeVar_open_id, A''lc'.Type_open_id]
-                specialize Aki a aninIΔ
-                simp [Type.TypeVar_open, A''lc'.TypeVar_open_id] at Aki
-                let .app A''ki _ := Aki
-                apply app _ refl (symm B'mst)
-                swap
-                exact A''ki.TypeVar_drop_of_not_mem_freeTypeVars
-                  (Type.not_mem_freeTypeVars_TypeVar_open_drop aninA'') (Δ' := .empty)
-              · case isFalse h =>
-                cases eq'
-                simp [Type.freeTypeVars] at aninA
-            all_goals nomatch eq'
-          all_goals nomatch A''''eq
-        | step st _ ih =>
-          cases A''''eq
-          cases A'''eq
-          let Aalc := Alc.Type_open_dec .var_free (B := .var (.free a))
-          rw [← Type.Type_open_var] at Aalc
-          let A₁lc := st.preserve_lc Aalc
-          apply EqSmallStep.trans <| ih
-            (fun a' a'nin => st.TypeVar_open_swap Alc aninA (List.not_mem_append'.mp a'nin |>.right)
-                |>.preservation <| Aki a' a'nin)
-            Type.not_mem_freeTypeVars_TypeVar_close (A₁lc.TypeVar_close_inc (a := a)) _ aninA''
-            A₁lc.TypeVar_open_TypeVar_close_id rfl
-          symm
-          rw [← Type.TypeVar_open_TypeVar_subst_eq_Type_open_of_not_mem_freeTypeVars aninA,
-              A₁lc.Type_open_TypeVar_close_eq_TypeVar_subst]
-          exact st.TypeVar_subst_in (Aki a aninIΔ) (Δwf.typeVarExt aninΔ) Bki (Δ' := .empty)
-  · case neg h =>
-    calc
-      [[Δ ⊢ (λ a : K₁. A) B <->* (λ a : K₁. \a^A') B']] := app (.lam (I ++ Δ.typeVarDom) Aki)
-          (lam Δ.typeVarDom
-            (fun _ a'nin => A'mst.TypeVar_open_swap Alc aninA a'nin |>.EqSmallStep_of) Alc) B'mst
-      [[Δ ⊢ (λ a : K₁. \a^A') B' <->* (\a^A')^^B']] := by
-        apply step <| .lamApp _ (B'mst.preservation Bki) _ B'v (K₂ := K₂)
-        · apply Kinding.lam <| I ++ Δ.typeVarDom
-          intro a' a'nin
-          let ⟨_, a'ninΔ⟩ := List.not_mem_append'.mp a'nin
-          exact A'mst.TypeVar_open_swap Alc aninA a'ninΔ |>.preservation <| Aki a' a'nin
-        · apply Type.IsValue.lam I
-          · intro a' a'nin
-            rw [Type.Type_open_var,
-                A'v.TypeVarLocallyClosed_of.Type_open_TypeVar_close_eq_TypeVar_subst]
-            exact A'v.TypeVar_subst_var
-          · intro A'' eq A''lc
-            apply not_exists.mp at h
-            specialize h A''
-            apply not_and.mp at h
-            apply h
-            · have : [[(A'' a)]] = [[((A'' a$0)^a)]] := by
-                rw [Type.TypeVar_open, A''lc.TypeVar_open_id, Type.TypeVar_open, if_pos rfl]
-              rw [this, ← eq, Type.TypeVarLocallyClosed.TypeVar_open_TypeVar_close_id]
-              apply A'mst.preserve_lc
-              rw [Type.Type_open_var]
-              exact Alc.Type_open_dec .var_free
-            · have : A''.freeTypeVars = [[(A'' a$0)]].freeTypeVars := by
-                simp [Type.freeTypeVars]
-              rw [this, ← eq]
-              exact Type.not_mem_freeTypeVars_TypeVar_close
-      [[Δ ⊢ (\a^A')^^B' <->* A^^B]] := by
-        symm
-        replace A'mst := A'mst.TypeVar_open_swap Alc aninA aninΔ
-        let Δawf := Δwf.typeVarExt aninΔ (K := K₁)
-        specialize Aki a aninIΔ
-        refine .trans ?_ <| B'mst.Type_open_out (A'mst.preservation Aki) Δawf
-          Type.not_mem_freeTypeVars_TypeVar_close Bki (Δ' := .empty)
-        generalize A''eq : [[(A^a)]] = A'', A'''eq : [[((\a^A')^a)]] = A''' at A'mst
-        clear A'v Alc aninIΔ anin h
-        induction A'mst generalizing A A' with
-        | refl =>
-          cases A''eq
-          cases Type.TypeVar_open_inj_of_not_mem_freeTypeVars
-            Type.not_mem_freeTypeVars_TypeVar_close aninA A'''eq
-          rfl
-        | step st _ ih =>
-          rename_i A'''' _ _
-          cases A''eq
-          cases A'''eq
-          let A''''ki := st.preservation Aki
-          let A''''lc := A''''ki.TypeVarLocallyClosed_of
-          refine .trans ?_ <| ih (A := A''''.TypeVar_close a)
-            Type.not_mem_freeTypeVars_TypeVar_close _ (by
-            rw [Type.TypeVarLocallyClosed.TypeVar_open_TypeVar_close_id A''''lc]
-            exact A''''ki)
-            (Type.TypeVarLocallyClosed.TypeVar_open_TypeVar_close_id A''''lc) rfl
-          rw [← Type.TypeVar_open_TypeVar_subst_eq_Type_open_of_not_mem_freeTypeVars aninA,
-              A''''lc.Type_open_TypeVar_close_eq_TypeVar_subst]
-          exact st.TypeVar_subst_in Aki Δawf Bki (Δ' := .empty)
-termination_by 0
-decreasing_by all_goals sorry
-
-theorem EqSmallStep.listAppComp (A₀ki : [[Δ ⊢ A₀ : K₂ ↦ K₃]]) (A₁ki : [[Δ ⊢ A₁ : K₁ ↦ K₂]])
-  (B'ki : [[Δ ⊢ B' : L K₁]]) (Δwf : [[⊢ Δ]])
-  : [[Δ ⊢ A₀ ⟦A₁ ⟦B'⟧⟧ <->* (λ a : K₁. A₀ (A₁ a$0)) ⟦B'⟧]] := by
-  open EqSmallStep in
-  let ⟨A₀', A₀'v, A₀'mst⟩ := MultiSmallStep.normalization A₀ki
-  by_cases ∃ K', A₀' = [[λ a : K'. a$0]]
-  · case pos h =>
-    rcases h with ⟨_, rfl⟩
-    cases A₀'mst.preservation A₀ki
-    case lam I' A₀''ki =>
-    let ⟨a, anin⟩ := I'.exists_fresh
-    specialize A₀''ki a anin
-    rw [Type.TypeVar_open, if_pos rfl] at A₀''ki
-    let .var ain := A₀''ki
-    cases ain
-    case typeVarExt ne => nomatch ne
-    let ⟨A₁', A₁'v, A₁'mst⟩ := MultiSmallStep.normalization A₁ki
-    let ⟨B'', B''v, B''mst⟩ := MultiSmallStep.normalization B'ki
-    let A₀lc := A₀ki.TypeVarLocallyClosed_of
-    let A₁lc := A₁ki.TypeVarLocallyClosed_of
-    calc
-      [[Δ ⊢ A₀ ⟦A₁ ⟦B'⟧⟧ <->* (λ a : K₂. a$0) ⟦A₁ ⟦B'⟧⟧]] := listApp A₀ki A₀'mst refl
-      [[Δ ⊢ (λ a : K₂. a$0) ⟦A₁ ⟦B'⟧⟧ <->* A₁ ⟦B'⟧]] := listAppId <| .listApp A₁ki B'ki
-      [[Δ ⊢ A₁ ⟦B'⟧ <->* (λ a : K₁. A₁ a$0) ⟦B'⟧]] := listApp A₁ki (symm <| eta A₁ki Δwf) refl
-      [[Δ ⊢ (λ a : K₁. A₁ a$0) ⟦B'⟧ <->* (λ a : K₁. (λ a : K₂. a$0) (A₁ a$0)) ⟦B'⟧]] := by
-        apply listApp
-        · apply Kinding.lam Δ.typeVarDom
-          intro a' a'nin
-          simp [Type.TypeVar_open, A₁lc.TypeVar_open_id]
-          exact .app
-            (A₁ki.weakening (Δwf.typeVarExt a'nin) (Δ' := .typeExt .empty ..) (Δ'' := .empty))
-            (.var .head)
-        · apply lam Δ.typeVarDom _ <| .app (A₁lc.weaken (n := 1)) <| .var_bound Nat.one_pos
-          intro a' a'nin
-          simp [Type.TypeVar_open, A₁lc.TypeVar_open_id]
-          symm
-          have : [[A₁ a']] = Type.Type_open (.var (.bound 0)) [[A₁ a']] := by
-            rw [Type.Type_open, if_pos rfl]
-          rw (occs := .pos [2]) [this]
-          let Δa'wf := Δwf.typeVarExt a'nin (K := K₁)
-          apply EqSmallStep.lamApp []
-            (fun _ _ => by rw [Type.TypeVar_open, if_pos rfl]; exact .var .head) _ Δa'wf
-          exact .app (A₁ki.weakening Δa'wf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) (.var .head)
-        · rfl
-      [[Δ ⊢ (λ a : K₁. (λ a : K₂. a$0) (A₁ a$0)) ⟦B'⟧ <->* (λ a : K₁. A₀ (A₁ a$0)) ⟦B'⟧]] := by
-        symm
-        apply listApp
-        · apply Kinding.lam Δ.typeVarDom
-          intro a' a'nin
-          simp [Type.TypeVar_open, A₀lc.TypeVar_open_id, A₁lc.TypeVar_open_id]
-          exact .app
-            (A₀ki.weakening (Δwf.typeVarExt a'nin) (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <|
-            .app
-              (A₁ki.weakening (Δwf.typeVarExt a'nin) (Δ' := .typeExt .empty ..) (Δ'' := .empty))
-              (.var .head)
-        · apply lam Δ.typeVarDom _ <|
-            .app (A₀lc.weaken (n := 1)) <| .app (A₁lc.weaken (n := 1)) <| .var_bound Nat.one_pos
-          intro a' a'nin
-          simp [Type.TypeVar_open, A₀lc.TypeVar_open_id, A₁lc.TypeVar_open_id]
-          exact app
-            (A₀ki.weakening (Δwf.typeVarExt a'nin) (Δ' := .typeExt .empty ..) (Δ'' := .empty))
-            (A₀'mst.weakening (Δwf.typeVarExt a'nin) (Δ' := .typeExt .empty ..)
-              (Δ'' := .empty)).EqSmallStep_of
-            refl
-        · rfl
-  · case neg ne =>
-    let ⟨A₁B'', A₁B''v, A₁B''mst⟩ := MultiSmallStep.normalization <| .listApp A₁ki B'ki
-    generalize A₁B'eq : [[A₁ ⟦B'⟧]] = A₁B' at A₁B''mst
-    let A₀lc := A₀ki.TypeVarLocallyClosed_of
-    induction A₁B''mst generalizing A₁ B' with
-    | refl =>
-      cases A₁B'eq
-      let A₁lc := A₁ki.TypeVarLocallyClosed_of
-      calc
-        [[Δ ⊢ A₀ ⟦A₁ ⟦B'⟧⟧ <->* A₀' ⟦A₁ ⟦B'⟧⟧]] := listApp A₀ki A₀'mst refl
-        [[Δ ⊢ A₀' ⟦A₁ ⟦B'⟧⟧ <->* (λ a : K₁. A₀' (A₁ a$0)) ⟦B'⟧]] :=
-          step <| .listAppComp (not_exists.mp ne) A₁ki A₀'v A₁B''v
-        [[Δ ⊢ (λ a : K₁. A₀' (A₁ a$0)) ⟦B'⟧ <->* (λ a : K₁. A₀ (A₁ a$0)) ⟦B'⟧]] := by
-          symm
-          apply listApp
-          · apply Kinding.lam Δ.typeVarDom
-            intro a anin
-            simp [Type.TypeVar_open, A₀lc.TypeVar_open_id, A₁lc.TypeVar_open_id]
-            let Δawf := Δwf.typeVarExt anin (K := K₁)
-            exact .app (A₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <|
-              .app (A₁ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <| .var .head
-          · apply lam Δ.typeVarDom _ <| .app (A₀lc.weaken (n := 1)) <|
-              .app (A₁lc.weaken (n := 1)) <| .var_bound Nat.one_pos
-            intro a anin
-            simp [Type.TypeVar_open, A₀lc.TypeVar_open_id, A₁lc.TypeVar_open_id,
-                  A₀'mst.preserve_lc A₀lc |>.TypeVar_open_id]
-            let Δawf := Δwf.typeVarExt anin (K := K₁)
-            exact app (A₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty))
-              (A₀'mst.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)).EqSmallStep_of
-              refl
-          · rfl
-    | step st A₁B''ist' ih =>
-      cases A₁B'eq
-      match st with
-      | .listAppList ne' A₁ki' A₁v B''v (B := B'') (n := n) (b := b) =>
-        cases A₁ki.deterministic A₁ki'
-        let A₁lc := A₁ki.TypeVarLocallyClosed_of
-        let ⟨B'ki', h⟩ := B'ki.inv_list
-        replace h : n ≠ 0 ∨ b := by
-          split at h
-          · case isTrue h' => exact .inr h'
-          · case isFalse => exact .inl h
-        calc
-          [[Δ ⊢ A₀ ⟦A₁ ⟦{</ B''@i // i in [:n] /> </ : K₁ // b />}⟧⟧ <->* A₀ ⟦{</ A₁ B''@i // i in [:n] /> </ : K₂ // b />}⟧]] :=
-            listApp A₀ki refl <| listAppList A₁ki B'ki' h
-          [[Δ ⊢ A₀ ⟦{</ A₁ B''@i // i in [:n] /> </ : K₂ // b />}⟧ <->* {</ A₀ (A₁ B''@i) // i in [:n] /> </ : K₃ // b />}]] :=
-            listAppList A₀ki (.app A₁ki <| B'ki' · ·) h
-          [[Δ ⊢ {</ A₀ (A₁ B''@i) // i in [:n] /> </ : K₃ // b />} <->* {</ (λ a : K₁. A₀ (A₁ a$0)) B''@i // i in [:n] /> </ : K₃ // b />}]] := by
-            apply list (.app A₀ki <| .app A₁ki <| B'ki' · ·)
-            intro i mem
-            have : [[A₀ (A₁ B''@i)]] = [[((A₀ (A₁ a$0))^^B''@i)]] := by
-              simp [Type.Type_open, A₀lc.Type_open_id, A₁lc.Type_open_id]
-            rw [this]
-            symm
-            apply EqSmallStep.lamApp Δ.typeVarDom _ (B'ki' i mem) Δwf (K₂ := K₃)
-            intro a anin
-            simp [Type.TypeVar_open, A₀lc.TypeVar_open_id, A₁lc.TypeVar_open_id]
-            let Δawf := Δwf.typeVarExt anin (K := K₁)
-            exact .app (A₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <|
-              .app (A₁ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <| .var .head
-          [[Δ ⊢ {</ (λ a : K₁. A₀ (A₁ a$0)) B''@i // i in [:n] /> </ : K₃ // b />} <->* (λ a : K₁. A₀ (A₁ a$0)) ⟦{</ B''@i // i in [:n] /> </ : K₁ // b />}⟧]] := by
-            symm
-            apply listAppList _ B'ki' h (K₂ := K₃)
-            apply Kinding.lam Δ.typeVarDom
-            intro a anin
-            simp [Type.TypeVar_open, A₀lc.TypeVar_open_id, A₁lc.TypeVar_open_id]
-            let Δawf := Δwf.typeVarExt anin (K := K₁)
-            exact .app (A₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <|
-              .app (A₁ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <| .var .head
-      | .listAppId _ _ (A := B'') (K := K') =>
-        let .lam I aki := A₁ki
-        let ⟨a, anin⟩ := I.exists_fresh
-        specialize aki a anin
-        rw [Type.TypeVar_open, if_pos rfl] at aki
-        let .var .head := aki
-        calc
-          [[Δ ⊢ A₀ ⟦(λ a : K'. a$0) ⟦B''⟧⟧ <->* A₀ ⟦B''⟧]] := listApp A₀ki refl <| listAppId B'ki
-          [[Δ ⊢ A₀ ⟦B''⟧ <->* (λ a : K'. A₀ a$0) ⟦B''⟧]] := listApp A₀ki (symm <| eta A₀ki Δwf) refl
-          [[Δ ⊢ (λ a : K'. A₀ a$0) ⟦B''⟧ <->* (λ a : K'. A₀ ((λ a : K'. a$0) a$0)) ⟦B''⟧]] := by
-            apply listApp
-            · apply Kinding.lam Δ.typeVarDom
-              intro a anin
-              simp [Type.TypeVar_open, A₀lc.TypeVar_open_id]
-              let Δawf := Δwf.typeVarExt anin (K := K')
-              exact .app (A₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <|
-                .var .head
-            · apply lam Δ.typeVarDom _ <| .app (A₀lc.weaken (n := 1)) <| .var_bound Nat.one_pos
-              intro a anin
-              simp [Type.TypeVar_open, A₀lc.TypeVar_open_id]
-              let Δawf := Δwf.typeVarExt anin (K := K')
-              apply app (A₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) refl
-              have : Type.var (.free a) = Type.Type_open (.var (.bound 0)) (.var (.free a)) := by
-                rw [Type.Type_open, if_pos rfl]
-              rw (occs := .pos [1]) [this]
-              symm
-              apply step <| .lamApp .id (.var .head) .id .var
-            · rfl
-      | .listAppComp ne' B₀ki A₁v B₀B₁v (A₁ := B₀) (B := B₁) (K₁ := K₀) =>
-        let .listApp B₀ki' B₁ki := B'ki
-        cases B₀ki.deterministic B₀ki'
-        let A₁lc := A₁v.TypeVarLocallyClosed_of
-        let B₀lc := B₀ki.TypeVarLocallyClosed_of
-        let A₀A₁ki : [[Δ ⊢ λ a : K₁. A₀ (A₁ a$0) : K₁ ↦ K₃]] := by
-          apply Kinding.lam Δ.typeVarDom
-          intro a anin
-          simp [Type.TypeVar_open, A₀lc.TypeVar_open_id, A₁lc.TypeVar_open_id]
-          let Δawf := Δwf.typeVarExt anin (K := K₁)
-          exact .app (A₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <|
-            .app (A₁ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <| .var .head
-        let ⟨A₀A₁', A₀A₁'v, A₀A₁'mst⟩ := MultiSmallStep.normalization A₀A₁ki
-        let A₀A₁'lc := A₀A₁'v.TypeVarLocallyClosed_of
-        calc
-          [[Δ ⊢ A₀ ⟦A₁ ⟦B₀ ⟦B₁⟧⟧⟧ <->* A₀ ⟦(λ a : K₀. A₁ (B₀ a$0)) ⟦B₁⟧⟧]] :=
-            listApp A₀ki refl <| step <| .listAppComp ne' B₀ki A₁v B₀B₁v
-          [[Δ ⊢ A₀ ⟦(λ a : K₀. A₁ (B₀ a$0)) ⟦B₁⟧⟧ <->* (λ a : K₀. A₀ ((λ a : K₀. A₁ (B₀ a$0)) a$0)) ⟦B₁⟧]] := by
-            apply EqSmallStep.listAppComp A₀ki _ B₁ki Δwf
-            apply Kinding.lam Δ.typeVarDom
-            intro a anin
-            simp [Type.TypeVar_open, A₁lc.TypeVar_open_id, B₀lc.TypeVar_open_id]
-            let Δawf := Δwf.typeVarExt anin (K := K₀)
-            exact .app (A₁ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <|
-              .app (B₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <| .var .head
-          [[Δ ⊢ (λ a : K₀. A₀ ((λ a : K₀. A₁ (B₀ a$0)) a$0)) ⟦B₁⟧ <->* (λ a : K₀. A₀ (A₁ (B₀ a$0))) ⟦B₁⟧]] := by
-            symm
-            apply listApp _ _ refl (K := [[K₀ ↦ K₃]])
-            · apply Kinding.lam Δ.typeVarDom
-              intro a anin
-              simp [Type.TypeVar_open, A₀lc.TypeVar_open_id, A₁lc.TypeVar_open_id,
-                    B₀lc.TypeVar_open_id]
-              let Δawf := Δwf.typeVarExt anin (K := K₀)
-              exact .app (A₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <|
-                .app (A₁ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <|
-                  .app (B₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <|
-                    .var .head
-            · apply lam Δ.typeVarDom _ <| .app (A₀lc.weaken (n := 1)) <|
-                .app (A₁lc.weaken (n := 1)) <| .app (B₀lc.weaken (n := 1)) <| .var_bound Nat.one_pos
-              intro a anin
-              simp [Type.TypeVar_open, A₀lc.TypeVar_open_id, A₁lc.TypeVar_open_id,
-                    A₁lc.weaken (n := 1).TypeVar_open_id, B₀lc.TypeVar_open_id,
-                    B₀lc.weaken (n := 1).TypeVar_open_id]
-              let Δawf := Δwf.typeVarExt anin (K := K₀)
-              apply app (A₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) refl
-              symm
-              have : [[A₁ (B₀ a)]] = [[((A₁ (B₀ a$0))^^a)]] := by
-                simp [Type.Type_open, A₁lc.Type_open_id, B₀lc.Type_open_id]
-              rw [this]
-              apply EqSmallStep.lamApp (a :: Δ.typeVarDom) _ (.var .head) Δawf (K₂ := K₂)
-              intro a' a'nin
-              simp [Type.TypeVar_open, A₁lc.TypeVar_open_id, B₀lc.TypeVar_open_id]
-              let Δaa'wf := Δawf.typeVarExt a'nin (K := K₀)
-              exact .app (A₁ki.weakening Δaa'wf (Δ' := [[ε, a : K₀, a' : K₀]]) (Δ'' := .empty)) <|
-                .app (B₀ki.weakening Δaa'wf (Δ' := [[ε, a : K₀, a' : K₀]]) (Δ'' := .empty)) <|
-                  .var .head
-          [[Δ ⊢ (λ a : K₀. A₀ (A₁ (B₀ a$0))) ⟦B₁⟧ <->* (λ a : K₀. (λ a : K₁. A₀ (A₁ a$0)) (B₀ a$0)) ⟦B₁⟧]] := by
-            apply listApp _ _ refl (K := [[K₀ ↦ K₃]])
-            · apply Kinding.lam Δ.typeVarDom
-              intro a anin
-              simp [Type.TypeVar_open, A₀lc.TypeVar_open_id, A₁lc.TypeVar_open_id,
-                    B₀lc.TypeVar_open_id]
-              let Δawf := Δwf.typeVarExt anin (K := K₀)
-              exact .app (A₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <|
-                .app (A₁ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <|
-                  .app (B₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <|
-                    .var .head
-            · apply lam Δ.typeVarDom _ <| .app (A₀lc.weaken (n := 1)) <|
-                .app (A₁lc.weaken (n := 1)) <| .app (B₀lc.weaken (n := 1)) <| .var_bound Nat.one_pos
-              intro a anin
-              let Δawf := Δwf.typeVarExt anin (K := K₀)
-              simp [Type.TypeVar_open, A₀lc.TypeVar_open_id, A₀lc.weaken (n := 1).TypeVar_open_id,
-                    A₁lc.TypeVar_open_id, A₁lc.weaken (n := 1).TypeVar_open_id,
-                    B₀lc.TypeVar_open_id]
-              symm
-              have : [[A₀ (A₁ (B₀ a))]] = [[((A₀ (A₁ a$0))^^(B₀ a))]] := by
-                simp [Type.Type_open, A₀lc.Type_open_id, A₁lc.Type_open_id]
-              rw [this]
-              apply EqSmallStep.lamApp (a :: Δ.typeVarDom) _ _ Δawf (K₂ := K₃)
-              · intro a' a'nin
-                simp [Type.TypeVar_open, A₀lc.TypeVar_open_id, A₁lc.TypeVar_open_id]
-                let Δaa'wf := Δawf.typeVarExt a'nin (K := K₁)
-                exact .app (A₀ki.weakening Δaa'wf (Δ' := [[ε, a : K₀, a' : K₁]]) (Δ'' := .empty)) <|
-                  .app (A₁ki.weakening Δaa'wf (Δ' := [[ε, a : K₀, a' : K₁]]) (Δ'' := .empty)) <|
-                    .var .head
-              · exact .app (B₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <|
-                  .var .head
-          [[Δ ⊢ (λ a : K₀. (λ a : K₁. A₀ (A₁ a$0)) (B₀ a$0)) ⟦B₁⟧ <->* (λ a : K₀. A₀A₁' (B₀ a$0)) ⟦B₁⟧]] := by
-            symm
-            apply listApp (K := [[K₀ ↦ K₃]]) _ _ refl
-            · apply Kinding.lam Δ.typeVarDom
-              intro a anin
-              simp [Type.TypeVar_open, A₀A₁'lc.TypeVar_open_id, B₀lc.TypeVar_open_id]
-              let Δawf := Δwf.typeVarExt anin (K := K₀)
-              exact .app (A₀A₁'mst.preservation A₀A₁ki |>.weakening Δawf
-                  (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <|
-                .app (B₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <|
-                  .var .head
-            · apply lam Δ.typeVarDom _ <| .app (A₀A₁'lc.weaken (n := 1)) <|
-                .app (B₀lc.weaken (n := 1)) <| .var_bound Nat.one_pos
-              intro a anin
-              let Δawf := Δwf.typeVarExt anin (K := K₀)
-              simp [Type.TypeVar_open, A₀lc.weaken (n := 1).TypeVar_open_id,
-                    A₁lc.weaken (n := 1).TypeVar_open_id, A₀A₁'lc.TypeVar_open_id,
-                    B₀lc.TypeVar_open_id]
-              symm
-              exact app (A₀A₁ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty))
-                (A₀A₁'mst.weakening Δawf (Δ' := .typeExt .empty ..)
-                  (Δ'' := .empty)).EqSmallStep_of refl
-        by_cases ∃ K', A₀A₁' = [[λ a : K'. a$0]]
-        · case pos h =>
-          rcases h with ⟨K₁, rfl⟩
-          cases A₀A₁'mst.preservation A₀A₁ki
-          calc
-            [[Δ ⊢ (λ a : K₀. (λ a : K₁. a$0) (B₀ a$0)) ⟦B₁⟧ <->* (λ a : K₀. B₀ a$0) ⟦B₁⟧]] := by
-              symm
-              apply listApp _ _ refl (K := [[K₀ ↦ K₁]])
-              · apply Kinding.lam Δ.typeVarDom
-                intro a anin
-                simp [Type.TypeVar_open, B₀lc.TypeVar_open_id]
-                let Δawf := Δwf.typeVarExt anin (K := K₀)
-                exact .app (B₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <|
-                  .var .head
-              · apply lam Δ.typeVarDom _ <| .app (B₀lc.weaken (n := 1)) <| .var_bound Nat.one_pos
-                intro a anin
-                simp [Type.TypeVar_open, B₀lc.TypeVar_open_id, B₀lc.weaken (n := 1).TypeVar_open_id]
-                symm
-                have : [[B₀ a]] = [[((a$0)^^(B₀ a))]] := by
-                  rw [Type.Type_open, if_pos rfl]
-                rw (occs := .pos [2]) [this]
-                let Δawf := Δwf.typeVarExt anin (K := K₀)
-                apply EqSmallStep.lamApp []
-                  (fun _ _ => by rw [Type.TypeVar_open, if_pos rfl]; exact .var .head) _ Δawf
-                exact .app (B₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <|
-                  .var .head
-            [[Δ ⊢ (λ a : K₀. B₀ a$0) ⟦B₁⟧ <->* B₀ ⟦B₁⟧]] :=
-              symm <| listApp B₀ki (symm <| eta B₀ki Δwf) refl
-            [[Δ ⊢ B₀ ⟦B₁⟧ <->* (λ a : K₁. a$0) ⟦B₀ ⟦B₁⟧⟧]] := symm <| listAppId (.listApp B₀ki B₁ki)
-            [[Δ ⊢ (λ a : K₁. a$0) ⟦B₀ ⟦B₁⟧⟧ <->* (λ a : K₁. A₀ (A₁ a$0)) ⟦B₀ ⟦B₁⟧⟧]] :=
-              symm <| listApp A₀A₁ki A₀A₁'mst refl
-        · case neg ne =>
-          calc
-            [[Δ ⊢ (λ a : K₀. A₀A₁' (B₀ a$0)) ⟦B₁⟧ <->* A₀A₁' ⟦B₀ ⟦B₁⟧⟧]] :=
-              symm <| step <| .listAppComp (not_exists.mp ne) B₀ki A₀A₁'v B₀B₁v
-            [[Δ ⊢ A₀A₁' ⟦B₀ ⟦B₁⟧⟧ <->* (λ a : K₁. A₀ (A₁ a$0)) ⟦B₀ ⟦B₁⟧⟧]] :=
-              listApp (A₀A₁'mst.preservation A₀A₁ki) (symm ↑A₀A₁'mst) refl
-      | .listAppl st' (A' := A₁') =>
-        let A₁lc := A₁ki.TypeVarLocallyClosed_of
-        calc
-          [[Δ ⊢ A₀ ⟦A₁ ⟦B'⟧⟧ <->* A₀ ⟦A₁' ⟦B'⟧⟧]] :=
-            listApp A₀ki refl <| listApp A₁ki (step st') refl
-          [[Δ ⊢ A₀ ⟦A₁' ⟦B'⟧⟧ <->* (λ a : K₁. A₀ (A₁' a$0)) ⟦B'⟧]] :=
-            ih (st'.preservation A₁ki) B'ki A₁B''v rfl
-          [[Δ ⊢ (λ a : K₁. A₀ (A₁' a$0)) ⟦B'⟧ <->* (λ a : K₁. A₀ (A₁ a$0)) ⟦B'⟧]] := by
-            symm
-            apply listApp (K := [[K₁ ↦ K₃]]) (Δ := Δ) _ _ refl
-            · apply Kinding.lam Δ.typeVarDom
-              intro a anin
-              simp [Type.TypeVar_open, A₀lc.TypeVar_open_id, A₁lc.TypeVar_open_id]
-              let Δawf := Δwf.typeVarExt anin (K := K₁)
-              exact .app (A₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <|
-                .app (A₁ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <|
-                  .var .head
-            · apply lam Δ.typeVarDom _ <| .app (A₀lc.weaken (n := 1)) <|
-                .app (A₁lc.weaken (n := 1)) <| .var_bound Nat.one_pos
-              intro a anin
-              let Δawf := Δwf.typeVarExt anin (K := K₁)
-              simp [Type.TypeVar_open, A₀lc.TypeVar_open_id, A₁lc.TypeVar_open_id,
-                    st'.preserve_lc A₁lc |>.TypeVar_open_id]
-              apply app (A₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) refl
-              exact app (A₁ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty))
-                (step (st'.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty))) refl
-      | .listAppr _ st' (B' := B'') =>
-        calc
-          [[Δ ⊢ A₀ ⟦A₁ ⟦B'⟧⟧ <->* A₀ ⟦A₁ ⟦B''⟧⟧]] :=
-            listApp A₀ki refl <| listApp A₁ki refl <| step st'
-          [[Δ ⊢ A₀ ⟦A₁ ⟦B''⟧⟧ <->* (λ a : K₁. A₀ (A₁ a$0)) ⟦B''⟧]] :=
-            ih A₁ki (st'.preservation B'ki) A₁B''v rfl
-          [[Δ ⊢ (λ a : K₁. A₀ (A₁ a$0)) ⟦B''⟧ <->* (λ a : K₁. A₀ (A₁ a$0)) ⟦B'⟧]] := by
-            apply listApp (K := [[K₁ ↦ K₃]]) (Δ := Δ) _ refl <| symm <| step st'
-            apply Kinding.lam Δ.typeVarDom
-            intro a anin
-            simp [Type.TypeVar_open, A₀lc.TypeVar_open_id,
-                  A₁ki.TypeVarLocallyClosed_of.TypeVar_open_id]
-            let Δawf := Δwf.typeVarExt anin (K := K₁)
-            exact .app (A₀ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <|
-              .app (A₁ki.weakening Δawf (Δ' := .typeExt .empty ..) (Δ'' := .empty)) <| .var .head
-termination_by 0
-decreasing_by all_goals sorry
-
-end
-
-namespace EqSmallStep
+theorem sum : [[Δ ⊢ A <->* B]] → [[Δ ⊢ ⊕ A <->* ⊕ B]] := Relation.EqvGen.map .sum
 
 theorem of_EquivalenceI (equ : [[Δ ⊢ A ≡ᵢ B]]) (Aki : [[Δ ⊢ A : K]]) (Δwf : [[⊢ Δ]])
   : [[Δ ⊢ A <->* B]] := by
@@ -3005,27 +2806,13 @@ theorem of_EquivalenceI (equ : [[Δ ⊢ A ≡ᵢ B]]) (Aki : [[Δ ⊢ A : K]]) (
     specialize A'aki a aninI
     simp [Type.TypeVar_open, A'ki.TypeVarLocallyClosed_of.TypeVar_open_id] at A'aki
     let .app A'ki (.var .head) := A'aki
-    exact eta (A'ki.TypeVar_drop_of_not_mem_freeTypeVars aninA' (Δ' := .empty)) Δwf
+    exact eta (A'ki.TypeVar_drop_of_not_mem_freeTypeVars aninA' (Δ' := .empty))
   | lamApp A'ki B'ki =>
-    let .app (.lam I A'ki') B'ki' := Aki
+    let .app A'ki B'ki' := Aki
     cases B'ki.deterministic B'ki'
-    exact lamApp I A'ki' B'ki Δwf
-  | listAppList A'ki =>
-    let .listApp A'ki' B'ki := Aki
-    cases A'ki.deterministic A'ki'
-    let ⟨B'ki', h⟩ := B'ki.inv_list
-    apply listAppList A'ki B'ki'
-    split at h
-    · case isTrue h' => exact .inr h'
-    · case isFalse => exact .inl h
-  | listAppId A'ki =>
-    rename_i Δ A' K'
-    let ⟨A'', A''v, A''mst⟩ := MultiSmallStep.normalization A'ki
-    calc
-      [[Δ ⊢ (λ a : K'. a$0) ⟦A'⟧ <->* (λ a : K'. a$0) ⟦A''⟧]] :=
-        listApp .id .refl A''mst
-      [[Δ ⊢ (λ a : K'. a$0) ⟦A''⟧ <->* A'']] := step <| .listAppId (A''mst.preservation A'ki) A''v
-      [[Δ ⊢ A'' <->* A']] := symm A''mst
+    exact lamApp A'ki B'ki
+  | listAppList A'ki => exact .listAppList A'ki
+  | listAppId A'ki => exact listAppId A'ki
   | lam I _ ih =>
     rename_i Δ _ A' _ _
     let .lam I' A'ki := Aki
@@ -3040,7 +2827,7 @@ theorem of_EquivalenceI (equ : [[Δ ⊢ A ≡ᵢ B]]) (Aki : [[Δ ⊢ A : K]]) (
     exact ih a' a'ninI (A'ki a' a'ninI') <| Δwf.typeVarExt a'ninΔ
   | app _ _ ih₀ ih₁ =>
     let .app A'ki B'ki := Aki
-    exact app A'ki (ih₀ A'ki Δwf) (ih₁ B'ki Δwf)
+    exact app (ih₀ A'ki Δwf) (ih₁ B'ki Δwf)
   | scheme I _ ih =>
     rename_i Δ _ A' _ _
     let .scheme I' A'ki := Aki
@@ -3055,110 +2842,118 @@ theorem of_EquivalenceI (equ : [[Δ ⊢ A ≡ᵢ B]]) (Aki : [[Δ ⊢ A : K]]) (
     exact ih a' a'ninI (A'ki a' a'ninI') <| Δwf.typeVarExt a'ninΔ
   | arr _ _ ih₀ ih₁ =>
     let .arr A'ki B'ki := Aki
-    exact .arr A'ki (ih₀ A'ki Δwf) (ih₁ B'ki Δwf)
+    exact arr (ih₀ A'ki Δwf) (ih₁ B'ki Δwf)
   | list _ ih =>
     rename_i K' b _
     rcases Aki.inv_list' with ⟨K'', rfl, A'ki, h⟩
     have : Option.someIf K' b = Option.someIf K'' b := by
       split at h
       · case isTrue h' => rw [h', Option.someIf_true, Option.someIf_true, h]
-      · case isFalse h' => rw [Bool.not_eq_true _ |>.mp h', Option.someIf_false, Option.someIf_false]
+      · case isFalse h' =>
+        rw [Bool.not_eq_true _ |>.mp h', Option.someIf_false, Option.someIf_false]
     rw [this]
-    apply list A'ki
-    intro i mem
-    exact ih i mem (A'ki i mem) Δwf
+    exact list fun i mem => ih i mem (A'ki i mem) Δwf
   | listApp _ _ ih₀ ih₁ =>
     let .listApp A'ki B'ki := Aki
-    exact listApp A'ki (ih₀ A'ki Δwf) (ih₁ B'ki Δwf)
+    exact listApp (ih₀ A'ki Δwf) (ih₁ B'ki Δwf)
   | listAppComp _ A₁ki =>
-    rename_i A₀ Δ A₁ K₁ K₂ B' _
-    let .listApp A₀ki (.listApp A₁ki' B'ki) (K₂ := K₃) := Aki
+    let .listApp A₀ki (.listApp A₁ki' B'ki) := Aki
     cases A₁ki.deterministic A₁ki'
-    exact listAppComp A₀ki A₁ki B'ki Δwf
+    exact listAppComp A₀ki.TypeVarLocallyClosed_of A₁ki
   | prod equ' ih =>
     let .prod A'ki := Aki
-    exact ih A'ki Δwf |>.prod
+    exact prod <| ih A'ki Δwf
   | sum equ' ih =>
     let .sum A'ki := Aki
-    exact ih A'ki Δwf |>.sum
+    exact sum <| ih A'ki Δwf
 
 theorem of_EquivalenceS (equ : [[Δ ⊢ A ≡ₛ B]]) (Aki : [[Δ ⊢ A : K]]) (Bki : [[Δ ⊢ B : K]])
   (Δwf : [[⊢ Δ]]) : [[Δ ⊢ A <->* B]] := by
   induction equ with
   | base equ' => exact .of_EquivalenceI equ' Aki Δwf
-  | symm equ' => exact .symm <| .of_EquivalenceI equ' Bki Δwf
+  | symm equ' => exact symm <| .of_EquivalenceI equ' Bki Δwf
   | trans equ' _ ih₀ ih₁ =>
-    exact .trans (ih₀ Aki (equ'.preservation.mp Aki)) (ih₁ (equ'.preservation.mp Aki) Bki)
+    exact .trans _ _ _ (ih₀ Aki (equ'.preservation.mp Aki)) (ih₁ (equ'.preservation.mp Aki) Bki)
 
-theorem of_Equivalence (equ : [[Δ ⊢ A ≡ B]]) (Aki : [[Δ ⊢ A : K]]) (Δwf : [[⊢ Δ]]) : [[Δ ⊢ A <->* B]] :=
-  have eqs := equ.TypeEquivalenceS_of Aki.TypeVarLocallyClosed_of Δwf
+theorem of_Equivalence (equ : [[Δ ⊢ A ≡ B]]) (Aki : [[Δ ⊢ A : K]]) (Δwf : [[⊢ Δ]])
+  : [[Δ ⊢ A <->* B]] :=
+  let eqs := equ.TypeEquivalenceS_of Aki.TypeVarLocallyClosed_of Δwf
   of_EquivalenceS eqs Aki (eqs.preservation.mp Aki) Δwf
 
-theorem preservation (Aest : [[Δ ⊢ A <->* B]]) : [[Δ ⊢ A : K]] ↔ [[Δ ⊢ B : K]] := by
-  induction Aest with
-  | refl => exact ⟨id, id⟩
-  | step Ast => exact ⟨(Ast.preservation ·), (Ast.preservation_rev ·)⟩
-  | symm _ ih => exact .symm ih
-  | trans _ _ ih₀ ih₁ => exact ⟨(ih₁.mp <| ih₀.mp ·), (ih₀.mpr <| ih₁.mpr ·)⟩
+theorem preservation (est : [[Δ ⊢ A <->* B]]) : [[Δ ⊢ A : K]] ↔ [[Δ ⊢ B : K]] :=
+  Equivalence.eqvGen_iff Iff.equiv |>.mp <|
+    Relation.EqvGen.mono (fun _ _ st => ⟨st.preservation, st.preservation_rev⟩) est
 
-theorem Equivalence_of (Aest : [[Δ ⊢ A <->* B]]) : [[Δ ⊢ A ≡ B]] := by
-  induction Aest with
-  | refl => exact .refl
-  | step A'st => exact A'st.Equivalence_of
-  | symm B'st ih => exact .symm ih
-  | trans A'st _ ih₀ ih₁ => exact .trans ih₀ ih₁
+def _root_.TabularTypeInterpreter.«F⊗⊕ω».TypeEquivalence.equiv
+  : Equivalence (TypeEquivalence Δ) := ⟨fun _ => .refl, .symm, .trans⟩
 
-theorem common_reduct (est : [[Δ ⊢ A <->* B]]) : ∃ C, [[Δ ⊢ A ->* C]] ∧ [[Δ ⊢ B ->* C]] := by
+theorem Equivalence_of (est : [[Δ ⊢ A <->* B]]) : [[Δ ⊢ A ≡ B]] :=
+  Equivalence.eqvGen_iff TypeEquivalence.equiv |>.mp <|
+    Relation.EqvGen.mono (fun _ _ => SmallStep.Equivalence_of) est
+
+theorem common_reduct (est : [[Δ ⊢ A <->* B]]) (Aki : [[Δ ⊢ A : K]]) (Δwf : [[⊢ Δ]])
+  : ∃ C, [[Δ ⊢ A ->* C]] ∧ [[Δ ⊢ B ->* C]] := by
   induction est with
   | refl => exact ⟨_, .refl, .refl⟩
-  | step st => exact ⟨_, .step st .refl, .refl⟩
-  | symm est ih =>
-    let ⟨C, B'mst, A'mst⟩ := ih
+  | rel _ _ st => exact ⟨_, .single st, .refl⟩
+  | symm _ _ est ih =>
+    let ⟨C, B'mst, A'mst⟩ := ih <| preservation est |>.mpr Aki
     exact ⟨_, A'mst, B'mst⟩
-  | trans q r ih₀ ih₁ =>
-    let ⟨C₀, A'mst, A''mst₀⟩ := ih₀
-    let ⟨C₁, A''mst₁, A'''mst⟩ := ih₁
-    let ⟨C, C₀mst, C₁mst⟩ := A''mst₀.confluence A''mst₁
+  | trans _ _ _ est₀ est₁ ih₀ ih₁ =>
+    let ⟨C₀, A'mst, A''mst₀⟩ := ih₀ Aki
+    apply preservation est₀ |>.mp at Aki
+    let ⟨C₁, A''mst₁, A'''mst⟩ := ih₁ Aki
+    let ⟨C, C₀mst, C₁mst⟩ := A''mst₀.confluence A''mst₁ Aki Δwf
     exact ⟨_, A'mst.trans C₀mst, A'''mst.trans C₁mst⟩
 
 -- ====================
 
 
 -- Injectivity of Type Constructors.
-theorem inj_arr (ArBest: [[ Δ ⊢ (A → B) <->* (A' → B') ]]): [[ Δ ⊢ A <->* A' ]] ∧ [[ Δ ⊢ B <->* B' ]] := by
-  have ⟨T, ArB_Tmst, A'rB'_Tmst⟩ := ArBest.common_reduct
+theorem inj_arr (ArBest: [[ Δ ⊢ (A → B) <->* (A' → B') ]]) (ki : [[Δ ⊢ A → B : K]]) (Δwf : [[⊢ Δ]])
+  : [[ Δ ⊢ A <->* A' ]] ∧ [[ Δ ⊢ B <->* B' ]] := by
+  have ⟨T, ArB_Tmst, A'rB'_Tmst⟩ := ArBest.common_reduct ki Δwf
   have ⟨A1, B1, Teq1, AA1, BB1⟩ := ArB_Tmst.preserve_shape_arr
   have ⟨A2, B2, Teq2, A'A2, B'B2⟩ := A'rB'_Tmst.preserve_shape_arr
   subst T; cases Teq2; case refl =>
-  refine ⟨AA1.est_of.trans A'A2.est_of.symm, BB1.est_of.trans B'B2.est_of.symm⟩
+  refine ⟨AA1.est_of.trans _ _ _ A'A2.est_of.symm, BB1.est_of.trans _ _ _ B'B2.est_of.symm⟩
 
-theorem inj_forall (Aest: [[ Δ ⊢ (∀ a? : K. A) <->* (∀ a? : K'. A') ]]): K = K' ∧ ∃I: List _, ∀a ∉ I, [[ Δ, a : K ⊢ A^a <->* A'^a ]] := by
-  have ⟨T, AT, A'T⟩ := Aest.common_reduct
+theorem inj_forall (Aest: [[ Δ ⊢ (∀ a? : K. A) <->* (∀ a? : K'. A') ]])
+  (ki : [[Δ ⊢ ∀ a? : K. A : K'']]) (Δwf : [[⊢ Δ]])
+  : K = K' ∧ ∃I: List _, ∀a ∉ I, [[ Δ, a : K ⊢ A^a <->* A'^a ]] := by
+  have ⟨T, AT, A'T⟩ := Aest.common_reduct ki Δwf
   have ⟨A1, Teq1, I1, AA1⟩:= AT.preserve_shape_forall
   have ⟨A2, Teq2, I2, A'A2⟩ := A'T.preserve_shape_forall
   subst T; cases Teq2; case refl =>
-  exact ⟨rfl, I1 ++ I2, λa nin => AA1 a (by simp_all) |>.est_of.trans <| A'A2 a (by simp_all) |>.est_of.symm⟩
+  exact ⟨
+    rfl,
+    I1 ++ I2,
+    λa nin => AA1 a (by simp_all) |>.est_of.trans _ _ _ <| A'A2 a (by simp_all) |>.est_of.symm
+  ⟩
 
-theorem inj_prod (Aest: [[ Δ ⊢ ⊗A <->* ⊗A' ]]): [[ Δ ⊢ A <->* A' ]] := by
-  have ⟨T, AT, A'T⟩ := Aest.common_reduct
+theorem inj_prod (Aest: [[ Δ ⊢ ⊗A <->* ⊗A' ]]) (ki : [[Δ ⊢ ⊗ A : K]]) (Δwf : [[⊢ Δ]])
+  : [[ Δ ⊢ A <->* A' ]] := by
+  have ⟨T, AT, A'T⟩ := Aest.common_reduct ki Δwf
   have ⟨A1, Teq1, AA1⟩:= AT.preserve_shape_prod
   have ⟨A2, Teq2, A'A2⟩ := A'T.preserve_shape_prod
   subst T; cases Teq2; case refl =>
-  exact AA1.est_of.trans A'A2.est_of.symm
+  exact AA1.est_of.trans _ _ _ A'A2.est_of.symm
 
-theorem inj_sum (Aest: [[ Δ ⊢ ⊕A <->* ⊕A' ]]): [[ Δ ⊢ A <->* A' ]] := by
-  have ⟨T, AT, A'T⟩ := Aest.common_reduct
+theorem inj_sum (Aest: [[ Δ ⊢ ⊕A <->* ⊕A' ]]) (ki : [[Δ ⊢ ⊕ A : K]]) (Δwf : [[⊢ Δ]])
+  : [[ Δ ⊢ A <->* A' ]] := by
+  have ⟨T, AT, A'T⟩ := Aest.common_reduct ki Δwf
   have ⟨A1, Teq1, AA1⟩:= AT.preserve_shape_sum
   have ⟨A2, Teq2, A'A2⟩ := A'T.preserve_shape_sum
   subst T; cases Teq2; case refl =>
-  exact AA1.est_of.trans A'A2.est_of.symm
+  exact AA1.est_of.trans _ _ _ A'A2.est_of.symm
 
 local instance : Inhabited Kind where
   default := .star
 in
 theorem inj_list (Aest: EqSmallStep Δ [[{ </ A@i // i in [:n] /> </ : K // b /> }]] (.list ([:n'].map fun i => B i) K?))
+  (ki : [[Δ ⊢ { </ A@i // i in [:n] /> </ : K // b /> } : K']]) (Δwf : [[⊢ Δ]])
   : n = n' ∧ [[ </ Δ ⊢ A@i <->* B@i // i in [:n] /> ]] ∧ Option.someIf K b = K? := by
-  have ⟨T, AT, BT⟩ := Aest.common_reduct
+  have ⟨T, AT, BT⟩ := Aest.common_reduct ki Δwf
   have ⟨A1, Teq1, AA1⟩ := AT.preserve_shape_list
   rw [← Option.someIf_get!_eq (x? := K?)] at BT
   have ⟨B1, Teq2, BB1⟩ := BT.preserve_shape_list
@@ -3167,7 +2962,7 @@ theorem inj_list (Aest: EqSmallStep Δ [[{ </ A@i // i in [:n] /> </ : K // b />
   have eqn'n := Std.Range.length_eq_of_mem_eq eq; subst eqn'n
   have eqBA := Std.Range.eq_of_mem_of_map_eq eq; clear eq
   simp_all [Option.someIf_get!_eq]
-  exact λ x xin => AA1 x xin |>.est_of.trans <| BB1 x xin |>.est_of.symm
+  exact λ x xin => AA1 x xin |>.est_of.trans _ _ _ <| BB1 x xin |>.est_of.symm
 
 end EqSmallStep
 

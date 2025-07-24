@@ -7,7 +7,7 @@ import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Term
 namespace TabularTypeInterpreter.«F⊗⊕ω»
 
 theorem TypeEquivalence.common_reduct_of (eq: [[Δ ⊢ A ≡ B]]) (wf: [[ ⊢ Δ ]]) (AkiStar: [[ Δ ⊢ A : * ]]) : ∃C, [[Δ ⊢ A ->* C]] ∧ [[Δ ⊢ B ->* C]] :=
-  EqSmallStep.of_Equivalence eq (K := [[ * ]]) AkiStar wf |>.common_reduct
+  EqSmallStep.of_Equivalence eq (K := [[ * ]]) AkiStar wf |>.common_reduct AkiStar wf
 namespace Value
 
 -- TODO rename, and will be affected by equiv definition change

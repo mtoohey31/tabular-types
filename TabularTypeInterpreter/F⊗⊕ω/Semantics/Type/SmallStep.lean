@@ -1,6 +1,6 @@
 import Lott.Elab.ImpliesJudgement
 import Lott.Elab.NotJudgement
-import TabularTypeInterpreter.Data.List
+import Mathlib.Logic.Relation
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Type
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
@@ -71,33 +71,24 @@ judgement_syntax Δ " ⊢ " A " -> " B : SmallStep
 judgement SmallStep where
 
 Δ ⊢ A : K₁ ↦ K₂
-∀ a ∉ I, value A a
-──────────────────────── eta (I : List TypeVarId)
+──────────────────────── eta
 Δ ⊢ λ a : K₁. A a$0 -> A
 
 Δ ⊢ λ a : K₁. A : K₁ ↦ K₂
 Δ ⊢ B : K₁
-value λ a : K₁. A
-value B
-─────────────────────────── lamApp
+───────────────────────────── lamApp
 Δ ⊢ (λ a : K₁. A) B -> A^^B/a
 
-∀ K, A ≠ λ a : K. a$0
 Δ ⊢ A : K₁ ↦ K₂
-value A
-</ value B@i // i in [:n] />
 ────────────────────────────────────────────────────────────────────────────────────────────── listAppList
 Δ ⊢ A ⟦{</ B@i // i in [:n] /> </ : K₁ // b />}⟧ -> {</ A B@i // i in [:n] /> </ : K₂ // b />}
 
 Δ ⊢ A : L K
-value A
 ─────────────────────────── listAppId
 Δ ⊢ (λ a : K. a$0) ⟦A⟧ -> A
 
-∀ K', A₀ ≠ λ a : K'. a$0
+lc_ A₀
 Δ ⊢ A₁ : K₁ ↦ K₂
-value A₀
-value A₁ ⟦B⟧
 ────────────────────────────────────────────── listAppComp
 Δ ⊢ A₀ ⟦A₁ ⟦B⟧⟧ -> (λ a : K₁. A₀ (A₁ a$0)) ⟦B⟧
 
@@ -109,7 +100,6 @@ value A₁ ⟦B⟧
 ─────────────── appl
 Δ ⊢ A B -> A' B
 
-value A
 Δ ⊢ B -> B'
 ─────────────── appr
 Δ ⊢ A B -> A B'
@@ -122,12 +112,10 @@ value A
 ─────────────────── arrl
 Δ ⊢ A → B -> A' → B
 
-value A
 Δ ⊢ B -> B'
 ─────────────────── arrr
 Δ ⊢ A → B -> A → B'
 
-</ value A₀@i // i in [:m] />
 Δ ⊢ A₁ -> A₁'
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── list
 Δ ⊢ {</ A₀@i // i in [:m] />, A₁, </ A₂@j // j in [:n] /> </ : K // b />} -> {</ A₀@i // i in [:m] />, A₁', </ A₂@j // j in [:n] /> </ : K // b />}
@@ -136,7 +124,6 @@ value A
 ─────────────────── listAppl
 Δ ⊢ A ⟦B⟧ -> A' ⟦B⟧
 
-value A
 Δ ⊢ B -> B'
 ─────────────────── listAppr
 Δ ⊢ A ⟦B⟧ -> A ⟦B'⟧
@@ -151,34 +138,10 @@ value A
 
 judgement_syntax Δ " ⊢ " A " ->* " B : MultiSmallStep
 
-judgement MultiSmallStep where
-
-─────────── refl
-Δ ⊢ A ->* A
-
-Δ ⊢ A₀ -> A₁
-Δ ⊢ A₁ ->* A₂
-───────────── step
-Δ ⊢ A₀ ->* A₂
+abbrev MultiSmallStep := fun Δ => Relation.ReflTransGen (SmallStep Δ)
 
 judgement_syntax Δ " ⊢ " A " <->* " B : EqSmallStep (tex := s!"{Δ} \\, \\lottsym\{⊢} \\, {A} \\, \\lottsym\{↔^*} \\, {B}")
 
-judgement EqSmallStep where
-
-──────────── refl
-Δ ⊢ A <->* A
-
-Δ ⊢ A -> B
-──────────── step
-Δ ⊢ A <->* B
-
-Δ ⊢ B <->* A
-──────────── symm
-Δ ⊢ A <->* B
-
-Δ ⊢ A₀ <->* A₁
-Δ ⊢ A₁ <->* A₂
-────────────── trans
-Δ ⊢ A₀ <->* A₂
+abbrev EqSmallStep := fun Δ => Relation.EqvGen (SmallStep Δ)
 
 end TabularTypeInterpreter.«F⊗⊕ω»
