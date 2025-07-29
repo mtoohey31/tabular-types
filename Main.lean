@@ -113,10 +113,10 @@ def main' (args : Args) : MainM Status := do
     let s ← readFile file
     let pgm! ← Parser.program s
     match pgm! with
-    | .error _ e =>
-      stderr.putStrLn s!"parse error in {file}: {e}"
+    | .error e =>
+      stderr.putStrLn s!"parse error in {file}: {e.toString s}"
       return syntaxOrSemanticError
-    | .ok _ pgm' =>
+    | .ok pgm' =>
       if args.parseOnly then
         appendProgram pgm'
         continue
@@ -184,10 +184,10 @@ def main' (args : Args) : MainM Status := do
 
   let evalTerm (s : String) : MainM Status := do
     match ← Parser.term s with
-    | .error _ e =>
-      stderr.putStrLn s!"parse error in term: {e}"
+    | .error e =>
+      stderr.putStrLn s!"parse error in term: {e.toString s}"
       return syntaxOrSemanticError
-    | .ok _ M =>
+    | .ok M =>
       if args.parseOnly then
         return ok
 
