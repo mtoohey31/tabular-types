@@ -609,8 +609,8 @@ def term' (greedy unlabel := true) (allowFree := false) : TermM Term := do
         return .let id none M N)
     <|> (label ∘ String.mk ∘ Prod.fst) <$>
       (token '\'' *> «until» any (token '\''))
-    <|> prod <$>
-      (token '{' **> sepBy (~*> token ',' <*~) (Prod.mk <$> go <**> liftM «▹» **> go) <** token '}')
+    <|> prod <$> (token '{' **> sepBy (~*> token ',' <*~)
+      (Prod.mk <$> go <**> (optionD unit (liftM «▹» **> go))) <** token '}')
     <|> sum <$> (token '[' **> go) <**> liftM «▹» **> go <** token ']'
     <|> prj <$> (string "prj" **> go false)
     <|> inj <$> (string "inj" **> go false)

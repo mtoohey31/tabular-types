@@ -400,6 +400,8 @@ deriving Inhabited, BEq
 
 namespace Term
 
+def unit := prod []
+
 private
 def decidableEq (M₀ M₁ : Term) : Decidable (M₀ = M₁) := by
   match M₀ with
