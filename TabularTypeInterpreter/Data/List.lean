@@ -1,4 +1,5 @@
 import Mathlib.Data.List.Basic
+import TabularTypeInterpreter.Data.Nat
 import TabularTypeInterpreter.Data.Range
 
 namespace List
@@ -40,5 +41,23 @@ def of_length_lt_of_append_eq_append {l₀ l₁ l₀' l₁' : List α} (length_l
     let length_eq := congrArg length eq₀
     rw [length_append] at length_eq
     nomatch Nat.not_le_of_lt length_lt <| Nat.le_of_add_right_le <| Nat.le_of_eq length_eq.symm
+
+inductive Unique : List α → Prop where
+  | nil : Unique nil
+  | cons : x ∉ xs → Unique xs → Unique (cons x xs)
+
+def max?_eq_of_subset {l₀ l₁ : List Nat} (sub₀₁ : l₀ ⊆ l₁) (sub₁₀ : l₁ ⊆ l₀)
+  : max? l₀ = max? l₁ := by
+  by_cases max? l₀ = none
+  · case pos h =>
+    rw [max?_eq_none_iff.mp h] at sub₁₀
+    rw [h, subset_nil.mp sub₁₀, max?]
+  · case neg h =>
+    replace ⟨_, h⟩ := Or.resolve_left (Option.eq_none_or_eq_some _) h
+    rw [h]
+    let ⟨mem, le⟩ := max?_eq_some_iff Nat.le_refl Nat.max_eq_or Nat.max_le_iff |>.mp h
+    symm
+    apply max?_eq_some_iff Nat.le_refl Nat.max_eq_or Nat.max_le_iff |>.mpr
+    exact ⟨sub₀₁ mem, fun _ mem => le _ <| sub₁₀ mem⟩
 
 end List

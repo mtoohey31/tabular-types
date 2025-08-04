@@ -108,6 +108,19 @@ theorem weakening_r (kT: [[ Δ ⊢ T: K ]]) (fresh: ∀ a ∈ Δ'.typeVarDom, a 
 theorem weakening : [[Δ, Δ'' ⊢ A : K]] → [[⊢ Δ, Δ', Δ'']] → [[Δ, Δ', Δ'' ⊢ A : K]] :=
   λ h wf => .weakening_r' h <| Environment.append_assoc.subst wf |>.weakening.append_typeVar_fresh_l
 
+theorem LE_weakening (Aki : [[Δ ⊢ A : K]]) (le : Δ ≤ Δ') : [[Δ' ⊢ A : K]] := by
+  induction Aki generalizing Δ'
+  case var ain => exact .var <| le.TypeVarIn_preservation ain
+  case lam I _ ih =>
+    exact lam (I ++ Δ'.typeVarDom) (fun a anin =>
+      let ⟨aninI, aninΔ'⟩ := List.not_mem_append'.mp anin
+      ih a aninI <| le.extExt aninΔ')
+  case scheme I _ ih =>
+    exact scheme (I ++ Δ'.typeVarDom) (fun a anin =>
+      let ⟨aninI, aninΔ'⟩ := List.not_mem_append'.mp anin
+      ih a aninI <| le.extExt aninΔ')
+  all_goals aesop (add safe constructors Kinding)
+
 open Environment TypeVarInEnvironment in
 theorem TermVar_drop (kT: [[ Δ, x: T', Δ'' ⊢ T: K ]]): [[ Δ, Δ'' ⊢ T: K ]] := by
   generalize Δ_eq: [[ (Δ, x: T', Δ'') ]] = Δ_ at kT
@@ -596,6 +609,149 @@ theorem deterministic (Aki₁ : [[Δ ⊢ A : K₁]]) (Aki₂ : [[Δ ⊢ A : K₂
     let .sum _ := Aki₁
     let .sum _ := Aki₂
     rfl
+
+local instance : Inhabited «Type» where
+  default := .list [] none
+in
+local instance : Inhabited Kind where
+  default := .star
+in
+theorem Type_open_preservation_rev {A : «Type»}
+  (Aki : Kinding [[(Δ, Δ' [B / a])]] (A.Type_open B n) K') (Bki : [[Δ ⊢ B : K]])
+  (ΔaΔ'wf : [[⊢ Δ, a : K, Δ']]) : Kinding [[(Δ, a : K, Δ')]] (A.TypeVar_open a n) K' := by
+  match A with
+  | .var (.free a') =>
+    rw [Type.TypeVar_open, if_neg nofun]
+    rw [Type.Type_open, if_neg nofun] at Aki
+    let .var a'in := Aki
+    match a'in.append_elim with
+    | .inl ⟨a'nin, a'Kin⟩ =>
+      apply Kinding.var <| .append_inl (a'Kin.typeVarExt _) <| by
+        rw [Environment.TypeVarNotInDom, Environment.TypeVarInDom,
+            ← Environment.typeVarDom_TypeVar_subst]
+        exact a'nin
+      let .typeVarExt _ anin := ΔaΔ'wf.weakening
+      rintro rfl
+      exact anin a'Kin.TypeVarInDom_of
+    | .inr a'Kin => exact .var <| .append_inr <| TypeVarInEnvironment.TypeVar_subst.mp a'Kin
+  | .var (.bound a') =>
+    rw [Type.TypeVar_open]
+    split
+    case isFalse h =>
+      rw [Type.Type_open, if_neg h] at Aki
+      nomatch Aki
+    case isTrue h =>
+    cases h
+    rw [Type.Type_open, if_pos rfl] at Aki
+    cases Aki.deterministic <| Bki.weakening (ΔaΔ'wf.TypeVar_subst Bki) (Δ'' := .empty)
+    apply Kinding.var <| TypeVarInEnvironment.weakening_r _ .head
+    clear Aki Bki
+    induction Δ' with
+    | empty => nofun
+    | typeExt _ _ _ ih =>
+      let .typeVarExt ΔaΔ''wf a'nin := ΔaΔ'wf
+      apply List.not_mem_cons.mpr ⟨_, ih ΔaΔ''wf⟩
+      rintro rfl
+      apply a'nin
+      rw [Environment.TypeVarInDom, Environment.typeVarDom_append, Environment.typeVarDom]
+      exact List.mem_append.mpr <| .inr <| .head ..
+    | termExt _ _ _ ih =>
+      let .termVarExt ΔaΔ''wf _ _ := ΔaΔ'wf
+      exact ih ΔaΔ''wf
+  | [[λ a : K''. A']] =>
+    rw [Type.TypeVar_open]
+    rw [Type.Type_open] at Aki
+    let .lam I A'ki := Aki
+    apply Kinding.lam <| I ++ [[Δ, a : K, Δ']].typeVarDom
+    intro a' a'nin
+    let ⟨a'ninI, a'ninΔaΔ'⟩ := List.not_mem_append'.mp a'nin
+    rw [Type.TypeVar_open_comm _ (Nat.succ_ne_zero _)]
+    specialize A'ki a' a'ninI
+    rw [← Type.Type_open_TypeVar_open_comm Bki.TypeVarLocallyClosed_of (Nat.zero_ne_add_one _),
+        ← Environment.append, ← Environment.TypeVar_subst] at A'ki
+    apply Type_open_preservation_rev A'ki Bki
+    rw [Environment.append]
+    exact ΔaΔ'wf.typeVarExt a'ninΔaΔ'
+  | [[A' B']] =>
+    rw [Type.TypeVar_open]
+    rw [Type.Type_open] at Aki
+    let .app A'ki B'ki := Aki
+    exact .app (Type_open_preservation_rev A'ki Bki ΔaΔ'wf)
+      (Type_open_preservation_rev B'ki Bki ΔaΔ'wf)
+  | [[∀ a : K''. A']] =>
+    rw [Type.TypeVar_open]
+    rw [Type.Type_open] at Aki
+    let .scheme I A'ki := Aki
+    apply Kinding.scheme <| I ++ [[Δ, a : K, Δ']].typeVarDom
+    intro a' a'nin
+    let ⟨a'ninI, a'ninΔaΔ'⟩ := List.not_mem_append'.mp a'nin
+    rw [Type.TypeVar_open_comm _ (Nat.succ_ne_zero _)]
+    specialize A'ki a' a'ninI
+    rw [← Type.Type_open_TypeVar_open_comm Bki.TypeVarLocallyClosed_of (Nat.zero_ne_add_one _),
+        ← Environment.append, ← Environment.TypeVar_subst] at A'ki
+    apply Type_open_preservation_rev A'ki Bki
+    rw [Environment.append]
+    exact ΔaΔ'wf.typeVarExt a'ninΔaΔ'
+  | [[A' → B']] =>
+    rw [Type.TypeVar_open]
+    rw [Type.Type_open] at Aki
+    let .arr A'ki B'ki := Aki
+    exact .arr (Type_open_preservation_rev A'ki Bki ΔaΔ'wf)
+      (Type_open_preservation_rev B'ki Bki ΔaΔ'wf)
+  | .list A's K? =>
+    rw [Type.Type_open, List.mapMem_eq_map, ← Std.Range.map_get!_eq (as := A's), List.map_map,
+        ← Std.Range.map, ← Option.someIf_get!_eq (x? := K?), Std.Range.map_eq_of_eq_of_mem'' (by
+          intro i mem
+          show _ = (fun i => (A's.get! i).Type_open B n) i
+          simp
+        )] at Aki
+    rw [Type.TypeVar_open, List.mapMem_eq_map, ← Std.Range.map_get!_eq (as := A's), List.map_map,
+        ← Std.Range.map, ← Option.someIf_get!_eq (x? := K?), Std.Range.map_eq_of_eq_of_mem'' (by
+          intro i mem
+          show _ = (fun i => (A's.get! i).TypeVar_open a n) i
+          simp
+        )]
+    rcases Aki.inv_list' with ⟨K', rfl, A'ki, h⟩
+    have : Option.someIf K?.get! K?.isSome = Option.someIf K' K?.isSome := by
+      match K? with
+      | some K'' =>
+        rw [Option.isSome, if_pos rfl, Option.get!] at h
+        rw [Option.isSome, Option.someIf, if_pos rfl, Option.get!, Option.someIf, if_pos rfl, h]
+      | none => rw [Option.isSome, Option.someIf, if_neg nofun, Option.someIf, if_neg nofun]
+    rw [this]
+    apply Kinding.list (A'ki · · |>.Type_open_preservation_rev Bki ΔaΔ'wf)
+    match K? with
+    | some K'' =>
+      rw [Option.isSome]
+      exact .inr rfl
+    | none =>
+      rw [Option.isSome, if_neg nofun] at h
+      exact .inl h
+  | [[A' ⟦B'⟧]] =>
+    rw [Type.TypeVar_open]
+    rw [Type.Type_open] at Aki
+    let .listApp A'ki B'ki := Aki
+    exact .listApp (Type_open_preservation_rev A'ki Bki ΔaΔ'wf)
+      (Type_open_preservation_rev B'ki Bki ΔaΔ'wf)
+  | [[⊗ A']] =>
+    rw [Type.TypeVar_open]
+    rw [Type.Type_open] at Aki
+    let .prod A'ki := Aki
+    exact .prod <| Type_open_preservation_rev A'ki Bki ΔaΔ'wf
+  | [[⊕ A']] =>
+    rw [Type.TypeVar_open]
+    rw [Type.Type_open] at Aki
+    let .sum A'ki := Aki
+    exact .sum <| Type_open_preservation_rev A'ki Bki ΔaΔ'wf
+termination_by sizeOf A
+decreasing_by
+  all_goals simp_arith
+  apply Nat.le_of_lt
+  apply Nat.lt_add_right
+  apply List.sizeOf_lt_of_mem
+  rename _ ∈ _ => mem
+  rw [List.getElem?_eq_getElem mem.upper, Option.getD]
+  exact List.getElem_mem mem.upper
 
 theorem singleton_list (Aki : [[Δ ⊢ A : K]]) : [[Δ ⊢ {A} : L K]] := by
   have := list (Δ := Δ) (A := fun _ => A) (K := K) (n := 1) (b := false) (by

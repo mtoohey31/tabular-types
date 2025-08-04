@@ -1,0 +1,10 @@
+\lottjudgement{Max Comp Shifts}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A₀ \targetpost \, \lottsym{⟦⟦} \targetpre B₀ \targetpost \lottsym{⟧⟧} \, \lottsym{⇝!} \, \targetpre A₁ \targetpost \, \lottsym{⟦⟦} \targetpre B₁ \targetpost \lottsym{⟧⟧}}{
+\lottinferencerule{refl}{
+\lotthypothesis{\targetpre B \targetpost \, \lottsym{≠} \, \targetpre \targetpre B₀ \targetpost \, \lottsym{⟦} \targetpre B₁ \targetpost \lottsym{⟧} \targetpost}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{⟦⟦} \targetpre B \targetpost \lottsym{⟧⟧} \, \lottsym{⇝!} \, \targetpre A \targetpost \, \lottsym{⟦⟦} \targetpre B \targetpost \lottsym{⟧⟧}}
+\lottinferencerulesep
+\lottinferencerule{shift}{
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A₀ \targetpost \, \lottsym{⟦⟦} \targetpre B₀ \targetpost \lottsym{⟧⟧} \, \lottsym{⇝} \, \targetpre A₁ \targetpost \, \lottsym{⟦⟦} \targetpre B₁ \targetpost \lottsym{⟧⟧}}\\
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A₁ \targetpost \, \lottsym{⟦⟦} \targetpre B₁ \targetpost \lottsym{⟧⟧} \, \lottsym{⇝!} \, \targetpre A₂ \targetpost \, \lottsym{⟦⟦} \targetpre B₂ \targetpost \lottsym{⟧⟧}}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A₀ \targetpost \, \lottsym{⟦⟦} \targetpre B₀ \targetpost \lottsym{⟧⟧} \, \lottsym{⇝!} \, \targetpre A₂ \targetpost \, \lottsym{⟦⟦} \targetpre B₂ \targetpost \lottsym{⟧⟧}}
+}

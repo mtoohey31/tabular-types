@@ -139,6 +139,25 @@ def delabTVarNotInDom: Lean.PrettyPrinter.Unexpander
     `([ $x $notIn $domL $Δ $R ])
   | _ => throw ()
 
+judgement_syntax Δ " ≤ " Δ' : LE
+
+judgement LE where
+
+───── refl
+Δ ≤ Δ
+
+Δ ≤ Δ'
+a ∉ dom(Δ')
+──────────────────── extExt
+Δ, a : K ≤ Δ', a : K
+
+Δ ≤ Δ'
+a ∉ dom(Δ')
+───────────── ext
+Δ ≤ Δ', a : K
+
+instance : _root_.LE Environment := ⟨LE⟩
+
 end Environment
 
 end TabularTypeInterpreter.«F⊗⊕ω»

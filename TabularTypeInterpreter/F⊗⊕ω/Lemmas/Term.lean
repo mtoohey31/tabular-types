@@ -745,7 +745,7 @@ theorem Kinding_of (EtyA : [[Δ ⊢ E : A]]) : [[ Δ ⊢ A: * ]] := by
   . case lam Δ A E B I EtyB ih =>
     have ⟨x, xnin⟩ := I ++ Δ.termVarDom |>.exists_fresh
     let .termVarExt wf _ AkiStar := EtyB x (by simp_all) |>.WellFormedness_of
-    exact .arr AkiStar <| ih x (by simp_all) |>.TermVar_drop (Δ'' := [[ ε ]])
+    exact .arr AkiStar <| ih x (by simp_all) |>.TermVar_drop (Δ'' := [[(ε)]])
   . case app ih1 _ =>
     let .arr _ BkiStar := ih1
     exact BkiStar
@@ -786,7 +786,7 @@ theorem inv_arr' (Ety: [[Δ ⊢ λ x? : T. E : C ]]) (eqC: [[ Δ ⊢ C ≡ A →
     have ⟨wf, TkiStar, B'kiStar⟩: _ ∧ _ ∧ _ := (
       have ⟨x, xnin⟩ := I.exists_fresh
       have .termVarExt wf _ TkiStar := EtyB' x xnin |>.WellFormedness_of
-      have B'kiStar := EtyB' x xnin |>.Kinding_of.TermVar_drop (Δ'' := [[ ε ]])
+      have B'kiStar := EtyB' x xnin |>.Kinding_of.TermVar_drop (Δ'' := [[(ε)]])
       ⟨wf, TkiStar, B'kiStar⟩
     )
     have ⟨eTA, eB'B⟩ := EqSmallStep.of_Equivalence eqC (TkiStar.arr B'kiStar) wf |>.inj_arr
@@ -794,7 +794,7 @@ theorem inv_arr' (Ety: [[Δ ⊢ λ x? : T. E : C ]]) (eqC: [[ Δ ⊢ C ≡ A →
     refine ⟨eTA.Equivalence_of, ?_⟩
     refine ⟨I, λ x xnin => ?_⟩
     refine .equiv (EtyB' x (by simp_all)) ?_
-    exact eB'B.Equivalence_of.weakening_term' (Δ' := [[ ε ]])
+    exact eB'B.Equivalence_of.weakening_term' (Δ' := [[(ε)]])
   . case equiv.refl _ _ _ eqA'B' _ ih => exact ih (eqA'B'.trans eqC) rfl
 
 theorem inv_arr (Ety: [[Δ ⊢ λ x? : T. E : A → B ]])

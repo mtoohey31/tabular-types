@@ -5,6 +5,7 @@ open Lake DSL
 
 require lott from "vendor/lott"
 require mathlib from git "https://github.com/leanprover-community/mathlib4.git" @ "v4.17.0"
+-- TODO: Don't just put the URL to my github here...
 require Thesis from git "https://github.com/mtoohey31/svkampen-msc-thesis" @ "main"
 
 package «tabular-type-interpreter» where

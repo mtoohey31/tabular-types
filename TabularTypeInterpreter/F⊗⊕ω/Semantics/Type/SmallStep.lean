@@ -1,6 +1,11 @@
 import Lott.Elab.ImpliesJudgement
 import Lott.Elab.NotJudgement
+import Mathlib.Data.Rel
 import Mathlib.Logic.Relation
+import TabularTypeInterpreter.Data.List
+import TabularTypeInterpreter.Logic.Relation
+import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Kind
+import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Environment
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Type
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
@@ -140,8 +145,104 @@ judgement_syntax Δ " ⊢ " A " ->* " B : MultiSmallStep
 
 abbrev MultiSmallStep := fun Δ => Relation.ReflTransGen (SmallStep Δ)
 
+judgement_syntax Δ " ⊢"n A " ->* " B : MultiSmallStepIn
+
+abbrev MultiSmallStepIn := fun Δ n => Relation.IndexedReflTransGen (SmallStep Δ) n
+
 judgement_syntax Δ " ⊢ " A " <->* " B : EqSmallStep (tex := s!"{Δ} \\, \\lottsym\{⊢} \\, {A} \\, \\lottsym\{↔^*} \\, {B}")
 
 abbrev EqSmallStep := fun Δ => Relation.EqvGen (SmallStep Δ)
+
+judgement_syntax Δ " ⊢ " "SN" "(" A ")" : StronglyNormalizing'
+
+abbrev StronglyNormalizing' Δ := Acc <| Rel.inv <| SmallStep Δ
+
+judgement_syntax "SN" "(" A ")" : StronglyNormalizing
+
+abbrev StronglyNormalizing := StronglyNormalizing' .empty
+
+judgement_syntax "SN" n "(" A ")" : StronglyNormalizingIn
+
+inductive StronglyNormalizingIn : Nat → «Type» → Prop where
+  | intro (Bns : List («Type» × Nat)) (eb : ∀ {B}, (∃ n, (B, n) ∈ Bns) ↔ [[ε ⊢ A -> B]])
+    (sni : (∀ Bn ∈ Bns, StronglyNormalizingIn Bn.snd Bn.fst))
+    : StronglyNormalizingIn (Bns.map Prod.snd |>.max?.map (· + 1) |>.getD 0) A
+
+inductive StronglyNormalizingToList (P : «Type» → Prop) : «Type» → Prop where
+  | refl : (∀ A ∈ As, P A) → StronglyNormalizingToList P (Type.list As K?)
+  | step : (∀ B, [[ε ⊢ A -> B]] → StronglyNormalizingToList P B) → (∀ As K?, A ≠ Type.list As K?) →
+      StronglyNormalizingToList P A
+
+judgement_syntax "SN" K "(" A ")" : IndexedStronglyNormalizing
+
+abbrev IndexedStronglyNormalizing : Kind → «Type» → Prop
+  | [[*]], A => [[ε ⊢ A : *]] ∧ [[SN(A)]]
+  | [[K₁ ↦ K₂]], A => [[ε ⊢ A : K₁ ↦ K₂]] ∧ ∀ B, [[SN K₁ (B)]] → [[SN K₂ (A B)]]
+  | [[L K]], A =>
+    [[ε ⊢ A : L K]] ∧ StronglyNormalizingToList (fun B => [[SN K (B)]]) A ∧
+      ∀ A' B', [[ε ⊢ A ->* A' ⟦B'⟧]] → ∃ C, [[SN K (A' C)]]
+
+nosubst
+nonterminal Subst, δ :=
+  | "ε"              : empty
+  | δ ", " A " / " a : ext (id a)
+
+namespace Subst
+
+def find? (δ : Subst) (a : TypeVarId) : Option «Type» := match δ with
+  | .empty => none
+  | .ext δ' A a' => if a = a' then A else find? δ' a
+
+def apply (δ : Subst) : «Type» → «Type»
+  | .var a => match a with
+    | .bound n => .var <| .bound n
+    | .free a => if let some A := δ.find? a then
+        A
+      else
+        .var <| .free a
+  | .lam K A => .lam K <| apply δ A
+  | .app A B => .app (apply δ A) (apply δ B)
+  | .forall K A => .forall K <| apply δ A
+  | .arr A B => .arr (apply δ A) (apply δ B)
+  | .list As K? => .list (As.mapMem fun A _ => apply δ A) K?
+  | .listApp A B => .listApp (apply δ A) (apply δ B)
+  | .prod A => .prod <| apply δ A
+  | .sum A => .sum <| apply δ A
+
+instance : CoeFun Subst (fun _ => «Type» → «Type») where
+  coe := Subst.apply
+
+def «dom» : Subst → List TypeVarId
+  | .empty => []
+  | .ext δ _ a => a :: δ.dom
+
+def freeTypeVars : Subst → List TypeVarId
+  | .empty => []
+  | .ext δ A _ => A.freeTypeVars ++ δ.freeTypeVars
+
+end Subst
+
+judgement_syntax δ " ⊨ " Δ : SubstSatisfies
+
+judgement SubstSatisfies := fun (δ : Subst) Δ => δ.dom.Unique ∧ δ.dom = Δ.typeVarDom ∧
+    ∀ a K, [[a : K ∈ Δ]] → IndexedStronglyNormalizing K (δ (Type.var a))
+
+judgement_syntax "neutral " A : Type.Neutral
+
+abbrev Type.Neutral A :=
+  (∀ K A', A ≠ [[λ a : K. A']]) ∧
+    (∀ A' n K b, A = [[{</ A'@i // i in [:n] /> </ : K // b />}]] → ∀ i ∈ [:n], Neutral (A' i)) ∧
+    ∀ A' B, A ≠ [[A' ⟦B⟧]]
+termination_by sizeOf A
+decreasing_by
+  all_goals (
+    rename A = _ => eq
+    simp_arith [eq]
+  )
+  apply Nat.le_add_right_of_le
+  apply Nat.le_of_lt
+  apply List.sizeOf_lt_of_mem
+  apply Std.Range.mem_map_of_mem
+  assumption
 
 end TabularTypeInterpreter.«F⊗⊕ω»

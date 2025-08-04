@@ -281,6 +281,24 @@ theorem append_elim : [[ a: K ∈ Δ, Δ' ]] → ([[ a ∉ dom(Δ') ]] ∧ [[ a:
       specialize @ih (by simp_all [typeVarDom]) (by cases hIn; simp_all)
       cases ih <;> aesop (add safe constructors TypeVarInEnvironment)
 
+theorem append_inl (aKin : [[a : K ∈ Δ]]) (anin : [[a ∉ dom(Δ')]]) : [[a : K ∈ Δ, Δ']] := by
+  match Δ' with
+  | [[ε]] => exact aKin
+  | [[Δ'', a' : K']] =>
+    let ⟨ane, anin'⟩ := List.not_mem_cons.mp anin
+    exact .typeVarExt (append_inl aKin anin') ane
+  | [[Δ'', x : A]] => exact .termVarExt <| append_inl aKin anin
+
+theorem append_inr (aKin : [[a : K ∈ Δ']]) : [[a : K ∈ Δ, Δ']] := by
+  match Δ' with
+  | [[ε]] => nomatch aKin
+  | [[Δ'', a' : K']] => cases aKin with
+    | head => exact .head
+    | typeVarExt aKin' ane => exact .typeVarExt (append_inr aKin') ane
+  | [[Δ'', x : A]] =>
+    let .termVarExt aKin' := aKin
+    exact .termVarExt <| append_inr aKin'
+
 open Environment in
 theorem weakening (h: [[ a: K ∈ Δ, Δ'' ]]) (fresh: ∀a ∈ Δ'.typeVarDom, a ∉ Δ.typeVarDom): [[ a: K ∈ Δ, Δ', Δ'' ]] := by
   induction Δ' generalizing Δ Δ''
@@ -496,6 +514,15 @@ theorem weakening (wf: [[ ⊢ Δ, Δ' ]]): [[ ⊢ Δ ]] := by
   . case typeExt Δ' a K ih => cases wf; simp_all
   . case termExt Δ' x' T' ih => cases wf; simp_all
 
+theorem LE_weakening (Δwf : [[⊢ Δ]]) (le : Δ ≤ Δ') : [[⊢ Δ']] := by
+  induction le with
+  | refl => exact Δwf
+  | extExt _ anin ih =>
+    let .typeVarExt Δ''wf _ := Δwf
+    exact ih Δ''wf |>.typeVarExt anin
+  | ext _ anin ih =>
+    exact ih Δwf |>.typeVarExt anin
+
 end EnvironmentWellFormedness
 
 namespace EnvironmentTypeWellFormedness
@@ -548,5 +575,54 @@ theorem append_typeVar_fresh_l : [[ ⊢τ Δ, Δ' ]] → ∀a ∈ Δ'.typeVarDom
   induction Δ' <;> aesop (add safe cases EnvironmentTypeWellFormedness, norm typeVarDom, norm typeVarDom_append, norm TypeVarNotInDom, norm TypeVarInDom)
 
 end EnvironmentTypeWellFormedness
+
+namespace Environment.LE
+
+theorem TypeVarNotInDom_preservation (le : [[Δ ≤ Δ']]) (anin : [[a ∉ dom(Δ')]])
+  : [[a ∉ dom(Δ)]] := by
+  induction le with
+  | refl => exact anin
+  | extExt _ _ ih =>
+    let ⟨ane, anin'⟩ := List.not_mem_cons.mp anin
+    exact List.not_mem_cons.mpr ⟨ane, ih anin'⟩
+  | ext _ a'nin ih => exact ih <| List.not_mem_of_not_mem_cons anin
+
+@[trans]
+theorem trans (le₀ : [[Δ ≤ Δ']]) (le₁ : [[Δ' ≤ Δ'']]) : [[Δ ≤ Δ'']] := by
+  induction le₁ generalizing Δ with
+  | refl => exact le₀
+  | extExt le₁' anin ih =>
+    cases le₀ with
+    | refl => exact extExt le₁' anin
+    | extExt le₀' =>
+      specialize ih le₀'
+      exact extExt ih anin
+    | ext le₀' =>
+      specialize ih le₀'
+      exact ext ih anin
+  | ext le₁' anin ih => exact ext (ih le₀) anin
+
+instance : IsTrans Environment LE.le := ⟨fun _ _ _ => trans⟩
+
+theorem TypeVarIn_preservation (le : [[Δ ≤ Δ']]) (ain : [[a : K ∈ Δ]]) : [[a : K ∈ Δ']] := by
+  induction le with
+  | refl => exact ain
+  | extExt _ _ ih =>
+    match ain with
+    | .head => exact .head
+    | .typeVarExt ain' ne => exact ih ain' |>.typeVarExt ne
+  | ext _ a'nin ih =>
+    specialize ih ain
+    apply ih.typeVarExt
+    rintro rfl
+    exact a'nin ih.TypeVarInDom_of
+
+theorem subset_dom (le : [[Δ ≤ Δ']]) : Δ.typeVarDom ⊆ Δ'.typeVarDom := by
+  induction le with
+  | refl => exact .refl _
+  | extExt _ _ ih => exact List.cons_subset_cons _ ih
+  | ext _ _ ih => exact List.subset_cons_of_subset _ ih
+
+end Environment.LE
 
 end TabularTypeInterpreter.«F⊗⊕ω»

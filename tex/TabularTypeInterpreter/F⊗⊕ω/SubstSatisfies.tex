@@ -1,0 +1,17 @@
+\lottjudgement{Subst Satisfies}{γ \, \lottsym{⊨} \, \targetpre Δ \targetpost}{
+\lottinferencerule{empty}{
+}{\lottsym{ε} \, \lottsym{⊨} \, \targetpre \lottsym{\epsilon} \targetpost}
+\lottinferencerulesep
+\lottinferencerule{typeExtSkip}{
+\lotthypothesis{γ \, \lottsym{⊨} \, \targetpre Δ \targetpost}
+}{γ \, \lottsym{⊨} \, \targetpre \targetpre Δ \targetpost \lottsym{,} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \targetpost}
+\lottinferencerulesep
+\lottinferencerule{typeExtSubst}{
+\lotthypothesis{γ \, \lottsym{⊨} \, \targetpre Δ \targetpost}\\
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \lottkw{SN} \targetpre K \targetpost \lottsym{(} \targetpre A \targetpost \lottsym{)}}
+}{γ \lottsym{,} \, \targetpre A \targetpost \, \lottsym{/} \, \targetpre a \targetpost \, \lottsym{⊨} \, \targetpre \targetpre Δ \targetpost \lottsym{,} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \targetpost}
+\lottinferencerulesep
+\lottinferencerule{termExt}{
+\lotthypothesis{γ \, \lottsym{⊨} \, \targetpre Δ \targetpost}
+}{γ \, \lottsym{⊨} \, \targetpre \targetpre Δ \targetpost \lottsym{,} \, \targetpre x \targetpost \, \lottsym{:} \, \targetpre A \targetpost \targetpost}
+}
