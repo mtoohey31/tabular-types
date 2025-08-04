@@ -41,4 +41,8 @@ def of_length_lt_of_append_eq_append {l₀ l₁ l₀' l₁' : List α} (length_l
     rw [length_append] at length_eq
     nomatch Nat.not_le_of_lt length_lt <| Nat.le_of_add_right_le <| Nat.le_of_eq length_eq.symm
 
+inductive Unique : List α → Prop where
+  | nil : Unique nil
+  | cons : x ∉ xs → Unique xs → Unique (cons x xs)
+
 end List

@@ -1,6 +1,8 @@
 import Lott.Elab.ImpliesJudgement
 import Lott.Elab.NotJudgement
+import Mathlib.Data.Rel
 import Mathlib.Logic.Relation
+import TabularTypeInterpreter.Data.List
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Type
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
@@ -135,6 +137,58 @@ lc_ A₀
 Δ ⊢ A -> A'
 ─────────────── sum
 Δ ⊢ ⊕ A -> ⊕ A'
+
+judgement_syntax Δ " ⊢ " "SN" "(" A ")" : StronglyNormalizing
+
+abbrev StronglyNormalizing := fun Δ => Acc (Rel.inv (SmallStep Δ))
+
+judgement_syntax Δ " ⊢ " "SN" K "(" A ")" : IndexedStronglyNormalizing
+
+abbrev IndexedStronglyNormalizing : Environment → Kind → «Type» → Prop
+  | Δ, [[*]], A => [[Δ ⊢ A : *]] ∧ [[Δ ⊢ SN(A)]]
+  | Δ, [[K₁ ↦ K₂]], A => [[Δ ⊢ A : K₁ ↦ K₂]] ∧ ∀ B, [[Δ ⊢ SN K₁ (B)]] → [[Δ ⊢ SN K₂ (A B)]]
+  | Δ, [[L K]], A => [[Δ ⊢ A : L K]] ∧ [[Δ ⊢ SN(A)]] ∧ sorry
+
+nosubst
+nonterminal Subst, δ :=
+  | "ε"              : empty
+  | δ ", " A " / " a : ext (id a)
+
+namespace Subst
+
+def find? (δ : Subst) (a : TypeVarId) : Option «Type» := match δ with
+  | .empty => none
+  | .ext δ' A a' => if a = a' then A else find? δ' a
+
+def apply (δ : Subst) : «Type» → «Type»
+  | .var a => match a with
+    | .bound n => .var <| .bound n
+    | .free a => if let some A := δ.find? a then
+        A
+      else
+        .var <| .free a
+  | .lam K A => .lam K <| apply δ A
+  | .app A B => .app (apply δ A) (apply δ B)
+  | .forall K A => .forall K <| apply δ A
+  | .arr A B => .arr (apply δ A) (apply δ B)
+  | .list As K? => .list (As.mapMem fun A _ => apply δ A) K?
+  | .listApp A B => .listApp (apply δ A) (apply δ B)
+  | .prod A => .prod <| apply δ A
+  | .sum A => .sum <| apply δ A
+
+instance : CoeFun Subst (fun _ => «Type» → «Type») where
+  coe := Subst.apply
+
+def «dom» : Subst → List TypeVarId
+  | .empty => []
+  | .ext δ _ a => a :: δ.dom
+
+end Subst
+
+judgement_syntax δ " ⊨ " Δ : SubstSatisfies
+
+judgement SubstSatisfies := fun (δ : Subst) Δ =>
+  δ.dom.Unique ∧ ∀ a K, [[a : K ∈ Δ]] → IndexedStronglyNormalizing Δ K (δ (Type.var a))
 
 judgement_syntax Δ " ⊢ " A " ->* " B : MultiSmallStep
 
