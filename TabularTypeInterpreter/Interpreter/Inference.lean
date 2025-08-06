@@ -61,18 +61,13 @@ structure InferState where
 
 abbrev InferM := EStateM InferError InferState
 
-def push (item : ContextItem) : InferM Unit := do
-  let state@{ Γ .. } <- get
-  set { state with Γ := item::Γ }
-
 def fresh : InferM UId := do
   let { nextFresh, .. } ← getModify fun st => { st with nextFresh := st.nextFresh.succ }
   return { val := nextFresh }
 
-def freshType (κ : Kind) : InferM Monotype := do
+def freshType (Γ : Context) (κ : Kind) : InferM (Context × Monotype) := do
   let α ← fresh
-  push <| .xunivar α κ
-  return .uvar α
+  return ((.xunivar α κ)::Γ, .uvar α)
 
 -- TODO: Failures to find things should probably `panic!` since this should be caught by the parser.
 set_option linter.deprecated false in
@@ -97,8 +92,7 @@ def getTypeAlias («alias» : String) : InferM TypeScheme := do
     | throw $ .panic s!"unknown type alias `{«alias»}`"
   return decl
 
-def getKind (a : TId) : InferM Kind := do
-  let { Γ .. } ← get
+def getKind (Γ : Context) (a : TId) : InferM Kind := do
   let κ ← (getKind' Γ a).getDM (throw $ .panic "type variable not defined")
   return κ
 where
@@ -108,8 +102,7 @@ where
     | .cons (.typevar a' κ) Γ' => if a == a' then .some κ else getKind' Γ' a
     | .cons _ Γ' => getKind' Γ' a
 
-def getType (χ : MId) : InferM TypeScheme := do
-  let { Γ .. } ← get
+def getType (Γ : Context) (χ : MId) : InferM TypeScheme := do
   let σ ← (getType' Γ χ).getDM (throw $ .panic "variable not defined")
   return σ
 where
@@ -126,65 +119,49 @@ def lookupUniVar (ᾱ : UId) : Context → Option ContextItem
   | .cons _ Γ => lookupUniVar ᾱ Γ
 
 /-- split the context into (before, after) based on the item's position. -/
-def split (item : ContextItem) : InferM (Context × Context) := do
-  let { Γ .. } ← get
+def split (Γ : Context) (item : ContextItem) : InferM (Context × Context) := do
   let index ← Γ.idxOf? item |>.getDM (throw $ .panic s!"I was trying to find {item} in the context but it wasn't there; I could have sworn I put it there though!")
   if let (after, _::before) := Γ.splitAt index then
     return (before, after)
   else panic! "malfunction in core `List.idxOf`"
 
-def before (item : ContextItem) : InferM Unit := do
-  let state ← get
-  let (before, _after) ← split item
-  set { state with Γ := before }
-
-def withItem (item : ContextItem) (m : InferM a) : InferM a := do
-  push item
-  let x ← m
-  before item
-  return x
-
-def withItems (items : List ContextItem) (m : InferM a) : InferM a :=
-  items.foldl (fun m item => withItem item m) m
-
 mutual
 
 partial
-def inferKind (σ : TypeScheme) : InferM Kind := open Monotype in do
+def inferKind (Γ : Context) (σ : TypeScheme) : InferM Kind := open Monotype in do
   match σ with
-  | .quant i κ₀ σ' => withItem (.typevar i κ₀) <| inferKind σ'
+  | .quant i κ₀ σ' => inferKind ((.typevar i κ₀)::Γ) σ'
   | QualifiedType.qual ψ γ =>
-    checkKind ψ .constr
-    inferKind γ
-  | var i => getKind i
+    checkKind Γ ψ .constr
+    inferKind Γ γ
+  | var i => getKind Γ i
   | uvar α =>
-    let { Γ, .. } ← get
     let some κ? ← List.head? <$> Γ.filterMapM fun
         | .xunivar α' κ => return if α = α' then some κ else none
-        | .sunivar α' τ => if α = α' then some <$> inferKind τ else return none
+        | .sunivar α' τ => if α = α' then some <$> inferKind Γ τ else return none
         | _ => return none
       | throw <| .panic "couldn't find uvar in context"
     return κ?
   | lam i κ₀ τ =>
-    let κ₁ ← withItem (.typevar i κ₀) <| inferKind τ
+    let κ₁ ← inferKind ((.typevar i κ₀)::Γ) τ
     return κ₀.arr κ₁
   | app τ₀ τ₁ =>
-    let .arr κ₀ κ₁ ← inferKind τ₀ | throw <| .panic "type application of type with non-arrow kind"
-    checkKind τ₁ κ₀
+    let .arr κ₀ κ₁ ← inferKind Γ τ₀ | throw <| .panic "type application of type with non-arrow kind"
+    checkKind Γ τ₁ κ₀
     return κ₁
   | arr τ₀ τ₁ =>
-    checkKind τ₀ .star
-    checkKind τ₁ .star
+    checkKind Γ τ₀ .star
+    checkKind Γ τ₁ .star
     return .star
   | label _ => return .label
   | floor ξ =>
-    checkKind ξ .label
+    checkKind Γ ξ .label
     return .star
   | comm _ => return .comm
   | row ξτs κ? =>
     let κs ← ξτs.mapMemM fun (ξ, τ) _ => do
-      checkKind ξ .label
-      inferKind τ
+      checkKind Γ ξ .label
+      inferKind Γ τ
     if let some κ := κ? then
       for (κ', i) in κs.zipIdx do
         if κ ≠ κ' then
@@ -200,23 +177,23 @@ def inferKind (σ : TypeScheme) : InferM Kind := open Monotype in do
             throw <| .panic s!"expected all row entries to have the same kind {κ}, but the entry at index {i + 1} had kind {κ'}"
         return .row κ
   | prodOrSum _ μ =>
-    checkKind μ .comm
+    checkKind Γ μ .comm
     return .arr (.row .star) .star
   | lift ϕ =>
-    let .arr κ₀ κ₁ ← inferKind ϕ | throw <| .panic "lift by type with non-arrow kind"
+    let .arr κ₀ κ₁ ← inferKind Γ ϕ | throw <| .panic "lift by type with non-arrow kind"
     return .arr (.row κ₀) (.row κ₁)
   | contain ρ₀ μ ρ₁ =>
-    let .row κ₀ ← inferKind ρ₀ | throw <| .panic "contain of type with non-row kind"
-    checkKind μ .comm
-    let .row κ₁ ← inferKind ρ₁ | throw <| .panic "contain of type with non-row kind"
+    let .row κ₀ ← inferKind Γ ρ₀ | throw <| .panic "contain of type with non-row kind"
+    checkKind Γ μ .comm
+    let .row κ₁ ← inferKind Γ ρ₁ | throw <| .panic "contain of type with non-row kind"
     if κ₀ ≠ κ₁ then
       throw <| .panic s!"inner kind of contained row {κ₀} does not match containing row's inner kind {κ₁}"
     return .constr
   | concat ρ₀ μ ρ₁ ρ₂ =>
-    let .row κ₀ ← inferKind ρ₀ | throw <| .panic "contain of type with non-row kind"
-    checkKind μ .comm
-    let .row κ₁ ← inferKind ρ₁ | throw <| .panic "contain of type with non-row kind"
-    let .row κ₂ ← inferKind ρ₂ | throw <| .panic "contain of type with non-row kind"
+    let .row κ₀ ← inferKind Γ ρ₀ | throw <| .panic "contain of type with non-row kind"
+    checkKind Γ μ .comm
+    let .row κ₁ ← inferKind Γ ρ₁ | throw <| .panic "contain of type with non-row kind"
+    let .row κ₂ ← inferKind Γ ρ₂ | throw <| .panic "contain of type with non-row kind"
     if κ₀ ≠ κ₂ then
       throw <| .panic s!"inner kind of left row {κ₀} does not match concatenated row's inner kind {κ₂}"
     if κ₁ ≠ κ₂ then
@@ -226,19 +203,19 @@ def inferKind (σ : TypeScheme) : InferM Kind := open Monotype in do
     let _ ← getClassByName s
     return .constr
   | all ϕ =>
-    let .arr κ₀ κ₁ ← inferKind ϕ | throw <| .panic "all with type with non-arrow kind"
+    let .arr κ₀ κ₁ ← inferKind Γ ϕ | throw <| .panic "all with type with non-arrow kind"
     if κ₁ ≠ .constr then
       throw <|
         .panic s!"expected all type function to have return type {Kind.constr}, got kind '{κ₁}'"
     return .arr (.row κ₀) .constr
   | ind ρ =>
-    let .row _ ← inferKind ρ | throw <| .panic "ind of non-row kind"
+    let .row _ ← inferKind Γ ρ | throw <| .panic "ind of non-row kind"
     return .constr
   | Monotype.split ϕ ρ₀ ρ₁ ρ₂ =>
-    let .arr κ₀ κ₁ ← inferKind ϕ | throw <| .panic "split by type with non-arrow kind"
-    let .row κ₂ ← inferKind ρ₀ | throw <| .panic "split of type with non-row kind"
-    let .row κ₃ ← inferKind ρ₁ | throw <| .panic "split of type with non-row kind"
-    let .row κ₄ ← inferKind ρ₂ | throw <| .panic "split of type with non-row kind"
+    let .arr κ₀ κ₁ ← inferKind Γ ϕ | throw <| .panic "split by type with non-arrow kind"
+    let .row κ₂ ← inferKind Γ ρ₀ | throw <| .panic "split of type with non-row kind"
+    let .row κ₃ ← inferKind Γ ρ₁ | throw <| .panic "split of type with non-row kind"
+    let .row κ₄ ← inferKind Γ ρ₂ | throw <| .panic "split of type with non-row kind"
     if κ₀ ≠ κ₂ then
       throw <| .panic s!"inner kind of left row {κ₂} does not match lift function's parameter kind {κ₀}"
     if κ₁ ≠ κ₃ then
@@ -250,11 +227,11 @@ def inferKind (σ : TypeScheme) : InferM Kind := open Monotype in do
   | int | str => return .star
   | «alias» a =>
     let σ' ← getTypeAlias a
-    inferKind σ'
+    inferKind Γ σ'
 
 partial
-def checkKind (σ : TypeScheme) (κ₀ : Kind) : InferM Unit := do
-  let κ₁ ← inferKind σ
+def checkKind (Γ : Context) (σ : TypeScheme) (κ₀ : Kind) : InferM Unit := do
+  let κ₁ ← inferKind Γ σ
   if κ₀ ≠ κ₁ then
     throw <| .panic s!"expected type of kind '{κ₀}', got type of kind '{κ₁}'"
 
@@ -411,52 +388,52 @@ namespace RowGraph
 end RowGraph
 end rowSolver
 
-def rowEquivalence (ρ₀ μ ρ₁ : Monotype) : InferM (ρ₀.RowEquivalence μ ρ₁) := do
+def rowEquivalence (Γ : Context) (ρ₀ μ ρ₁ : Monotype) : InferM (Context × (ρ₀.RowEquivalence μ ρ₁)) := do
   if h : ρ₀ = ρ₁ then
-    return by cases h; exact .refl
+    return ⟨Γ, by cases h; exact .refl⟩
 
   match ρ₀, ρ₁ with
   | .app (.lift ϕ₀) (.row ξτs₀ κ₀?), .app (.lift ϕ₁) (.row ξτs₁ κ₁?) =>
     if h : (ξτs₀.map fun (ξ, τ) => (ξ, ϕ₀.app τ)) = ξτs₁.map fun (ξ, τ) => (ξ, ϕ₁.app τ) then
-      return by
+      return ⟨Γ, by
         refine .trans .liftL ?_ (ρ₁ := .row (ξτs₀.map fun (ξ, τ) => (ξ, ϕ₀.app τ)) κ₀?)
         rw [h]
-        exact .liftR
+        exact .liftR⟩
     else if h' : μ = .comm .comm ∧
         @List.isPerm _ instBEqOfDecidableEq (ξτs₀.map fun (ξ, τ) => (ξ, ϕ₀.app τ))
           (ξτs₁.map fun (ξ, τ) => (ξ, ϕ₁.app τ)) then
-      return by
+      return ⟨Γ, by
         rcases h' with ⟨rfl, perm⟩
         exact .trans .liftL <|
-          .trans (.comm (List.isPerm_iff.mp perm) (κ₀? := κ₀?) (κ₁? := κ₁?)) .liftR
+          .trans (.comm (List.isPerm_iff.mp perm) (κ₀? := κ₀?) (κ₁? := κ₁?)) .liftR⟩
     else
       throw <| .panic s!"{ρ₀} is not equivalent to {ρ₁} with respect to {μ}"
   | .app (.lift ϕ) (.row ξτs₀ κ₀?), .row ξτs₁ κ₁? =>
     if h : (ξτs₀.map fun (ξ, τ) => (ξ, ϕ.app τ)) = ξτs₁ then
-      return by cases h; exact .liftL
+      return ⟨Γ, by cases h; exact .liftL⟩
     else if h' : μ = .comm .comm ∧
         @List.isPerm _ instBEqOfDecidableEq (ξτs₀.map fun (ξ, τ) => (ξ, ϕ.app τ)) ξτs₁ then
-      return by
+      return ⟨Γ, by
         let ⟨eq, perm⟩ := h'
         cases eq
-        exact .trans .liftL (.comm (List.isPerm_iff.mp perm) (κ₀? := κ₀?))
+        exact .trans .liftL (.comm (List.isPerm_iff.mp perm) (κ₀? := κ₀?))⟩
     else
       throw <| .panic s!"{ρ₀} is not equivalent to {ρ₁} with respect to {μ}"
   | .row ξτs₀ _, .app (.lift ϕ) (.row ξτs₁ κ₁?) =>
     if h : ξτs₀ = ξτs₁.map fun (ξ, τ) => (ξ, ϕ.app τ) then
-      return by cases h; exact .liftR
+      return ⟨Γ, by cases h; exact .liftR⟩
     else if h' : μ = .comm .comm ∧
         @List.isPerm _ instBEqOfDecidableEq ξτs₀ (ξτs₁.map fun (ξ, τ) => (ξ, ϕ.app τ)) then
-      return by
+      return ⟨Γ, by
         rcases h' with ⟨rfl, perm⟩
-        exact .trans (.comm (List.isPerm_iff.mp perm) (κ₁? := κ₁?)) .liftR
+        exact .trans (.comm (List.isPerm_iff.mp perm) (κ₁? := κ₁?)) .liftR⟩
     else
       throw <| .panic s!"{ρ₀} is not equivalent to {ρ₁} with respect to {μ}"
   | .row ξτs₀ _, .row ξτs₁ _ =>
     if h : μ = .comm .comm ∧ @List.isPerm _ instBEqOfDecidableEq ξτs₀ ξτs₁ then
-      return by
+      return ⟨Γ, by
         rcases h with ⟨rfl, perm⟩
-        exact .comm <| List.isPerm_iff.mp perm
+        exact .comm <| List.isPerm_iff.mp perm⟩
     else
       throw <| .panic s!"{ρ₀} is not equivalent to {ρ₁} with respect to {μ}"
   | _, _ =>
@@ -471,24 +448,23 @@ def instantiateRight (σ : TypeScheme) (ᾱ : UniVar) : InferM Unit := sorry
 mutual
 
 partial
-def rowEquivalenceAndSubtyping (ρ₀ μ ρ₁ : Monotype)
-  : InferM (TypeScheme.Subtyping (Monotype.app (Monotype.prodOrSum Ξ μ) ρ₀)
-      (Monotype.app (Monotype.prodOrSum Ξ μ) ρ₁)) := sorry
+def rowEquivalenceAndSubtyping (Γ : Context) (ρ₀ μ ρ₁ : Monotype)
+  : InferM ((Γout : Context) × (TypeScheme.Subtyping (Monotype.app (Monotype.prodOrSum Ξ μ) ρ₀)
+      (Monotype.app (Monotype.prodOrSum Ξ μ) ρ₁))) := sorry
 
 partial
-def subtype (σ₀ σ₁ : TypeScheme) : InferM (σ₀.Subtyping σ₁) :=
+def subtype (Γ : Context) (σ₀ σ₁ : TypeScheme) : InferM ((Γout : Context) × σ₀.Subtyping σ₁) :=
   open TypeScheme in open Monotype in do
   if h : σ₀ = σ₁ then
-    return by rw [h]
-
+    return ⟨Γ, by rw [h]⟩
   match σ₀, σ₁ with
   | quant i κ σ₀', σ₁ =>
     let α ← fresh
-    let st ← withItems [.mark α, .xunivar α κ] <| subtype (σ₀'.subst (.uvar α) i) σ₁
-    return st.schemeL
+    let ⟨Γout, st⟩ ← subtype ((.mark α)::(.xunivar α κ)::Γ) (σ₀'.subst (.uvar α) i) σ₁
+    return ⟨Γout, st.schemeL⟩
   | σ₀, quant i κ σ₁' =>
-    let st ← withItem (.typevar i κ) <| subtype σ₀ σ₁'
-    return st.schemeR
+    let ⟨Γout, st⟩ ← subtype ((.typevar i κ)::Γ) σ₀ σ₁'
+    return ⟨Γout, st.schemeR⟩
   | uvar ᾱ, σ₁ =>
     -- TODO: Account for substitutions in the return type or something so that these can work?
     instantiateLeft ᾱ σ₁
@@ -497,135 +473,128 @@ def subtype (σ₀ σ₁ : TypeScheme) : InferM (σ₀.Subtyping σ₁) :=
     instantiateRight σ₁ ᾱ
     sorry
   | arr τ₀ τ₁, arr τ₂ τ₃ =>
-    let sₗ ← subtype τ₂ τ₀
-    let sᵣ ← subtype τ₁ τ₃
-    return sₗ.arr sᵣ
+    let ⟨Γ', sₗ⟩ ← subtype Γ τ₂ τ₀
+    let ⟨Γout, sᵣ⟩ ← subtype Γ' τ₁ τ₃
+    return ⟨Γout, sₗ.arr sᵣ⟩
   | QualifiedType.qual ψ₀ γ₀, QualifiedType.qual ψ₁ γ₁ =>
-    let sψ ← subtype ψ₁ ψ₀
-    let sγ ← subtype γ₀ γ₁
-    return sψ.qual sγ
-  | app (prodOrSum .sum μ) (row [] (some .star)), σ => return .trans (.decay .comm) .never
+    let ⟨Γ', sψ⟩ ← subtype Γ ψ₁ ψ₀
+    let ⟨Γout, sγ⟩ ← subtype Γ' γ₀ γ₁
+    return ⟨Γout, sψ.qual sγ⟩
+  | app (prodOrSum .sum μ) (row [] (some .star)), σ => return ⟨Γ, .trans (.decay .comm) .never⟩
   | app (prodOrSum Ξ₀ μ₀) ρ₀, app (prodOrSum Ξ₁ μ₁) ρ₁ =>
     if hΞ : Ξ₀ = Ξ₁ then
       if hμ : μ₀.CommutativityPartialOrdering μ₁ then
-        let Ξμ₁ρ₀₁st ← rowEquivalenceAndSubtyping ρ₀ μ₁ ρ₁ (Ξ := Ξ₀)
-        return by cases hΞ; exact .trans (.decay hμ) Ξμ₁ρ₀₁st
+        let ⟨Γout, Ξμ₁ρ₀₁st⟩ ← rowEquivalenceAndSubtyping Γ ρ₀ μ₁ ρ₁ (Ξ := Ξ₀)
+        return ⟨Γout, by cases hΞ; exact .trans (.decay hμ) Ξμ₁ρ₀₁st⟩
       else
         throw $ .fail "to show compatibility of commutativity"
     else
       throw $ .panic "Subtype of different row constructors"
   | contain ρ₀ μ₀ ρ₁, contain ρ₂ μ₁ ρ₃ =>
     if h : μ₀ = μ₁ then
-      let ρ₀₂re ← rowEquivalence ρ₀ μ₀ ρ₂
-      let ρ₁₃re ← rowEquivalence ρ₁ μ₀ ρ₃
-      return by cases h; exact .contain ρ₀₂re ρ₁₃re
+      let ⟨Γ', ρ₀₂re⟩ ← rowEquivalence Γ ρ₀ μ₀ ρ₂
+      let ⟨Γout, ρ₁₃re⟩ ← rowEquivalence Γ' ρ₁ μ₀ ρ₃
+      return ⟨Γout, by cases h; exact .contain ρ₀₂re ρ₁₃re⟩
     else
       -- TODO: Should we allow decay here and below?
       throw <| .panic "subtype of contain constraints with different commutatitvity"
   | concat ρ₀ μ₀ ρ₁ ρ₂, concat ρ₃ μ₁ ρ₄ ρ₅ =>
     if h : μ₀ = μ₁ then
-      let ρ₀₃re ← rowEquivalence ρ₀ μ₀ ρ₃
-      let ρ₁₄re ← rowEquivalence ρ₁ μ₀ ρ₄
-      let ρ₂₅re ← rowEquivalence ρ₂ μ₀ ρ₅
-      return by cases h; exact .concat ρ₀₃re ρ₁₄re ρ₂₅re
+      let ⟨Γ', ρ₀₃re⟩ ← rowEquivalence Γ ρ₀ μ₀ ρ₃
+      let ⟨Γ'', ρ₁₄re⟩ ← rowEquivalence Γ' ρ₁ μ₀ ρ₄
+      let ⟨Γout, ρ₂₅re⟩ ← rowEquivalence Γ'' ρ₂ μ₀ ρ₅
+      return ⟨Γout, by cases h; exact .concat ρ₀₃re ρ₁₄re ρ₂₅re⟩
     else
       throw <| .panic "subtype of contain constraints with different commutatitvity"
   | app (all ϕ₀) ρ₀, app (all ϕ₁) ρ₁ =>
     if h : ϕ₀ = ϕ₁ then
-      let ρ₀₁re ← rowEquivalence ρ₀ (comm .comm) ρ₁
-      return by cases h; exact .all ρ₀₁re
+      let ⟨Γout, ρ₀₁re⟩ ← rowEquivalence Γ ρ₀ (comm .comm) ρ₁
+      return ⟨Γout, by cases h; exact .all ρ₀₁re⟩
     else
       throw <| .panic "subtype of all constraints with different constraint function"
   | Monotype.split ϕ₀ ρ₀ ρ₁ ρ₂, Monotype.split ϕ₁ ρ₃ ρ₄ ρ₅ =>
     if h : ϕ₀ = ϕ₁ then
-      let st ← subtype (concat ((lift ϕ₀).app ρ₀) (comm .comm) ρ₁ ρ₂)
+      let ⟨Γout, st⟩ ← subtype Γ (concat ((lift ϕ₀).app ρ₀) (comm .comm) ρ₁ ρ₂)
         (concat ((lift ϕ₀).app ρ₃) (comm .comm) ρ₄ ρ₅)
-      return by cases h; exact st.split
+      return ⟨Γout, by cases h; exact st.split⟩
     else
       throw <| .panic "subtype of split constraints with different function"
   | app list τ₀, app list τ₁ =>
-    let s ← subtype τ₀ τ₁
-    return s.list
+    let ⟨Γout, s⟩ ← subtype Γ τ₀ τ₁
+    return ⟨Γout, s.list⟩
   | σ₀, σ₁ => throw <| .panic s!"expected type {σ₁}, got type: {σ₀}"
 
 end
 
-def constraint (ψ : Monotype) : InferM (ψ.ConstraintSolution) := do
-  checkKind ψ .constr
+def constraint (Γ : Context) (ψ : Monotype) : InferM (Context × ψ.ConstraintSolution) := do
+  checkKind Γ ψ .constr
   match ψ with
   | .concat ρ₁ μ ρ₂ ρ₃ =>
-    let { Γ .. } ← get
     let graph := rowSolver.RowGraph.generate Γ
     let .some solution := graph.concatenates ρ₁ μ ρ₂ ρ₃
       | throw $ .fail s!"Could not prove concatenation constraint `{ψ}`"
-    return solution
+    return ⟨Γ, solution⟩
   | .contain ρ₁ μ ρ₂ =>
-    let { Γ .. } ← get
     let graph := rowSolver.RowGraph.generate Γ
     let .some solution := graph.contains ρ₁ μ ρ₂
       | throw $ .fail s!"Could not prove containment constraint `{ψ}`"
-    return solution
+    return ⟨Γ, solution⟩
   | .app (.all ϕ) ρ =>
-    let { Γ .. } ← get
     let graph := rowSolver.RowGraph.generate Γ
     let .some solution := graph.alls ϕ ρ
       | throw $ .fail s!"Could not prove constraint `{ψ}`"
-    return solution
+    return ⟨Γ, solution⟩
   | _ => throw $ .fail s!"Proving constraints of the form `{ψ}`is as-of-yet unimplemented"
 
 partial def InferApp (σ : TypeScheme) (e : Term) := (Γ' : Context) × (σ' : TypeScheme) × (∀ (e' : Term), (e'.Typing σ) -> (e'.app e).Typing σ')
 mutual
-partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
+partial def infer (Γ : Context) (e : Term) : InferM ((Γ' : Context) × (σ : TypeScheme) × e.Typing σ) := do
   match e with
   | .var χ =>
-    let { Γ .. } ← get
-    let σ ← getType χ
-    return ⟨σ, .var⟩
+    let σ ← getType Γ χ
+    return ⟨Γ, σ, .var⟩
   | .annot e σ =>
-    let t ← check e σ
-    return ⟨σ, t.annot⟩
+    let ⟨Γout, t⟩ ← check Γ e σ
+    return ⟨Γout, σ, t.annot⟩
   | .let χ σ? e e' =>
     match σ? with
     | .none =>
-      let ⟨σ, t⟩ ← infer e
-      let ⟨σ', t'⟩ ← withItem (.termvar χ σ) do infer e'
-      return ⟨σ', t.let (b := false) t'⟩
+      let ⟨Γ', σ, t⟩ ← infer Γ e
+      let ⟨Γout, σ', t'⟩ ← infer ((.termvar χ σ)::Γ') e'
+      return ⟨Γout, σ', t.let (b := false) t'⟩
     | .some σ =>
-      let t ← check e σ
-      let ⟨σ', t'⟩ ← withItem (.termvar χ σ) do infer e'
-      return ⟨σ', t.let (b := true) t'⟩
+      let ⟨Γ', t⟩ ← check Γ e σ
+      let ⟨Γout, σ', t'⟩ ← infer ((.termvar χ σ)::Γ') e'
+      return ⟨Γout, σ', t.let (b := true) t'⟩
   | .app e₁ e₂ =>
-    let ⟨σ₁, t₁⟩ ← infer e₁
-    let σ ← inferApp σ₁ e₂
-    -- TODO: get necessary information from inferApp for the typing tree.
-    return ⟨σ, sorry⟩
+    let ⟨Γ', σ₁, t₁⟩ ← infer Γ e₁
+    let ⟨Γout, σ, generate_evidence⟩ ← inferApp Γ' σ₁ e₂
+    return ⟨Γout, σ, generate_evidence e₁ t₁⟩
   | .lam χ e =>
     let a ← fresh
     let b ← fresh
     let τa := Monotype.uvar a
     let τb := Monotype.uvar b
-    push <| .xunivar a .star
-    push <| .xunivar b .star
-    let t ← withItem (.termvar χ τa) do check e τb
-    return ⟨Monotype.arr τa τb, t.lam⟩
-  | .label l => return ⟨Monotype.floor (.label l), .label⟩
+    let ⟨Γout, t⟩ ← check ((.xunivar b .star)::(.xunivar a .star)::Γ) e τb
+    return ⟨Γ, Monotype.arr τa τb, t.lam⟩
+  | .label l => return ⟨Γ, Monotype.floor (.label l), .label⟩
   | .unlabel e₁ e₂ =>
-    let ⟨Monotype.app (.prodOrSum Ξ μ) (.row [(ξ, τ)] _), t₁⟩ ← infer e₁
+    let ⟨Γ', Monotype.app (.prodOrSum Ξ μ) (.row [(ξ, τ)] _), t₁⟩ ← infer Γ e₁
       | throw $ .panic "expected a singleton product or sum"
-    let t₂ ← check e₂ (ξ.floor)
-    return ⟨τ, t₁.unlabel⟩
+    let ⟨Γout, t₂⟩ ← check Γ' e₂ (ξ.floor)
+    return ⟨Γout, τ, t₁.unlabel⟩
   | .prod MNs =>
-    let rec f : (MNs : List (Term × Term)) → InferM
-      ((ξτs : List (Monotype × Monotype)) ×
+    let rec f (Γ : Context) : (MNs : List (Term × Term)) → InferM
+      (Context × (ξτs : List (Monotype × Monotype)) ×
         ∀ MNξτ ∈ MNs.zip ξτs, let ((_, N), _, τ) := MNξτ; N.Typing τ)
-      | [] => return ⟨[], nofun⟩
+      | [] => return ⟨Γ, [], nofun⟩
       | (M, N) :: MNs' => do
-        let ⟨ξτs, h⟩ ← f MNs'
-        let ⟨.qual $ .mono ξ, _⟩ ← infer M -- TODO: Check that ξ has kind label, evaluate lam apps?
+        let ⟨Γ', ξτs, h⟩ ← f Γ MNs'
+        let ⟨Γ'', .qual $ .mono ξ, _⟩ ← infer Γ' M -- TODO: Check that ξ has kind label, evaluate lam apps?
           | throw $ .panic "expected a monotype for the label"
-        let ⟨.qual $ .mono τ, t⟩ ← infer N
+        let ⟨Γout, .qual $ .mono τ, t⟩ ← infer Γ'' N
           | throw $ .panic "expected a monotype in the row"
-        return by
+        return ⟨Γout, by
           refine ⟨(ξ, τ) :: ξτs, ?h⟩
           intro MNξτ mem
           let ((M', N'), ξ', τ') := MNξτ
@@ -641,110 +610,108 @@ partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
                   | .inl h'' => nomatch h''
                   | .inr h'' => nomatch h''
                 | .tail _ mem' => exact mem'
-              exact h _ mem'
-    let x ← f MNs
-    return ⟨
-      (Monotype.prodOrSum .prod (.comm .non)).app (.row x.fst (some .star)),
-      Term.Typing.prod x.snd
+              exact h _ mem'⟩
+    let ⟨Γout, fst, snd⟩ ← f Γ MNs
+    return ⟨Γout,
+      (Monotype.prodOrSum .prod (.comm .non)).app (.row fst (some .star)),
+      Term.Typing.prod snd
     ⟩
   | .sum e₁ e₂ =>
-    let ⟨.qual <| .mono <| .floor ξ, _⟩ ← infer e₁
+    let ⟨Γ', .qual <| .mono <| .floor ξ, _⟩ ← infer Γ e₁
       | throw $ .panic "expected a floor for the label"
-    checkKind ξ .label
-    let ⟨.qual $ .mono τ, t⟩ ← infer e₂
+    checkKind Γ' ξ .label
+    let ⟨Γout, .qual $ .mono τ, t⟩ ← infer Γ' e₂
       | throw $ .panic "expected a monotype in the row"
-    return ⟨(Monotype.prodOrSum .sum (.comm .non)).app (.row [(ξ, τ)] none), t.sum⟩
+    return ⟨Γout, (Monotype.prodOrSum .sum (.comm .non)).app (.row [(ξ, τ)] none), t.sum⟩
   | .prj e =>
-    let ⟨Monotype.app (.prodOrSum .prod μ) ρ, t⟩ ← infer e
+    let ⟨Γ', Monotype.app (.prodOrSum .prod μ) ρ, t⟩ ← infer Γ e
       | throw $ .panic "projection out of non-record term"
     let rx ← fresh
-    push <| .xunivar rx (.row .star)
-    let c ← constraint <| .contain (.uvar rx) μ ρ
-    return ⟨Monotype.app (.prodOrSum .prod μ) (.uvar rx), t.prj c⟩
+    let ⟨Γout, c⟩ ← constraint (.xunivar rx (.row .star)::Γ') <| .contain (.uvar rx) μ ρ
+    return ⟨Γout, Monotype.app (.prodOrSum .prod μ) (.uvar rx), t.prj c⟩
   | .inj e =>
-    let ⟨Monotype.app (.prodOrSum .sum μ) ρ, t⟩ ← infer e
+    let ⟨Γ', Monotype.app (.prodOrSum .sum μ) ρ, t⟩ ← infer Γ e
       | throw $ .panic "injection of non-variant term"
     let rx ← fresh
-    push <| .xunivar rx (.row .star)
-    let c ← constraint <| .contain ρ μ (.uvar rx)
-    return ⟨Monotype.app (.prodOrSum .sum μ) (.uvar rx), t.inj c⟩
+    let ⟨Γout, c⟩ ← constraint (.xunivar rx (.row .star)::Γ') <| .contain ρ μ (.uvar rx)
+    return ⟨Γout, Monotype.app (.prodOrSum .sum μ) (.uvar rx), t.inj c⟩
   | .concat m n =>
-    let μ ← freshType .comm
-    let ρₘ ← freshType (.row .star)
-    let tₘ ← check m (Monotype.prodOrSum .prod μ |>.app ρₘ)
-    let ρₙ ← freshType (.row .star)
-    let tₙ ← check n (Monotype.prodOrSum .prod μ |>.app ρₙ)
-    let ρ ← freshType (.row .star)
-    let c ← constraint <| .concat ρₘ μ ρₙ ρ
-    return ⟨_, .concat tₘ tₙ c⟩
+    let (Γ, μ) ← freshType Γ .comm
+    let (Γ, ρₘ) ← freshType Γ (.row .star)
+    let ⟨Γ, tₘ⟩ ← check Γ m (Monotype.prodOrSum .prod μ |>.app ρₘ)
+    let (Γ, ρₙ) ← freshType Γ (.row .star)
+    let ⟨Γ, tₙ⟩ ← check Γ n (Monotype.prodOrSum .prod μ |>.app ρₙ)
+    let (Γ, ρ) ← freshType Γ (.row .star)
+    let (Γ, c) ← constraint Γ <| .concat ρₘ μ ρₙ ρ
+    return ⟨Γ, _, .concat tₘ tₙ c⟩
   | .elim m n =>
-    let μ ← freshType .comm
-    let τ ← freshType .star
-    let ρₘ ← freshType (.row .star)
-    let tₘ ← check m (Monotype.prodOrSum .sum μ |>.app ρₘ |>.arr τ)
-    let ρₙ ← freshType (.row .star)
-    let tₙ ← check n (Monotype.prodOrSum .sum μ |>.app ρₙ |>.arr τ)
-    let ρ ← freshType (.row .star)
-    let c ← constraint <| (.concat ρₘ μ ρₙ ρ)
-    return ⟨_, tₘ.elim tₙ c⟩
+    let (Γ, μ) ← freshType Γ .comm
+    let (Γ, τ) ← freshType Γ .star
+    let (Γ, ρₘ) ← freshType Γ (.row .star)
+    let ⟨Γ, tₘ⟩ ← check Γ m (Monotype.prodOrSum .sum μ |>.app ρₘ |>.arr τ)
+    let (Γ, ρₙ) ← freshType Γ (.row .star)
+    let ⟨Γ, tₙ⟩ ← check Γ n (Monotype.prodOrSum .sum μ |>.app ρₙ |>.arr τ)
+    let (Γ, ρ) ← freshType Γ (.row .star)
+    let ⟨Γ, c⟩ ← constraint Γ <| (.concat ρₘ μ ρₙ ρ)
+    return ⟨Γ, _, tₘ.elim tₙ c⟩
   | .member m =>
     let { TC, κ, .. } ← getClass m
-    let τ ← freshType κ
+    let (Γout, τ) ← freshType Γ κ
     -- TODO: push the constraint into the environment and get a proof for it.
     let s : ((Monotype.tc TC).app τ).ConstraintSolution := sorry
     let σ' : TypeScheme := sorry
-    return ⟨σ', Term.Typing.member s⟩
+    return ⟨Γout, σ', Term.Typing.member s⟩
   | .ind ϕ ρ l t rp ri rn M N =>
-    let .arr κ κ' ← inferKind ϕ | throw <| .panic "ind function with non-arrow kind"
+    let .arr κ κ' ← inferKind Γ ϕ | throw <| .panic "ind function with non-arrow kind"
     if κ' ≠ .star then
       throw <| .panic "ind function with non-star result kind"
 
-    let so ← constraint <| .ind ρ
-    let Mty ← check M _
-    let Nty ← check N _
-    return ⟨_, .ind (κ := κ) Mty Nty so⟩
+    let ⟨Γ', so⟩ ← constraint Γ <| .ind ρ
+    let ⟨Γ'', Mty⟩ ← check Γ' M _
+    let ⟨Γout, Nty⟩ ← check Γ'' N _
+    return ⟨Γout, _, .ind (κ := κ) Mty Nty so⟩
   | .splitₚ ϕ e =>
-    let ⟨Monotype.app (.prodOrSum .prod (.comm .comm)) ρ, t⟩ ← infer e
+    let ⟨Γ, Monotype.app (.prodOrSum .prod (.comm .comm)) ρ, t⟩ ← infer Γ e
       | throw $ .panic "invalid splitₚ"
-    let ρ₁ ← freshType (.row .star)
-    let ρ₂ ← freshType (.row .star)
-    let c ← constraint (Monotype.split ϕ ρ₁ ρ₂ ρ)
-    return ⟨_, t.splitₚ c⟩
+    let (Γ, ρ₁) ← freshType Γ (.row .star)
+    let (Γ, ρ₂) ← freshType Γ (.row .star)
+    let (Γout, c) ← constraint Γ (Monotype.split ϕ ρ₁ ρ₂ ρ)
+    return ⟨Γout, _, t.splitₚ c⟩
   | .splitₛ ϕ e₁ e₂ =>
-    let τ ← freshType .star
-    let ρ₁ ← freshType (.row .star)
-    let t₁ ← check e₁ <| Monotype.arr (.app (.prodOrSum .sum (.comm .comm)) (.app (.lift ϕ) ρ₁)) τ
-    let ρ₂ ← freshType (.row .star)
-    let t₂ ← check e₂ <| Monotype.prodOrSum .sum (.comm .comm) |>.app ρ₂ |>.arr τ
-    let ρ₃ ← freshType (.row .star)
-    let c ← constraint (Monotype.split ϕ ρ₁ ρ₂ ρ₃)
-    return ⟨_, t₁.splitₛ t₂ c⟩
+    let (Γ, τ) ← freshType Γ .star
+    let (Γ, ρ₁) ← freshType Γ (.row .star)
+    let ⟨Γ, t₁⟩ ← check Γ e₁ <| Monotype.arr (.app (.prodOrSum .sum (.comm .comm)) (.app (.lift ϕ) ρ₁)) τ
+    let (Γ, ρ₂) ← freshType Γ (.row .star)
+    let ⟨Γ, t₂⟩ ← check Γ e₂ <| Monotype.prodOrSum .sum (.comm .comm) |>.app ρ₂ |>.arr τ
+    let (Γ, ρ₃) ← freshType Γ (.row .star)
+    let ⟨Γ, c⟩ ← constraint Γ (Monotype.split ϕ ρ₁ ρ₂ ρ₃)
+    return ⟨Γ, _, t₁.splitₛ t₂ c⟩
   | .nil =>
-    let τ ← freshType .star
-    return ⟨_, Term.Typing.nil (τ := τ)⟩
+    let (Γout, τ) ← freshType Γ .star
+    return ⟨Γout, _, Term.Typing.nil (τ := τ)⟩
   | .cons e₁ e₂ =>
     -- NOTE: Not sure if the order matters here, but this seems natural.
-    let ⟨.qual $ .mono τ₁, t₁⟩ ← infer e₁
+    let ⟨Γ', .qual $ .mono τ₁, t₁⟩ ← infer Γ e₁
       | throw $ .panic "cons applied to non-monotype"
-    let t₂ ← check e₂ (Monotype.list.app τ₁)
-    return ⟨_, t₁.cons t₂⟩
-  | .fold i iₐ => return ⟨_, Term.Typing.fold⟩
+    let ⟨Γout, t₂⟩ ← check Γ' e₂ (Monotype.list.app τ₁)
+    return ⟨Γout, _, t₁.cons t₂⟩
+  | .fold i iₐ => return ⟨Γ, _, Term.Typing.fold⟩
   | .int n =>
-    return ⟨_, Term.Typing.int⟩
+    return ⟨Γ, _, Term.Typing.int⟩
   | .op _ e₁ e₂ =>
-    let t₁ ← check e₁ Monotype.int
-    let t₂ ← check e₂ Monotype.int
-    return ⟨_, t₁.op t₂⟩
+    let ⟨Γ', t₁⟩ ← check Γ e₁ Monotype.int
+    let ⟨Γout, t₂⟩ ← check Γ' e₂ Monotype.int
+    return ⟨Γout, _, t₁.op t₂⟩
   | .range =>
-    return ⟨_, Term.Typing.range⟩
+    return ⟨Γ, _, Term.Typing.range⟩
   | .str s =>
-    return ⟨_, Term.Typing.str⟩
+    return ⟨Γ, _, Term.Typing.str⟩
   | .def s =>
     let ex ← fresh
-    return ⟨_, Term.Typing.def (σ := Monotype.uvar ex)⟩
+    return ⟨Γ, _, Term.Typing.def (σ := Monotype.uvar ex)⟩
   | .throw =>
     let ex ← fresh
-    return ⟨_, Term.Typing.throw (σ := Monotype.uvar ex)⟩
+    return ⟨Γ, _, Term.Typing.throw (σ := Monotype.uvar ex)⟩
 
 partial def inferApp (Γ : Context) (σ : TypeScheme) (e : Term) : InferM (InferApp σ e) := do
   match σ with
@@ -752,17 +719,15 @@ partial def inferApp (Γ : Context) (σ : TypeScheme) (e : Term) : InferM (Infer
     let ᾱ ← fresh;
     let Γ := (.xunivar ᾱ κ)::Γ
     let ⟨Γ', σ', myfun⟩ ← inferApp Γ (σ.subst (.uvar ᾱ) α) e
-    return ⟨Γ', σ', (fun e' (t : e'.Typing (TypeScheme.quant α κ σ)) =>
-      let t' := t.subst a a
-      let substed := e'.subst (.uvar ᾱ) α
+    return ⟨Γ', σ', fun e' (t : e'.Typing (TypeScheme.quant α κ σ)) =>
       sorry
-    )⟩
+    ⟩
   | Monotype.uvar ᾱ =>
     let .some item := lookupUniVar ᾱ Γ
       | throw $ .panic "found unknown unification variable"
     let .xunivar ᾱ (.arr κ₁ κ₂) := item
       | throw $ .panic "bad unification variable"
-    let (before, after) ← split item
+    let (before, after) ← split Γ item
     let ᾱ₁ ← fresh; let ᾱ₂ ← fresh;
     -- RECALL: newers entries appear to the "left" of the Context
     -- if regarded as a stack, this term should make sense
@@ -772,26 +737,30 @@ partial def inferApp (Γ : Context) (σ : TypeScheme) (e : Term) : InferM (Infer
       .xunivar ᾱ₂ κ₂,
     ]
     let Γ := after++injection++before
-    let _t ← check e (Monotype.uvar ᾱ₁)
-    return Monotype.uvar ᾱ₂
+    let ⟨Γout, _t⟩ ← check Γ e (Monotype.uvar ᾱ₁)
+    return ⟨Γout, Monotype.uvar ᾱ₂, fun e' t' =>
+      sorry
+    ⟩
   | Monotype.arr τ₁ τ₂ =>
-    let _t ← check e τ₁
-    return τ₂
+    let ⟨Γout, _t⟩ ← check Γ e τ₁
+    return ⟨Γout, τ₂, fun e' t' =>
+      sorry
+    ⟩
   | _ => throw $ .panic "can only infer applications for functions"
 
-partial def check (e : Term) (σ : TypeScheme) : InferM (e.Typing σ) := do
+partial def check (Γ : Context) (e : Term) (σ : TypeScheme) : InferM ((Γ' : Context) × e.Typing σ) := do
   match σ with
   | .quant α κ σ =>
-    let t ← withItem (.typevar α κ) do check e σ
-    return t.schemeI
+    let ⟨Γout, t⟩ ← check ((.typevar α κ)::Γ) e σ
+    return ⟨Γout, t.schemeI⟩
   -- TODO: I am deeply inconfident in this rule.
   | .qual $ .qual ψ γ =>
-    checkKind ψ .constr
-    let t ← withItem (.constraint ψ) do check e γ
-    return .qualI (fun _ => t)
+    checkKind Γ ψ .constr
+    let ⟨Γout, t⟩ ← check ((.constraint ψ)::Γ) e γ
+    return ⟨Γout, .qualI (fun _ => t)⟩
   | σ =>
-    let ⟨σ', t⟩ ← infer e
+    let ⟨Γ', σ', t⟩ ← infer Γ e
     -- TODO: σ' and σ should have their bodies solved before subtyping begins
-    let s ← subtype σ' σ
-    return t.sub s
+    let ⟨Γout, s⟩ ← subtype Γ' σ' σ
+    return ⟨Γout, t.sub s⟩
 end
