@@ -57,7 +57,6 @@ instance : ToString InferError where
 
 structure InferState where
   prog : Program
-  Γ : Context := []
   nextFresh : Nat
 
 abbrev InferM := EStateM InferError InferState
@@ -574,6 +573,7 @@ def constraint (ψ : Monotype) : InferM (ψ.ConstraintSolution) := do
     return solution
   | _ => throw $ .fail s!"Proving constraints of the form `{ψ}`is as-of-yet unimplemented"
 
+partial def InferApp (σ : TypeScheme) (e : Term) := (Γ' : Context) × (σ' : TypeScheme) × (∀ (e' : Term), (e'.Typing σ) -> (e'.app e).Typing σ')
 mutual
 partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
   match e with
@@ -746,17 +746,18 @@ partial def infer (e : Term) : InferM ((σ : TypeScheme) × e.Typing σ) := do
     let ex ← fresh
     return ⟨_, Term.Typing.throw (σ := Monotype.uvar ex)⟩
 
--- TODO: How do we produce a typing derivation for inferApp?
-partial def inferApp (σ : TypeScheme) (e : Term) : InferM TypeScheme := do
+partial def inferApp (Γ : Context) (σ : TypeScheme) (e : Term) : InferM (InferApp σ e) := do
   match σ with
   | TypeScheme.quant α κ σ =>
     let ᾱ ← fresh;
-    push (.xunivar ᾱ κ)
-    -- TODO: replace every occurence of `α` in `σ` with `ᾱ`. Call it `σ'`
-    let σ' : TypeScheme := sorry
-    inferApp σ' e
+    let Γ := (.xunivar ᾱ κ)::Γ
+    let ⟨Γ', σ', myfun⟩ ← inferApp Γ (σ.subst (.uvar ᾱ) α) e
+    return ⟨Γ', σ', (fun e' (t : e'.Typing (TypeScheme.quant α κ σ)) =>
+      let t' := t.subst a a
+      let substed := e'.subst (.uvar ᾱ) α
+      sorry
+    )⟩
   | Monotype.uvar ᾱ =>
-    let state@{ Γ .. } ← get
     let .some item := lookupUniVar ᾱ Γ
       | throw $ .panic "found unknown unification variable"
     let .xunivar ᾱ (.arr κ₁ κ₂) := item
@@ -770,7 +771,7 @@ partial def inferApp (σ : TypeScheme) (e : Term) : InferM TypeScheme := do
       .xunivar ᾱ₁ κ₁,
       .xunivar ᾱ₂ κ₂,
     ]
-    set { state with Γ := after++injection++before }
+    let Γ := after++injection++before
     let _t ← check e (Monotype.uvar ᾱ₁)
     return Monotype.uvar ᾱ₂
   | Monotype.arr τ₁ τ₂ =>
