@@ -21,7 +21,27 @@ abbrev ℓₘ := 0
 
 abbrev ℓᵣ := 1
 
-judgement_syntax Γᵢ "; " Γc "; " Γ " ⊢ " M " : " σ " ⇝ " E : Term.TypingAndElaboration
+syntax (name := typing) Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment "; " Lott.Symbol.TabularTypeInterpreter.ClassEnvironment "; " Lott.Symbol.TabularTypeInterpreter.TypeEnvironment " ⊢ " Lott.Symbol.TabularTypeInterpreter.Term " : " Lott.Symbol.TabularTypeInterpreter.TypeScheme : Lott.Judgement
+
+judgement_syntax Γᵢ "; " Γc "; " Γ " ⊢ " M " : " σ " ⇝ " E : Term.TypingAndElaboration (tex := s!"{Γᵢ} \\lottsym\{;} \\, {Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {M} \\, \\typingsym \\, {σ} \\, \\lottsym\{⇝} \\, {E}") (tex noelab := s!"{Γᵢ} \\lottsym\{;} \\, {Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {M} \\, \\typingsym \\, {σ}")
+
+macro_rules
+  | `([[$Γᵢ:Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment; $Γc:Lott.Symbol.TabularTypeInterpreter.ClassEnvironment; $Γ:Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ⊢ $M:Lott.Symbol.TabularTypeInterpreter.Term : $σ:Lott.Symbol.TabularTypeInterpreter.TypeScheme]]) =>
+    `($(Lean.mkIdent `TypingAndElaboration) [[$(.mk Γᵢ):Lott.Symbol]] [[$(.mk Γc):Lott.Symbol]] [[$(.mk Γ):Lott.Symbol]] [[$(.mk M):Lott.Symbol]] [[$(.mk σ):Lott.Symbol]] _)
+
+@[lott_tex_elab typing]
+private
+def typingTexElab : Lott.TexElab := fun profile ref stx => do
+  let `(typing| $Γᵢ:Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment; $Γc:Lott.Symbol.TabularTypeInterpreter.ClassEnvironment; $Γ:Lott.Symbol.TabularTypeInterpreter.TypeEnvironment ⊢ $M:Lott.Symbol.TabularTypeInterpreter.Term : $σ:Lott.Symbol.TabularTypeInterpreter.TypeScheme) := stx
+    | Lean.Elab.throwUnsupportedSyntax
+  let Γᵢ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment profile ref Γᵢ
+  let Γc ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.ClassEnvironment profile ref Γc
+  let Γ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeEnvironment profile ref Γ
+  let M ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.Term profile ref M
+  let σ ← Lott.texElabSymbolOrJudgement `Lott.Symbol.TabularTypeInterpreter.TypeScheme profile ref σ
+  return s!"{Γᵢ} \\lottsym\{;} \\, {Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {M} \\, \\typingsym \\, {σ}"
+
+open TypeScheme
 
 judgement Term.TypingAndElaboration where
 
@@ -50,7 +70,7 @@ x : σ ∈ Γ
 Γᵢ; Γc; Γ ⊢ M : γ ⇝ F E
 
 ∀ a ∉ I, Γᵢ; Γc; Γ, a : κ ⊢ M^a : σ^a ⇝ E^a
-⊢ κ ⇝ K
+elab_related ⊢ κ ⇝ K
 ─────────────────────────────────────────── schemeI (I : List TypeVarId)
 Γᵢ; Γc; Γ ⊢ M : ∀ a : κ. σ ⇝ Λ a : K. E
 
@@ -72,26 +92,24 @@ x : σ ∈ Γ
 ──────────────────────── label
 Γᵢ; Γc; Γ ⊢ ℓ : ⌊ℓ⌋ ⇝ ()
 
-</ Γᵢ; Γc; Γ ⊢ M@i : ⌊ξ@i⌋ ⇝ F@i // i in [:n] notex />
-unique(</ ξ@i // i in [:n] notex />)
-</ Γᵢ; Γc; Γ ⊢ «N»@i : τ@i ⇝ E@i // i in [:n] notex />
-notex n ≠ 0 ∨ b
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── prod
-Γᵢ; Γc; Γ ⊢ {</ M@i ▹ «N»@i // i in [:n] notex />} : Π(N) ⟨</ ξ@i ▹ τ@i // i in [:n] notex /> </ : * // b />⟩ ⇝ (</ E@i // i in [:n] notex />)
+Γᵢ; Γc; Γ ⊢ M : ⌊ξ⌋
+Γᵢ; Γc; Γ ⊢ «N» : τ ⇝ E
+────────────────────────────────────────── prod
+Γᵢ; Γc; Γ ⊢ {M ▹ «N»} : Π(N) ⟨ξ ▹ τ⟩ ⇝ (E)
 
-Γᵢ; Γc; Γ ⊢ M : ⌊ξ⌋ ⇝ F
+Γᵢ; Γc; Γ ⊢ M : ⌊ξ⌋
 Γᵢ; Γc; Γ ⊢ «N» : τ ⇝ E
 ──────────────────────────────────────────── sum
 Γᵢ; Γc; Γ ⊢ [M ▹ «N»] : Σ(N) ⟨ξ ▹ τ⟩ ⇝ ι 0 E
 
-Γᵢ; Γc; Γ ⊢ M : Π(μ) ⟨ξ ▹ τ⟩ ⇝ E
-Γᵢ; Γc; Γ ⊢ «N» : ⌊ξ⌋ ⇝ F
+Γᵢ; Γc; Γ ⊢ M : Π(C) ⟨ξ ▹ τ⟩ ⇝ E
+Γᵢ; Γc; Γ ⊢ «N» : ⌊ξ⌋
 ──────────────────────────────── unlabelProd
 Γᵢ; Γc; Γ ⊢ M/«N» : τ ⇝ π 0 E
 
-Γᵢ; Γc; Γ ⊢ M : Σ(μ) ⟨ξ ▹ τ⟩ ⇝ E
-Γᵢ; Γc; Γ ⊢ «N» : ⌊ξ⌋ ⇝ F
-Γc; Γ ⊢ τ : * ⇝ A
+Γᵢ; Γc; Γ ⊢ M : Σ(C) ⟨ξ ▹ τ⟩ ⇝ E
+Γᵢ; Γc; Γ ⊢ «N» : ⌊ξ⌋
+elab_related Γc; Γ ⊢ τ : * ⇝ A
 ───────────────────────────────────────────── unlabelSum
 Γᵢ; Γc; Γ ⊢ M/«N» : τ ⇝ case E {λ x : A. x$0}
 
@@ -118,41 +136,24 @@ notex n ≠ 0 ∨ b
 ──────────────────────────────────────────────────────────────────────── elim
 Γᵢ; Γc; Γ ⊢ M ▿ «N» : (Σ(μ) ρ₂) → τ ⇝ ⦅⦅π 1 F⦆ [λ a : *. a$0] [A] E₀⦆ E₁
 
-Γᵢ; Γc; Γ ⊢ M : τ₀ ⇝ E
-Γc; Γ ⊢ τ₀ <: τ₁ ⇝ F
+Γᵢ; Γc; Γ ⊢ M : σ₀ ⇝ E
+Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F
 ──────────────────────── sub
-Γᵢ; Γc; Γ ⊢ M : τ₁ ⇝ F E
+Γᵢ; Γc; Γ ⊢ M : σ₁ ⇝ F E
 
-(</ TCₛ@i a ⇝ Aₛ@i // i in [:n] notex /> ⇒ TC a : κ) ↦ m : σ ⇝ A ∈ Γc
+(</ TC'@i a ⇝ A'@i // i in [:n] notex /> ⇒ TC a : κ) ↦ m : σ ⇝ A ∈ Γc
 Γᵢ; Γc; Γ ⊨ TC τ ⇝ E
-───────────────────────────────────────────────────────────────────── member {TC}
+───────────────────────────────────────────────────────────────────── method {TC}
 Γᵢ; Γc; Γ ⊢ m : σ^^τ/a ⇝ π 0 E
 
-Γᵢ; Γc; Γ ⊢ M : Ξ(C) ρ ⇝ E
-────────────────────────────────── «order»
-Γᵢ; Γc; Γ ⊢ order ρ M : Ξ(N) ρ ⇝ E
-
-Γc; Γ ⊢ ρ : R κ ⇝ A
-∀ a ∉ Iₘ, Γc; Γ, a : R κ ⊢ τ^a : * ⇝ B^a
-⊢ κ ⇝ K
-∀ aₗ ∉ Iₛ, ∀ aₜ ∉ aₗ :: Iₛ, ∀ aₚ ∉ aₜ :: aₗ :: Iₛ, ∀ aᵢ ∉ aₚ :: aₜ :: aₗ :: Iₛ, ∀ aₙ ∉ aᵢ :: aₚ :: aₜ :: aₗ :: Iₛ, Γᵢ; Γc; Γ, aₗ : L, aₜ : κ, aₚ : R κ, aᵢ : R κ, aₙ : R κ ⊢ M : aₚ ⊙(N) ⟨aₗ ▹ aₜ⟩ ~ aᵢ ⇒ aᵢ ⊙(N) aₙ ~ ρ ⇒ ⌊aₗ⌋ → τ^aₚ → τ^aᵢ ⇝ E₀^aₗ#4^aₜ#3^aₚ#2^aᵢ#1^aₙ
+Γc; Γ ⊢ ρ : R κ
+∀ a ∉ Iₘ, Γc; Γ, a : R κ ⊢ τ^a : * ⇝ A^a
+∀ aₗ ∉ Iₛ, ∀ aₜ ∉ aₗ :: Iₛ, ∀ aₚ ∉ aₜ :: aₗ :: Iₛ, ∀ aᵢ ∉ aₚ :: aₜ :: aₗ :: Iₛ, ∀ aₙ ∉ aᵢ :: aₚ :: aₜ :: aₗ :: Iₛ, Γᵢ; Γc; Γ, aₗ : L, aₜ : κ, aₚ : R κ, aᵢ : R κ, aₙ : R κ ⊢ M : aₚ ⊙(N) ⟨aₗ ▹ aₜ⟩ ~ aᵢ ⇒ aᵢ ⊙(N) aₙ ~ ρ ⇒ ⌊aₗ⌋ → τ^aₚ/a → τ^aᵢ/a ⇝ E₀^aₗ#4^aₜ#3^aₚ#2^aᵢ#1^aₙ
 Γᵢ; Γc; Γ ⊢ «N» : τ^^⟨ : κ ⟩/a ⇝ E₁
-Γᵢ; Γc; Γ ⊨ Ind ρ ⇝ F
-E := ⦅F [λ a : L K. B] ⦅Λ aₗ : *. Λ aₜ : K. Λ aₚ : L K. Λ aᵢ : L K. Λ aₙ : L K. E₀⦆⦆ E₁
-───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── «ind» (Iₘ Iₛ : List TypeVarId)
+elab_related ⊢ κ ⇝ K
+elab_related Γᵢ; Γc; Γ ⊨ Ind ρ ⇝ F
+E := ⦅F [λ a : L K. A] ⦅Λ aₗ : *. Λ aₜ : K. Λ aₚ : L K. Λ aᵢ : L K. Λ aₙ : L K. E₀⦆⦆ E₁
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── «ind» (Iₘ Iₛ : List TypeVarId)
 Γᵢ; Γc; Γ ⊢ ind (λ a : R κ. τ) ρ; M; «N» : τ^^ρ/a ⇝ E
-
-Γᵢ; Γc; Γ ⊢ M : Π(μ) ρ₂ ⇝ E₀
-Γᵢ; Γc; Γ ⊨ Split (λ a : *. τ) ρ₀ ⊙' ρ₁ ~ ρ₂ ⇝ F
-E := (⦅π 0 π 2 F⦆ [λ a : *. a$0] E₀, ⦅π 0 π 3 F⦆ [λ a : *. a$0] E₀)
-─────────────────────────────────────────────────────────────────────────────────────────── splitP
-Γᵢ; Γc; Γ ⊢ splitₚ (λ a : *. τ) M : Π(N) ⟨ℓₘ ▹ Π(μ) Lift (λ a : *. τ) ρ₀, ℓᵣ ▹ Π(μ) ρ₁⟩ ⇝ E
-
-Γᵢ; Γc; Γ ⊢ M : (Σ(μ) (Lift (λ a : *. τ₀) ρ₀)) → τ₁ ⇝ E₀
-Γᵢ; Γc; Γ ⊢ «N» : (Σ(μ) ρ₁) → τ₁ ⇝ E₁
-Γᵢ; Γc; Γ ⊨ Split (λ a : *. τ₀) ρ₀ ⊙' ρ₁ ~ ρ₂ ⇝ F
-Γc; Γ ⊢ τ₁ : * ⇝ A
-──────────────────────────────────────────────────────────────────────────────────────────── splitS
-Γᵢ; Γc; Γ ⊢ splitₛ (λ a : *. τ) M; «N» : (Σ(μ) ρ₂) → τ₁ ⇝ ⦅⦅π 1 F⦆ [λ a : *. a$0] [A] E₀⦆ E₁
 
 end TabularTypeInterpreter

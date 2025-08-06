@@ -62,24 +62,26 @@ x : A ∈ Δ
 
 ⊢ Δ
 </ Δ ⊢ E@i : A@i // i in [:n] notex />
-───────────────────────────────────────────────────────────────────── prodIntro
-Δ ⊢ (</ E@i // i in [:n] notex />) : ⊗ {</ A@i // i in [:n] notex />}
+notex n ≠ 0 ∨ b
+──────────────────────────────────────────────────────────────────────────────────── prodIntro
+Δ ⊢ (</ E@i // i in [:n] notex />) : ⊗ {</ A@i // i in [:n] notex /> </ : * // b />}
 
-Δ ⊢ E : ⊗ {</ A@i // i in [:n] />}
-i ∈ [:n]
-────────────────────────────────── prodElim
-Δ ⊢ π i E : A@i
+Δ ⊢ E : ⊗ {</ A@i // i in [:n] /> </ : * // b />}
+j ∈ [:n]
+───────────────────────────────────────────────── prodElim
+Δ ⊢ π j E : A@j
 
 j ∈ [:n]
 Δ ⊢ E : A@j
 </ Δ ⊢ A@i : * // i in [:n] />
-────────────────────────────────────── sumIntro
-Δ ⊢ ι j E : ⊕ {</ A@i // i in [:n] />}
+notex n ≠ 0 ∨ b
+───────────────────────────────────────────────────── sumIntro
+Δ ⊢ ι j E : ⊕ {</ A@i // i in [:n] /> </ : * // b />}
 
-Δ ⊢ E : ⊕ {</ A@i // i in [:n] notex />}
+Δ ⊢ E : ⊕ {</ A@i // i in [:n] notex /> </ : * // b />}
 </ Δ ⊢ F@i : A@i → B // i in [:n] notex />
 Δ ⊢ B : *
-───────────────────────────────────────────── sumElim
+─────────────────────────────────────────────────────── sumElim
 Δ ⊢ case E {</ F@i // i in [:n] notex />} : B
 
 Δ ⊢ E : A
@@ -90,7 +92,7 @@ j ∈ [:n]
 termonly
 attribute [app_unexpander Typing] Kinding.delabK
 
-judgement_syntax E " -> " F : OperationalSemantics (tex := s!"{E} \\, \\lottsym\{→} \\, {F}")
+judgement_syntax E " -> " F : OperationalSemantics (tex := s!"{E} \\, \\lottsym\{⟶} \\, {F}")
 
 judgement OperationalSemantics where
 

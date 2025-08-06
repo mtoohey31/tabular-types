@@ -1,0 +1,14 @@
+\lottjudgement{Type Equivalence S}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{≡ₛ} \, \targetpre B \targetpost}{
+\lottinferencerule{base}{
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{≡ᵢ} \, \targetpre B \targetpost}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{≡ₛ} \, \targetpre B \targetpost}
+\lottinferencerulesep
+\lottinferencerule{symm}{
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{≡ᵢ} \, \targetpre B \targetpost}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre B \targetpost \, \lottsym{≡ₛ} \, \targetpre A \targetpost}
+\lottinferencerulesep
+\lottinferencerule{trans}{
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{≡ₛ} \, \targetpre B \targetpost}\\
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre B \targetpost \, \lottsym{≡ₛ} \, \targetpre C \targetpost}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \targetpre A \targetpost \, \lottsym{≡ₛ} \, \targetpre C \targetpost}
+}

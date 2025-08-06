@@ -1,23 +1,22 @@
-\lottjudgement{Well Formedness And Elaboration}{\sourcepre Γ_{C} \sourcepost \, \lottsym{⊢} \, \sourcepre Γ \sourcepost \, \lottsym{⇝} \, \targetpre Δ \targetpost}{
+\lottjudgement{Well Formedness And Elaboration}{Γ_{C} \, \lottsym{⊢} \, Γ \, \lottsym{⇝} \, \targetpre Δ \targetpost}{
 \lottinferencerule{empty}{
-\\\\
-}{\sourcepre Γ_{C} \sourcepost \, \lottsym{⊢} \, \sourcepre \epsilon \sourcepost \, \lottsym{⇝} \, \targetpre \epsilon \targetpost}
+}{Γ_{C} \, \lottsym{⊢} \, \lottsym{\epsilon} \, \lottsym{⇝} \, \targetpre \lottsym{\epsilon} \targetpost}
 \lottinferencerulesep
 \lottinferencerule{typeExt}{
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \, \lottsym{⊢} \, \sourcepre Γ \sourcepost \, \lottsym{⇝} \, \targetpre Δ \targetpost}\\
-\lotthypothesis{\sourcepre a \sourcepost \, \lottsym{∉} \, \lottkw{dom} \lottsym{(} \sourcepre Γ \sourcepost \lottsym{)}}\\
-\lotthypothesis{\lottsym{⊢} \, \sourcepre κ \sourcepost \, \lottsym{⇝} \, \targetpre K \targetpost}
-}{\sourcepre Γ_{C} \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre Γ \sourcepost \lottsym{,} \, \sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \sourcepost \, \lottsym{⇝} \, \targetpre \targetpre Δ \targetpost \lottsym{,} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \targetpost}
+\lotthypothesis{Γ_{C} \, \lottsym{⊢} \, Γ \, \lottsym{⇝} \, \targetpre Δ \targetpost}\\
+\lotthypothesis{a \, \lottsym{∉} \, \lottkw{dom} \lottsym{(} Γ \lottsym{)}}\\
+\lotthypothesis{\lottsym{⊢} \, κ \, \lottsym{⇝} \, \targetpre K \targetpost}
+}{Γ_{C} \, \lottsym{⊢} \, Γ \lottsym{,} \, a \, \lottsym{:} \, κ \, \lottsym{⇝} \, \targetpre \targetpre Δ \targetpost \lottsym{,} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \targetpost}
 \lottinferencerulesep
 \lottinferencerule{termExt}{
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \, \lottsym{⊢} \, \sourcepre Γ \sourcepost \, \lottsym{⇝} \, \targetpre Δ \targetpost}\\
-\lotthypothesis{\sourcepre x \sourcepost \, \lottsym{∉} \, \lottsym{dom'} \lottsym{(} \sourcepre Γ \sourcepost \lottsym{)}}\\
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre σ \sourcepost \, \lottsym{:} \, \sourcepre \star \sourcepost \, \lottsym{⇝} \, \targetpre A \targetpost}
-}{\sourcepre Γ_{C} \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre Γ \sourcepost \lottsym{,} \, \sourcepre x \sourcepost \, \lottsym{:} \, \sourcepre σ \sourcepost \sourcepost \, \lottsym{⇝} \, \targetpre \targetpre Δ \targetpost \lottsym{,} \, \targetpre x \targetpost \, \lottsym{:} \, \targetpre A \targetpost \targetpost}
+\lotthypothesis{Γ_{C} \, \lottsym{⊢} \, Γ \, \lottsym{⇝} \, \targetpre Δ \targetpost}\\
+\lotthypothesis{x \, \lottsym{∉} \, \lottsym{dom'} \lottsym{(} Γ \lottsym{)}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, σ \, \kindingsym \, \lottsym{\star} \, \lottsym{⇝} \, \targetpre A \targetpost}
+}{Γ_{C} \, \lottsym{⊢} \, Γ \lottsym{,} \, x \, \lottsym{:} \, σ \, \lottsym{⇝} \, \targetpre \targetpre Δ \targetpost \lottsym{,} \, \targetpre x \targetpost \, \lottsym{:} \, \targetpre A \targetpost \targetpost}
 \lottinferencerulesep
 \lottinferencerule{constrExt}{
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \, \lottsym{⊢} \, \sourcepre Γ \sourcepost \, \lottsym{⇝} \, \targetpre Δ \targetpost}\\
-\lotthypothesis{\sourcepre x \sourcepost \, \lottsym{∉} \, \lottsym{dom'} \lottsym{(} \sourcepre Γ \sourcepost \lottsym{)}}\\
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre Γ \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre ψ \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{C} \sourcepost \, \lottsym{⇝} \, \targetpre A \targetpost}
-}{\sourcepre Γ_{C} \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre Γ \sourcepost \lottsym{,} \, \sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \sourcepost \, \lottsym{⇝} \, \targetpre \targetpre Δ \targetpost \lottsym{,} \, \targetpre x \targetpost \, \lottsym{:} \, \targetpre A \targetpost \targetpost}
+\lotthypothesis{Γ_{C} \, \lottsym{⊢} \, Γ \, \lottsym{⇝} \, \targetpre Δ \targetpost}\\
+\lotthypothesis{x \, \lottsym{∉} \, \lottsym{dom'} \lottsym{(} Γ \lottsym{)}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ψ \, \kindingsym \, \lottkw{C} \, \lottsym{⇝} \, \targetpre A \targetpost}
+}{Γ_{C} \, \lottsym{⊢} \, Γ \lottsym{,} \, ψ \, \lottsym{⇝} \, \targetpre x \targetpost \, \lottsym{⇝} \, \targetpre \targetpre Δ \targetpost \lottsym{,} \, \targetpre x \targetpost \, \lottsym{:} \, \targetpre A \targetpost \targetpost}
 }

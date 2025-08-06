@@ -1,5 +1,6 @@
 import Lott.Data.Range
 import Lott.Elab.JudgementComprehension
+import Lott.Elab.OrJudgement
 import Lott.Elab.UniversalJudgement
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Environment.Basic
 import TabularTypeInterpreter.RuleSets
@@ -33,9 +34,9 @@ a : K ∈ Δ
 ─────────────── app
 Δ ⊢ A B : K₂
 
-∀ a ∉ I, Δ, a : K₁ ⊢ A^a : K₂
-───────────────────────────── scheme (I : List TypeVarId)
-Δ ⊢ ∀ a : K₁. A : K₂
+∀ a ∉ I, Δ, a : K ⊢ A^a : *
+─────────────────────────── scheme (I : List TypeVarId)
+Δ ⊢ ∀ a : K. A : *
 
 Δ ⊢ A : *
 Δ ⊢ B : *
@@ -43,8 +44,9 @@ a : K ∈ Δ
 Δ ⊢ A → B : *
 
 </ Δ ⊢ A@i : K // i in [:n] notex />
-──────────────────────────────────────── list
-Δ ⊢ {</ A@i // i in [:n] notex />} : L K
+notex n ≠ 0 ∨ b
+─────────────────────────────────────────────────────── list
+Δ ⊢ {</ A@i // i in [:n] notex /> </ : K // b />} : L K
 
 Δ ⊢ A : K₁ ↦ K₂
 Δ ⊢ B : L K₁
@@ -72,6 +74,18 @@ def delabK: Lean.PrettyPrinter.Unexpander
 
 end Kinding
 
+judgement_syntax "lc_" T : TypeVarLC (tex := s!"\\lottkw\{lc}\\lottsym\{(}{T}\\lottsym\{)}")
+
+termonly
+@[simp]
+def TypeVarLC (T: «Type») := T.TypeVarLocallyClosed 0
+
+judgement_syntax "body " T : TypeVarBody
+
+termonly
+@[simp]
+def TypeVarBody (T: «Type») := T.TypeVarLocallyClosed 1
+
 judgement_syntax Δ " ⊢ " A " ≡ " B : TypeEquivalence
 
 judgement TypeEquivalence where
@@ -79,29 +93,27 @@ judgement TypeEquivalence where
 ───────── refl
 Δ ⊢ A ≡ A
 
-─────────────────────────── lamAppL
-Δ ⊢ (λ a : K. A) B ≡ A^^B/a
+Δ ⊢ A : K₁ ↦ K₂
+─────────────────────── eta
+Δ ⊢ λ a : K₁. A a$0 ≡ A
 
-─────────────────────────── lamAppR
-Δ ⊢ A^^B/a ≡ (λ a : K. A) B
+Δ ⊢ λ a : K₁. A : K₁ ↦ K₂
+Δ ⊢ B: K₁
+──────────────────────────── lamApp
+Δ ⊢ (λ a : K₁. A) B ≡ A^^B/a
 
-───────────────────────────────────────────────────────────────────────────── listAppL
-Δ ⊢ A ⟦{ </ B@i // i in [:n] notex /> }⟧ ≡ { </ A B@i // i in [:n] notex /> }
+Δ ⊢ A : K₁ ↦ K₂
+───────────────────────────────────────────────────────────────────────────────────────────────────────────── listAppList
+Δ ⊢ A ⟦{ </ B@i // i in [:n] notex /> </ : K₁ // b /> }⟧ ≡ { </ A B@i // i in [:n] notex /> </ : K₂ // b /> }
 
-───────────────────────────────────────────────────────────────────────────── listAppR
-Δ ⊢ { </ A B@i // i in [:n] notex /> } ≡ A ⟦{ </ B@i // i in [:n] notex /> }⟧
-
-────────────────────────── listAppIdL
+Δ ⊢ A: L K
+────────────────────────── listAppId
 Δ ⊢ (λ a : K. a$0) ⟦A⟧ ≡ A
 
-────────────────────────── listAppIdR
-Δ ⊢ A ≡ (λ a : K. a$0) ⟦A⟧
-
-───────────────────────────────────────────────── listAppCompL
-Δ ⊢ A₀ ⟦(λ a : K. A₁) ⟦B⟧⟧ ≡ (λ a : K. A₀ A₁) ⟦B⟧
-
-───────────────────────────────────────────────── listAppCompR
-Δ ⊢ (λ a : K. A₀ A₁) ⟦B⟧ ≡ A₀ ⟦(λ a : K. A₁) ⟦B⟧⟧
+notex lc_ A₀
+Δ ⊢ A₁ : K₁ ↦ K₂
+───────────────────────────────────────────── listAppComp
+Δ ⊢ A₀ ⟦A₁ ⟦B⟧⟧ ≡ (λ a : K₁. A₀ (A₁ a$0)) ⟦B⟧
 
 ∀ a ∉ I, Δ, a : K ⊢ A^a ≡ B^a
 ───────────────────────────── lam (I : List TypeVarId)
@@ -122,8 +134,8 @@ judgement TypeEquivalence where
 Δ ⊢ A₁ → B₁ ≡ A₂ → B₂
 
 </ Δ ⊢ A@i ≡ B@i // i in [:n] notex />
-─────────────────────────────────────────────────────────────────── list
-Δ ⊢ {</ A@i // i in [:n] notex />} ≡ {</ B@i // i in [:n] notex />}
+───────────────────────────────────────────────────────────────────────────────────────────────── list
+Δ ⊢ {</ A@i // i in [:n] notex /> </ : K // b />} ≡ {</ B@i // i in [:n] notex /> </ : K // b />}
 
 Δ ⊢ A₁ ≡ A₂
 Δ ⊢ B₁ ≡ B₂
@@ -138,137 +150,127 @@ judgement TypeEquivalence where
 ───────────── sum
 Δ ⊢ ⊕ A ≡ ⊕ B
 
+Δ ⊢ A ≡ B
+───────── symm
+Δ ⊢ B ≡ A
+
+Δ ⊢ A ≡ B
+Δ ⊢ B ≡ C
+───────── trans
+Δ ⊢ A ≡ C
+
 judgement_syntax Δ " ⊢ " A " ≢ " B : TypeInequivalence
 
 judgement TypeInequivalence := fun Δ A B => ¬[[Δ ⊢ A ≡ B]]
 
-judgement_syntax "body" T : TypeVarBody
+@[app_unexpander TypeEquivalence]
+def TypeEquivalence.delab: Lean.PrettyPrinter.Unexpander
+  | `($(_) $Δ $A $B) =>
+    let info := Lean.SourceInfo.none
+    let vdash := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "⊢") }
+    let into := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "≡") }
+    `([ $Δ $vdash $A $into $B ])
+  | _ => throw ()
 
-termonly
-@[simp]
-def TypeVarBody (T: «Type») := T.TypeVarLocallyClosed 1
+judgement_syntax Δ " ⊢ " A " ≡ᵢ " B : TypeEquivalenceI
 
-judgement_syntax Δ " ⊢ " A " ≡> " B : ParallelReduction
+judgement TypeEquivalenceI where
 
-judgement ParallelReduction where
+────────── refl
+Δ ⊢ A ≡ᵢ A
 
-───────── refl
-Δ ⊢ A ≡> A
+Δ ⊢ A : K₁ ↦ K₂
+──────────────────────── eta
+Δ ⊢ λ a : K₁. A a$0 ≡ᵢ A
 
-Δ ⊢ B : K
-∀ a ∉ (I: List _), Δ, a : K ⊢ A^a ≡> A'^a
-Δ ⊢ B ≡> B'
-────────────────────────────── lamApp
-Δ ⊢ (λ a : K. A) B ≡> A'^^B'/a
+Δ ⊢ λ a : K₁. A : K₁ ↦ K₂
+Δ ⊢ B: K₁
+───────────────────────────── lamApp
+Δ ⊢ (λ a : K₁. A) B ≡ᵢ A^^B/a
 
-</ Δ ⊢ B@i : K // i in [:n] notex />
-∀ a ∉ (I: List _), Δ, a : K ⊢ A^a ≡> A'^a
-</ Δ ⊢ B@i ≡> B'@i // i in [:n] notex />
-body A
-────────────────────────────────────────────────────────────────────────────────────────────── lamListApp
-Δ ⊢ (λ a : K. A) ⟦{ </ B@i // i in [:n] notex /> }⟧ ≡> { </ A'^^B'@i/a // i in [:n] notex /> }
+Δ ⊢ A : K₁ ↦ K₂
+────────────────────────────────────────────────────────────────────────────────────────────────────────────── listAppList
+Δ ⊢ A ⟦{ </ B@i // i in [:n] notex /> </ : K₁ // b /> }⟧ ≡ᵢ { </ A B@i // i in [:n] notex /> </ : K₂ // b /> }
 
-∀ a ∉ (I : List _), Δ, a : K ⊢ A^a ≡> B^a
-─────────────────────────── lam
-Δ ⊢ λ a : K. A ≡> λ a : K. B
+Δ ⊢ A: L K
+────────────────────────── listAppId
+Δ ⊢ (λ a : K. a$0) ⟦A⟧ ≡ᵢ A
 
-Δ ⊢ A₁ ≡> A₂
-Δ ⊢ B₁ ≡> B₂
+notex lc_ A₀
+Δ ⊢ A₁ : K₁ ↦ K₂
+────────────────────────────────────────────── listAppComp
+Δ ⊢ A₀ ⟦A₁ ⟦B⟧⟧ ≡ᵢ (λ a : K₁. A₀ (A₁ a$0)) ⟦B⟧
+
+∀ a ∉ I, Δ, a : K ⊢ A^a ≡ᵢ B^a
+───────────────────────────── lam (I : List TypeVarId)
+Δ ⊢ λ a : K. A ≡ᵢ λ a : K. B
+
+Δ ⊢ A₁ ≡ᵢ A₂
+Δ ⊢ B₁ ≡ᵢ B₂
 ───────────────── app
-Δ ⊢ A₁ B₁ ≡> A₂ B₂
+Δ ⊢ A₁ B₁ ≡ᵢ A₂ B₂
 
-∀ a ∉ (I: List _), Δ, a : K ⊢ A^a ≡> B^a
-─────────────────────────── scheme
-Δ ⊢ ∀ a : K. A ≡> ∀ a : K. B
+∀ a ∉ I, Δ, a : K ⊢ A^a ≡ᵢ B^a
+───────────────────────────── scheme (I : List TypeVarId)
+Δ ⊢ ∀ a : K. A ≡ᵢ ∀ a : K. B
 
-Δ ⊢ A₁ ≡> A₂
-Δ ⊢ B₁ ≡> B₂
+Δ ⊢ A₁ ≡ᵢ A₂
+Δ ⊢ B₁ ≡ᵢ B₂
 ───────────────────── arr
-Δ ⊢ A₁ → B₁ ≡> A₂ → B₂
+Δ ⊢ A₁ → B₁ ≡ᵢ A₂ → B₂
 
-</ Δ ⊢ A@i ≡> B@i // i in [:n] notex />
-──────────────────────────────────────────────────────────────────────── list
-Δ ⊢ { </ A@i // i in [:n] notex /> } ≡> { </ B@i // i in [:n] notex /> }
+</ Δ ⊢ A@i ≡ᵢ B@i // i in [:n] notex />
+────────────────────────────────────────────────────────────────────────────────────────────────── list
+Δ ⊢ {</ A@i // i in [:n] notex /> </ : K // b />} ≡ᵢ {</ B@i // i in [:n] notex /> </ : K // b />}
 
-Δ ⊢ A₁ ≡> A₂
-Δ ⊢ B₁ ≡> B₂
+Δ ⊢ A₁ ≡ᵢ A₂
+Δ ⊢ B₁ ≡ᵢ B₂
 ───────────────────── listApp
-Δ ⊢ A₁ ⟦B₁⟧ ≡> A₂ ⟦B₂⟧
+Δ ⊢ A₁ ⟦B₁⟧ ≡ᵢ A₂ ⟦B₂⟧
 
-Δ ⊢ A ≡> B
+Δ ⊢ A ≡ᵢ B
 ───────────── prod
-Δ ⊢ ⊗ A ≡> ⊗ B
+Δ ⊢ ⊗ A ≡ᵢ ⊗ B
 
-Δ ⊢ A ≡> B
+Δ ⊢ A ≡ᵢ B
 ───────────── sum
-Δ ⊢ ⊕ A ≡> ⊕ B
+Δ ⊢ ⊕ A ≡ᵢ ⊕ B
 
-@[app_unexpander ParallelReduction]
-def ParallelReduction.delabPRed: Lean.PrettyPrinter.Unexpander
+termonly
+@[app_unexpander TypeEquivalenceI]
+def TypeEquivalenceI.delab: Lean.PrettyPrinter.Unexpander
   | `($(_) $Δ $A $B) =>
     let info := Lean.SourceInfo.none
     let vdash := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "⊢") }
-    let into := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "≡>") }
+    let into := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "≡ᵢ") }
     `([ $Δ $vdash $A $into $B ])
   | _ => throw ()
 
-judgement_syntax Δ " ⊢ " A " ≡>* " B : MultiParallelReduction
+judgement_syntax Δ " ⊢ " A " ≡ₛ " B : TypeEquivalenceS
 
-judgement MultiParallelReduction where
+judgement TypeEquivalenceS where
 
-───────── refl
-Δ ⊢ A ≡>* A
+Δ ⊢ A ≡ᵢ B
+────────── base
+Δ ⊢ A ≡ₛ B
 
-Δ ⊢ A ≡> A'
-Δ ⊢ A' ≡>* A''
-────────────── step
-Δ ⊢ A ≡>* A''
+Δ ⊢ A ≡ᵢ B
+────────── symm
+Δ ⊢ B ≡ₛ A
 
-@[app_unexpander MultiParallelReduction]
-def MultiParallelReduction.delabMPRed: Lean.PrettyPrinter.Unexpander
+Δ ⊢ A ≡ₛ B
+Δ ⊢ B ≡ₛ C
+────────── trans
+Δ ⊢ A ≡ₛ C
+
+termonly
+@[app_unexpander TypeEquivalenceS]
+def TypeEquivalenceS.delab: Lean.PrettyPrinter.Unexpander
   | `($(_) $Δ $A $B) =>
     let info := Lean.SourceInfo.none
     let vdash := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "⊢") }
-    let into := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "≡>*") }
+    let into := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "≡ₛ") }
     `([ $Δ $vdash $A $into $B ])
   | _ => throw ()
-
-termonly
-def ParallelReduction.Multi_of (red: [[ Δ ⊢ A ≡> B ]]): [[ Δ ⊢ A ≡>* B ]] := .step red .refl
-
-judgement_syntax Δ " ⊢ " A " <≡>* " B : EqParallelReduction
-
-judgement EqParallelReduction where
-
-──────────── refl
-Δ ⊢ A <≡>* A
-
-Δ ⊢ A ≡> B
-──────────── step
-Δ ⊢ A <≡>* B
-
-Δ ⊢ B <≡>* A
-──────────── sym
-Δ ⊢ A <≡>* B
-
-Δ ⊢ A <≡>* A'
-Δ ⊢ A' <≡>* A''
-─────────────── trans
-Δ ⊢ A <≡>* A''
-
-@[app_unexpander EqParallelReduction]
-def EqParallelReduction.delabMPRed: Lean.PrettyPrinter.Unexpander
-  | `($(_) $Δ $A $B) =>
-    let info := Lean.SourceInfo.none
-    let vdash := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "⊢") }
-    let into := { raw := Lean.Syntax.node1 info `str (Lean.Syntax.atom info "<≡>*") }
-    `([ $Δ $vdash $A $into $B ])
-  | _ => throw ()
-
-termonly
-def ParallelReduction.Equiv_of (red: [[ Δ ⊢ A ≡> B ]]): [[ Δ ⊢ A <≡>* B ]] := .step red
-
-termonly
-attribute [aesop unsafe simp constructors (rule_sets := [pred])] ParallelReduction MultiParallelReduction EqParallelReduction
 
 end TabularTypeInterpreter.«F⊗⊕ω»

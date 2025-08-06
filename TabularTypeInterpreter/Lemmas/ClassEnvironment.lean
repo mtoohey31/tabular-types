@@ -13,10 +13,10 @@ theorem TCDom_append : (append Γc Γc').TCDom = Γc'.TCDom ++ Γc.TCDom := by
   | empty => rw [append, TCDom, List.nil_append]
   | ext .. => rw [append, TCDom, TCDom_append, TCDom, List.cons_append]
 
-theorem memberDom_append : (append Γc Γc').memberDom = Γc'.memberDom ++ Γc.memberDom := by
+theorem methodDom_append : (append Γc Γc').methodDom = Γc'.methodDom ++ Γc.methodDom := by
   match Γc' with
-  | empty => rw [append, memberDom, List.nil_append]
-  | ext .. => rw [append, memberDom, memberDom_append, memberDom, List.cons_append]
+  | empty => rw [append, methodDom, List.nil_append]
+  | ext .. => rw [append, methodDom, methodDom_append, methodDom, List.cons_append]
 
 namespace In
 
@@ -25,10 +25,10 @@ theorem ne_of_TCNotInDom {TC} (γcin : [[γc ∈ Γc]]) (TCnin : [[TC ∉ dom(Γ
   | .head => List.ne_of_not_mem_cons TCnin
   | .ext γcin' .. => γcin'.ne_of_TCNotInDom <| List.not_mem_of_not_mem_cons TCnin
 
-theorem ne_of_MemberNotInDom (γcin : [[γc ∈ Γc]]) (mnin : [[m ∉ dom(Γc)]]) : m ≠ γc.4 :=
+theorem ne_of_MethodNotInDom (γcin : [[γc ∈ Γc]]) (mnin : [[m ∉ dom(Γc)]]) : m ≠ γc.4 :=
   match γcin with
   | .head => List.ne_of_not_mem_cons mnin
-  | .ext γcin' .. => γcin'.ne_of_MemberNotInDom <| List.not_mem_of_not_mem_cons mnin
+  | .ext γcin' .. => γcin'.ne_of_MethodNotInDom <| List.not_mem_of_not_mem_cons mnin
 
 theorem deterministic (γc₀in : [[γc₀ ∈ Γc]]) (γc₁in : [[γc₁ ∈ Γc]]) (eq : γc₀.2 = γc₁.2)
   : γc₀ = γc₁ := by
@@ -54,8 +54,11 @@ end In
 local instance : Inhabited TypeClass where
   default := .zero
 in
+local instance : Inhabited ClassEnvironmentEntrySuper where
+  default := .mk default <| .list [] none
+in
 local instance : Inhabited «F⊗⊕ω».Type where
-  default := .list []
+  default := .list [] none
 in
 theorem WellFormedness.In_append_inl (ΓcΓc'w : [[⊢c Γc, Γc']]) (γcin : [[γc ∈ Γc]])
   : [[γc ∈ Γc, Γc']] := by
@@ -69,9 +72,9 @@ theorem WellFormedness.In_append_inl (ΓcΓc'w : [[⊢c Γc, Γc']]) (γcin : [[
     rw [← Range.map_get!_eq (as := TCₛAₛ)] at this ⊢
     rw [TCNotInDom, TCDom_append] at TCnin
     let ⟨_, TCninΓc⟩ := List.not_mem_append'.mp TCnin
-    rw [MemberNotInDom, memberDom_append] at mnin
+    rw [MethodNotInDom, methodDom_append] at mnin
     let ⟨_, mninΓc⟩ := List.not_mem_append'.mp mnin
-    exact this.ext (γcin.ne_of_TCNotInDom TCninΓc).symm (γcin.ne_of_MemberNotInDom mninΓc).symm
+    exact this.ext (γcin.ne_of_TCNotInDom TCninΓc).symm (γcin.ne_of_MethodNotInDom mninΓc).symm
 
 end ClassEnvironment
 
@@ -83,7 +86,7 @@ theorem TypeScheme.KindingAndElaboration.class_weakening (σke : [[Γc; Γ ⊢ �
   case tc γcin _ ih => exact tc (ΓcΓc'w.In_append_inl γcin) (ih ΓcΓc'w)
   case all I _ κ₀e _ ψih ρih => exact all I (ψih · · ΓcΓc'w) κ₀e (ρih ΓcΓc'w)
   case ind I₀ I₁ _ κe _ _ ρih Bₗih Bᵣih =>
-    exact ind I₀ I₁ (ρih ΓcΓc'w) κe (Bₗih · · · · · · · · · · ΓcΓc'w) (Bᵣih · · · · ΓcΓc'w)
+    exact ind I₀ I₁ (ρih ΓcΓc'w) κe (Bₗih · · · · · · · · ΓcΓc'w) (Bᵣih · · · · ΓcΓc'w)
   all_goals aesop (add safe constructors KindingAndElaboration)
 
 namespace ClassEnvironment
@@ -95,10 +98,10 @@ theorem ext_eliml (Γcγcw : [[⊢c Γc, γc]]) : [[⊢c Γc]] :=
   Γcw
 
 theorem In_inversion {TC} (Γcw : [[⊢c Γc]])
-  (γcin : [[(</ TCₛ@i a ⇝ Aₛ@i // i in [:n] /> ⇒ TC a : κ) ↦ m : σ ⇝ A ∈ Γc]])
+  (γcin : [[(</ TC'@i a ⇝ A'@i // i in [:n] /> ⇒ TC a : κ) ↦ m : σ ⇝ A ∈ Γc]])
   : ∃ K, [[⊢ κ ⇝ K]] ∧ (∀ a, [[Γc; ε, a : κ ⊢ σ^a : * ⇝ A^a]]) ∧ (∀ a, [[ε, a : K ⊢ A^a : *]]) ∧
-    (∀ a, ∀ i ∈ [:n], [[Γc; ε, a : κ ⊢ TCₛ@i a : C ⇝ Aₛ@i^a]]) ∧
-    (∀ a, ∀ i ∈ [:n], [[ε, a : K ⊢ Aₛ@i^a : *]]) := by
+    (∀ a, ∀ i ∈ [:n], [[Γc; ε, a : κ ⊢ TC'@i a : C ⇝ A'@i^a]]) ∧
+    (∀ a, ∀ i ∈ [:n], [[ε, a : K ⊢ A'@i^a : *]]) := by
   generalize γceq : ClassEnvironmentEntry.mk .. = γc at γcin
   match γcin with
   | .head =>
@@ -119,15 +122,17 @@ theorem In_inversion {TC} (Γcw : [[⊢c Γc]])
         · exact Ake
         · constructor
           · intro a i mem
-            let ⟨TCₛeq, Aₛeq⟩ := Prod.mk.inj <| Range.eq_of_mem_of_map_eq TCₛAₛeq i mem
+            let ⟨TCₛeq, Aₛeq⟩ := ClassEnvironmentEntrySuper.mk.inj <|
+              Range.eq_of_mem_of_map_eq TCₛAₛeq i mem
             rw [TCₛeq, Aₛeq]
             exact TCₛke i mem a |>.class_weakening Γcw (Γc' := .ext .empty _)
           · intro a i mem
-            let ⟨TCₛeq, Aₛeq⟩ := Prod.mk.inj <| Range.eq_of_mem_of_map_eq TCₛAₛeq i mem
+            let ⟨TCₛeq, Aₛeq⟩ := ClassEnvironmentEntrySuper.mk.inj <|
+              Range.eq_of_mem_of_map_eq TCₛAₛeq i mem
             rw [Aₛeq]
             exact Aₛki i mem a
-  | .ext TCin' TCneTC' mnem' (TC' := TC') =>
-    generalize ClassEnvironmentEntry.mk _ TC' .. = γc at *
+  | .ext TCin' TCneTC' mnem' (TC'' := TC'') =>
+    generalize ClassEnvironmentEntry.mk _ TC'' .. = γc at *
     let Γcw@(ext Γcw' ..) := Γcw
     let ⟨_, κe, σke, Aki, TCₛke, Aₛki⟩ := Γcw'.In_inversion TCin'
     injection γceq with TCₛAₛeq TCeq κeq meq σeq Aeq
@@ -146,11 +151,13 @@ theorem In_inversion {TC} (Γcw : [[⊢c Γc]])
         · exact Aki
         · constructor
           · intro a i mem
-            let ⟨TCₛeq, Aₛeq⟩ := Prod.mk.inj <| Range.eq_of_mem_of_map_eq TCₛAₛeq i mem
+            let ⟨TCₛeq, Aₛeq⟩ := ClassEnvironmentEntrySuper.mk.inj <|
+              Range.eq_of_mem_of_map_eq TCₛAₛeq i mem
             rw [TCₛeq, Aₛeq]
             exact TCₛke a i mem |>.class_weakening Γcw (Γc' := .ext .empty _)
           · intro a i mem
-            let ⟨TCₛeq, Aₛeq⟩ := Prod.mk.inj <| Range.eq_of_mem_of_map_eq TCₛAₛeq i mem
+            let ⟨TCₛeq, Aₛeq⟩ := ClassEnvironmentEntrySuper.mk.inj <|
+              Range.eq_of_mem_of_map_eq TCₛAₛeq i mem
             rw [Aₛeq]
             exact Aₛki a i mem
 

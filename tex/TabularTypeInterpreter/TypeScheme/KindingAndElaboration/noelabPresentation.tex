@@ -1,0 +1,81 @@
+\lottjudgement{Kinding And Elaboration}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, σ \, \kindingsym \, κ}{
+\lottinferencerule{var}{
+\lotthypothesis{a \, \lottsym{:} \, κ \, \lottsym{∈} \, Γ}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, a \, \kindingsym \, κ}
+\lottinferencerulesep
+\lottinferencerule{app}{
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ϕ \, \kindingsym \, κ₀ \, \lottsym{↦} \, κ₁}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ \, \kindingsym \, κ₀}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ϕ \, τ \, \kindingsym \, κ₁}
+\lottinferencerulesep
+\lottinferencerule{arr}{
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ₀ \, \kindingsym \, \lottsym{\star}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ₁ \, \kindingsym \, \lottsym{\star}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ₀ \, \lottsym{→} \, τ₁ \, \kindingsym \, \lottsym{\star}}
+\lottinferencerulesep
+\lottinferencerule{qual}{
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ψ \, \kindingsym \, \lottkw{C}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, γ \, \kindingsym \, \lottsym{\star}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ψ \, \lottsym{⇒} \, γ \, \kindingsym \, \lottsym{\star}}
+\lottinferencerulesep
+\lottinferencerule{scheme}{
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \lottsym{,} \, a \, \lottsym{:} \, κ \, \lottsym{⊢} \, σ \, \kindingsym \, \lottsym{\star}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottsym{∀} \, a \, \lottsym{:} \, κ \lottsym{.} \, σ \, \kindingsym \, \lottsym{\star}}
+\lottinferencerulesep
+\lottinferencerule{label}{
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ℓ \, \kindingsym \, \lottkw{L}}
+\lottinferencerulesep
+\lottinferencerule{floor}{
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ξ \, \kindingsym \, \lottkw{L}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottsym{⌊} ξ \lottsym{⌋} \, \kindingsym \, \lottsym{\star}}
+\lottinferencerulesep
+\lottinferencerule{comm}{
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, u \, \kindingsym \, \lottkw{U}}
+\lottinferencerulesep
+\lottinferencerule{row}{
+\lotthypothesis{\lottjudgementcomprehension{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ξ_{i} \, \kindingsym \, \lottkw{L}}}\\
+\lotthypothesis{\lottsym{⊢}_\mathcal{T} \, \lottsepbycomprehension{ξ_{i}}}\\
+\lotthypothesis{\lottjudgementcomprehension{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ_{i} \, \kindingsym \, κ}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottsym{⟨} \lottsepbycomprehension{ξ_{i} \, \lottsym{▹} \, τ_{i}} \lottsym{⟩} \, \kindingsym \, \lottkw{R}^{κ}}
+\lottinferencerulesep
+\lottinferencerule{prodOrSum}{
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, μ \, \kindingsym \, \lottkw{U}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ \, \kindingsym \, \lottkw{R}^{\lottsym{\star}}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, {\lottsym{Ξ}}_{μ} \, ρ \, \kindingsym \, \lottsym{\star}}
+\lottinferencerulesep
+\lottinferencerule{lift}{
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \lottsym{,} \, a \, \lottsym{:} \, κ₀ \, \lottsym{⊢} \, τ \, \kindingsym \, κ₁}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ \, \kindingsym \, \lottkw{R}^{κ₀}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottkw{Lift} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ₀ \lottsym{.} \, τ \lottsym{)} \, ρ \, \kindingsym \, \lottkw{R}^{κ₁}}
+\lottinferencerulesep
+\lottinferencerule{contain}{
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, μ \, \kindingsym \, \lottkw{U}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \kindingsym \, \lottkw{R}^{κ}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₁ \, \kindingsym \, \lottkw{R}^{κ}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \lottsym{≲}_{μ} \, ρ₁ \, \kindingsym \, \lottkw{C}}
+\lottinferencerulesep
+\lottinferencerule{concat}{
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, μ \, \kindingsym \, \lottkw{U}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \kindingsym \, \lottkw{R}^{κ}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₁ \, \kindingsym \, \lottkw{R}^{κ}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₂ \, \kindingsym \, \lottkw{R}^{κ}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ₀ \, \lottsym{⊙}_{μ} \, ρ₁ \, \lottsym{\sim} \, ρ₂ \, \kindingsym \, \lottkw{C}}
+\lottinferencerulesep
+\lottinferencerule{tc}{
+\lotthypothesis{\lottsym{(} \lottsepbycomprehension{TC'_{i} \, a} \, \lottsym{⇒} \, TC \, a \, \lottsym{:} \, κ \lottsym{)} \, \lottsym{↦} \, m \, \lottsym{:} \, σ \, \lottsym{∈} \, Γ_{C}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ \, \kindingsym \, κ}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, TC \, τ \, \kindingsym \, \lottkw{C}}
+\lottinferencerulesep
+\lottinferencerule{all}{
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \lottsym{,} \, a \, \lottsym{:} \, κ \, \lottsym{⊢} \, ψ \, \kindingsym \, \lottkw{C}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ \, \kindingsym \, \lottkw{R}^{κ}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottkw{All} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, ψ \lottsym{)} \, ρ \, \kindingsym \, \lottkw{C}}
+\lottinferencerulesep
+\lottinferencerule{ind}{
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, ρ \, \kindingsym \, \lottkw{R}^{κ}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottkw{Ind} \, ρ \, \kindingsym \, \lottkw{C}}
+\lottinferencerulesep
+\lottinferencerule{split}{
+\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottsym{(} \lottkw{Lift} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ₀ \lottsym{)} \, \lottsym{⊙}_{\mathfrak{c}} \, ρ₁ \, \lottsym{\sim} \, ρ₂ \, \kindingsym \, \lottkw{C}}
+}{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottkw{Split} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ₀ \, ρ₁ \, ρ₂ \, \kindingsym \, \lottkw{C}}
+}

@@ -1,0 +1,22 @@
+\lottjudgement{Typing And Elaboration}{Γ_{I} \lottsym{;} \, Γ_{C} \, \lottsym{⊢} \, pgm \, \pgmtypingsym \, σ}{
+\lottinferencerule{cls}{
+\lotthypothesis{\lottjudgementcomprehension{TC'_{i} \, \lottsym{:} \, κ \, \lottsym{∈} \, Γ_{C}}}\\
+\lotthypothesis{TC \, \lottsym{∉} \, \lottkw{dom} \lottsym{(} Γ_{C} \lottsym{)}}\\
+\lotthypothesis{m \, \lottsym{∉} \, \lottkw{dom} \lottsym{(} Γ_{C} \lottsym{)}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, \lottsym{\epsilon} \lottsym{,} \, a \, \lottsym{:} \, κ \, \lottsym{⊢} \, σ₀ \, \kindingsym \, \lottsym{\star}}\\
+\lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{,} \, \lottsym{(} \lottsepbycomprehension{TC'_{i} \, a} \, \lottsym{⇒} \, TC \, a \, \lottsym{:} \, κ \lottsym{)} \, \lottsym{↦} \, m \, \lottsym{:} \, σ₀ \, \lottsym{⊢} \, pgm \, \pgmtypingsym \, σ₁}
+}{Γ_{I} \lottsym{;} \, Γ_{C} \, \lottsym{⊢} \, \lottkw{class} \, \lottsepbycomprehension{TC'_{i} \, a} \, \lottsym{⇒} \, TC \, a \, \lottsym{:} \, κ \, \lottkw{where} \, \lottsym{\{} m \, \lottsym{:} \, σ₀ \lottsym{\}} \lottsym{;} \, pgm \, \pgmtypingsym \, σ₁}
+\lottinferencerulesep
+\lottinferencerule{inst}{
+\lotthypothesis{\lottsym{(} \lottsepbycomprehension{TC'_{i} \, a'} \, \lottsym{⇒} \, TC \, a' \, \lottsym{:} \, κ \lottsym{)} \, \lottsym{↦} \, m \, \lottsym{:} \, σ₀ \, \lottsym{∈} \, Γ_{C}}\\
+\lotthypothesis{\lottjudgementcomprehension{Γ_{C} \lottsym{;} \, \lottsym{\epsilon} \lottsym{,} \, \lottsepbycomprehension{a_{k} \, \lottsym{:} \, κ'_{k}} \, \lottsym{⊢} \, ψ_{j} \, \kindingsym \, \lottkw{C}}}\\
+\lotthypothesis{\lottjudgementcomprehension{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, \lottsym{\epsilon} \lottsym{,} \, \lottsepbycomprehension{a_{k} \, \lottsym{:} \, κ'_{k}} \lottsym{,} \, \lottsepbycomprehension{ψ_{j}} \, \solvingsym \, TC'_{i} \, τ}}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, \lottsym{\epsilon} \lottsym{,} \, \lottsepbycomprehension{a_{k} \, \lottsym{:} \, κ'_{k}} \, \lottsym{⊢} \, τ \, \kindingsym \, κ}\\
+\lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, \lottsym{\epsilon} \lottsym{,} \, \lottsepbycomprehension{a_{k} \, \lottsym{:} \, κ'_{k}} \lottsym{,} \, \lottsepbycomprehension{ψ_{j}} \, \lottsym{⊢} \, M \, \typingsym \, σ₀\left[τ/a'\right]}\\
+\lotthypothesis{Γ_{I} \lottsym{,} \, \lottsym{(} \lottsym{∀} \, \lottsepbycomprehension{a_{k} \, \lottsym{:} \, κ'_{k}} \lottsym{.} \, \lottsepbycomprehension{ψ_{j}} \, \lottsym{⇒} \, TC \, τ \lottsym{)} \lottsym{;} \, Γ_{C} \, \lottsym{⊢} \, pgm \, \pgmtypingsym \, σ₁}
+}{Γ_{I} \lottsym{;} \, Γ_{C} \, \lottsym{⊢} \, \lottkw{instance} \, \lottsepbycomprehension{ψ_{j}} \, \lottsym{⇒} \, TC \, τ \, \lottkw{where} \, \lottsym{\{} m \, \lottsym{=} \, M \lottsym{\}} \lottsym{;} \, pgm \, \pgmtypingsym \, σ₁}
+\lottinferencerulesep
+\lottinferencerule{term}{
+\lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, \lottsym{\epsilon} \, \lottsym{⊢} \, M \, \typingsym \, σ}
+}{Γ_{I} \lottsym{;} \, Γ_{C} \, \lottsym{⊢} \, M \, \pgmtypingsym \, σ}
+}

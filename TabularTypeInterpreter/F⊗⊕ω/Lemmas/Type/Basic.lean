@@ -9,7 +9,7 @@ def rec_uniform {motive : «Type» → Prop} (var : ∀ a : TypeVar, motive (var
   (lam : ∀ K A, motive A → motive (lam K A)) (app : ∀ A B, motive A → motive B → motive (app A B))
   («forall» : ∀ K A, motive A → motive («forall» K A))
   (arr : ∀ A B, motive A → motive B → motive (arr A B))
-  (list : ∀ As, (∀ A ∈ As, motive A) → motive (list As))
+  (list : ∀ As K?, (∀ A ∈ As, motive A) → motive (list As K?))
   (listApp : ∀ A B, motive A → motive B → motive (listApp A B))
   (prod : ∀ A, motive A → motive (prod A)) (sum : ∀ A, motive A → motive (sum A)) (A : «Type»)
   : motive A :=
@@ -53,26 +53,27 @@ theorem TypeVar_open_sizeOf (A : «Type») : sizeOf (A.TypeVar_open a n) = sizeO
     simp only
     rw [← _sizeOf_1, ← _sizeOf_1, ← _sizeOf_1, ← _sizeOf_1, rev (A'.TypeVar_open _ _),
         rev (B.TypeVar_open _ _), rev A', rev B, A'.TypeVar_open_sizeOf, B.TypeVar_open_sizeOf]
-  | list A's =>
+  | list A's K? =>
     match A's with
     | [] =>
       rw [TypeVar_open]
-      show sizeOf (list []) = _
+      show sizeOf (list [] _) = _
       dsimp only [sizeOf]
     | A' :: A's' =>
       rw [TypeVar_open]
-      show sizeOf (list (_ :: _)) = _
+      show sizeOf (list (_ :: _) _) = _
       dsimp only [sizeOf]
       rw [_sizeOf_1, _sizeOf_1]
       simp only
       rw [← _sizeOf_1, ← _sizeOf_1, ← _sizeOf_2, ← _sizeOf_2, rev (A'.TypeVar_open _ _), rev A',
           A'.TypeVar_open_sizeOf]
-      have h := (list A's').TypeVar_open_sizeOf (a := a) (n := n)
+      have h := (list A's' K?).TypeVar_open_sizeOf (a := a) (n := n)
       dsimp only [sizeOf] at h
       rw [TypeVar_open, _sizeOf_1, _sizeOf_1] at h
       simp only at h
-      rw [← _sizeOf_2, ← _sizeOf_2, Nat.add_comm, Nat.add_comm (m := _sizeOf_2 A's')] at h
-      rw [Nat.add_one_inj.mp h]
+      rw [← _sizeOf_2, ← _sizeOf_2, Nat.add_assoc, Nat.add_assoc, Nat.add_comm 1,
+          Nat.add_comm 1] at h
+      rw [Nat.add_left_inj.mp <| Nat.add_one_inj.mp h]
   | listApp A' B =>
     dsimp only [sizeOf]
     rw [TypeVar_open, _sizeOf_1, _sizeOf_1]
@@ -98,6 +99,11 @@ theorem Type_open_var {T: «Type»} : T.TypeVar_open a n = T.Type_open (var (Typ
 theorem TypeVar_open_comm (A : «Type»)
   : m ≠ n → (A.TypeVar_open a m).TypeVar_open a' n = (A.TypeVar_open a' n).TypeVar_open a m := by
   induction A using rec_uniform generalizing m n <;> aesop (add simp TypeVar_open)
+
+theorem TypeVar_open_TypeVar_subst_var_comm : a ≠ a'' →
+    TypeVar_open (TypeVar_subst A a (.var (.free a'))) a'' n =
+      TypeVar_subst (A.TypeVar_open a'' n) a (.var (.free a')) := by
+  induction A using rec_uniform generalizing n <;> aesop (add simp [TypeVar_open, TypeVar_subst])
 
 theorem TypeVar_open_TypeVar_multi_open_comm (mlen : m ≤ n)
   : TypeVar_multi_open (TypeVar_open A a n) a' m =
@@ -236,7 +242,7 @@ theorem Type_open_drop (h : m < n) (Aoplc : (Type_open A B m).TypeVarLocallyClos
     rw [Type_open] at Aoplc
     let .arr A'oplc Boplc := Aoplc
     exact arr (A'oplc.Type_open_drop h) (Boplc.Type_open_drop h)
-  | .list A's =>
+  | .list A's K? =>
     rw [Type_open] at Aoplc
     match h' : A's with
     | [] => exact .list nofun
@@ -247,7 +253,7 @@ theorem Type_open_drop (h : m < n) (Aoplc : (Type_open A B m).TypeVarLocallyClos
       match A''in with
       | .head _ => exact A'oplc (A''.Type_open _ _) (.head _) |>.Type_open_drop h
       | .tail _ A''inA's' =>
-        have := list <| fun A''' A'''in => A'oplc A''' <| .tail _ A'''in
+        have := @list K? _ _ <| fun A''' A'''in => A'oplc A''' <| .tail _ A'''in
         rw [← Type_open] at this
         let .list A's'lc := this.Type_open_drop h
         exact A's'lc A'' A''inA's'
@@ -267,6 +273,7 @@ termination_by sizeOf A
 decreasing_by
   all_goals simp_arith
   · apply Nat.le_of_lt
+    apply Nat.lt_add_right
     apply List.sizeOf_lt_of_mem
     have : A's = A' :: A's' := by assumption
     cases this
@@ -301,7 +308,7 @@ theorem TypeVar_open_drop {A : «Type»} (h : m < n)
     rw [TypeVar_open] at Aoplc
     let .arr A'oplc Boplc := Aoplc
     exact arr (A'oplc.TypeVar_open_drop h) (Boplc.TypeVar_open_drop h)
-  | .list A's =>
+  | .list A's K? =>
     rw [TypeVar_open] at Aoplc
     match h' : A's with
     | [] => exact .list nofun
@@ -312,7 +319,7 @@ theorem TypeVar_open_drop {A : «Type»} (h : m < n)
       match A''in with
       | .head _ => exact A'oplc (A''.TypeVar_open _ _) (.head _) |>.TypeVar_open_drop h
       | .tail _ A''inA's' =>
-        have := list <| fun A''' A'''in => A'oplc A''' <| .tail _ A'''in
+        have := @list K? _ _ <| fun A''' A'''in => A'oplc A''' <| .tail _ A'''in
         rw [← TypeVar_open] at this
         let .list A's'lc := this.TypeVar_open_drop h
         exact A's'lc A'' A''inA's'
@@ -332,6 +339,7 @@ termination_by sizeOf A
 decreasing_by
   all_goals simp_arith
   · apply Nat.le_of_lt
+    apply Nat.lt_add_right
     apply List.sizeOf_lt_of_mem
     have : A's = A' :: A's' := by assumption
     cases this
@@ -484,6 +492,11 @@ theorem Type_open_TypeVar_close_eq_TypeVar_subst
 private
 theorem Type_open_id' : TypeVarLocallyClosed A n → A = A.Type_open B n := (Type_open_id · |>.symm)
 
+theorem TypeVar_open_TypeVar_subst_comm {T A: «Type»} (lc: A.TypeVarLocallyClosed n) (neq: x ≠ y): (T.TypeVar_open y n).TypeVar_subst x A = (T.TypeVar_subst x A).TypeVar_open y n := by
+  set_option aesop.dev.statefulForward false in
+  induction T using rec_uniform generalizing n <;> aesop
+    (add simp [TypeVar_open, TypeVar_subst], 40% Type_open_id', 40% forward TypeVar_open_id, 40% weaken)
+
 theorem Type_open_TypeVar_subst_dist
   : TypeVarLocallyClosed B' n → (Type_open A B n).TypeVar_subst a B' =
     (A.TypeVar_subst a B').Type_open (B.TypeVar_subst a B') n := by
@@ -556,20 +569,29 @@ theorem aux_of : TypeVarLocallyClosed A → TypeVarLocallyClosed_aux A := by
 -- thank you matthew!!!
 theorem aux_iff : (TypeVarLocallyClosed_aux A ↔ A.TypeVarLocallyClosed) := ⟨of_aux, aux_of⟩
 
+theorem not_mem_freeTypeVars_TypeVar_open_dec
+  : TypeVarLocallyClosed A (n + 1) → a ∉ freeTypeVars (TypeVar_open A a n) → TypeVarLocallyClosed A n := by
+  induction A using rec_uniform generalizing n
+  case var =>
+    rw [TypeVar_open]
+    split
+    · case isTrue h =>
+      cases h
+      rw [freeTypeVars]
+      intro _ nmem
+      nomatch List.not_mem_singleton.mp nmem
+    · case isFalse h =>
+      intro Alc nmem
+      match Alc with
+      | var_free => exact var_free
+      | var_bound h' =>
+        exact var_bound <|
+          Nat.lt_of_le_of_ne (Nat.le_of_lt_succ h') (h <| TypeVar.bound.injEq .. |>.mpr ·.symm)
+  all_goals aesop (add simp [TypeVar_open, freeTypeVars], unsafe cases TypeVarLocallyClosed, safe constructors TypeVarLocallyClosed)
+
+theorem id : TypeVarLocallyClosed [[λ a : K. a$0]] := .lam <| .var_bound Nat.one_pos
+
 end TypeVarLocallyClosed
-
-
--- NOTE only this is needed
-theorem subst_open_var {T A: «Type»} (neq: x ≠ y) (lc: A.TypeVarLocallyClosed n): (T.TypeVar_open y n).TypeVar_subst x A = (T.TypeVar_subst x A).TypeVar_open y n := sorry
-
-
-theorem subst_close_var {T A: «Type»} (neq: x ≠ y) (fresh: y ∉ A.freeTypeVars): (T.TypeVar_close y n).TypeVar_subst x A = (T.TypeVar_subst x A).TypeVar_close y n := sorry
-
-
-theorem subst_fresh {A T : «Type»} (fresh: a ∉ A.freeTypeVars) : a ∉ (T.TypeVar_subst a A |>.freeTypeVars) := sorry
-
-
-theorem subst_fresh' {A T: «Type»} (freshA: a ∉ A.freeTypeVars) (freshT: a ∉ T.freeTypeVars) : a ∉ (T.TypeVar_subst a' A |>.freeTypeVars) := sorry -- TODO by induction on T, wait is the a a' part right?
 
 theorem freeTypeVars_TypeVar_open {T: «Type»} : a ∈ T.freeTypeVars -> a ∈ (T.TypeVar_open a' n).freeTypeVars := by
   induction T using rec_uniform generalizing n <;> aesop (add simp [freeTypeVars, TypeVar_open])

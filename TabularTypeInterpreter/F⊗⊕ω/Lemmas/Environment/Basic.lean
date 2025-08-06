@@ -205,6 +205,18 @@ theorem TermVarInEnvironment_of (xInDomΔ : [[x ∈ dom(Δ)]]) : ∃ T, [[x : T 
 end TermVarInDom
 namespace TypeVarInEnvironment
 
+theorem deterministic (aK₁inΔ : [[a : K₁ ∈ Δ]]) (aK₂inΔ : [[a : K₂ ∈ Δ]]) : K₁ = K₂ :=
+  match aK₁inΔ with
+  | .head =>
+    let .head := aK₂inΔ
+    rfl
+  | .typeVarExt aK₁inΔ' ne => match aK₂inΔ with
+    | .head => nomatch ne
+    | .typeVarExt aK₂inΔ' _ => aK₁inΔ'.deterministic aK₂inΔ'
+  | .termVarExt aK₁inΔ' =>
+    let .termVarExt aK₂inΔ' := aK₂inΔ
+    aK₁inΔ'.deterministic aK₂inΔ'
+
 theorem eq_of (aKinΔ : [[a : K ∈ Δ]]) : ∃ Δ' Δ'', Δ = [[(Δ', a : K, Δ'')]] := by
   match aKinΔ with
   | .head => exact ⟨_, .empty, rfl⟩
@@ -269,11 +281,49 @@ theorem append_elim : [[ a: K ∈ Δ, Δ' ]] → ([[ a ∉ dom(Δ') ]] ∧ [[ a:
       specialize @ih (by simp_all [typeVarDom]) (by cases hIn; simp_all)
       cases ih <;> aesop (add safe constructors TypeVarInEnvironment)
 
+open Environment in
+theorem weakening (h: [[ a: K ∈ Δ, Δ'' ]]) (fresh: ∀a ∈ Δ'.typeVarDom, a ∉ Δ.typeVarDom): [[ a: K ∈ Δ, Δ', Δ'' ]] := by
+  induction Δ' generalizing Δ Δ''
+  . case empty => simp_all [empty_append]
+  . case typeExt Δ' a' K' ih =>
+    specialize @ih Δ [[ (ε , a' : K') , Δ'' ]]
+    simp_all [append_type_assoc]
+    refine ih ?_ (by aesop (add norm typeVarDom))
+    obtain h := h.append_elim
+    cases h
+    . case inl h =>
+      apply weakening_r
+      . simp_all
+      . by_cases (a = a')
+        . case pos eq =>
+          -- contradiction
+          aesop (add norm typeVarDom, norm TypeVarInDom, safe forward TypeVarInDom_of)
+        . case neg neq =>
+          constructor <;> simp_all [TypeVarNe]
+    . case inr hIn =>
+      simp_all [weakening_l]
+  . case termExt Δ' x' T ih =>
+    specialize @ih Δ [[ (ε , x' : T) , Δ'' ]]
+    simp_all [append_term_assoc]
+    refine ih ?_ (by aesop (add norm typeVarDom))
+    obtain h := h.append_elim
+    cases h
+    . case inl h =>
+      apply weakening_r
+      . simp_all
+      . constructor; simp_all
+    . case inr h =>
+      simp_all [weakening_l]
+
 theorem TypeVar_subst: [[ a: K ∈ Δ[A/a'] ]] ↔ [[ a: K ∈ Δ ]] := by
   induction Δ <;>
     aesop (add norm Environment.TypeVar_subst, unsafe cases TypeVarInEnvironment, unsafe constructors TypeVarInEnvironment)
 
 theorem TermVar_drop : [[ a: K ∈ Δ, x: T, Δ' ]] → [[ a: K ∈ Δ, Δ' ]] := by
+  induction Δ' <;>
+    aesop (add norm Environment.append, unsafe constructors TypeVarInEnvironment, safe cases TypeVarInEnvironment)
+
+theorem TypeVar_drop : [[a : K ∈ Δ, a' : K', Δ']] → a ≠ a' → [[a : K ∈ Δ, Δ']] := by
   induction Δ' <;>
     aesop (add norm Environment.append, unsafe constructors TypeVarInEnvironment, safe cases TypeVarInEnvironment)
 
@@ -350,6 +400,40 @@ theorem append_elim : [[ x: T ∈ Δ, Δ' ]] → ([[ x ∉ dom(Δ') ]] ∧ [[ x:
       simp_all [Environment.append]
       specialize @ih (by simp_all [termVarDom]) (by cases hIn <;> simp_all [termVarDom])
       cases ih <;> aesop (add norm termVarDom, safe constructors TermVarInEnvironment)
+
+open Environment in
+theorem weakening (h: [[ x: T ∈ Δ, Δ'' ]]) (fresh: ∀x ∈ Δ'.termVarDom, x ∉ Δ.termVarDom): [[ x: T ∈ Δ, Δ', Δ'' ]] := by
+  induction Δ' generalizing Δ Δ''
+  . case empty => simp_all [empty_append]
+  . case typeExt Δ' a' K' ih =>
+    specialize @ih Δ [[ (ε , a' : K') , Δ'' ]]
+    simp_all [append_type_assoc]
+    refine ih ?_ (by aesop (add norm typeVarDom))
+    obtain h := h.append_elim
+    cases h
+    . case inl h =>
+      apply weakening_r
+      . simp_all
+      . constructor; simp_all
+    . case inr hIn =>
+      simp_all [weakening_l]
+  . case termExt Δ' x' T' ih =>
+    specialize @ih Δ [[ (ε , x' : T') , Δ'' ]]
+    simp_all [append_term_assoc]
+    refine ih ?_ (by aesop (add norm termVarDom))
+    obtain h := h.append_elim
+    cases h
+    . case inl h =>
+      apply weakening_r
+      . simp_all
+      . by_cases (x = x')
+        . case pos eq =>
+          -- contradiction
+          aesop (add norm termVarDom, norm TermVarInDom, safe forward TermVarInDom_of)
+        . case neg neq =>
+          constructor <;> simp_all [TermVarNe]
+    . case inr hIn =>
+      simp_all [weakening_l]
 
 open Environment in
 theorem append_intro_l (xinΔ: [[ x: T ∈ Δ ]]) (xninΔ': ([[ x ∉ dom(Δ') ]])): [[ x: T ∈ Δ, Δ' ]] := by

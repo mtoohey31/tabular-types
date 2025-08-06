@@ -6,11 +6,13 @@ open Lake DSL
 require lott from "vendor/lott"
 require mathlib from git "https://github.com/leanprover-community/mathlib4.git" @ "v4.17.0"
 require parser from "vendor/lean4-parser"
+require Thesis from git "https://github.com/mtoohey31/svkampen-msc-thesis" @ "main"
 
 package «tabular-type-interpreter» where
   moreGlobalServerArgs := #[
     s!"-Dweak.lott.tex.output.dir={__dir__}/tex",
-    s!"-Dweak.tti.corePath={__dir__}/examples/core"
+    s!"-Dweak.tti.corePath={__dir__}/examples/core",
+    "-DmaxHeartbeats=4000000"
   ]
 
 -- TODO: Figure out how to enable makeDeps without breaking build.

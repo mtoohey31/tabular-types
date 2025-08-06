@@ -1,18 +1,17 @@
-\lottjudgement{Type Var In}{\sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \, \lottsym{∈} \, \sourcepre Γ \sourcepost}{
+\lottjudgement{Type Var In}{a \, \lottsym{:} \, κ \, \lottsym{∈} \, Γ}{
 \lottinferencerule{head}{
-\\\\
-}{\sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \, \lottsym{∈} \, \sourcepre \sourcepre Γ \sourcepost \lottsym{,} \, \sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \sourcepost}
+}{a \, \lottsym{:} \, κ \, \lottsym{∈} \, Γ \lottsym{,} \, a \, \lottsym{:} \, κ}
 \lottinferencerulesep
 \lottinferencerule{typeExt}{
-\lotthypothesis{\sourcepre a \sourcepost \, \lottsym{≠} \, \sourcepre a' \sourcepost}\\
-\lotthypothesis{\sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \, \lottsym{∈} \, \sourcepre Γ \sourcepost}
-}{\sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \, \lottsym{∈} \, \sourcepre \sourcepre Γ \sourcepost \lottsym{,} \, \sourcepre a' \sourcepost \, \lottsym{:} \, \sourcepre κ' \sourcepost \sourcepost}
+\lotthypothesis{a \, \lottsym{≠} \, a'}\\
+\lotthypothesis{a \, \lottsym{:} \, κ \, \lottsym{∈} \, Γ}
+}{a \, \lottsym{:} \, κ \, \lottsym{∈} \, Γ \lottsym{,} \, a' \, \lottsym{:} \, κ'}
 \lottinferencerulesep
 \lottinferencerule{termExt}{
-\lotthypothesis{\sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \, \lottsym{∈} \, \sourcepre Γ \sourcepost}
-}{\sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \, \lottsym{∈} \, \sourcepre \sourcepre Γ \sourcepost \lottsym{,} \, \sourcepre x \sourcepost \, \lottsym{:} \, \sourcepre σ \sourcepost \sourcepost}
+\lotthypothesis{a \, \lottsym{:} \, κ \, \lottsym{∈} \, Γ}
+}{a \, \lottsym{:} \, κ \, \lottsym{∈} \, Γ \lottsym{,} \, x \, \lottsym{:} \, σ}
 \lottinferencerulesep
 \lottinferencerule{constrExt}{
-\lotthypothesis{\sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \, \lottsym{∈} \, \sourcepre Γ \sourcepost}
-}{\sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \, \lottsym{∈} \, \sourcepre \sourcepre Γ \sourcepost \lottsym{,} \, \sourcepre ψ \sourcepost \, \lottsym{⇝} \, \targetpre x \targetpost \sourcepost}
+\lotthypothesis{a \, \lottsym{:} \, κ \, \lottsym{∈} \, Γ}
+}{a \, \lottsym{:} \, κ \, \lottsym{∈} \, Γ \lottsym{,} \, ψ \, \lottsym{⇝} \, \targetpre x \targetpost}
 }

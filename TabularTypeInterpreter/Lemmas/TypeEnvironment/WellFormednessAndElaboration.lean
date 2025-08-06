@@ -113,7 +113,7 @@ theorem append_typeExt (ΓΓ'we : [[Γc ⊢ Γ, Γ' ⇝ Δ]]) (aninΓΓ' : [[a �
       exact List.not_mem_append'.mpr ⟨xninΓ, xninΓ''⟩
     rw [TypeEnvironment.typeExt_append_assoc] at ΓaΓ''we xninΓaΓ'' ⊢
     exact ⟨_, ΓaΓ''we.termExt xninΓaΓ'' <| σke.weakening ΓaΓ''we (Γ' := .typeExt .empty ..)⟩
-  | .constrExt Γ'' ψ x =>
+  | .constrExt Γ'' (.mk ψ x) =>
     let .constrExt ΓΓ''we xninΓΓ'' σke := ΓΓ'we
     rw [append, TypeVarNotInDom, typeVarDom] at aninΓΓ'
     let ⟨_, ΓaΓ''we⟩ := ΓΓ''we.append_typeExt aninΓΓ' κe
@@ -142,7 +142,7 @@ theorem TypeVar_subst_id_of_NotInDom (Γwe : [[Γc ⊢ Γ, Γ' ⇝ Δ]]) (aninΓ
     let aninσ := σke.not_in_freeTypeVars_of aninΓΓ'
     rw [TypeVar_subst, TypeScheme.TypeVar_subst_id_of_not_mem_freeTypeVars aninσ, append,
         Γ'we.TypeVar_subst_id_of_NotInDom aninΓΓ', append]
-  | .constrExt Γ' ψ x =>
+  | .constrExt Γ' (.mk ψ x) =>
     let .constrExt Γ'we _ ψke := Γwe
     rw [TypeVarNotInDom, typeVarDom_append, typeVarDom, ← typeVarDom_append] at aninΓΓ'
     let aninψ := ψke.not_in_freeTypeVars_of aninΓΓ'

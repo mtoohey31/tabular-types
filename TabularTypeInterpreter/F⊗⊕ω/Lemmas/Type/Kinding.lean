@@ -24,8 +24,8 @@ theorem TypeVarLocallyClosed_of : [[Δ ⊢ A : K]] → A.TypeVarLocallyClosed 0 
     exact .forall <| this.weaken.TypeVar_open_drop <| Nat.lt_succ_self _
   | .arr A' B, .arr A'opki Bopki =>
     .arr A'opki.TypeVarLocallyClosed_of Bopki.TypeVarLocallyClosed_of
-  | .list A', Aki =>
-    let .list A'opki (A := A'') := Aki
+  | .list A' _, Aki =>
+    let .list A'opki _ (A := A'') := Aki
     .list fun A''' A'''in => by
       let ⟨i, mem, A'''eq⟩ := Std.Range.mem_of_mem_map A'''in
       cases A'''eq
@@ -38,6 +38,7 @@ termination_by sizeOf A
 decreasing_by
   all_goals simp_arith
   apply Nat.le_of_lt
+  apply Nat.lt_add_right
   exact List.sizeOf_lt_of_mem A'''in
 
 theorem not_mem_freeTypeVars_of (Aki : [[Δ ⊢ A : K]]) (aninΔ : [[a ∉ dom(Δ)]])
@@ -61,7 +62,7 @@ theorem not_mem_freeTypeVars_of (Aki : [[Δ ⊢ A : K]]) (aninΔ : [[a ∉ dom(�
       A'ki.not_mem_freeTypeVars_of aninΔ,
       Bki.not_mem_freeTypeVars_of aninΔ
     ⟩
-  | .list Aski =>
+  | .list Aski _ =>
     rw [Type.freeTypeVars, List.mapMem_eq_map, List.map_map]
     apply List.not_mem_flatten.mpr
     intro as mem
@@ -75,11 +76,8 @@ termination_by sizeOf A
 decreasing_by
   all_goals simp_arith
   apply Nat.le_of_lt
+  apply Nat.lt_add_right
   exact List.sizeOf_lt_of_mem <| Std.Range.mem_map_of_mem mem'
-
-theorem Type_open_preservation {A : «Type»}
-  (Aki : Kinding [[(Δ, a : K, Δ')]] (A.TypeVar_open a n) K') (aninfvA : a ∉ A.freeTypeVars)
-  (Bki : [[Δ ⊢ B : K]]) : Kinding [[(Δ, (Δ' [B / a]))]] (A.Type_open B n) K' := sorry
 
 open Environment TypeVarInEnvironment in
 theorem weakening_r' (kT: [[ Δ, Δ'' ⊢ T: K ]]) (fresh: ∀ a ∈ Δ'.typeVarDom, a ∉ Δ.typeVarDom): [[ Δ, Δ', Δ'' ⊢ T: K ]] := by
@@ -87,51 +85,19 @@ theorem weakening_r' (kT: [[ Δ, Δ'' ⊢ T: K ]]) (fresh: ∀ a ∈ Δ'.typeVar
   induction kT generalizing Δ Δ' Δ''
   case var a K Δ_ hIn =>
     subst Δ_
-    constructor
-    case a =>
-    induction Δ' generalizing Δ Δ''
-    . case empty => simp_all [empty_append]
-    . case typeExt Δ' a' K' ih =>
-      specialize @ih Δ [[ (ε , a' : K') , Δ'' ]]
-      simp_all [append_type_assoc]
-      apply ih (by aesop (add norm typeVarDom))
-      apply append_elim at hIn
-      cases hIn
-      . case inl hIn =>
-        apply weakening_r
-        . simp_all
-        . by_cases (a = a')
-          . case pos eq =>
-            -- contradiction
-            aesop (add norm typeVarDom, norm TypeVarInDom, safe forward TypeVarInDom_of)
-          . case neg neq =>
-            constructor <;> simp_all [TypeVarNe]
-      . case inr hIn =>
-        simp_all [TypeVarInEnvironment.weakening_l]
-    . case termExt Δ' x' T ih =>
-      specialize @ih Δ [[ (ε , x' : T) , Δ'' ]]
-      simp_all [append_term_assoc]
-      apply ih (by aesop (add norm typeVarDom))
-      apply TypeVarInEnvironment.append_elim at hIn
-      cases hIn
-      . case inl hIn =>
-        apply TypeVarInEnvironment.weakening_r
-        . simp_all
-        . constructor; simp_all
-      . case inr hIn =>
-        simp_all [TypeVarInEnvironment.weakening_l]
+    exact .var <| hIn.weakening fresh
   case lam Δ_ K1 T K2 I kT ih =>
     subst Δ_
     apply Kinding.lam (I := I ++ Δ.typeVarDom ++ Δ'.typeVarDom ++ Δ''.typeVarDom)
     intro a notIn
     specialize @ih a (by simp_all) Δ (Δ''.typeExt a K1)
     simp_all [append]
-  case scheme Δ_ K1 T K2 I kT ih =>
+  case scheme Δ_ K T I kT ih =>
     subst Δ_
     have ⟨a, notIn⟩ := (I ++ T.freeTypeVars ++ Δ.typeVarDom ++ Δ'.typeVarDom ++ Δ''.typeVarDom).exists_fresh
     apply Kinding.scheme (I := I ++ Δ.typeVarDom ++ Δ'.typeVarDom ++ Δ''.typeVarDom)
     intro a notIn
-    specialize @ih a (by simp_all) Δ (Δ''.typeExt a K1)
+    specialize @ih a (by simp_all) Δ (Δ''.typeExt a K)
     simp_all [append]
   all_goals aesop (add safe constructors Kinding) (config := { enableSimp := false })
 
@@ -139,10 +105,11 @@ theorem weakening_r' (kT: [[ Δ, Δ'' ⊢ T: K ]]) (fresh: ∀ a ∈ Δ'.typeVar
 theorem weakening_r (kT: [[ Δ ⊢ T: K ]]) (fresh: ∀ a ∈ Δ'.typeVarDom, a ∉ Δ.typeVarDom): [[ Δ, Δ' ⊢ T: K ]] := by
   apply Kinding.weakening_r' (Δ'' := Environment.empty) <;> simp_all [Environment.append]
 
-theorem weakening : [[Δ, Δ'' ⊢ A : K]] → [[⊢ Δ, Δ', Δ'']] → [[Δ, Δ', Δ'' ⊢ A : K]] := sorry
+theorem weakening : [[Δ, Δ'' ⊢ A : K]] → [[⊢ Δ, Δ', Δ'']] → [[Δ, Δ', Δ'' ⊢ A : K]] :=
+  λ h wf => .weakening_r' h <| Environment.append_assoc.subst wf |>.weakening.append_typeVar_fresh_l
 
 open Environment TypeVarInEnvironment in
-theorem TypeVar_drop (kT: [[ Δ, x: T', Δ'' ⊢ T: K ]]): [[ Δ, Δ'' ⊢ T: K ]] := by
+theorem TermVar_drop (kT: [[ Δ, x: T', Δ'' ⊢ T: K ]]): [[ Δ, Δ'' ⊢ T: K ]] := by
   generalize Δ_eq: [[ (Δ, x: T', Δ'') ]] = Δ_ at kT
   induction kT generalizing Δ Δ'' x T'
   case var a K Δ_ hIn =>
@@ -154,17 +121,76 @@ theorem TypeVar_drop (kT: [[ Δ, x: T', Δ'' ⊢ T: K ]]): [[ Δ, Δ'' ⊢ T: K 
     intro a notIn
     specialize @ih a (by simp_all) Δ x T' (Δ''.typeExt a K1)
     simp_all [append]
-  case scheme Δ_ K1 T K2 I kT ih =>
+  case scheme Δ_ K T I kT ih =>
     subst Δ_
     have ⟨a, notIn⟩ := (I ++ T.freeTypeVars ++ Δ.typeVarDom ++ Δ''.typeVarDom).exists_fresh
     apply Kinding.scheme (I := I ++ Δ.typeVarDom ++ Δ''.typeVarDom)
     intro a notIn
-    specialize @ih a (by simp_all) Δ x T' (Δ''.typeExt a K1)
+    specialize @ih a (by simp_all) Δ x T' (Δ''.typeExt a K)
     simp_all [append]
   all_goals aesop (add safe constructors Kinding) (config := { enableSimp := false })
 
+open «Type» in
+theorem TypeVar_drop_of_not_mem_freeTypeVars (Aki : [[Δ, a : K, Δ' ⊢ A : K']])
+  (aninA : a ∉ A.freeTypeVars) : [[Δ, Δ' ⊢ A : K']] := by
+  match Aki with
+  | var aK'in =>
+    rw [freeTypeVars] at aninA
+    exact var <| aK'in.TypeVar_drop <| Ne.symm <| List.not_mem_singleton.mp aninA
+  | lam I A'ki =>
+    apply lam <| a :: I
+    intro a' a'nin
+    let ⟨ane, a'ninI⟩ := List.not_mem_cons.mp a'nin
+    specialize A'ki a' a'ninI
+    rw [← Environment.append] at A'ki ⊢
+    rw [freeTypeVars] at aninA
+    exact TypeVar_drop_of_not_mem_freeTypeVars A'ki <|
+      not_mem_freeTypeVars_TypeVar_open_intro aninA ane.symm
+  | app A'ki Bki =>
+    rw [freeTypeVars] at aninA
+    let ⟨aninA', aninB⟩ := List.not_mem_append'.mp aninA
+    exact app (TypeVar_drop_of_not_mem_freeTypeVars A'ki aninA')
+      (TypeVar_drop_of_not_mem_freeTypeVars Bki aninB)
+  | scheme I A'ki =>
+    apply scheme <| a :: I
+    intro a' a'nin
+    let ⟨ane, a'ninI⟩ := List.not_mem_cons.mp a'nin
+    specialize A'ki a' a'ninI
+    rw [← Environment.append] at A'ki ⊢
+    rw [freeTypeVars] at aninA
+    exact TypeVar_drop_of_not_mem_freeTypeVars A'ki <|
+      not_mem_freeTypeVars_TypeVar_open_intro aninA ane.symm
+  | arr A'ki Bki =>
+    rw [freeTypeVars] at aninA
+    let ⟨aninA', aninB⟩ := List.not_mem_append'.mp aninA
+    exact arr (TypeVar_drop_of_not_mem_freeTypeVars A'ki aninA')
+      (TypeVar_drop_of_not_mem_freeTypeVars Bki aninB)
+  | list A'ki h (A := A') =>
+    rw [freeTypeVars, List.mapMem_eq_map] at aninA
+    apply list _ h
+    intro i mem
+    apply TypeVar_drop_of_not_mem_freeTypeVars <| A'ki i mem
+    apply List.not_mem_flatten.mp aninA
+    rw [List.map_map, ← Std.Range.map]
+    exact Std.Range.mem_map_of_mem mem
+  | listApp A'ki Bki =>
+    rw [freeTypeVars] at aninA
+    let ⟨aninA', aninB⟩ := List.not_mem_append'.mp aninA
+    exact listApp (TypeVar_drop_of_not_mem_freeTypeVars A'ki aninA')
+      (TypeVar_drop_of_not_mem_freeTypeVars Bki aninB)
+  | prod A'ki =>
+    rw [freeTypeVars] at aninA
+    exact prod <| TypeVar_drop_of_not_mem_freeTypeVars A'ki aninA
+  | sum A'ki =>
+    rw [freeTypeVars] at aninA
+    exact sum <| TypeVar_drop_of_not_mem_freeTypeVars A'ki aninA
+termination_by sizeOf A
+decreasing_by
+  all_goals simp_arith
+  exact Nat.le_of_lt <| Nat.lt_add_right _ <| List.sizeOf_lt_of_mem <| Std.Range.mem_map_of_mem mem
+
 -- NOTE we could use a weaker wf: wfτ
-theorem subst' (kT: [[ Δ, a: K, Δ' ⊢ T: K' ]]) (wf: [[ ⊢ Δ, a: K, Δ' ]]) (kA: [[ Δ ⊢ A: K ]]): [[ (Δ , Δ'[A/a]) ⊢ T[A/a] : K' ]] := by
+theorem substAux (kT: [[ Δ, a: K, Δ' ⊢ T: K' ]]) (h1: a ∉ Δ'.typeVarDom) (h2: ∀a ∈ Δ'.typeVarDom, a ∉ Δ.typeVarDom) (kA: [[ Δ ⊢ A: K ]]): [[ (Δ , Δ'[A/a]) ⊢ T[A/a] : K' ]] := by
   generalize Δ'eq: (Δ.typeExt a K).append Δ' = Δ_ at kT
   induction kT generalizing Δ' a <;> simp_all [Type.TypeVar_subst]
   case var a' K' Δ_ kIn =>
@@ -174,10 +200,10 @@ theorem subst' (kT: [[ Δ, a: K, Δ' ⊢ T: K' ]]) (wf: [[ ⊢ Δ, a: K, Δ' ]])
       simp_all
       subst a'
       -- 1. by wf we know a ∉ Δ'.typeVarDom
-      have fresh := wf.append_typeVar_fresh_r a (by constructor)
+      -- have fresh := wf.append_typeVar_fresh_r a (by constructor)
       -- 2. then by uniqueness we know from kIn that K' = K
       have eq := kIn.unique (K':=K) (by
-        apply TypeVarInEnvironment.weakening_r fresh
+        apply TypeVarInEnvironment.weakening_r h1
         constructor
       )
       subst K'
@@ -185,7 +211,6 @@ theorem subst' (kT: [[ Δ, a: K, Δ' ⊢ T: K' ]]) (wf: [[ ⊢ Δ, a: K, Δ' ]])
       apply weakening_r
       . case kT => assumption
       . case fresh =>
-        apply EnvironmentWellFormedness.append_typeVar_fresh_l at wf
         simp_all [Environment.typeVarDom_TypeVar_subst, Environment.typeVarDom]
     . case neg neq =>
       simp_all
@@ -208,37 +233,125 @@ theorem subst' (kT: [[ Δ, a: K, Δ' ⊢ T: K' ]]) (wf: [[ ⊢ Δ, a: K, Δ' ]])
   case lam Δ_ K1 T K2 I kind ih =>
     subst Δ_
     refine .lam (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom) (λ a' notIn => ?_)
-    rw [<- Type.subst_open_var (by aesop) (kA.TypeVarLocallyClosed_of)]
-    refine ih a' (by simp_all) ?_ (by rw [Environment.append_typeExt_assoc])
-    -- wf
-    refine .typeVarExt wf ?_
-    simp_all [Environment.typeVarDom, Environment.typeVarDom_append, Environment.TypeVarNotInDom, Environment.TypeVarInDom]
-  case scheme Δ_ K1 T K2 I kind ih =>
+    rw [<- kA.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm (by aesop)]
+    refine ih a' (by simp_all) ?_ ?_ (by rw [Environment.append_typeExt_assoc])
+    . aesop (add simp [Environment.typeVarDom])
+    . simp_all [Environment.typeVarDom]
+  case scheme Δ_ K T I kind ih =>
     subst Δ_
     refine .scheme (I := a :: I ++ Δ.typeVarDom ++ Δ'.typeVarDom) (λ a' notIn => ?_)
-    rw [<- Type.subst_open_var (by aesop) (kA.TypeVarLocallyClosed_of)]
-    refine ih a' (by simp_all) ?_ (by rw [Environment.append_typeExt_assoc])
-    -- wf
-    refine .typeVarExt wf ?_
-    simp_all [Environment.typeVarDom, Environment.typeVarDom_append, Environment.TypeVarNotInDom, Environment.TypeVarInDom]
-  case list n Δ_ T_i K_i kind ih =>
+    rw [<- kA.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_subst_comm (by aesop)]
+    refine ih a' (by simp_all) ?_ ?_ (by rw [Environment.append_typeExt_assoc])
+    . aesop (add simp [Environment.typeVarDom])
+    . simp_all [Environment.typeVarDom]
+  case list n Δ_ T_i K_i b kind h ih =>
     subst Δ_
     constructor
     simp_all
+    exact h
   all_goals aesop (add safe constructors Kinding) (config := { enableSimp := false })
 
--- NOTE this is also provable. Difference with subst' is that we don't do substitution on Environment.
--- Check branch before merge for proof.
-theorem subst2' (kT: [[ Δ, a: K, Δ' ⊢ T: K' ]]) (wf: [[ ⊢ Δ, a: K, Δ' ]]) (kA: [[ Δ ⊢ A: K ]]): [[ (Δ , Δ') ⊢ T[A/a] : K' ]] := by sorry
+theorem subst' (kT: [[ Δ, a: K, Δ' ⊢ T: K' ]]) (wf: [[ ⊢ Δ, a: K, Δ' ]]) (kA: [[ Δ ⊢ A: K ]]): [[ (Δ , Δ'[A/a]) ⊢ T[A/a] : K' ]] := by
+  refine substAux kT ?_ ?_ kA
+  . exact wf.append_typeVar_fresh_r a (by constructor)
+  . have := wf.append_typeVar_fresh_l
+    simp_all [Environment.typeVarDom]
 
-theorem subst  (kT: [[ Δ, a: K ⊢ T: K' ]]) (wf: [[ ⊢ Δ, a: K ]]) (kA: [[ Δ ⊢ A: K ]]): [[ Δ ⊢ T[A/a]: K' ]] :=
+theorem subst (kT: [[ Δ, a: K ⊢ T: K' ]]) (wf: [[ ⊢ Δ, a: K ]]) (kA: [[ Δ ⊢ A: K ]]): [[ Δ ⊢ T[A/a]: K' ]] :=
  by apply subst' (Δ' := Environment.empty) <;> assumption
 
--- NOTE provable by subst but might not be necessary
-theorem lam_intro_ex_k : ∀a, a ∉ A.freeTypeVars → a ∉ Δ.typeVarDom → [[ Δ, a : K1 ⊢ A^a: K2 ]] → [[ Δ ⊢ (λ a : K1. A) : K1 ↦ K2 ]] := sorry
+theorem Environment_TypeVar_subst_swap (Aki : [[Δ, Δ'[B / a] ⊢ A : K']])
+  : [[Δ, Δ'[B' / a] ⊢ A : K']] := by
+  generalize Δ''eq : [[Δ, Δ'[B / a] ]] = Δ'' at Aki
+  induction Aki generalizing Δ' <;> cases Δ''eq
+  case var ain =>
+    apply var
+    match ain.append_elim with
+    | .inl ⟨anin, ain'⟩ =>
+      apply ain'.weakening_r
+      intro ain''
+      apply anin
+      rw [Environment.TypeVarInDom, Environment.typeVarDom_TypeVar_subst] at ain'' ⊢
+      exact ain''
+    | .inr ain' =>
+      exact .weakening_l <| TypeVarInEnvironment.TypeVar_subst.mpr <|
+        TypeVarInEnvironment.TypeVar_subst.mp ain'
+  case lam I _ ih =>
+    apply lam I
+    intro a' a'nin
+    rw [← Environment.append, ← Environment.TypeVar_subst]
+    apply ih a' a'nin
+    rw [Environment.TypeVar_subst, Environment.append]
+  case scheme I _ ih =>
+    apply scheme I
+    intro a' a'nin
+    rw [← Environment.append, ← Environment.TypeVar_subst]
+    apply ih a' a'nin
+    rw [Environment.TypeVar_subst, Environment.append]
+  all_goals aesop (add safe constructors Kinding)
 
--- NOTE provable by subst but might not be necessary
-theorem forall_intro_ex_k : ∀a, a ∉ A.freeTypeVars → a ∉ Δ.typeVarDom → [[ Δ, a : K1 ⊢ A^a: K2 ]] → [[ Δ ⊢ (∀ a : K1. A) : K2 ]] := sorry
+theorem TypeVar_subst_var (Aki : [[Δ, a : K, Δ' ⊢ A : K']]) (a'ninΔ : [[a' ∉ dom(Δ)]])
+  (aninΔ' : [[a ∉ dom(Δ')]]) (a'ninΔ' : [[a' ∉ dom(Δ')]])
+  : [[Δ, a' : K, Δ' ⊢ A[a' / a] : K']] := by
+  generalize Δ''eq : [[Δ, a : K, Δ']] = Δ'' at Aki
+  induction Aki generalizing Δ' <;> cases Δ''eq <;> simp [Type.TypeVar_subst]
+  case var a''in =>
+    split
+    · case isTrue h =>
+      cases h
+      apply var
+      match a''in.append_elim with
+      | .inl ⟨_, .head⟩ => exact .weakening_r a'ninΔ' .head
+      | .inr a''in' => nomatch aninΔ' a''in'.TypeVarInDom_of
+    · case isFalse h =>
+      apply var
+      match a''in.append_elim with
+      | .inl ⟨a''nin, .head⟩ => nomatch h
+      | .inl ⟨a''nin, .typeVarExt a''in' ne⟩ =>
+        let f := Environment.TypeVarNotInDom
+        apply TypeVarInEnvironment.weakening_r a''nin <| a''in'.typeVarExt _
+        intro aeq
+        cases aeq
+        nomatch a'ninΔ a''in'.TypeVarInDom_of
+      | .inr a''in' => exact a''in'.weakening_l
+  case lam I _ ih =>
+    apply lam <| a :: a' :: I
+    intro a'' a''nin
+    let ⟨ane, a''nina'I⟩ := List.not_mem_cons.mp a''nin
+    let ⟨a'ne, a''ninI⟩ := List.not_mem_cons.mp a''nina'I
+    rw [← Environment.append, Type.TypeVar_open_TypeVar_subst_var_comm ane.symm]
+    apply ih a'' a''ninI _ _ rfl
+    all_goals rw [Environment.TypeVarNotInDom, Environment.TypeVarInDom, Environment.typeVarDom]
+    · exact List.not_mem_cons.mpr ⟨ane.symm, aninΔ'⟩
+    · exact List.not_mem_cons.mpr ⟨a'ne.symm, a'ninΔ'⟩
+  case scheme I _ ih =>
+    apply scheme <| a :: a' :: I
+    intro a'' a''nin
+    let ⟨ane, a''nina'I⟩ := List.not_mem_cons.mp a''nin
+    let ⟨a'ne, a''ninI⟩ := List.not_mem_cons.mp a''nina'I
+    rw [← Environment.append, Type.TypeVar_open_TypeVar_subst_var_comm ane.symm]
+    apply ih a'' a''ninI _ _ rfl
+    all_goals rw [Environment.TypeVarNotInDom, Environment.TypeVarInDom, Environment.typeVarDom]
+    · exact List.not_mem_cons.mpr ⟨ane.symm, aninΔ'⟩
+    · exact List.not_mem_cons.mpr ⟨a'ne.symm, a'ninΔ'⟩
+  all_goals aesop (add safe constructors Kinding)
+
+theorem Type_open_preservation' {A : «Type»}
+  (Aki : Kinding [[(Δ, a : K, Δ')]] (A.TypeVar_open a n) K') (h1: a ∉ Δ'.typeVarDom) (h2: ∀a ∈ Δ'.typeVarDom, a ∉ Δ.typeVarDom) (aninfvA : a ∉ A.freeTypeVars)
+  (Bki : [[Δ ⊢ B : K]]) : Kinding [[(Δ, (Δ' [B / a]))]] (A.Type_open B n) K' := by
+  rw [← Type.TypeVar_subst_intro_of_not_mem_freeTypeVars aninfvA]
+  exact Aki.substAux h1 h2 Bki
+
+theorem Type_open_preservation {A : «Type»}
+  (Aki : Kinding [[(Δ, a : K)]] (A.TypeVar_open a n) K') (aninfvA : a ∉ A.freeTypeVars)
+  (Bki : [[Δ ⊢ B : K]]) : Kinding Δ (A.Type_open B n) K' := Type_open_preservation' (Δ' := [[ ε ]]) Aki (by simp_all [Environment.typeVarDom]) nofun aninfvA Bki
+
+theorem Type_open_preservation'' {A : «Type»}
+  (Aki : Kinding [[(Δ, a : K, Δ')]] (A.TypeVar_open a n) K') (ΔaΔ'wf : [[⊢ Δ, a : K, Δ']])
+  (aninfvA : a ∉ A.freeTypeVars) (Bki : [[Δ ⊢ B : K]])
+  : Kinding [[(Δ, (Δ'[B / a]))]] (A.Type_open B n) K' :=
+  Type_open_preservation' Aki (ΔaΔ'wf.append_typeVar_fresh_r _ <| .head _)
+    (ΔaΔ'wf.append_typeVar_fresh_l · · <| ·.tail _) aninfvA Bki
 
 end Kinding
 
@@ -256,7 +369,7 @@ theorem TermVar_drop (wf: [[ ⊢ Δ, x: T, Δ' ]]) : [[ ⊢ Δ, Δ' ]] := by
     exact .termVarExt
       (ih wf)
       (by simp_all [TermVarNotInDom, TermVarInDom, termVarDom_append, termVarDom])
-      T'kiStar.TypeVar_drop
+      T'kiStar.TermVar_drop
 
 open Environment in
 theorem TypeVar_subst (wf: [[ ⊢ Δ, a: K, Δ' ]]) (BkiK: [[ Δ ⊢ B: K ]]) : [[ ⊢ Δ, Δ'[B/a] ]] := by
@@ -277,6 +390,26 @@ theorem TypeVar_subst (wf: [[ ⊢ Δ, a: K, Δ' ]]) (BkiK: [[ Δ ⊢ B: K ]]) : 
     clear * - xnin
     induction Δ' <;> simp_all [TypeVar_subst, termVarDom]
 
+open Environment in
+theorem strengthen_type (wf: [[ ⊢ Δ, Δ' ]]) (fresh: a ∉ Δ.typeVarDom ++ Δ'.typeVarDom): [[ ⊢ Δ, a: K, Δ' ]] := by
+  induction Δ'
+  . case empty =>
+    simp_all [append]
+    exact wf.typeVarExt (by simp_all [TypeVarNotInDom, TypeVarInDom, typeVarDom])
+  . case typeExt Δ' a' K' ih =>
+    cases wf; case typeVarExt wf anin =>
+    refine .typeVarExt ?_ ?_
+    . simp_all [typeVarDom]
+    . aesop (add simp [TypeVarNotInDom, TypeVarInDom, typeVarDom_append, typeVarDom])
+  . case termExt Δ' x' T' ih =>
+    cases wf; case termVarExt T'kiStar =>
+    refine .termVarExt ?_ ?_ ?_
+    . simp_all [typeVarDom]
+    . aesop (add simp [TermVarNotInDom, TermVarInDom, termVarDom_append])
+    . rw [← append_type_assoc]
+      refine T'kiStar.weakening_r' ?_
+      simp_all [typeVarDom]
+
 end EnvironmentWellFormedness
 
 namespace Kinding
@@ -293,7 +426,7 @@ theorem freeTypeVars_in_Δ (AkiK: [[ Δ ⊢ A: K ]]) (ainA: a ∈ A.freeTypeVars
     specialize AkiK2 a' (by simp_all)
     specialize ih a' (by simp_all) (Type.freeTypeVars_TypeVar_open ainA)
     aesop (add simp typeVarDom)
-  . case scheme Δ K1 A K2 I AkiK2 ih =>
+  . case scheme Δ K A I AkiK2 ih =>
     have ⟨a', a'nin⟩ := (a :: I).exists_fresh
     simp_all [freeTypeVars]
     specialize AkiK2 a' (by simp_all)
@@ -328,70 +461,160 @@ theorem freeTypeVars_in_Δ
       specialize ih (by cases xAinΔ <;> simp_all)
       simp_all [TypeVarNotInDom, TypeVarInDom, typeVarDom]
 
+open Environment in
+theorem Kinding_of (xinΔ: [[ x : A ∈ Δ ]]) (wf: [[ ⊢ Δ ]]): [[ Δ ⊢ A : * ]] := by
+  induction xinΔ
+  . case head Δ =>
+    let .termVarExt _ _ AkiStar := wf
+    exact AkiStar.weakening (Δ' := [[ ε, x: A ]]) (Δ'' := [[ε]]) wf
+  . case typeVarExt Δ a K xinΔ ih =>
+    let .typeVarExt wf' aninΔ := wf
+    exact ih wf' |>.weakening (Δ' := [[ ε, a: K ]]) (Δ'' := [[ε]]) wf
+  . case termVarExt Δ x' A' xinΔ xnex' ih =>
+    let .termVarExt wf' xninΔ AkiStar := wf
+    exact ih wf' |>.weakening (Δ' := [[ ε, x': A' ]]) (Δ'' := [[ε]]) wf
+
 end TermVarInEnvironment
 
 namespace Kinding
 
--- TODO might not be necessary. (required by some kind of exchange lemma?)
-theorem det : [[ Δ ⊢ A: K ]] → [[ Δ ⊢ A: K' ]] → K = K' := by
-  intro k
-  induction k generalizing K'
-  . case var => aesop (add safe cases Kinding, safe TypeVarInEnvironment.unique)
-  . case lam Δ K1 A K2 I kindA ih =>
-    intro k
-    cases k
-    case lam K2' I' kindA' =>
-    simp
-    have ⟨a, notIn⟩ := (I ++ I').exists_fresh
-    apply ih a (by aesop)
-    apply kindA' a (by aesop)
-  . case app =>
-    rename_i ihA ihB
-    intro k
-    cases k
-    rename_i kB kA
-    apply ihA at kA
-    apply ihB at kB
-    simp_all
-  all_goals sorry -- TODO It's obviously provable, but very tedious
-
-
-theorem inv_list (k: [[ Δ ⊢ { </ A@i // i in [:n] /> } : L K ]]): ∀i ∈ [0:n], [[ Δ ⊢ A@i : K ]] := by
-  generalize Teq : (Type.list ([0:n].map fun i => A i)) = T at k
+theorem inv_list (k: [[ Δ ⊢ { </ A@i // i in [:n] /> </ : K' // b /> } : L K ]])
+  : (∀i ∈ [0:n], [[ Δ ⊢ A@i : K ]]) ∧ if b then K = K' else n ≠ 0 := by
+  generalize Teq : (Type.list ([0:n].map fun i => A i) _) = T at k
   cases k <;> simp_all
-  . case list n_ A_ k =>
+  . case list n_ _ _ h A'ki =>
     have neq: n = n_ := by
+      apply And.left at Teq
       apply congrArg (f:= List.length) at Teq
       simp_all [List.length_map, Std.Range.length_toList]
+    cases neq
     simp_all [Std.Range.mem_toList_of_mem]
+    split
+    · case isTrue beq =>
+      cases beq
+      rw [Option.someIf_true] at Teq
+      exact Option.eq_of_someIf_eq_some Teq.right.symm |>.left
+    · case isFalse bne =>
+      match h with
+      | .inl ne => exact ne
+      | .inr beq =>
+        cases beq
+        rw [Option.someIf_true] at Teq
+        nomatch bne <| Option.eq_of_someIf_eq_some Teq.right |>.right
 
-
-theorem inv_list' (k: [[ Δ ⊢ { </ A@i // i in [:n] /> } : K ]]): ∃ K', K = Kind.list K' ∧ ∀i ∈ [0:n], [[ Δ ⊢ A@i : K' ]] := by
-  generalize Teq : (Type.list ([0:n].map fun i => A i)) = T at k
+theorem inv_list' (k: [[ Δ ⊢ { </ A@i // i in [:n] /> </ : K' // b /> } : K ]])
+  : ∃ K'', K = Kind.list K'' ∧ (∀i ∈ [0:n], [[ Δ ⊢ A@i : K'' ]]) ∧
+    (if b then K' = K'' else n ≠ 0) := by
+  generalize Teq : (Type.list ([0:n].map fun i => A i) _) = T at k
   cases k <;> simp_all
-  . case list n_ A_ K_ k =>
+  . case list n_ _ _ _ h Aki =>
     have neq: n = n_ := by
+      apply And.left at Teq
       apply congrArg (f:= List.length) at Teq
       simp_all [List.length_map, Std.Range.length_toList]
-    simp_all [Std.Range.mem_toList_of_mem]
+    cases neq
+    constructor
+    · intro i mem
+      rw [Std.Range.eq_of_mem_of_map_eq Teq.left i mem]
+      exact Aki i mem
+    · split
+      · case isTrue h' =>
+        cases h'
+        rw [Option.someIf_true] at Teq
+        exact Option.eq_of_someIf_eq_some Teq.right.symm |>.left.symm
+      · case isFalse h' =>
+        match h with
+        | .inl ne => exact ne
+        | .inr beq =>
+          cases beq
+          rw [Option.someIf_true] at Teq
+          nomatch h' <| Option.eq_of_someIf_eq_some Teq.right |>.right
+
+local instance : Inhabited «Type» where
+  default := .list [] none
+in
+theorem deterministic (Aki₁ : [[Δ ⊢ A : K₁]]) (Aki₂ : [[Δ ⊢ A : K₂]]) : K₁ = K₂ := by
+  match A with
+  | .var _ =>
+    let .var aK₁inΔ := Aki₁
+    let .var aK₂inΔ := Aki₂
+    exact aK₁inΔ.deterministic aK₂inΔ
+  | .lam .. =>
+    let .lam I₁ A'ki₁ := Aki₁
+    let .lam I₂ A'ki₂ := Aki₂
+    let ⟨a, anin⟩ := I₁ ++ I₂ |>.exists_fresh
+    let ⟨aninI₁, aninI₂⟩ := List.not_mem_append'.mp anin
+    exact Kind.arr.injEq .. |>.mpr ⟨rfl, A'ki₁ a aninI₁ |>.deterministic <| A'ki₂ a aninI₂⟩
+  | .app .. =>
+    let .app A'ki₁ Bki₁ := Aki₁
+    let .app A'ki₂ Bki₂ := Aki₂
+    exact And.right <| Kind.arr.inj <| A'ki₁.deterministic A'ki₂
+  | .forall .. =>
+    let .scheme I₁ A'ki₁ := Aki₁
+    let .scheme I₂ A'ki₂ := Aki₂
+    let ⟨a, anin⟩ := I₁ ++ I₂ |>.exists_fresh
+    let ⟨aninI₁, aninI₂⟩ := List.not_mem_append'.mp anin
+    exact A'ki₁ a aninI₁ |>.deterministic <| A'ki₂ a aninI₂
+  | .arr .. =>
+    let .arr A'ki₁ Bki₁ := Aki₁
+    let .arr A'ki₂ Bki₂ := Aki₂
+    rfl
+  | .list A's K? =>
+    match K? with
+    | some _ =>
+      rw [← Option.someIf_true, ← Std.Range.map_get!_eq (as := A's)] at Aki₁ Aki₂
+      rcases Aki₁.inv_list' with ⟨_, rfl, _, h'⟩
+      rcases Aki₂.inv_list' with ⟨_, rfl, _, h''⟩
+      rw [if_pos rfl] at h' h''
+      cases h'
+      cases h''
+      rfl
+    | none =>
+      have : none = Option.someIf Kind.star false := rfl
+      rw [this, ← Std.Range.map_get!_eq (as := A's)] at Aki₁ Aki₂
+      rcases Aki₁.inv_list' with ⟨_, rfl, A'ki₁, h'⟩
+      rcases Aki₂.inv_list' with ⟨_, rfl, A'ki₂, h''⟩
+      rw [if_neg nofun] at h' h''
+      rcases List.length_pos_iff_exists_cons.mp <| Nat.pos_of_ne_zero h' with ⟨_, _, rfl⟩
+      rcases List.length_pos_iff_exists_cons.mp <| Nat.pos_of_ne_zero h'' with ⟨_, _, eq⟩
+      cases eq
+      rw [List.length_cons] at A'ki₁ A'ki₂
+      specialize A'ki₁ 0 ⟨Nat.zero_le _, Nat.succ_pos _, Nat.mod_one _⟩
+      specialize A'ki₂ 0 ⟨Nat.zero_le _, Nat.succ_pos _, Nat.mod_one _⟩
+      rw [List.get!_cons_zero] at A'ki₁ A'ki₂
+      cases A'ki₁.deterministic A'ki₂
+      rfl
+  | .listApp .. =>
+    let .listApp A'ki₁ Bki₁ := Aki₁
+    let .listApp A'ki₂ Bki₂ := Aki₂
+    exact Kind.list.injEq .. |>.mpr <| And.right <| Kind.arr.inj <| A'ki₁.deterministic A'ki₂
+  | .prod .. =>
+    let .prod _ := Aki₁
+    let .prod _ := Aki₂
+    rfl
+  | .sum .. =>
+    let .sum _ := Aki₁
+    let .sum _ := Aki₂
+    rfl
 
 theorem singleton_list (Aki : [[Δ ⊢ A : K]]) : [[Δ ⊢ {A} : L K]] := by
-  have := list (Δ := Δ) (A := fun _ => A) (K := K) (n := 1) <| by
+  have := list (Δ := Δ) (A := fun _ => A) (K := K) (n := 1) (b := false) (by
     intro i mem
     cases Nat.eq_of_le_of_lt_succ mem.lower mem.upper
     simp only
-    exact Aki
+    exact Aki) (.inl nofun)
   rw [Std.Range.map, Std.Range.toList, if_pos Nat.zero_lt_one, Std.Range.toList] at this
   exact this
 
-theorem empty_list : [[Δ ⊢ { } : L K]] := by
-  have := list (Δ := Δ) (A := fun _ => .list []) (K := K) (n := 0) (fun _ => nomatch ·)
+theorem empty_list : [[Δ ⊢ { : K } : L K]] := by
+  have := list (Δ := Δ) (A := fun _ => .list [] none) (K := K) (n := 0) (b := true)
+    (fun _ => nomatch ·) (.inr rfl)
   rw [Std.Range.map, Std.Range.toList, if_neg (Nat.not_lt_of_le (Nat.le_refl _))] at this
   exact this
 
-theorem unit : [[Δ ⊢ ⊗ { } : *]] := prod empty_list
+theorem unit : [[Δ ⊢ ⊗ { : * } : *]] := prod empty_list
 
-theorem never : [[Δ ⊢ ⊕ { } : *]] := sum empty_list
+theorem never : [[Δ ⊢ ⊕ { : * } : *]] := sum empty_list
 
 theorem prj_evidence (Δwf : [[⊢ Δ]]) (A₀ki : [[Δ ⊢ A₀ : L K]]) (A₁ki : [[Δ ⊢ A₁ : L K]])
   : [[Δ ⊢ ∀ a : K ↦ *. (⊗ (a$0 ⟦A₁⟧)) → ⊗ (a$0 ⟦A₀⟧) : *]] := by
@@ -495,7 +718,7 @@ theorem ind_step (Δwf : [[⊢ Δ]]) (aₘinΔ : [[aₘ : (L K) ↦ * ∈ Δ]])
   (Bₗki : ∀ aₗ ∉ I₀, ∀ aₜ ∉ aₗ :: I₀, ∀ aₚ ∉ aₜ :: aₗ :: I₀, ∀ aᵢ ∉ aₚ :: aₜ :: aₗ :: I₀, ∀ aₙ ∉ aᵢ :: aₚ :: aₜ :: aₗ :: I₀,
     [[Δ, aₗ : *, aₜ : K, aₚ : L K, aᵢ : L K, aₙ : L K ⊢ Bₗ^aₗ#4^aₜ#3^aₚ#2^aᵢ#1^aₙ : *]])
   (Bᵣki : ∀ aᵢ ∉ I₁, ∀ aₙ ∉ aᵢ :: I₁, [[Δ, aᵢ : L K, aₙ : L K ⊢ Bᵣ^aᵢ#1^aₙ : *]])
-  : [[Δ ⊢ ∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bₗ → Bᵣ → (⊗ { }) → (aₘ aₚ$2) → aₘ aᵢ$1 : *]] := by
+  : [[Δ ⊢ ∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bₗ → Bᵣ → (⊗ { : * }) → (aₘ aₚ$2) → aₘ aᵢ$1 : *]] := by
   let ⟨aₗ, aₗnin⟩ := I₀.exists_fresh
   let ⟨aₜ, aₜnin⟩ := aₗ :: I₀ |>.exists_fresh
   let ⟨aₚ, aₚnin⟩ := aₜ :: aₗ :: I₀ |>.exists_fresh
@@ -580,13 +803,13 @@ theorem ind_step (Δwf : [[⊢ Δ]]) (aₘinΔ : [[aₘ : (L K) ↦ * ∈ Δ]])
       · exact var <| .typeVarExt .head aᵢneaₙ
 
 local instance : Inhabited «Type» where
-  default := .list []
+  default := .list [] none
 in
 theorem ind_evidence (Δwf : [[⊢ Δ]]) (Aki : [[Δ ⊢ A : L K]])
   (Bₗki : ∀ aₗ ∉ I₀, ∀ aₜ ∉ aₗ :: I₀, ∀ aₚ ∉ aₜ :: aₗ :: I₀, ∀ aᵢ ∉ aₚ :: aₜ :: aₗ :: I₀, ∀ aₙ ∉ aᵢ :: aₚ :: aₜ :: aₗ :: I₀,
     [[Δ, aₗ : *, aₜ : K, aₚ : L K, aᵢ : L K, aₙ : L K ⊢ Bₗ^aₗ#4^aₜ#3^aₚ#2^aᵢ#1^aₙ : *]])
   (Bᵣki : ∀ aᵢ ∉ I₁, ∀ aₙ ∉ aᵢ :: I₁, [[Δ, aᵢ : L K, aₙ : L K ⊢ Bᵣ^aᵢ#1^aₙ : *]])
-  : [[Δ ⊢ ∀ aₘ : (L K) ↦ *. (∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bₗ → Bᵣ → (⊗ { }) → (aₘ$5 aₚ$2) → aₘ$5 aᵢ$1) → (aₘ$0 { }) → aₘ$0 A : *]] := by
+  : [[Δ ⊢ ∀ aₘ : (L K) ↦ *. (∀ aₗ : *. ∀ aₜ : K. ∀ aₚ : L K. ∀ aᵢ : L K. ∀ aₙ : L K. Bₗ → Bᵣ → (⊗ { : * }) → (aₘ$5 aₚ$2) → aₘ$5 aᵢ$1) → (aₘ$0 { : K }) → aₘ$0 A : *]] := by
   apply scheme Δ.typeVarDom
   intro aₘ aₘnin
   let Δaₘwf := Δwf.typeVarExt aₘnin (K := K.list.arr .star)
@@ -669,7 +892,8 @@ theorem ind_evidence (Δwf : [[⊢ Δ]]) (Aki : [[Δ ⊢ A : L K]])
     · apply app
       · exact var .head
       · rw [← Std.Range.map_get!_eq (as := [])]
-        exact list nofun
+        apply list _ (.inr rfl) (b := true)
+        nofun
     · apply app
       · exact var .head
       · exact Aki.weakening (Δ' := .typeExt .empty ..) (Δ'' := .empty) Δaₘwf

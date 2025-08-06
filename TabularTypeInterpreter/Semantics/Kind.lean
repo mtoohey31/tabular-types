@@ -17,17 +17,17 @@ judgement Kind.Elaboration where
 ─────────────────── arr
 ⊢ κ₀ ↦ κ₁ ⇝ K₀ ↦ K₁
 
-─────── label
-⊢ L ⇝ *
-
-─────── comm
-⊢ U ⇝ *
-
 ⊢ κ ⇝ K
 ─────────── row
 ⊢ R κ ⇝ L K
 
 ─────── constr
 ⊢ C ⇝ *
+
+─────── label
+⊢ L ⇝ *
+
+─────── comm
+⊢ U ⇝ *
 
 end TabularTypeInterpreter

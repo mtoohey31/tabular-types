@@ -1,9 +1,8 @@
-\lottjudgement{Uniqueness}{\lottkw{unique} \lottsym{(} \lottsepbycomprehension{\sourcepre {ξ}_{i} \sourcepost} \lottsym{)}}{
+\lottjudgement{Uniqueness}{\lottkw{unique} \lottsym{(} \lottsepbycomprehension{ξ_{i}} \lottsym{)}}{
 \lottinferencerule{concrete}{
-\lotthypothesis{\lottjudgementcomprehensionpatcollection{\lottjudgementcomprehensionpatcollection{\sourcepre {ℓ}_{i} \sourcepost \, \lottsym{≠} \, \sourcepre {ℓ}_{j} \sourcepost}{j}{[i + 1:n]}}{i}{[:n]}}
-}{\lottkw{unique} \lottsym{(} \lottsepbycomprehensionpatcollection{\sourcepre \sourcepre {ℓ}_{i} \sourcepost \sourcepost}{i}{[:n]} \lottsym{)}}
+\lotthypothesis{\lottjudgementcomprehensionpatcollection{\lottjudgementcomprehensionpatcollection{ℓ_{i} \, \lottsym{≠} \, ℓ_{j}}{j}{[i + 1:n]}}{i}{[:n]}}
+}{\lottkw{unique} \lottsym{(} \lottsepbycomprehensionpatcollection{ℓ_{i}}{i}{[:n]} \lottsym{)}}
 \lottinferencerulesep
-\lottinferencerule{var}{
-\\\\
-}{\lottkw{unique} \lottsym{(} \sourcepre ξ \sourcepost \lottsym{)}}
+\lottinferencerule{singleton}{
+}{\lottkw{unique} \lottsym{(} ξ \lottsym{)}}
 }

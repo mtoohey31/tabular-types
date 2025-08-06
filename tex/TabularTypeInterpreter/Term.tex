@@ -1,45 +1,35 @@
 \lottnonterminal{Term}{
-\sourcepre\lottalias{M}\sourcepost
+\lottalias{M}
 \lottaliassep
-\sourcepre\lottalias{N}\sourcepost
+\lottalias{N}
 }{
-\lottproduction{\sourcepre \sourcepre x \sourcepost \sourcepost}
+\lottproduction{x}
 \lottproductionsep
-\lottproduction{\sourcepre \sourcepre m \sourcepost \sourcepost}
+\lottproduction{m}
 \lottproductionsep
-\lottproduction{\sourcepre \lottsym{λ} \, \sourcepre x \sourcepost \lottsym{.} \, \sourcepre M \sourcepost \sourcepost}
+\lottproduction{\lottsym{λ} \, x \lottsym{.} \, M}
 \lottproductionsep
-\lottproduction{\sourcepre \sourcepre M \sourcepost \, \sourcepre N \sourcepost \sourcepost}
+\lottproduction{M \, N}
 \lottproductionsep
-\lottproduction{\sourcepre \lottkw{let} \, \sourcepre x \sourcepost \, \lottsym{:} \, \sourcepre σ \sourcepost \, \lottsym{=} \, \sourcepre M \sourcepost \, \lottkw{in} \, \sourcepre N \sourcepost \sourcepost}
+\lottproduction{\lottkw{let} \, x \, \lottsym{:} \, σ \, \lottsym{=} \, M \, \lottkw{in} \, N}
 \lottproductionsep
-\lottproduction{\sourcepre \sourcepre M \sourcepost \, \lottsym{:} \, \sourcepre σ \sourcepost \sourcepost}
+\lottproduction{M \, \lottsym{:} \, σ}
 \lottproductionsep
-\lottproduction{\sourcepre \sourcepre ℓ \sourcepost \sourcepost}
+\lottproduction{ℓ}
 \lottproductionsep
-\lottproduction{\sourcepre \lottsym{\{} \lottsepbycomprehension{\sourcepre {M}_{i} \sourcepost \, \lottsym{▹} \, \sourcepre {N}_{i} \sourcepost} \lottsym{\}} \sourcepost}
+\lottproduction{\lottsym{\{} M \, \lottsym{▹} \, N \lottsym{\}}}
 \lottproductionsep
-\lottproduction{\sourcepre \lottsym{[} \sourcepre M \sourcepost \, \lottsym{▹} \, \sourcepre N \sourcepost \lottsym{]} \sourcepost}
+\lottproduction{\lottsym{[} M \, \lottsym{▹} \, N \lottsym{]}}
 \lottproductionsep
-\lottproduction{\sourcepre \sourcepre M \sourcepost \lottsym{/} \sourcepre N \sourcepost \sourcepost}
+\lottproduction{M \lottsym{/} N}
 \lottproductionsep
-\lottproduction{\sourcepre \lottkw{prj} \, \sourcepre M \sourcepost \sourcepost}
+\lottproduction{\lottkw{prj} \, M}
 \lottproductionsep
-\lottproduction{\sourcepre \sourcepre M \sourcepost \doubleplus \sourcepre N \sourcepost \sourcepost}
+\lottproduction{M \lottsym{\doubleplus} N}
 \lottproductionsep
-\lottproduction{\sourcepre \lottkw{inj} \, \sourcepre M \sourcepost \sourcepost}
+\lottproduction{\lottkw{inj} \, M}
 \lottproductionsep
-\lottproduction{\sourcepre \sourcepre M \sourcepost \, \lottsym{▿} \, \sourcepre N \sourcepost \sourcepost}
+\lottproduction{M \, \lottsym{▿} \, N}
 \lottproductionsep
-\lottproduction{\sourcepre \lottkw{order} \, \sourcepre ρ \sourcepost \, \sourcepre M \sourcepost \sourcepost}
-\lottproductionsep
-\lottproduction{\sourcepre \lottkw{ind} \, \sourcepre \lottsym{(} \lottsym{λ} \, \sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \lottsym{.} \, \sourcepre τ \sourcepost \lottsym{)} \sourcepost \sourcepre ρ \sourcepost \, \sourcepre M \sourcepost \, \sourcepre N \sourcepost \sourcepost}
-\lottproductionsep
-\lottproduction{\sourcepre \lottkw{splitₚ} \, \sourcepre \lottsym{(} \lottsym{λ} \, \sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \lottsym{.} \, \sourcepre τ \sourcepost \lottsym{)} \sourcepost \, \sourcepre M \sourcepost \sourcepost}
-\lottproductionsep
-\lottproduction{\sourcepre \lottkw{splitₛ} \, \sourcepre \lottsym{(} \lottsym{λ} \, \sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \lottsym{.} \, \sourcepre τ \sourcepost \lottsym{)} \sourcepost \sourcepre M \sourcepost \, \sourcepre N \sourcepost \sourcepost}
-\lottproductionsep
-\lottproduction{\sourcepre \sourcepre M \sourcepost \sourcepost}
-\lottproductionsep
-\lottproduction{\sourcepre \sourcepre M \sourcepost \sourcepost}
+\lottproduction{\lottkw{ind} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ \, M \, N}
 }

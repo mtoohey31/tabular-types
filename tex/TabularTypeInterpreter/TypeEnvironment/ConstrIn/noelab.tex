@@ -1,0 +1,18 @@
+\lottjudgement{Constr In}{ψ \, \lottsym{∈} \, Γ}{
+\lottinferencerule{head}{
+}{ψ \, \lottsym{∈} \, Γ \lottsym{,} \, ψ}
+\lottinferencerulesep
+\lottinferencerule{typeExt}{
+\lotthypothesis{ψ \, \lottsym{∈} \, Γ}
+}{ψ \, \lottsym{∈} \, Γ \lottsym{,} \, a \, \lottsym{:} \, κ}
+\lottinferencerulesep
+\lottinferencerule{termExt}{
+\lotthypothesis{x \, \lottsym{≠} \, x'}\\
+\lotthypothesis{ψ \, \lottsym{∈} \, Γ}
+}{ψ \, \lottsym{∈} \, Γ \lottsym{,} \, x' \, \lottsym{:} \, σ}
+\lottinferencerulesep
+\lottinferencerule{constrExt}{
+\lotthypothesis{x \, \lottsym{≠} \, x'}\\
+\lotthypothesis{ψ \, \lottsym{∈} \, Γ}
+}{ψ \, \lottsym{∈} \, Γ \lottsym{,} \, ψ'}
+}

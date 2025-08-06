@@ -23,7 +23,7 @@ theorem TypeScheme.KindingAndElaboration.deterministic (σke₀ : [[Γc; Γ ⊢ 
         τ₁₀ke.deterministic τ₁₁ke |>.right
       ⟩
     ⟩
-  | .qual ψ₀ke γ₀ke _, .qual ψ₁ke γ₁ke _ =>
+  | .qual ψ₀ke γ₀ke, .qual ψ₁ke γ₁ke =>
     let ⟨κeq, Beq⟩ := γ₀ke.deterministic γ₁ke
     ⟨κeq, Type.arr.injEq .. |>.mpr ⟨ψ₀ke.deterministic ψ₁ke |>.right, Beq⟩⟩
   | .scheme I₀ σ₀ke κ₀e (A := A₀), .scheme I₁ σ₁ke κ₁e (A := A₁) =>
@@ -39,25 +39,27 @@ theorem TypeScheme.KindingAndElaboration.deterministic (σke₀ : [[Γc; Γ ⊢ 
         Type.TypeVar_open_inj_of_not_mem_freeTypeVars aninA₀ aninA₁ Aopeq
       ⟩
     ⟩
-
   | .label, .label
   | .floor _, .floor _
   | .comm, .comm => ⟨rfl, rfl⟩
-  | .row ξ₀ke _ τ₀ke h (n := n), σke₁ => by
-    let ⟨_, _, ⟨_, _, Aeq, κeq, _, κ'eq, τ₁ke⟩⟩ := σke₁.row_inversion (n := n)
+  | .row ξ₀ke _ τ₀ke κ'e h (n := n) (κ := κ'), σke₁ => by
+    let ⟨_, _, _, _, κ'', Aeq, κeq, κ'e', _, κ'eq, τ₁ke⟩ := σke₁.row_inversion (n := n)
     cases κeq
     cases Aeq
-    constructor
-    · match h with
+    replace κ'eq : κ' = κ'' := by
+      match h with
       | .inl nnezero =>
         let τ₀₀ke := τ₀ke 0 ⟨Nat.le_refl _, Nat.pos_of_ne_zero nnezero, Nat.mod_one _⟩
         let τ₁₀ke := τ₁ke 0 ⟨Nat.le_refl _, Nat.pos_of_ne_zero nnezero, Nat.mod_one _⟩
-        exact Kind.row.injEq .. |>.mpr <| τ₀₀ke.deterministic τ₁₀ke |>.left
-      | .inr beq => exact Kind.row.injEq .. |>.mpr <| κ'eq beq
-    · apply Type.list.injEq .. |>.mpr
-      apply Range.map_eq_of_eq_of_mem
-      intro i imem
-      exact And.right <| τ₀ke i imem |>.deterministic <| τ₁ke i imem
+        exact τ₀₀ke.deterministic τ₁₀ke |>.left
+      | .inr beq => exact κ'eq beq
+    cases κ'eq
+    cases κ'e.deterministic κ'e'
+    refine ⟨rfl, ?_⟩
+    refine Type.list.injEq .. |>.mpr ⟨?_, rfl⟩
+    apply Range.map_eq_of_eq_of_mem
+    intro i imem
+    exact And.right <| τ₀ke i imem |>.deterministic <| τ₁ke i imem
   | .prod _ ρ₀ke, .prod _ ρ₁ke =>
     ⟨rfl, Type.prod.injEq .. |>.mpr <| ρ₀ke.deterministic ρ₁ke |>.right⟩
   | .sum _ ρ₀ke, .sum _ ρ₁ke =>
@@ -76,31 +78,33 @@ theorem TypeScheme.KindingAndElaboration.deterministic (σke₀ : [[Γc; Γ ⊢ 
         ρ₀ke.deterministic ρ₁ke |>.right
       ⟩
     ⟩
-
   | .contain _ ρ₀₀ke ρ₁₀ke κ₀e, .contain _ ρ₀₁ke ρ₁₁ke κ₁e => by
     let ⟨κeq, A₀eq⟩ := ρ₀₀ke.deterministic ρ₀₁ke
     let ⟨_, A₁eq⟩ := ρ₁₀ke.deterministic ρ₁₁ke
     cases κeq
     exact ⟨
       rfl,
-      Type.prod.injEq .. |>.mpr <| Type.list.injEq .. |>.mpr <| List.cons.injEq .. |>.mpr ⟨
-        Type.forall.injEq .. |>.mpr ⟨
-          «F⊗⊕ω».Kind.arr.injEq .. |>.mpr ⟨κ₀e.deterministic κ₁e, rfl⟩,
-          Type.arr.injEq .. |>.mpr ⟨
-            Type.prod.injEq .. |>.mpr <| Type.listApp.injEq .. |>.mpr ⟨rfl, A₁eq⟩,
-            Type.prod.injEq .. |>.mpr <| Type.listApp.injEq .. |>.mpr ⟨rfl, A₀eq⟩
-          ⟩
-        ⟩,
+      Type.prod.injEq .. |>.mpr <| Type.list.injEq .. |>.mpr ⟨
         List.cons.injEq .. |>.mpr ⟨
           Type.forall.injEq .. |>.mpr ⟨
             «F⊗⊕ω».Kind.arr.injEq .. |>.mpr ⟨κ₀e.deterministic κ₁e, rfl⟩,
             Type.arr.injEq .. |>.mpr ⟨
-              Type.sum.injEq .. |>.mpr <| Type.listApp.injEq .. |>.mpr ⟨rfl, A₀eq⟩,
-              Type.sum.injEq .. |>.mpr <| Type.listApp.injEq .. |>.mpr ⟨rfl, A₁eq⟩
+              Type.prod.injEq .. |>.mpr <| Type.listApp.injEq .. |>.mpr ⟨rfl, A₁eq⟩,
+              Type.prod.injEq .. |>.mpr <| Type.listApp.injEq .. |>.mpr ⟨rfl, A₀eq⟩
             ⟩
           ⟩,
-          rfl
-        ⟩
+          List.cons.injEq .. |>.mpr ⟨
+            Type.forall.injEq .. |>.mpr ⟨
+              «F⊗⊕ω».Kind.arr.injEq .. |>.mpr ⟨κ₀e.deterministic κ₁e, rfl⟩,
+              Type.arr.injEq .. |>.mpr ⟨
+                Type.sum.injEq .. |>.mpr <| Type.listApp.injEq .. |>.mpr ⟨rfl, A₀eq⟩,
+                Type.sum.injEq .. |>.mpr <| Type.listApp.injEq .. |>.mpr ⟨rfl, A₁eq⟩
+              ⟩
+            ⟩,
+            rfl
+          ⟩
+        ⟩,
+        rfl
       ⟩
     ⟩
   | .concat _ ρ₀₀ke ρ₁₀ke ρ₂₀ke κ₀e containᵣ₀ containₗ₀,
@@ -113,42 +117,45 @@ theorem TypeScheme.KindingAndElaboration.deterministic (σke₀ : [[Γc; Γ ⊢ 
     let ⟨_, Bₗeq⟩ := containₗ₀.deterministic containₗ₁
     exact ⟨
       rfl,
-      Type.prod.injEq .. |>.mpr <| Type.list.injEq .. |>.mpr <| List.cons.injEq .. |>.mpr ⟨
-        Type.forall.injEq .. |>.mpr ⟨
-          «F⊗⊕ω».Kind.arr.injEq .. |>.mpr ⟨κ₀e.deterministic κ₁e, rfl⟩,
-          Type.arr.injEq .. |>.mpr ⟨
-            Type.prod.injEq .. |>.mpr <| Type.listApp.injEq .. |>.mpr ⟨rfl, A₀eq⟩,
-            Type.arr.injEq .. |>.mpr ⟨
-              Type.prod.injEq .. |>.mpr <| Type.listApp.injEq .. |>.mpr ⟨rfl, A₁eq⟩,
-              Type.prod.injEq .. |>.mpr <| Type.listApp.injEq .. |>.mpr ⟨rfl, A₂eq⟩
-            ⟩
-          ⟩
-        ⟩,
+      Type.prod.injEq .. |>.mpr <| Type.list.injEq .. |>.mpr ⟨
         List.cons.injEq .. |>.mpr ⟨
           Type.forall.injEq .. |>.mpr ⟨
             «F⊗⊕ω».Kind.arr.injEq .. |>.mpr ⟨κ₀e.deterministic κ₁e, rfl⟩,
-            Type.forall.injEq .. |>.mpr ⟨
-              rfl,
+            Type.arr.injEq .. |>.mpr ⟨
+              Type.prod.injEq .. |>.mpr <| Type.listApp.injEq .. |>.mpr ⟨rfl, A₀eq⟩,
               Type.arr.injEq .. |>.mpr ⟨
-                Type.arr.injEq .. |>.mpr ⟨
-                  Type.sum.injEq .. |>.mpr <| Type.listApp.injEq .. |>.mpr ⟨rfl, A₀eq⟩,
-                  rfl
-                ⟩,
-                Type.arr.injEq .. |>.mpr ⟨
-                  Type.arr.injEq .. |>.mpr ⟨
-                    Type.sum.injEq .. |>.mpr <| Type.listApp.injEq .. |>.mpr ⟨rfl, A₁eq⟩,
-                    rfl
-                  ⟩,
-                  Type.arr.injEq .. |>.mpr ⟨
-                    Type.sum.injEq .. |>.mpr <| Type.listApp.injEq .. |>.mpr ⟨rfl, A₂eq⟩,
-                    rfl
-                  ⟩
-                ⟩
+                Type.prod.injEq .. |>.mpr <| Type.listApp.injEq .. |>.mpr ⟨rfl, A₁eq⟩,
+                Type.prod.injEq .. |>.mpr <| Type.listApp.injEq .. |>.mpr ⟨rfl, A₂eq⟩
               ⟩
             ⟩
           ⟩,
-          List.cons.injEq .. |>.mpr ⟨Bᵣeq, List.cons.injEq .. |>.mpr ⟨Bₗeq, rfl⟩⟩
-        ⟩
+          List.cons.injEq .. |>.mpr ⟨
+            Type.forall.injEq .. |>.mpr ⟨
+              «F⊗⊕ω».Kind.arr.injEq .. |>.mpr ⟨κ₀e.deterministic κ₁e, rfl⟩,
+              Type.forall.injEq .. |>.mpr ⟨
+                rfl,
+                Type.arr.injEq .. |>.mpr ⟨
+                  Type.arr.injEq .. |>.mpr ⟨
+                    Type.sum.injEq .. |>.mpr <| Type.listApp.injEq .. |>.mpr ⟨rfl, A₀eq⟩,
+                    rfl
+                  ⟩,
+                  Type.arr.injEq .. |>.mpr ⟨
+                    Type.arr.injEq .. |>.mpr ⟨
+                      Type.sum.injEq .. |>.mpr <| Type.listApp.injEq .. |>.mpr ⟨rfl, A₁eq⟩,
+                      rfl
+                    ⟩,
+                    Type.arr.injEq .. |>.mpr ⟨
+                      Type.sum.injEq .. |>.mpr <| Type.listApp.injEq .. |>.mpr ⟨rfl, A₂eq⟩,
+                      rfl
+                    ⟩
+                  ⟩
+                ⟩
+              ⟩
+            ⟩,
+            List.cons.injEq .. |>.mpr ⟨Bᵣeq, List.cons.injEq .. |>.mpr ⟨Bₗeq, rfl⟩⟩
+          ⟩
+        ⟩,
+        rfl
       ⟩
     ⟩
   | .tc mem₀ τ₀ke, .tc mem₁ τ₁ke => by
@@ -157,14 +164,15 @@ theorem TypeScheme.KindingAndElaboration.deterministic (σke₀ : [[Γc; Γ ⊢ 
     cases τ₀ke.deterministic τ₁ke |>.right
     constructor
     · rfl
-    · apply Type.prod.injEq .. |>.mpr <| Type.list.injEq .. |>.mpr <| List.cons.injEq .. |>.mpr
-        ⟨rfl, _⟩
+    · apply Type.prod.injEq .. |>.mpr <| Type.list.injEq .. |>.mpr
+        ⟨List.cons.injEq .. |>.mpr ⟨rfl, _⟩, rfl⟩
       let lengths_eq : List.length (Range.map ..) = List.length _ := by rw [TCₛAₛeq]
       rw [List.length_map, List.length_map, Range.length_toList, Range.length_toList] at lengths_eq
       cases lengths_eq
       apply Range.map_eq_of_eq_of_mem
       intro i imem
-      rw [And.right <| Prod.mk.inj <| Range.eq_of_mem_of_map_eq TCₛAₛeq i imem]
+      rw [And.right <| ClassEnvironmentEntrySuper.mk.inj <|
+            Range.eq_of_mem_of_map_eq TCₛAₛeq i imem]
   | .all I₀ ψ₀ke κ₀e ρ₀ke (A := A₀), .all I₁ ψ₁ke κ₁e ρ₁ke (A := A₁) =>
     let ⟨a, anin⟩ := I₀ ++ I₁ ++ ↑A₀.freeTypeVars ++ ↑A₁.freeTypeVars |>.exists_fresh
     let ⟨aninI₀I₁A₀, aninA₁⟩ := List.not_mem_append'.mp anin
@@ -185,6 +193,8 @@ theorem TypeScheme.KindingAndElaboration.deterministic (σke₀ : [[Γc; Γ ⊢ 
     .ind I₀₁ I₁₁ ρ₁ke κ₁e  keBₗ₁ keBᵣ₁ (Bₗ := Bₗ₁) (Bᵣ := Bᵣ₁) => open «Type» in by
     let ⟨κeq, Aeq⟩ := ρ₀ke.deterministic ρ₁ke
     cases κeq
+
+    cases κ₀e.deterministic κ₁e
 
     let ⟨aₗ₀, aₗ₀nin⟩ := I₀₀ ++ I₀₁ ++ ↑Bₗ₀.freeTypeVars ++ ↑Bₗ₁.freeTypeVars |>.exists_fresh
     let ⟨aₗ₀nin₀₁Bₗ₀, aₗ₀ninBₗ₁⟩ := List.not_mem_append'.mp aₗ₀nin
@@ -208,15 +218,8 @@ theorem TypeScheme.KindingAndElaboration.deterministic (σke₀ : [[Γc; Γ ⊢ 
     let ⟨aᵢ₀nin₀₁Bₗ₀, aᵢ₀ninBₗ₁⟩ := List.not_mem_append'.mp aᵢ₀nin
     let ⟨aᵢ₀nin₀₁, aᵢ₀ninBₗ₀⟩ := List.not_mem_append'.mp aᵢ₀nin₀₁Bₗ₀
     let ⟨aᵢ₀nin₀, aᵢ₀nin₁⟩ := List.not_mem_append'.mp aᵢ₀nin₀₁
-    let I₀₀ₗₜₚᵢ := aᵢ₀ :: I₀₀ₗₜₚ
-    let I₀₁ₗₜₚᵢ := aᵢ₀ :: I₀₁ₗₜₚ
-    let ⟨aₙ₀, aₙ₀nin⟩ := I₀₀ₗₜₚᵢ ++ I₀₁ₗₜₚᵢ ++ ↑Bₗ₀.freeTypeVars ++ ↑Bₗ₁.freeTypeVars |>.exists_fresh
-    let ⟨aₙ₀nin₀₁Bₗ₀, aₙ₀ninBₗ₁⟩ := List.not_mem_append'.mp aₙ₀nin
-    let ⟨aₙ₀nin₀₁, aₙ₀ninBₗ₀⟩ := List.not_mem_append'.mp aₙ₀nin₀₁Bₗ₀
-    let ⟨aₙ₀nin₀, aₙ₀nin₁⟩ := List.not_mem_append'.mp aₙ₀nin₀₁
-    let ⟨_, Bₗopeq⟩ :=
-      keBₗ₀ aₗ₀ aₗ₀nin₀ aₜ₀ aₜ₀nin₀ aₚ₀ aₚ₀nin₀ aᵢ₀ aᵢ₀nin₀ aₙ₀ aₙ₀nin₀ |>.deterministic <|
-        keBₗ₁ aₗ₀ aₗ₀nin₁ aₜ₀ aₜ₀nin₁ aₚ₀ aₚ₀nin₁ aᵢ₀ aᵢ₀nin₁ aₙ₀ aₙ₀nin₁
+    let ⟨_, Bₗopeq⟩ := keBₗ₀ aₗ₀ aₗ₀nin₀ aₜ₀ aₜ₀nin₀ aₚ₀ aₚ₀nin₀ aᵢ₀ aᵢ₀nin₀ |>.deterministic <|
+      keBₗ₁ aₗ₀ aₗ₀nin₁ aₜ₀ aₜ₀nin₁ aₚ₀ aₚ₀nin₁ aᵢ₀ aᵢ₀nin₁
     let aₜ₀neaₗ₀ := List.ne_of_not_mem_cons aₜ₀nin₀
     let aₜ₀ninBₗ₀op :=
       TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₜ₀neaₗ₀ aₜ₀ninBₗ₀ (n := 4)
@@ -238,25 +241,10 @@ theorem TypeScheme.KindingAndElaboration.deterministic (σke₀ : [[Γc; Γ ⊢ 
     let aᵢ₀ninBₗ₁op := TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aᵢ₀neaₚ₀ (n := 2) <|
       TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aᵢ₀neaₜ₀ (n := 3) <|
       TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aᵢ₀neaₗ₀ aᵢ₀ninBₗ₁ (n := 4)
-    let aₙ₀neaᵢ₀ := List.ne_of_not_mem_cons aₙ₀nin₀
-    let aₙ₀neaₚ₀ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons aₙ₀nin₀
-    let aₙ₀neaₜ₀ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
-      List.not_mem_of_not_mem_cons aₙ₀nin₀
-    let aₙ₀neaₗ₀ := List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
-      List.not_mem_of_not_mem_cons <| List.not_mem_of_not_mem_cons aₙ₀nin₀
-    let aₙ₀ninBₗ₀op := TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₀neaᵢ₀ (n := 1) <|
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₀neaₚ₀ (n := 2) <|
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₀neaₜ₀ (n := 3) <|
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₀neaₗ₀ aₙ₀ninBₗ₀ (n := 4)
-    let aₙ₀ninBₗ₁op := TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₀neaᵢ₀ (n := 1) <|
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₀neaₚ₀ (n := 2) <|
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₀neaₜ₀ (n := 3) <|
-      TypeVar_open_not_mem_freeTypeVars_preservation_of_ne aₙ₀neaₗ₀ aₙ₀ninBₗ₁ (n := 4)
     let Bₗeq := TypeVar_open_inj_of_not_mem_freeTypeVars aₗ₀ninBₗ₀ aₗ₀ninBₗ₁ <|
       TypeVar_open_inj_of_not_mem_freeTypeVars aₜ₀ninBₗ₀op aₜ₀ninBₗ₁op <|
       TypeVar_open_inj_of_not_mem_freeTypeVars aₚ₀ninBₗ₀op aₚ₀ninBₗ₁op <|
-      TypeVar_open_inj_of_not_mem_freeTypeVars aᵢ₀ninBₗ₀op aᵢ₀ninBₗ₁op <|
-      TypeVar_open_inj_of_not_mem_freeTypeVars aₙ₀ninBₗ₀op aₙ₀ninBₗ₁op Bₗopeq
+      TypeVar_open_inj_of_not_mem_freeTypeVars aᵢ₀ninBₗ₀op aᵢ₀ninBₗ₁op Bₗopeq
 
     let ⟨aᵢ₁, aᵢ₁nin⟩ := I₁₀ ++ I₁₁ ++ ↑Bᵣ₀.freeTypeVars ++ ↑Bᵣ₁.freeTypeVars |>.exists_fresh
     let ⟨aᵢ₁nin₀₁Bᵣ₀, aᵢ₁ninBᵣ₁⟩ := List.not_mem_append'.mp aᵢ₁nin
@@ -282,18 +270,18 @@ theorem TypeScheme.KindingAndElaboration.deterministic (σke₀ : [[Γc; Γ ⊢ 
       rfl,
       forall.injEq .. |>.mpr ⟨
         «F⊗⊕ω».Kind.arr.injEq .. |>.mpr
-          ⟨«F⊗⊕ω».Kind.list.injEq .. |>.mpr <| κ₀e.deterministic κ₁e, rfl⟩,
+          ⟨«F⊗⊕ω».Kind.list.injEq .. |>.mpr <| rfl, rfl⟩,
         arr.injEq .. |>.mpr ⟨
           forall.injEq .. |>.mpr ⟨
             rfl,
             forall.injEq .. |>.mpr ⟨
-              κ₀e.deterministic κ₁e,
+              rfl,
               forall.injEq .. |>.mpr ⟨
-                «F⊗⊕ω».Kind.list.injEq .. |>.mpr <| κ₀e.deterministic κ₁e,
+                «F⊗⊕ω».Kind.list.injEq .. |>.mpr rfl,
                 forall.injEq .. |>.mpr ⟨
-                  «F⊗⊕ω».Kind.list.injEq .. |>.mpr <| κ₀e.deterministic κ₁e,
+                  «F⊗⊕ω».Kind.list.injEq .. |>.mpr rfl,
                   forall.injEq .. |>.mpr ⟨
-                    «F⊗⊕ω».Kind.list.injEq .. |>.mpr <| κ₀e.deterministic κ₁e,
+                    «F⊗⊕ω».Kind.list.injEq .. |>.mpr rfl,
                     arr.injEq .. |>.mpr ⟨Bₗeq, arr.injEq .. |>.mpr ⟨Bᵣeq, rfl⟩⟩
                   ⟩,
                 ⟩,
@@ -311,7 +299,7 @@ theorem TypeScheme.KindingAndElaboration.deterministic (σke₀ : [[Γc; Γ ⊢ 
 termination_by σ.sizeOf'
 decreasing_by
   all_goals simp_arith
-  · case _ ξ _ τ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ =>
+  · case _ ξ τ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ =>
     apply Nat.le_trans <| Nat.le_add_left (τ 0).sizeOf' (ξ 0).sizeOf'
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'
@@ -321,7 +309,7 @@ decreasing_by
       simp only [Function.comp]
     )]
     exact Range.mem_map_of_mem ⟨Nat.le_refl _, Nat.pos_of_ne_zero nnezero, Nat.mod_one _⟩
-  · case _ ξ _ τ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ =>
+  · case _ ξ τ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ =>
     apply Nat.le_trans <| Nat.le_add_left (τ i).sizeOf' (ξ i).sizeOf'
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'
@@ -346,18 +334,20 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
     let .star := κe
     .arr (τ₀ke.soundness Γcw Γwe .star) (τ₁ke.soundness Γcw Γwe .star)
   | .quant κ' σ', .scheme I σ'ke κ'e =>
+    let .star := κe
     .scheme (I := Γ.typeVarDom ++ I) fun a anin =>
       let ⟨aninΓ, aninI⟩ := List.not_mem_append'.mp anin
-      σ'ke a aninI |>.soundness Γcw (Γwe.typeExt aninΓ κ'e) κe
-  | .qual (.qual ψ γ), .qual ϕke γke κe' => by
-    cases κe.deterministic κe'
-    exact .arr (ϕke.soundness Γcw Γwe .constr) (γke.soundness Γcw Γwe κe')
+      σ'ke a aninI |>.soundness Γcw (Γwe.typeExt aninΓ κ'e) .star
+  | .qual (.qual ψ γ), .qual ϕke γke => by
+    let .star := κe
+    exact .arr (ϕke.soundness Γcw Γwe .constr) (γke.soundness Γcw Γwe .star)
   | .qual (.mono (.label _)), .label => let .label := κe; .unit
   | .qual (.mono (.floor _)), .floor _ => let .star := κe; .unit
   | .qual (.mono (.comm _)), .comm => let .comm := κe; .unit
-  | .qual (.mono (.row ..)), .row _ _ τke _ =>
-    let .row κ'e := κe
-    .list fun i imem => τke i imem |>.soundness Γcw Γwe κ'e
+  | .qual (.mono (.row ..)), .row _ _ τke κ'e h => by
+    let .row κ'e' := κe
+    cases κ'e.deterministic κ'e'
+    exact .list (fun i imem => τke i imem |>.soundness Γcw Γwe κ'e) h
   | .qual (.mono (.prodOrSum .prod μ ρ)), .prod μke ρke =>
     let .star := κe
     .prod <| ρke.soundness Γcw Γwe <| .row .star
@@ -377,12 +367,12 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
     let A i : «Type» := match i with
       | 0 => [[∀ a : K' ↦ *. (⊗ (a$0 ⟦A₁⟧)) → ⊗ (a$0 ⟦A₀⟧)]]
       | 1 => [[∀ a : K' ↦ *. (⊕ (a$0 ⟦A₀⟧)) → ⊕ (a$0 ⟦A₁⟧)]]
-      | _ => .list []
+      | _ => .list [] none
     let Δwf := Γwe.soundness Γcw
     let A₀k := ρ₀ke.soundness Γcw Γwe κ'e.row
     let A₁k := ρ₁ke.soundness Γcw Γwe κ'e.row
-    have := Kinding.list (Δ := Δ) (A := A) (K := .star) (n := 2)
-      fun | 0, _ => .prj_evidence Δwf A₀k A₁k | 1, _ => .inj_evidence Δwf A₀k A₁k
+    have := Kinding.list (Δ := Δ) (A := A) (K := .star) (n := 2) (b := false)
+      (fun | 0, _ => .prj_evidence Δwf A₀k A₁k | 1, _ => .inj_evidence Δwf A₀k A₁k) (.inl nofun)
     simp [Range.map, Range.toList, A] at this
     exact this
   | .qual (.mono (.concat ρ₀ μ ρ₁ ρ₂)), .concat _ ρ₀ke ρ₁ke ρ₂ke κ'e containₗ containᵣ (K := K')
@@ -394,25 +384,25 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
       | 1 => [[∀ a : K' ↦ *. ∀ aₜ : *. ((⊕ (a$1 ⟦A₀⟧)) → aₜ$0) → ((⊕ (a$1 ⟦A₁⟧)) → aₜ$0) → (⊕ (a$1 ⟦A₂⟧)) → aₜ$0]]
       | 2 => Bₗ
       | 3 => Bᵣ
-      | _ => .list []
+      | _ => .list [] none
     let Δwf := Γwe.soundness Γcw
     let A₀k := ρ₀ke.soundness Γcw Γwe κ'e.row
     let A₁k := ρ₁ke.soundness Γcw Γwe κ'e.row
     let A₂k := ρ₂ke.soundness Γcw Γwe κ'e.row
-    have := Kinding.list (Δ := Δ) (A := A) (K := .star) (n := 4)
-      fun
+    have := Kinding.list (Δ := Δ) (A := A) (K := .star) (n := 4) (b := false)
+      (fun
         | 0, _ => .concat_evidence Δwf A₀k A₁k A₂k
         | 1, _ => .elim_evidence Δwf A₀k A₁k A₂k
         | 2, _ => containₗ.soundness Γcw Γwe .constr
-        | 3, _ => containᵣ.soundness Γcw Γwe .constr
+        | 3, _ => containᵣ.soundness Γcw Γwe .constr) (.inl nofun)
     simp [Range.map, Range.toList, A] at this
     exact this
   | .qual (.mono (.typeClass _ τ)),
-    .tc inΓc τke (κ := κ') (A := A') (Aₛ := Aₛ) (B := B) (n := n) => by
+    .tc inΓc τke (κ := κ') (A := A') (A' := A''') (B := B) (n := n) => by
     let .constr := κe
     apply Kinding.prod
-    let A'' i := if i = 0 then A'.Type_open B else (Aₛ (i - 1)).Type_open B
-    have := Kinding.list (Δ := Δ) (n := n + 1) (A := A'') (K := .star) ?h
+    let A'' i := if i = 0 then A'.Type_open B else (A''' (i - 1)).Type_open B
+    have := Kinding.list (Δ := Δ) (n := n + 1) (b := false) (A := A'') (K := .star) ?h (.inl nofun)
     rw [Range.map, Range.toList, if_pos (Nat.zero_lt_succ _), List.map] at this
     simp only at this
     dsimp only [A''] at this
@@ -423,7 +413,7 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
     dsimp only [A'']
     let ⟨K', κ'e⟩ := κ'.Elaboration_total
     let Bk := τke.soundness Γcw Γwe κ'e
-    let ⟨_, κ'e', _, A'k, _, Aₛk⟩ := Γcw.In_inversion inΓc
+    let ⟨_, κ'e', _, A'k, _, A'''k⟩ := Γcw.In_inversion inΓc
     cases κ'e.deterministic κ'e'
     split
     · case isTrue h =>
@@ -432,17 +422,17 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
       rw [← Δ.empty_append] at Γwe Bk ⊢
       exact A'k a |>.weakening (Δ := .empty) (Δ'' := .typeExt .empty ..)
        (Γwe.soundness Γcw |>.typeVarExt <| Γwe.TypeVarNotInDom_preservation aninΓ)
-        |>.Type_open_preservation (Δ' := .empty) aninA' Bk
+        |>.Type_open_preservation aninA' Bk
     · case isFalse h =>
-      let ⟨a, anin⟩ := Γ.typeVarDom ++ ↑(Aₛ (i - 1)).freeTypeVars |>.exists_fresh
-      let ⟨aninΓ, aninAₛ⟩ := List.not_mem_append'.mp anin
+      let ⟨a, anin⟩ := Γ.typeVarDom ++ ↑(A''' (i - 1)).freeTypeVars |>.exists_fresh
+      let ⟨aninΓ, aninA'''⟩ := List.not_mem_append'.mp anin
       rw [Nat.add_comm] at iltnsucc
       have : i - 1 < n := Nat.sub_lt_left_of_lt_add (Nat.pos_of_ne_zero h) iltnsucc
       rw [← Δ.empty_append] at Γwe Bk ⊢
-      exact Aₛk a (i - 1) ⟨Nat.zero_le _, this, Nat.mod_one _⟩ |>.weakening (Δ := .empty)
+      exact A'''k a (i - 1) ⟨Nat.zero_le _, this, Nat.mod_one _⟩ |>.weakening (Δ := .empty)
         (Δ'' := .typeExt .empty ..)
         (Γwe.soundness Γcw |>.typeVarExt <| Γwe.TypeVarNotInDom_preservation aninΓ)
-        |>.Type_open_preservation (Δ' := .empty) aninAₛ Bk
+        |>.Type_open_preservation aninA''' Bk
   | .qual (.mono (.all (.mk κ ψ) ρ)), .all I ψke κe' ρke =>
     let .constr := κe
     let Aopki : «F⊗⊕ω».Kinding .. := .lam (I := Γ.typeVarDom ++ I) fun a anin =>
@@ -492,9 +482,13 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
           ⟨aₙneaₚ, List.not_mem_cons.mpr ⟨aₙneaₜ, List.not_mem_cons.mpr ⟨aₙneaₗ, aₙninΓ⟩⟩⟩
       ⟩
 
-      exact keBₗ aₗ aₗninI₀ aₜ aₜninI₀' aₚ aₚninI₀' aᵢ aᵢninI₀' aₙ aₙninI₀' |>.soundness Γcw
-        (Γwe.typeExt aₗninΓ .label |>.typeExt aₜninΓ' κ'e |>.typeExt aₚninΓ' κ'e.row
-           |>.typeExt aᵢninΓ' κ'e.row |>.typeExt aₙninΓ' κ'e.row) .constr
+      specialize keBₗ aₗ aₗninI₀ aₜ aₜninI₀' aₚ aₚninI₀' aᵢ aᵢninI₀'
+      let Γawe := Γwe.typeExt aₗninΓ .label |>.typeExt aₜninΓ' κ'e |>.typeExt aₚninΓ' κ'e.row
+        |>.typeExt aᵢninΓ' κ'e.row |>.typeExt aₙninΓ' κ'e.row
+      let Bₗki := keBₗ.weakening Γawe (Γ' := .typeExt .empty ..) (Γ'' := .empty)
+        |>.soundness Γcw Γawe .constr
+      rw [Bₗki.TypeVarLocallyClosed_of.TypeVar_open_id]
+      exact Bₗki
     · intro aᵢ aᵢnin aₙ aₙnin
       let ⟨aᵢninI₁, aᵢninΓ⟩ := List.not_mem_append'.mp aᵢnin
       let ⟨aₙneaᵢ, aₙnin'⟩ := List.not_mem_cons.mp aₙnin
@@ -509,7 +503,7 @@ theorem TypeScheme.KindingAndElaboration.soundness (σke : [[Γc; Γ ⊢ σ : κ
 termination_by Γ.sizeOf' + σ.sizeOf'
 decreasing_by
   all_goals simp_arith
-  · case _ ξ _ τ _ _ _ _ _ _ _ _ =>
+  · case _ ξ τ _ _ _ _ _ _ _ _ _ _ _ _ =>
     apply Nat.le_trans <| Nat.le_add_left (τ i).sizeOf' (ξ i).sizeOf'
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'
@@ -520,7 +514,10 @@ decreasing_by
     )]
     exact Range.mem_map_of_mem imem
   · exact Nat.succ_le_of_lt <| Monotype.sizeOf'_pos _
-  · exact Nat.succ_le_of_lt <| Monotype.sizeOf'_pos _
+  · rw [TypeEnvironment.append, TypeEnvironment.append, TypeEnvironment.append,
+        TypeEnvironment.sizeOf', TypeEnvironment.sizeOf', TypeEnvironment.sizeOf',
+        TypeEnvironment.sizeOf', TypeEnvironment.sizeOf']
+    simp_arith
 
 theorem TypeEnvironment.WellFormednessAndElaboration.soundness (Γwe : [[Γc ⊢ Γ ⇝ Δ]])
   (Γcw : [[⊢c Γc]]) : [[⊢ Δ]] := match Γwe with

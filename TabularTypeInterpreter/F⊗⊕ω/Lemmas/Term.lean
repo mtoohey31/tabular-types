@@ -35,6 +35,17 @@ theorem TermVar_open_sizeOf : sizeOf (TermVar_open E x n) = sizeOf E := by
   induction E using rec_uniform generalizing n <;> aesop
     (add simp TermVar_open, safe List.sizeOf_map_eq_of_eq_id_of_mem)
 
+theorem TypeVar_open_TermVar_subst_comm {E: Term} : (E.TermVar_open y n).TypeVar_subst x A = (E.TypeVar_subst x A).TermVar_open y n := by
+  induction E using rec_uniform generalizing n <;> simp_all [TermVar_open, TypeVar_subst]
+
+theorem TermVar_subst_intro_of_not_mem_freeTermVars {A: Term}: a ∉ A.freeTermVars → (A.TermVar_open a n).TermVar_subst a B = A.Term_open B n := by
+  induction A using rec_uniform generalizing B n <;>
+    aesop (add simp [TermVar_subst, TermVar_open, Term_open, freeTermVars, TermVar_open])
+
+theorem TypeVar_subst_intro_of_not_mem_freeTypeVars {A: Term}: a ∉ A.freeTypeVars → (A.TypeVar_open a n).TypeVar_subst a B = A.Type_open B n := by
+  induction A using rec_uniform generalizing B n <;>
+    simp_all [TypeVar_subst, TypeVar_open, Type_open, freeTypeVars, TypeVar_open, Type.TypeVar_subst_intro_of_not_mem_freeTypeVars]
+
 @[simp]
 theorem TypeVar_open_multi_app : TypeVar_open (multi_app Fs E) a n =
     multi_app (Fs.map (TypeVar_open · a n)) (TypeVar_open E a n) := by
@@ -109,6 +120,10 @@ where
   of_eq {E m n} (Elc : TypeVarLocallyClosed E m) (eq : m = n) : E.TypeVarLocallyClosed n := by
     rwa [eq] at Elc
 
+theorem TermVar_open_TypeVar_subst_comm {E: Term} (lc: F.TypeVarLocallyClosed n) : (E.TypeVar_open y n).TermVar_subst x F = (E.TermVar_subst x F).TypeVar_open y n := by
+  induction E using rec_uniform generalizing n <;> aesop
+    (add simp [TypeVar_open, TermVar_subst], 40% forward TypeVar_open_id, 40% weaken)
+
 theorem prod_id (Alc : A.TypeVarLocallyClosed)
   : [[Λ a : K ↦ *. λ x : ⊗ (a$0 ⟦A⟧). x$0]].TypeVarLocallyClosed :=
   typeLam <| lam (.prod (.listApp (.var_bound Nat.one_pos) Alc.weaken)) var
@@ -162,6 +177,18 @@ theorem weaken (Elc : TermVarLocallyClosed E m) : E.TermVarLocallyClosed (m + n)
 where
   of_eq {E m n} (Elc : TermVarLocallyClosed E m) (eq : m = n) : E.TermVarLocallyClosed n := by
     rwa [eq] at Elc
+
+theorem Term_open_id : TermVarLocallyClosed A n → A.Term_open B n = A := by
+  induction A using rec_uniform generalizing n <;> aesop
+    (add simp [Term_open], safe cases TermVarLocallyClosed, safe List.map_eq_id_of_eq_id_of_mem)
+
+private
+theorem Term_open_id' : TermVarLocallyClosed A n → A = A.Term_open B n := (Term_open_id · |>.symm)
+
+theorem TermVar_open_TermVar_subst_comm {E F : Term} (lc : F.TermVarLocallyClosed n) (neq : x ≠ y) : (E.TermVar_open y n).TermVar_subst x F = (E.TermVar_subst x F).TermVar_open y n := by
+  set_option aesop.dev.statefulForward false in
+  induction E using rec_uniform generalizing n <;> aesop
+    (add simp [TermVar_open, TermVar_subst], 40% Term_open_id', 40% forward TermVar_open_id, 40% weaken)
 
 end TermVarLocallyClosed
 
@@ -419,6 +446,18 @@ theorem TermVar_open_TermVar_subst_eq_Term_open_of_not_mem_freeTermVars
 
 end Term
 
+namespace Type.TypeVarLocallyClosed
+
+private
+theorem Type_open_id' : Term.TypeVarLocallyClosed A n → A = A.Type_open B n := (Term.TypeVarLocallyClosed.Type_open_id · |>.symm)
+
+theorem Term_TypeVar_open_TypeVar_subst_comm {E : Term} (lc : F.TypeVarLocallyClosed n) (neq : x ≠ y) : (E.TypeVar_open y n).TypeVar_subst x F = (E.TypeVar_subst x F).TypeVar_open y n := by
+  set_option aesop.dev.statefulForward false in
+  induction E using Term.rec_uniform generalizing n <;> aesop
+    (add simp [Term.TypeVar_open, Term.TypeVar_subst], 40% Type_open_id', 40% forward Term.TypeVarLocallyClosed.TypeVar_open_id, 40% Term.TypeVarLocallyClosed.weaken, 40% Type.TypeVarLocallyClosed.TypeVar_open_TypeVar_subst_comm, 40% Type.TypeVarLocallyClosed.weaken)
+
+end Type.TypeVarLocallyClosed
+
 namespace Typing
 
 open Std
@@ -427,12 +466,15 @@ local instance : Inhabited Term where
   default := .prodIntro []
 in
 local instance : Inhabited «Type» where
-  default := .list []
+  default := .list [] none
 in
-theorem prodIntro' (wf: [[ ⊢ Δ ]]) (EstyAs : ∀ EA ∈ List.zip Es As, let (E, A) := EA; [[Δ ⊢ E : A]])
-  (length_eq : Es.length = As.length) : Typing Δ (.prodIntro Es) (.prod (.list As)) := by
-  rw [← Range.map_get!_eq (as := Es), ← Range.map_get!_eq (as := As), ← length_eq]
-  apply Typing.prodIntro wf
+theorem prodIntro' {b : Bool} (wf: [[ ⊢ Δ ]])
+  (EstyAs : ∀ EA ∈ List.zip Es As, let (E, A) := EA; [[Δ ⊢ E : A]]) (h : Es.length ≠ 0 ∨ b)
+  (length_eq : Es.length = As.length)
+  : Typing Δ (.prodIntro Es) (.prod (.list As (Option.someIf .star b))) := by
+  rw (occs := .pos [1]) [← Range.map_get!_eq (as := Es)]
+  rw [← Range.map_get!_eq (as := As), ← length_eq]
+  apply Typing.prodIntro wf _ (by rw [NatNe, BoolId]; exact h)
   intro i mem
   have := EstyAs ((List.zip Es As).get! i) <| List.get!_mem <| by
     rw [List.length_zip, ← length_eq, Nat.min_self]
@@ -444,12 +486,14 @@ local instance : Inhabited Term where
   default := .prodIntro []
 in
 local instance : Inhabited «Type» where
-  default := .list []
+  default := .list [] none
 in
-theorem sumElim' (EtyA : Typing Δ E (.sum (.list As)))
+local instance : Inhabited Kind where
+  default := .star
+in
+theorem sumElim' (EtyA : Typing Δ E (.sum (.list As (Option.someIf .star b))))
   (FstyAsarrB : ∀ FA ∈ List.zip Fs As, let (F, A) := FA; [[Δ ⊢ F : A → B]])
-  (Bki : [[Δ ⊢ B : *]])
-  (length_eq : Fs.length = As.length) : Typing Δ (.sumElim E Fs) B := by
+  (Bki : [[Δ ⊢ B : *]]) (length_eq : Fs.length = As.length) : Typing Δ (.sumElim E Fs) B := by
   rw [← Range.map_get!_eq (as := Fs)]
   apply Typing.sumElim (A := As.get!)
   · rw [length_eq, Range.map_get!_eq]
@@ -503,14 +547,15 @@ theorem WellFormedness_of (EtyA : [[Δ ⊢ E : A]]) : [[ ⊢ Δ ]] := by
     specialize ih a notIn
     cases ih; assumption
 
-theorem unit (Δwf : [[⊢ Δ]]) : [[Δ ⊢ () : ⊗ { }]] := by
-  apply Typing.prodIntro' Δwf _ rfl
+theorem unit (Δwf : [[⊢ Δ]]) : [[Δ ⊢ () : ⊗ { : * }]] := by
+  apply Typing.prodIntro' Δwf _ (.inr rfl) rfl
   intro EA mem
   rw [List.zip_nil_left] at mem
   nomatch mem
 
 theorem singleton (EtyA : [[Δ ⊢ E : A]]) : [[Δ ⊢ (E) : ⊗ {A}]] := by
-  apply prodIntro' EtyA.WellFormedness_of _ rfl
+  rw [← Option.someIf_false]
+  apply prodIntro' EtyA.WellFormedness_of _ (.inl (by rw [List.length_singleton]; nofun)) rfl
   intro EA mem
   rw [List.zip_cons_cons, List.zip_nil_left] at mem
   let (_, _) := EA
@@ -518,7 +563,8 @@ theorem singleton (EtyA : [[Δ ⊢ E : A]]) : [[Δ ⊢ (E) : ⊗ {A}]] := by
   exact EtyA
 
 theorem pair (EtyA : [[Δ ⊢ E : A]]) (FtyB : [[Δ ⊢ F : B]]) : [[Δ ⊢ (E, F) : ⊗ {A, B}]] := by
-  apply prodIntro' EtyA.WellFormedness_of _ rfl
+  rw [← Option.someIf_false]
+  apply prodIntro' EtyA.WellFormedness_of _ (.inl (by simp [List.length])) rfl
   intro EA mem
   rw [List.zip_cons_cons, List.zip_cons_cons, List.zip_nil_left] at mem
   let (_, _) := EA
@@ -528,7 +574,8 @@ theorem pair (EtyA : [[Δ ⊢ E : A]]) (FtyB : [[Δ ⊢ F : B]]) : [[Δ ⊢ (E, 
 
 theorem quadruple (E₀tyA₀ : [[Δ ⊢ E₀ : A₀]]) (E₁tyA₁ : [[Δ ⊢ E₁ : A₁]]) (E₂tyA₂ : [[Δ ⊢ E₂ : A₂]])
   (E₃tyA₃ : [[Δ ⊢ E₃ : A₃]]) : [[Δ ⊢ (E₀, E₁, E₂, E₃) : ⊗ {A₀, A₁, A₂, A₃}]] := by
-  apply prodIntro' E₀tyA₀.WellFormedness_of _ rfl
+  rw [← Option.someIf_false]
+  apply prodIntro' E₀tyA₀.WellFormedness_of _ (.inl (by simp [List.length])) rfl
   intro EA mem
   rw [List.zip_cons_cons, List.zip_cons_cons, List.zip_cons_cons, List.zip_cons_cons,
       List.zip_nil_left] at mem
@@ -539,7 +586,8 @@ theorem quadruple (E₀tyA₀ : [[Δ ⊢ E₀ : A₀]]) (E₁tyA₁ : [[Δ ⊢ E
   | .tail _ (.tail _ (.head ..)) => exact E₂tyA₂
   | .tail _ (.tail _ (.tail _ (.head ..))) => exact E₃tyA₃
 
-theorem explode (Ety : [[Δ ⊢ E : ⊕ { }]]) (Aki : [[Δ ⊢ A : *]]) : [[Δ ⊢ case E { } : A]] := by
+theorem explode (Ety : [[Δ ⊢ E : ⊕ { : * }]]) (Aki : [[Δ ⊢ A : *]]) : [[Δ ⊢ case E { } : A]] := by
+  rw [← Option.someIf_true] at Ety
   apply sumElim' Ety _ Aki rfl
   intro _ mem
   rw [List.zip_nil_left] at mem
@@ -594,11 +642,11 @@ theorem TypeVarLocallyClosed_of (EtyA : [[Δ ⊢ E : A]]) : A.TypeVarLocallyClos
     have ⟨i, In, A_eq⟩ := In
     subst A_eq
     exact ih i (by simp_all [Range.mem_of_mem_toList])
-  . case prodElim Δ E n As i EtyAs In ih =>
+  . case prodElim Δ E n As b i EtyAs In ih =>
     simp [List.map_singleton_flatten] at ih
     cases ih; case prod ih => cases ih; case list ih =>
     exact ih (As i) (Range.mem_map_of_mem In)
-  . case sumIntro i n Δ E As In EtyA Aki ih =>
+  . case sumIntro i n Δ E As In EtyA Aki h ih =>
     constructor
     constructor
     intro A AInAs
@@ -608,7 +656,8 @@ theorem TypeVarLocallyClosed_of (EtyA : [[Δ ⊢ E : A]]) : A.TypeVarLocallyClos
     exact Aki j (by simp_all [Range.mem_of_mem_toList]) |>.TypeVarLocallyClosed_of
   . case sumElim Δ E n As Fs B EtyA FtyAB Bki ih1 ih2 =>
     exact Bki.TypeVarLocallyClosed_of
-  . case equiv Δ E A B EtyA eqAB ih => sorry -- TODO by equiv -> equiv closure of pred -> equiv pred preserves lc
+  . case equiv Δ E A B EtyA eqAB ih =>
+    exact eqAB.preserve_lc.1 ih
 
 theorem TermTypeVarLocallyClosed_of (EtyA : [[Δ ⊢ E : A]]) : E.TypeVarLocallyClosed := by
   induction EtyA with
@@ -623,13 +672,13 @@ theorem TermTypeVarLocallyClosed_of (EtyA : [[Δ ⊢ E : A]]) : E.TypeVarLocally
     let ⟨a, anin⟩ := I.exists_fresh
     exact .typeLam <| ih _ anin |>.weaken |>.TypeVar_open_drop Nat.zero_lt_one
   | typeApp _ Bki ih => exact .typeApp ih Bki.TypeVarLocallyClosed_of
-  | prodIntro _ _ ih =>
+  | prodIntro _ _ _ ih =>
     apply Term.TypeVarLocallyClosed.prodIntro
     intro E mem
     rcases Range.mem_of_mem_map mem with ⟨i, imem, rfl⟩
     exact ih _ imem
   | prodElim _ _ ih => exact .prodElim ih
-  | sumIntro _ _ _ ih => exact .sumIntro ih
+  | sumIntro _ _ _ _ ih => exact .sumIntro ih
   | sumElim _ _ _ Eih Fih =>
     apply Term.TypeVarLocallyClosed.sumElim Eih
     intro E mem
@@ -648,13 +697,13 @@ theorem TermVarLocallyClosed_of (EtyA : [[Δ ⊢ E : A]]) : E.TermVarLocallyClos
     let ⟨x, xnin⟩ := I.exists_fresh
     exact .typeLam <| ih x xnin |>.TypeVar_open_drop
   | typeApp _ _ ih => exact .typeApp ih
-  | prodIntro _ _ ih =>
+  | prodIntro _ _ _ ih =>
     exact .prodIntro fun E mem => by
       let ⟨i, mem', eq⟩ := Range.mem_of_mem_map mem
       cases eq
       exact ih i mem'
   | prodElim _ _ ih => exact .prodElim ih
-  | sumIntro _ _ _ ih => exact .sumIntro ih
+  | sumIntro _ _ _ _ ih => exact .sumIntro ih
   | sumElim _ _ _ ih₀ ih₁ =>
     exact .sumElim ih₀ fun i mem => by
       let ⟨i, mem', eq⟩ := Range.mem_of_mem_map mem
@@ -662,7 +711,185 @@ theorem TermVarLocallyClosed_of (EtyA : [[Δ ⊢ E : A]]) : E.TermVarLocallyClos
       exact ih₁ i mem'
   | equiv Ety' _ ih => exact ih
 
-theorem weakening : [[Δ, Δ'' ⊢ E : A]] → [[⊢ Δ, Δ', Δ'']] → [[Δ, Δ', Δ'' ⊢ E : A]] := sorry
+open Environment in
+theorem weakening (h: [[Δ, Δ'' ⊢ E : A]]) (wf: [[⊢ Δ, Δ', Δ'']]): [[Δ, Δ', Δ'' ⊢ E : A]] := by
+  generalize Δ_eq : [[ Δ, Δ'' ]] = Δ_ at h
+  induction h generalizing Δ Δ'' <;> subst Δ_eq
+  case var x T wf' h =>
+    refine .var wf ?_
+    exact h.weakening <| Environment.append_assoc.subst wf |>.weakening.append_termVar_fresh_l
+  case lam T E A I h ih =>
+    refine .lam (I := I ++ Δ.termVarDom ++ Δ'.termVarDom ++ Δ''.termVarDom) fun x nin => ?_
+    repeat1' rw [append_termExt_assoc]
+    refine ih x (by simp_all) ?_ rfl
+    simp [append]
+    have TkiStar := match h x (by simp_all) |>.WellFormedness_of with |.termVarExt _ _ h => h |>.weakening wf
+    exact .termVarExt wf (by simp_all [TermVarNotInDom, TermVarInDom, termVarDom_append]) TkiStar
+  case typeLam K E A I EtyA ih =>
+    refine .typeLam (I := I ++ Δ.typeVarDom ++ Δ'.typeVarDom ++ Δ''.typeVarDom) (λ a nin => ?_)
+    repeat1' rw [append_typeExt_assoc]
+    refine ih a (by simp_all) ?_ rfl
+    simp [append]
+    exact .typeVarExt wf (by simp_all [TypeVarNotInDom, TypeVarInDom, typeVarDom_append])
+  case sumIntro i n E A iltn h EtyA AkiStar ih =>
+    exact .sumIntro iltn (ih wf rfl) (λ i' i'ltn => AkiStar i' i'ltn |>.weakening wf) h
+  case equiv E A B h AB ih =>
+    have EtyA := ih wf rfl
+    exact EtyA.equiv <| AB.weakening wf.EnvironmentTypeWellFormedness_of
+  all_goals try aesop (add safe constructors Kinding, unsafe constructors Typing, safe forward Kinding.weakening) (config := { enableSimp := false })
+
+open Environment in
+theorem Kinding_of (EtyA : [[Δ ⊢ E : A]]) : [[ Δ ⊢ A: * ]] := by
+  induction EtyA
+  . case var wf xinΔ => exact xinΔ.Kinding_of wf
+  . case lam Δ A E B I EtyB ih =>
+    have ⟨x, xnin⟩ := I ++ Δ.termVarDom |>.exists_fresh
+    let .termVarExt wf _ AkiStar := EtyB x (by simp_all) |>.WellFormedness_of
+    exact .arr AkiStar <| ih x (by simp_all) |>.TermVar_drop (Δ'' := [[ ε ]])
+  . case app ih1 _ =>
+    let .arr _ BkiStar := ih1
+    exact BkiStar
+  . case typeLam Δ K E A I EtyA ih =>
+    exact .scheme (I ++ Δ.typeVarDom) (λ a anin => ih a (by simp_all))
+  . case typeApp Δ E K A B EtyA BkiK ih =>
+    let .scheme I AkiStar := ih
+    have ⟨a, anin⟩ := I ++ Δ.typeVarDom ++ A.freeTypeVars |>.exists_fresh
+    specialize AkiStar a (by simp_all)
+    rw [← Type.TypeVar_open_TypeVar_subst_eq_Type_open_of_not_mem_freeTypeVars (a := a) (by simp_all)]
+    exact AkiStar.subst (.typeVarExt EtyA.WellFormedness_of (by simp_all [TypeVarNotInDom, TypeVarInDom])) BkiK
+  . case prodIntro Δ n E A b wf EtyA h ih => exact .prod <| .list ih h
+  . case prodElim Δ E n A _ i EtyA iltn ih =>
+    let .prod h := ih; have AkiStar := h.inv_list.left; clear h
+    exact AkiStar i iltn
+  . case sumIntro AkiStar h _ => exact .sum <| .list AkiStar h
+  . case sumElim BkiStar _ _ =>
+    exact BkiStar
+  . case equiv Δ E A B EtyA eqAB ih =>
+    exact eqAB.TypeEquivalenceS_of ih.TypeVarLocallyClosed_of EtyA.WellFormedness_of
+      |>.preservation.mp ih
+
+open Environment in
+theorem inv_arr' (Ety: [[Δ ⊢ λ x? : T. E : C ]]) (eqC: [[ Δ ⊢ C ≡ A → B ]])
+  : [[ Δ ⊢ T ≡ A ]] ∧ (∃(I: List _), ∀x ∉ I, [[ Δ, x: T ⊢ E^x : B ]]) := by
+  generalize T_eq : [[ λ x? : T. E ]] = T_ at Ety
+  induction Ety <;> cases T_eq
+  -- . case lam.refl Δ B' I EtyB' _ =>
+  --   refine skolem ⟨I ++ Δ.termVarDom, λx nin => ?_⟩
+  --   specialize EtyB' x (by simp_all)
+  --   have .termVarExt wf _ TkiStar := EtyB'.WellFormedness_of
+  --   have B'kiStar := EtyB'.Kinding_of.TermVar_drop (Δ'' := [[ ε ]])
+  --   have ⟨eTA, eB'B⟩ := EqSmallStep.of_Equivalence eqC (TkiStar.arr B'kiStar) wf |>.inj_arr
+  --   refine ⟨eTA.Equivalence_of TkiStar, ?_⟩
+  --   refine .equiv EtyB' ?_
+  --   exact eB'B.Equivalence_of B'kiStar |>.weakening_term' (Δ' := [[ ε ]])
+  . case lam.refl Δ B' I EtyB' _ =>
+    have ⟨wf, TkiStar, B'kiStar⟩: _ ∧ _ ∧ _ := (
+      have ⟨x, xnin⟩ := I.exists_fresh
+      have .termVarExt wf _ TkiStar := EtyB' x xnin |>.WellFormedness_of
+      have B'kiStar := EtyB' x xnin |>.Kinding_of.TermVar_drop (Δ'' := [[ ε ]])
+      ⟨wf, TkiStar, B'kiStar⟩
+    )
+    have ⟨eTA, eB'B⟩ := EqSmallStep.of_Equivalence eqC (TkiStar.arr B'kiStar) wf |>.inj_arr
+      (.arr TkiStar B'kiStar) wf
+    refine ⟨eTA.Equivalence_of, ?_⟩
+    refine ⟨I, λ x xnin => ?_⟩
+    refine .equiv (EtyB' x (by simp_all)) ?_
+    exact eB'B.Equivalence_of.weakening_term' (Δ' := [[ ε ]])
+  . case equiv.refl _ _ _ eqA'B' _ ih => exact ih (eqA'B'.trans eqC) rfl
+
+theorem inv_arr (Ety: [[Δ ⊢ λ x? : T. E : A → B ]])
+  : [[ Δ ⊢ T ≡ A ]] ∧ (∃(I: List _), ∀x ∉ I, [[ Δ, x: T ⊢ E^x : B ]]) := Ety.inv_arr' .refl
+
+open Environment in
+theorem inv_forall' (Ety: [[Δ ⊢ Λ a? : K. E : T ]]) (eqT: [[ Δ ⊢ T ≡ ∀ a?: K'. A ]])
+  : K = K' ∧ (∃(I: List _), ∀a ∉ I, [[ Δ, a: K ⊢ E^a : A^a ]]) := by
+  generalize T_eq : [[ Λ a? : K. E ]] = T_ at Ety
+  induction Ety <;> cases T_eq
+  . case typeLam.refl Δ A' I EtyA' _ =>
+    have wf := (
+      have ⟨a, xnin⟩ := I.exists_fresh
+      let .typeVarExt wf _ := EtyA' a xnin |>.WellFormedness_of
+      wf
+    )
+    have A'kiStar := Kinding.scheme I (λ a nin => EtyA' a nin |>.Kinding_of)
+    have ⟨eqKK', I', eA'A⟩ := EqSmallStep.of_Equivalence eqT A'kiStar wf |>.inj_forall A'kiStar wf
+    refine ⟨eqKK', ?_⟩
+    have .scheme I'' A'kiStar := A'kiStar
+    refine ⟨I ++ I', λ a anin => ?_⟩
+    refine .equiv (EtyA' a (by simp_all)) ?_
+    exact eA'A a (by simp_all) |>.Equivalence_of
+  . case equiv.refl _ _ _ eqA'B' _ ih => exact ih (eqA'B'.trans eqT) rfl
+
+theorem inv_forall (Ety: [[Δ ⊢ Λ a? : K. E : ∀ a?: K'. A ]])
+  : K = K' ∧ (∃(I: List _), ∀a ∉ I, [[ Δ, a: K ⊢ E^a : A^a ]]) := Ety.inv_forall' .refl
+
+theorem inv_prod' (Ety: [[ Δ ⊢ (</ E@i // i in [:n] />) : T ]])
+  (eqT: TypeEquivalence Δ T (.prod (.list ([:n'].map fun i => A i) K?)))
+  : n = n' ∧ [[ </ Δ ⊢ E@i : A@i // i in [:n] /> ]] ∧ ∃ b, Option.someIf .star b = K? ∧ (n ≠ 0 ∨ b) := by
+  generalize T_eq : [[ (</ E@i // i in [:n] />) ]] = T_ at Ety
+  induction Ety <;> try cases T_eq
+  . case prodIntro Δ n_ E_ A_ b wf EtyA h ih =>
+    clear ih
+    injection T_eq with eq
+    have eqnn_ := Std.Range.length_eq_of_mem_eq eq; simp at eqnn_; subst n_
+    have eqEE_ := Std.Range.eq_of_mem_of_map_eq eq; clear eq
+    let ki := (Typing.prodIntro wf EtyA h).Kinding_of
+    let .prod ki' := ki
+    have ⟨eqn'n, eA_A, K?eq⟩ := EqSmallStep.of_Equivalence eqT
+      (by exact .prod (.list (λ i iltn => EtyA i iltn |>.Kinding_of) h)) wf |>.inj_prod ki wf
+      |>.inj_list ki' wf
+    subst n'
+    refine ⟨rfl, λ x xin => ?_, _, K?eq, h⟩
+    simp_all
+    refine .equiv (EtyA x xin) ?_
+    exact eA_A x xin |>.Equivalence_of
+  . case equiv.refl _ _ _ eqA'B' _ ih => exact ih (eqA'B'.trans eqT) rfl
+
+theorem inv_prod
+  (Ety: Typing Δ [[(</ E@i // i in [:n] />)]] (.prod (.list ([:n'].map fun i => A i) K?)))
+  : n = n' ∧ [[ </ Δ ⊢ E@i : A@i // i in [:n] /> ]] ∧ ∃ b, Option.someIf .star b = K? ∧ (n ≠ 0 ∨ b) :=
+  Ety.inv_prod' .refl
+
+-- NOTE I believe this stronger version holds but idk how to prove it. For details, check the notes.
+-- theorem inv_sum' (Ety: [[ Δ ⊢ ι n E : T ]]) (eqT: [[ Δ ⊢ T ≡ ⊕ {</ A@i // i in [:n'] />} ]]) (Alc: [[ ⊕ {</ A@i // i in [:n'] />} ]].TypeVarLocallyClosed) : n ∈ [0:n'] ∧ [[ Δ ⊢ E : A@n ]] ∧ [[ </ Δ ⊢ A@i : * // i in [:n'] /> ]] := by
+--   generalize T_eq : [[ ι n E ]] = T_ at Ety
+--   induction Ety <;> cases T_eq
+--   . case sumIntro.refl n_ Δ A' A'kiStar nin EtyA' ih =>
+--     clear ih
+--     have wf := EtyA'.WellFormedness_of
+--     have Alc' := match Alc with | .sum Alc => Alc
+--     have ⟨eqn'n_, eAA'⟩ := eqT.EqParallelReduction_of.sym.inv_sum wf Alc |>.inv_list wf Alc'
+--     subst n_
+--     refine ⟨nin, ?_, ?_⟩
+--     . exact .equiv EtyA' (eAA' n nin |>.sym.TypeEquivalence_of)
+--     . refine λ i iin => ?_
+--       have A'kiStar := A'kiStar i iin
+--       have eAA' := eAA' i iin
+--       -- NOTE this requires preservation of type equivalence (aka type parallelreduction), and idk how to prove this
+--       sorry
+
+-- theorem inv_sum (Ety: [[ Δ ⊢ ι n E : ⊕ {</ A@i // i in [:n'] />} ]]) : n ∈ [0:n'] ∧ [[ Δ ⊢ E : A@n ]] ∧ [[ </ Δ ⊢ A@i : * // i in [:n'] /> ]] := Ety.inv_sum' .refl Ety.Type_TypeVarLocallyClosed_of
+
+theorem inv_sum' (Ety: [[ Δ ⊢ ι n E : T ]])
+  (eqT: TypeEquivalence Δ T (.sum (.list ([:n'].map fun i => A i) K?)))
+  : n ∈ [0:n'] ∧ [[ Δ ⊢ E : A@n ]] ∧ ∃ b, Option.someIf .star b = K? ∧ (n' ≠ 0 ∨ b) := by
+  generalize T_eq : [[ ι n E ]] = T_ at Ety
+  induction Ety <;> cases T_eq
+  . case sumIntro.refl n_ Δ A' _ A'kiStar h nin EtyA' ih =>
+    clear ih
+    have wf := EtyA'.WellFormedness_of
+    let ki := (Typing.sumIntro nin EtyA' A'kiStar h).Kinding_of
+    let .sum ki' := ki
+    have ⟨eqn'n_, eA'A, K?eq⟩ := EqSmallStep.of_Equivalence eqT (K := [[ * ]])
+      (by exact .sum (.list (λ i iltn => A'kiStar i iltn) h)) wf |>.inj_sum ki wf
+      |>.inj_list ki' wf
+    subst n_
+    exact ⟨nin, .equiv EtyA' <| eA'A n nin |>.Equivalence_of, _, K?eq, h⟩
+  . case equiv.refl _ _ _ eqA'B' _ ih => exact ih (eqA'B'.trans eqT) rfl
+
+theorem inv_sum (Ety: Typing Δ [[ι n E]] (.sum (.list ([:n'].map fun i => A i) K?)))
+  : n ∈ [0:n'] ∧ [[ Δ ⊢ E : A@n ]] ∧ ∃ b, Option.someIf .star b = K? ∧ (n' ≠ 0 ∨ b) :=
+  Ety.inv_sum' .refl
 
 end Typing
 

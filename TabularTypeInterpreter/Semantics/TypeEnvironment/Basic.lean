@@ -12,23 +12,23 @@ def multiTypeExt (Γ : TypeEnvironment) : List (TypeVarId × Kind) → TypeEnvir
   | (a, κ) :: aκs => Γ.typeExt a κ |>.multiTypeExt aκs
 
 termonly
-def multiConstrExt (Γ : TypeEnvironment) : List (Monotype × «F⊗⊕ω».TermVarId) → TypeEnvironment
+def multiConstrExt (Γ : TypeEnvironment) : List TypeEnvironmentConstrEntry → TypeEnvironment
   | [] => Γ
-  | (ψ, x) :: ψxs => Γ.constrExt ψ x |>.multiConstrExt ψxs
+  | ψx :: ψxs => Γ.constrExt ψx |>.multiConstrExt ψxs
 
 termonly
 def append (Γ : TypeEnvironment) : TypeEnvironment → TypeEnvironment
   | empty => Γ
   | typeExt Γ' a κ => Γ.append Γ' |>.typeExt a κ
   | termExt Γ' x σ => Γ.append Γ' |>.termExt x σ
-  | constrExt Γ' ψ x => Γ.append Γ' |>.constrExt ψ x
+  | constrExt Γ' ψx => Γ.append Γ' |>.constrExt ψx
 
 termonly
 def TypeVar_subst (Γ : TypeEnvironment) (a : TypeVarId) (τ : Monotype) := match Γ with
   | empty => empty
   | typeExt Γ' a' κ => Γ'.TypeVar_subst a τ |>.typeExt a' κ
   | termExt Γ' x σ => Γ'.TypeVar_subst a τ |>.termExt x <| σ.TypeVar_subst a τ
-  | constrExt Γ' ψ x => Γ'.TypeVar_subst a τ |>.constrExt (ψ.TypeVar_subst a τ) x
+  | constrExt Γ' (.mk ψ x) => Γ'.TypeVar_subst a τ |>.constrExt <| .mk (ψ.TypeVar_subst a τ) x
 
 termonly
 def typeVarDom : TypeEnvironment → List TypeVarId
@@ -42,7 +42,7 @@ def termVarDom : TypeEnvironment → List TermVarId
   | empty => []
   | typeExt Γ .. => Γ.termVarDom
   | termExt Γ x _ => x :: Γ.termVarDom
-  | constrExt Γ _ x => x :: Γ.termVarDom
+  | constrExt Γ (.mk _ x) => x :: Γ.termVarDom
 
 termonly
 @[simp]
@@ -51,7 +51,7 @@ def sizeOf' : TypeEnvironment → Nat
   | empty => 1
   | typeExt Γ _ _ => 1 + Γ.sizeOf'
   | termExt Γ _ σ => 1 + Γ.sizeOf' + σ.sizeOf'
-  | constrExt Γ ψ _ => 3 + Γ.sizeOf' + ψ.sizeOf'
+  | constrExt Γ (.mk ψ _) => 3 + Γ.sizeOf' + ψ.sizeOf'
 
 end TypeEnvironment
 
@@ -96,7 +96,7 @@ x : σ ∈ Γ
 ───────────────── constrExt
 x : σ ∈ Γ, ψ ⇝ x'
 
-judgement_syntax ψ " ⇝ " «F⊗⊕ω».x " ∈ " Γ : TypeEnvironment.ConstrIn (id x)
+judgement_syntax ψ " ⇝ " «F⊗⊕ω».x " ∈ " Γ : TypeEnvironment.ConstrIn (id x) (tex noelab := s!"{ψ} \\, \\lottsym\{∈} \\, {Γ}")
 
 judgement TypeEnvironment.ConstrIn where
 

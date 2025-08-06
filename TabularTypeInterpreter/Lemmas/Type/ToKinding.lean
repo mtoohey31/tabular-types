@@ -14,7 +14,7 @@ theorem Monotype.RowEquivalenceAndElaboration.to_Kinding (ρee : [[Γc; Γ ⊢ �
   match ρee with
   | refl ρek .. => exact ⟨_, _, _, ρek, ρek⟩
   | comm perm _ _ ξτke κe (p_ := p) =>
-    let ⟨⟨_, ξke⟩, uni, ⟨_, _, eq, eqκ, h, _, τke⟩⟩ := ξτke.row_inversion
+    let ⟨⟨_, ξke⟩, uni, ⟨_, _, _, eq, eqκ, _, h, _, τke⟩⟩ := ξτke.row_inversion
     cases eqκ
     rw [← Std.Range.map_get!_eq (as := p), List.map_map]
     let length_eq := perm.length_eq
@@ -24,15 +24,16 @@ theorem Monotype.RowEquivalenceAndElaboration.to_Kinding (ρee : [[Γc; Γ ⊢ �
       ξke (p.get! i) <| Std.Range.mem_of_mem_toList <| perm.mem_iff.mp <| List.get!_mem imem.upper
     let τke' := fun i (imem : i ∈ [:p.length]) =>
       τke (p.get! i) <| Std.Range.mem_of_mem_toList <| perm.mem_iff.mp <| List.get!_mem imem.upper
-    exact ⟨_, _, _, ξτke, .row ξke' (uni.Perm_preservation perm (fun _ => rfl)) τke' h⟩
+    exact ⟨_, _, _, ξτke, .row ξke' (uni.Perm_preservation perm (fun _ => rfl)) τke' κe h⟩
   | trans ρ₀ke κe ρ₀₁ee ρ₁₂ee =>
     let ⟨_, _, _, ρ₀ke', ρ₁ke⟩ := ρ₀₁ee.to_Kinding Γcw Γwe
     cases ρ₀ke.deterministic ρ₀ke' |>.left
     let ⟨_, _, _, ρ₁ke', ρ₂ke⟩ := ρ₁₂ee.to_Kinding Γcw Γwe
     cases ρ₁ke.deterministic ρ₁ke' |>.left
     exact ⟨_, _, _, ρ₀ke, ρ₂ke⟩
-  | liftL _ liftke@(.lift I τ₁ke κ₀e ξτ₀ke) _ (τ₁ := τ₁) =>
-    let ⟨⟨_, ξke⟩, uni, ⟨_, _, eq, κeq, h, _, τ₀ke⟩⟩ := ξτ₀ke.row_inversion
+  | liftL _ liftke@(.lift I τ'ke κ₀e ξτke) _ (τ' := τ') (κ₁ := κ₁) =>
+    let ⟨⟨_, ξke⟩, uni, ⟨_, _, _, eq, κeq, _, h, _, τke⟩⟩ := ξτke.row_inversion
+    let ⟨_, κ₁e⟩ := κ₁.Elaboration_total
     cases eq
     cases κeq
     exact ⟨
@@ -42,18 +43,19 @@ theorem Monotype.RowEquivalenceAndElaboration.to_Kinding (ρee : [[Γc; Γ ⊢ �
       liftke,
       .row ξke uni (fun i imem => by
         rename «Type» => A
-        let ⟨a, anin⟩ := τ₁.freeTypeVars ++ ↑A.freeTypeVars ++ Γ.typeVarDom ++ I |>.exists_fresh
-        let ⟨aninτ₁AΓ, aninI⟩ := List.not_mem_append'.mp anin
-        let ⟨aninτ₁A, aninΓ⟩ := List.not_mem_append'.mp aninτ₁AΓ
-        let ⟨aninτ₁, aninA⟩ := List.not_mem_append'.mp aninτ₁A
-        have := τ₁ke a aninI
+        let ⟨a, anin⟩ := τ'.freeTypeVars ++ ↑A.freeTypeVars ++ Γ.typeVarDom ++ I |>.exists_fresh
+        let ⟨aninτ'AΓ, aninI⟩ := List.not_mem_append'.mp anin
+        let ⟨aninτ'A, aninΓ⟩ := List.not_mem_append'.mp aninτ'AΓ
+        let ⟨aninτ', aninA⟩ := List.not_mem_append'.mp aninτ'A
+        have := τ'ke a aninI
         rw [← QualifiedType.Monotype_open, ← TypeScheme.Monotype_open]
         rw [← QualifiedType.TypeVar_open, ← TypeScheme.TypeVar_open] at this
-        exact this.Monotype_open_preservation Γcw (Γwe.typeExt aninΓ κ₀e) nofun aninτ₁ aninA
-          (τ₀ke i imem) (Γ' := .empty)) h
+        exact this.Monotype_open_preservation Γcw (Γwe.typeExt aninΓ κ₀e) nofun aninτ' aninA
+          (τke i imem) (Γ' := .empty)) κ₁e h
     ⟩
-  | liftR _ liftke@(.lift I τ₁ke κ₀e ξτ₀ke) _ (τ₁ := τ₁) =>
-    let ⟨⟨_, ξke⟩, uni, ⟨_, _, eq, κeq, h, _, τ₀ke⟩⟩ := ξτ₀ke.row_inversion
+  | liftR _ liftke@(.lift I τ'ke κ₀e ξτke) _ (τ' := τ') (κ₁ := κ₁) =>
+    let ⟨⟨_, ξke⟩, uni, ⟨_, _, _, eq, κeq, _, h, _, τke⟩⟩ := ξτke.row_inversion
+    let ⟨_, κ₁e⟩ := κ₁.Elaboration_total
     cases eq
     cases κeq
     exact ⟨
@@ -62,15 +64,15 @@ theorem Monotype.RowEquivalenceAndElaboration.to_Kinding (ρee : [[Γc; Γ ⊢ �
       _,
       .row ξke uni (fun i imem => by
         rename «Type» => A
-        let ⟨a, anin⟩ := τ₁.freeTypeVars ++ ↑A.freeTypeVars ++ Γ.typeVarDom ++ I |>.exists_fresh
-        let ⟨aninτ₁AΓ, aninI⟩ := List.not_mem_append'.mp anin
-        let ⟨aninτ₁A, aninΓ⟩ := List.not_mem_append'.mp aninτ₁AΓ
-        let ⟨aninτ₁, aninA⟩ := List.not_mem_append'.mp aninτ₁A
-        have := τ₁ke a aninI
+        let ⟨a, anin⟩ := τ'.freeTypeVars ++ ↑A.freeTypeVars ++ Γ.typeVarDom ++ I |>.exists_fresh
+        let ⟨aninτ'AΓ, aninI⟩ := List.not_mem_append'.mp anin
+        let ⟨aninτ'A, aninΓ⟩ := List.not_mem_append'.mp aninτ'AΓ
+        let ⟨aninτ', aninA⟩ := List.not_mem_append'.mp aninτ'A
+        have := τ'ke a aninI
         rw [← QualifiedType.Monotype_open, ← TypeScheme.Monotype_open]
         rw [← QualifiedType.TypeVar_open, ← TypeScheme.TypeVar_open] at this
-        exact this.Monotype_open_preservation Γcw (Γwe.typeExt aninΓ κ₀e) nofun aninτ₁ aninA
-          (τ₀ke i imem) (Γ' := .empty)) h,
+        exact this.Monotype_open_preservation Γcw (Γwe.typeExt aninΓ κ₀e) nofun aninτ' aninA
+          (τke i imem) (Γ' := .empty)) κ₁e h,
       liftke
     ⟩
 
@@ -78,7 +80,7 @@ local instance : Inhabited Monotype where
   default := .row [] none
 in
 local instance : Inhabited «Type» where
-  default := .list []
+  default := .list [] none
 in
 theorem TypeScheme.SubtypingAndElaboration.to_Kinding (σse : [[Γc; Γ ⊢ σ₀ <: σ₁ ⇝ F]])
   (Γcw : [[⊢c Γc]]) (Γwe : [[Γc ⊢ Γ ⇝ Δ]])
@@ -97,15 +99,15 @@ theorem TypeScheme.SubtypingAndElaboration.to_Kinding (σse : [[Γc; Γ ⊢ σ�
     cases τ₁ke.deterministic τ₁ke' |>.left
     exact ⟨_, _, _, τ₀τ₁ke, τ₂ke.arr τ₃ke⟩
   | qual ψ₁₀se _ ψ₀γ₀ke ψ₁ke _ γ₀₁ih =>
-    let .qual _ γ₀ke κe := ψ₀γ₀ke
+    let .qual ψ₀ke γ₀ke := ψ₀γ₀ke
     let ⟨_, _, _, γ₀ke', γ₁ke⟩ := γ₀₁ih Γcw Γwe
     cases γ₀ke.deterministic γ₀ke' |>.left
-    exact ⟨_, _, _, ψ₀γ₀ke, ψ₁ke.qual γ₁ke κe⟩
+    exact ⟨.star, _, _, ψ₀ke.qual γ₀ke, ψ₁ke.qual γ₁ke⟩
   | scheme I _ κ₀e σ₀ke σ'ih =>
     rename Kind => κ₁
     rename TypeScheme => σ₁'
     rename TypeEnvironment => Γ
-    let .scheme I' σ₀'ke _ := σ₀ke
+    let .scheme I' σ₀'ke κ'e := σ₀ke
     let ⟨a, anin⟩ := I ++ I' ++ Γ.typeVarDom ++ σ₁'.freeTypeVars |>.exists_fresh
     let ⟨aninII'Γ, aninσ₁'⟩ := List.not_mem_append'.mp anin
     let ⟨aninII', aninΓ⟩ := List.not_mem_append'.mp aninII'Γ
@@ -113,11 +115,11 @@ theorem TypeScheme.SubtypingAndElaboration.to_Kinding (σse : [[Γc; Γ ⊢ σ�
     let Γawe := Γwe.typeExt aninΓ κ₀e
     let ⟨_, _, B, σ₀'ke', σ₁'ke⟩ := σ'ih a aninI Γcw Γawe
     cases σ₀'ke a aninI' |>.deterministic σ₀'ke' |>.left
-    exact ⟨_, _, _, σ₀ke, .scheme (a :: Γ.typeVarDom) (A := B.TypeVar_close a) (by
+    exact ⟨_, _, _, .scheme I' σ₀'ke κ'e, .scheme (a :: Γ.typeVarDom) (A := B.TypeVar_close a) (by
       intro a' a'nin
       let ⟨a'nea, a'ninΓ⟩ := List.not_mem_cons.mp a'nin
       let ⟨_, κ₁e⟩ := κ₁.Elaboration_total
-      rw [← σ₁'ke.soundness Γcw Γawe κ₁e |>.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_close_id
+      rw [← σ₁'ke.soundness Γcw Γawe .star |>.TypeVarLocallyClosed_of.TypeVar_open_TypeVar_close_id
             (a := a)] at σ₁'ke
       let Γa'awe :=
         Γwe.typeExt a'ninΓ κ₀e |>.typeExt (List.not_mem_cons.mpr ⟨a'nea.symm, aninΓ⟩) κ₀e
@@ -133,7 +135,7 @@ theorem TypeScheme.SubtypingAndElaboration.to_Kinding (σse : [[Γc; Γ ⊢ σ�
     let .prod μke ξτ₀ke := prodke
     generalize ξτ₀s'eq : ([:n].map fun i => (ξ i, τ₀ i)) = ξτ₀s' at *
     generalize κ?eq : Option.someIf Kind.star b = κ? at *
-    let .row ξ'ke uni τ₀'ke h (ξ := ξ') := ξτ₀ke
+    let .row ξ'ke uni τ₀'ke κ'e h (ξ := ξ') := ξτ₀ke
     let neqn' : List.length (Range.map ..) = List.length _ := by rw [ξτ₀s'eq]
     rw [List.length_map, List.length_map, Range.length_toList, Range.length_toList, Nat.sub_zero,
         Nat.sub_zero] at neqn'
@@ -156,13 +158,13 @@ theorem TypeScheme.SubtypingAndElaboration.to_Kinding (σse : [[Γc; Γ ⊢ σ�
       let ⟨_, _, A, τ₀ke', τ₁ke⟩ := τ₀₁ih i mem Γcw Γwe
       cases τ₀ke i mem |>.deterministic τ₀ke' |>.left
       exact ⟨A, τ₁ke⟩
-    exact ⟨_, _, _, prodke, .prod μke <| .row ξke uni τ₁ke h⟩
+    exact ⟨_, _, _, prodke, .prod μke <| .row ξke uni τ₁ke κ'e h⟩
   | sum _ sumke τ₀ke τ₀₁ih =>
     rename_i n Γc Γ τ₀ τ₁ _ _ ξ b _ _ _
     let .sum μke ξτ₀ke := sumke
     generalize ξτ₀s'eq : ([:n].map fun i => (ξ i, τ₀ i)) = ξτ₀s' at *
     generalize κ?eq : Option.someIf Kind.star b = κ? at *
-    let .row ξ'ke uni τ₀'ke h (ξ := ξ') := ξτ₀ke
+    let .row ξ'ke uni τ₀'ke κ'e h (ξ := ξ') := ξτ₀ke
     let neqn' : List.length (Range.map ..) = List.length _ := by rw [ξτ₀s'eq]
     rw [List.length_map, List.length_map, Range.length_toList, Range.length_toList, Nat.sub_zero,
         Nat.sub_zero] at neqn'
@@ -180,7 +182,7 @@ theorem TypeScheme.SubtypingAndElaboration.to_Kinding (σse : [[Γc; Γ ⊢ σ�
       let ⟨_, _, A, τ₀ke', τ₁ke⟩ := τ₀₁ih i mem Γcw Γwe
       cases τ₀ke i mem |>.deterministic τ₀ke' |>.left
       exact ⟨A, τ₁ke⟩
-    exact ⟨_, _, _, sumke, .sum μke <| .row ξke uni τ₁ke h⟩
+    exact ⟨_, _, _, sumke, .sum μke <| .row ξke uni τ₁ke κ'e h⟩
   | prodRow ρ₀₁se prodke =>
     let .prod μke ρ₀ke := prodke
     let ⟨_, _, _, ρ₀ke', ρ₁ke⟩ := ρ₀₁se.to_Kinding Γcw Γwe
@@ -200,7 +202,7 @@ theorem TypeScheme.SubtypingAndElaboration.to_Kinding (σse : [[Γc; Γ ⊢ σ�
     | .sum =>
       let .sum _ ρke := prodOrSumke
       exact ⟨_, _, _, prodOrSumke, .sum μ₁ke ρke⟩
-  | never σke => exact ⟨_, .sum (.list []), _, .sum .comm .empty_row, σke⟩
+  | never σke => exact ⟨_, .sum <| .list [] <| some .star, _, .sum .comm <| .empty_row .star, σke⟩
   | contain _ _ _ _ containke _ _ ρ₂ke ρ₃ke κe =>
     let .contain μke .. := containke
     exact ⟨_, _, _, containke, .contain μke ρ₂ke ρ₃ke κe⟩
@@ -213,17 +215,7 @@ theorem TypeScheme.SubtypingAndElaboration.to_Kinding (σse : [[Γc; Γ ⊢ σ�
       concatke,
       .concat μke ρ₃ke ρ₄ke ρ₅ke κe (.contain μke ρ₃ke ρ₅ke κe) (.contain μke ρ₄ke ρ₅ke κe)
     ⟩
-  | tc _ σop₀₁se _ TCₛse TCτ₀ke τ₀₁ih =>
-    let ⟨_, _, _, τ₀ke, τ₁ke⟩ := τ₀₁ih Γcw Γwe
-    let .tc γcin τ₀ke' := TCτ₀ke
-    cases τ₀ke.deterministic τ₀ke' |>.left
-    exact ⟨_, _, _, TCτ₀ke, .tc γcin τ₁ke⟩
-  | tcRow ρ₀₁ee σop₀₁se _ TCₛse TCτ₀ke =>
-    let ⟨_, _, _, ρ₀ke, ρ₁ke⟩ := ρ₀₁ee.to_Kinding Γcw Γwe
-    let .tc γcin ρ₀ke' := TCτ₀ke
-    cases ρ₀ke.deterministic ρ₀ke' |>.left
-    exact ⟨_, _, _, TCτ₀ke, .tc γcin ρ₁ke⟩
-  | allRow I ρ₀₁ee allke ψke κe =>
+  | all I ρ₀₁ee allke ψke κe =>
     let ⟨_, _, _, ρ₀ke, ρ₁ke⟩ := ρ₀₁ee.to_Kinding Γcw Γwe
     let .all _ _ _ ρ₀ke' := allke
     cases ρ₀ke.deterministic ρ₀ke' |>.left

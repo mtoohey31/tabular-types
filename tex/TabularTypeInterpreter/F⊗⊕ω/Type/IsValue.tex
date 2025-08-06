@@ -1,0 +1,50 @@
+\lottjudgement{Is Value}{\lottkw{value} \, \targetpre A \targetpost}{
+\lottinferencerule{var}{
+}{\lottkw{value} \, \targetpre \targetpre a \targetpost \targetpost}
+\lottinferencerulesep
+\lottinferencerule{lam}{
+\lotthypothesis{\lottkw{value} \, \targetpre \targetpre A \targetpost \targetpost}\\
+\lotthypothesis{\targetpre A \targetpost \, \lottsym{=} \, \targetpre \targetpre A' \targetpost \, \targetpre \targetpre a \targetpost \targetpost \targetpost \, \lottsym{⇒} \, \lottsym{¬} \, \lottkw{lc}\lottsym{(}\targetpre A' \targetpost\lottsym{)}}
+}{\lottkw{value} \, \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre A \targetpost \targetpost}
+\lottinferencerulesep
+\lottinferencerule{forall}{
+\lotthypothesis{\lottkw{value} \, \targetpre \targetpre A \targetpost \targetpost}
+}{\lottkw{value} \, \targetpre \lottsym{∀} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre A \targetpost \targetpost}
+\lottinferencerulesep
+\lottinferencerule{arr}{
+\lotthypothesis{\lottkw{value} \, \targetpre A \targetpost}\\
+\lotthypothesis{\lottkw{value} \, \targetpre B \targetpost}
+}{\lottkw{value} \, \targetpre \targetpre A \targetpost \, \lottsym{→} \, \targetpre B \targetpost \targetpost}
+\lottinferencerulesep
+\lottinferencerule{list}{
+\lotthypothesis{\lottjudgementcomprehensionpatcollection{\lottkw{value} \, \targetpre A_{i} \targetpost}{i}{[:n]}}
+}{\lottkw{value} \, \targetpre \lottsym{\{} \lottsepbycomprehensionpatcollection{\targetpre A_{i} \targetpost}{i}{[:n]} \lottsym{\}} \targetpost}
+\lottinferencerulesep
+\lottinferencerule{prod}{
+\lotthypothesis{\lottkw{value} \, \targetpre A \targetpost}
+}{\lottkw{value} \, \targetpre \lottsym{⊗} \, \targetpre A \targetpost \targetpost}
+\lottinferencerulesep
+\lottinferencerule{sum}{
+\lotthypothesis{\lottkw{value} \, \targetpre A \targetpost}
+}{\lottkw{value} \, \targetpre \lottsym{⊕} \, \targetpre A \targetpost \targetpost}
+\lottinferencerulesep
+\lottinferencerule{varApp}{
+\lotthypothesis{\lottkw{value} \, \targetpre A \targetpost}
+}{\lottkw{value} \, \targetpre \targetpre \targetpre a \targetpost \targetpost \, \targetpre A \targetpost \targetpost}
+\lottinferencerulesep
+\lottinferencerule{appApp}{
+\lotthypothesis{\lottkw{value} \, \targetpre \targetpre A₀ \targetpost \, \targetpre A₁ \targetpost \targetpost}\\
+\lotthypothesis{\lottkw{value} \, \targetpre B \targetpost}
+}{\lottkw{value} \, \targetpre \targetpre \lottsym{(} \targetpre \targetpre A₀ \targetpost \, \targetpre A₁ \targetpost \targetpost \lottsym{)} \targetpost \, \targetpre B \targetpost \targetpost}
+\lottinferencerulesep
+\lottinferencerule{listAppVar}{
+\lotthypothesis{\targetpre A \targetpost \, \lottsym{≠} \, \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre \targetpre a \targetpost \targetpost \targetpost}\\
+\lotthypothesis{\lottkw{value} \, \targetpre A \targetpost}
+}{\lottkw{value} \, \targetpre \targetpre A \targetpost \, \lottsym{⟦} \targetpre \targetpre a \targetpost \targetpost \lottsym{⟧} \targetpost}
+\lottinferencerulesep
+\lottinferencerule{listAppApp}{
+\lotthypothesis{\targetpre A \targetpost \, \lottsym{≠} \, \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \lottsym{.} \, \targetpre \targetpre a \targetpost \targetpost \targetpost}\\
+\lotthypothesis{\lottkw{value} \, \targetpre A \targetpost}\\
+\lotthypothesis{\lottkw{value} \, \targetpre \targetpre B₀ \targetpost \, \targetpre B₁ \targetpost \targetpost}
+}{\lottkw{value} \, \targetpre \targetpre A \targetpost \, \lottsym{⟦} \targetpre \targetpre B₀ \targetpost \, \targetpre B₁ \targetpost \targetpost \lottsym{⟧} \targetpost}
+}

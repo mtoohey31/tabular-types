@@ -1,0 +1,36 @@
+\lottnonterminal{Term}{
+\lottalias{M}
+\lottaliassep
+\lottalias{N}
+}{
+\lottproduction{x}
+\lottproductionsep
+\lottproduction{m}
+\lottproductionsep
+\lottproduction{\lottsym{λ} \, x \lottsym{.} \, M}
+\lottproductionsep
+\lottproduction{M \, N}
+\lottproductionsep
+\lottproduction{\lottkw{let} \, x \, \lottsym{:} \, σ \, \lottsym{=} \, M \, \lottkw{in} \, N}
+\lottproductionsep
+\lottproduction{M \, \lottsym{:} \, σ}
+\lottproductionsep
+\lottproduction{ℓ}
+\lottproductionsep
+\lottproductionlinebreak
+\lottproduction{\lottsym{\{} M \, \lottsym{▹} \, N \lottsym{\}}}
+\lottproductionsep
+\lottproduction{\lottsym{[} M \, \lottsym{▹} \, N \lottsym{]}}
+\lottproductionsep
+\lottproduction{M \lottsym{/} N}
+\lottproductionsep
+\lottproduction{\lottkw{prj} \, M}
+\lottproductionsep
+\lottproduction{M \lottsym{\doubleplus} N}
+\lottproductionsep
+\lottproduction{\lottkw{inj} \, M}
+\lottproductionsep
+\lottproduction{M \, \lottsym{▿} \, N}
+\lottproductionsep
+\lottproduction{\lottkw{ind} \, \lottsym{(} \lottsym{λ} \, a \, \lottsym{:} \, κ \lottsym{.} \, τ \lottsym{)} \, ρ \, M \, N}
+}

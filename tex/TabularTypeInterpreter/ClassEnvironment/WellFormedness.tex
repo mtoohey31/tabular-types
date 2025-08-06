@@ -1,16 +1,15 @@
-\lottjudgement{Well Formedness}{\lottsym{⊢c} \, \sourcepre Γ_{C} \sourcepost}{
+\lottjudgement{Well Formedness}{\lottsym{⊢c} \, Γ_{C}}{
 \lottinferencerule{empty}{
-\\\\
-}{\lottsym{⊢c} \, \sourcepre \epsilon \sourcepost}
+}{\lottsym{⊢c} \, \lottsym{\epsilon}}
 \lottinferencerulesep
 \lottinferencerule{ext}{
-\lotthypothesis{\lottsym{⊢c} \, \sourcepre Γ_{C} \sourcepost}\\
-\lotthypothesis{\sourcepre TC \sourcepost \, \lottsym{∉} \, \lottkw{dom} \lottsym{(} \sourcepre Γ_{C} \sourcepost \lottsym{)}}\\
-\lotthypothesis{\sourcepre m \sourcepost \, \lottsym{∉} \, \lottkw{dom} \lottsym{(} \sourcepre Γ_{C} \sourcepost \lottsym{)}}\\
-\lotthypothesis{\lottsym{⊢} \, \sourcepre κ \sourcepost \, \lottsym{⇝} \, \targetpre K \targetpost}\\
-\lotthypothesis{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre \sourcepre \epsilon \sourcepost \lottsym{,} \, \sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre σ \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \star \sourcepost \, \lottsym{⇝} \, \targetpre \targetpre A \targetpost \targetpost}\\
-\lotthypothesis{\targetpre \targetpre \epsilon \targetpost \lottsym{,} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \targetpost \, \lottsym{⊢} \, \targetpre \targetpre A \targetpost \targetpost \, \lottsym{:} \, \targetpre \star \targetpost}\\
-\lotthypothesis{\lottjudgementcomprehension{\sourcepre Γ_{C} \sourcepost \lottsym{;} \, \sourcepre \sourcepre \epsilon \sourcepost \lottsym{,} \, \sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \sourcepost \, \lottsym{⊢} \, \sourcepre \sourcepre \sourcepre \sourcepre {TCₛ}_{i} \sourcepost \, \sourcepre \sourcepre a \sourcepost \sourcepost \sourcepost \sourcepost \sourcepost \, \lottsym{:} \, \sourcepre \lottkw{C} \sourcepost \, \lottsym{⇝} \, \targetpre \targetpre {Aₛ}_{i} \targetpost \targetpost}}\\
-\lotthypothesis{\lottjudgementcomprehension{\targetpre \targetpre \epsilon \targetpost \lottsym{,} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \targetpost \, \lottsym{⊢} \, \targetpre \targetpre {Aₛ}_{i} \targetpost \targetpost \, \lottsym{:} \, \targetpre \star \targetpost}}
-}{\lottsym{⊢c} \, \sourcepre \sourcepre Γ_{C} \sourcepost \lottsym{,} \, \sourcepre \lottsym{(} \lottsepbycomprehension{\sourcepre {TCₛ}_{i} \sourcepost \, \sourcepre a \sourcepost \, \lottsym{⇝} \, \targetpre {Aₛ}_{i} \targetpost} \, \lottsym{⇒} \, \sourcepre TC \sourcepost \, \sourcepre a \sourcepost \, \lottsym{:} \, \sourcepre κ \sourcepost \lottsym{)} \, \lottsym{↦} \, \sourcepre m \sourcepost \, \lottsym{:} \, \sourcepre σ \sourcepost \, \lottsym{⇝} \, \targetpre A \targetpost \sourcepost \sourcepost}
+\lotthypothesis{\lottsym{⊢c} \, Γ_{C}}\\
+\lotthypothesis{TC \, \lottsym{∉} \, \lottkw{dom} \lottsym{(} Γ_{C} \lottsym{)}}\\
+\lotthypothesis{m \, \lottsym{∉} \, \lottkw{dom} \lottsym{(} Γ_{C} \lottsym{)}}\\
+\lotthypothesis{\lottsym{⊢} \, κ \, \lottsym{⇝} \, \targetpre K \targetpost}\\
+\lotthypothesis{Γ_{C} \lottsym{;} \, \lottsym{\epsilon} \lottsym{,} \, a \, \lottsym{:} \, κ \, \lottsym{⊢} \, σ \, \kindingsym \, \lottsym{\star} \, \lottsym{⇝} \, \targetpre \targetpre A \targetpost \targetpost}\\
+\lotthypothesis{\targetpre \targetpre \lottsym{\epsilon} \targetpost \lottsym{,} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \targetpost \, \lottsym{⊢} \, \targetpre \targetpre A \targetpost \targetpost \, \lottsym{:} \, \targetpre \lottsym{\star} \targetpost}\\
+\lotthypothesis{\lottjudgementcomprehension{Γ_{C} \lottsym{;} \, \lottsym{\epsilon} \lottsym{,} \, a \, \lottsym{:} \, κ \, \lottsym{⊢} \, TC'_{i} \, a \, \kindingsym \, \lottkw{C} \, \lottsym{⇝} \, \targetpre \targetpre A'_{i} \targetpost \targetpost}}\\
+\lotthypothesis{\lottjudgementcomprehension{\targetpre \targetpre \lottsym{\epsilon} \targetpost \lottsym{,} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \targetpost \, \lottsym{⊢} \, \targetpre \targetpre A'_{i} \targetpost \targetpost \, \lottsym{:} \, \targetpre \lottsym{\star} \targetpost}}
+}{\lottsym{⊢c} \, Γ_{C} \lottsym{,} \, \lottsym{(} \lottsepbycomprehension{TC'_{i} \, a \, \lottsym{⇝} \, \targetpre A'_{i} \targetpost} \, \lottsym{⇒} \, TC \, a \, \lottsym{:} \, κ \lottsym{)} \, \lottsym{↦} \, m \, \lottsym{:} \, σ \, \lottsym{⇝} \, \targetpre A \targetpost}
 }

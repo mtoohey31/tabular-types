@@ -636,9 +636,9 @@ local instance : Inhabited Monotype where
   default := .row [] none
 in
 local instance : Inhabited «Type» where
-  default := .list []
+  default := .list [] none
 in
-theorem empty_row : [[Γc; Γ ⊢ ⟨ : κ ⟩ : R κ ⇝ { }]] := by
+theorem empty_row (κe : [[⊢ κ ⇝ K]]) : [[Γc; Γ ⊢ ⟨ : κ ⟩ : R κ ⇝ { : K }]] := by
   have : some κ = Option.filter (fun _ => true) (some κ) := by rw [Option.filter, if_pos rfl]
   rw (occs := .pos [2]) [← Range.map_get!_eq (as := [])]
   rw [← Range.map_get!_eq (as := []),
@@ -648,8 +648,8 @@ theorem empty_row : [[Γc; Γ ⊢ ⟨ : κ ⟩ : R κ ⇝ { }]] := by
         nomatch mem
       ), this]
   apply KindingAndElaboration.row (fun _ mem => by rw [List.length_nil] at mem; nomatch mem) _
-    (fun _ mem => by rw [List.length_nil] at mem; nomatch mem) (.inr rfl)
-    (B := fun _ => default)
+    (fun _ mem => by rw [List.length_nil] at mem; nomatch mem) κe (.inr rfl)
+  exact fun _ => default
   rw [Range.map_eq_of_eq_of_mem'' (by
     intro i mem
     show _ = Monotype.label ((fun i => .zero) i)
@@ -664,7 +664,7 @@ local instance : Inhabited Monotype where
   default := .row [] none
 in
 local instance : Inhabited «Type» where
-  default := .list []
+  default := .list [] none
 in
 theorem singleton_row (ξke : [[Γc; Γ ⊢ ξ : L ⇝ B]]) (τke : [[Γc; Γ ⊢ τ : κ ⇝ A]])
   : [[Γc; Γ ⊢ ⟨ξ ▹ τ⟩ : R κ ⇝ {A}]] := by
@@ -684,32 +684,40 @@ theorem singleton_row (ξke : [[Γc; Γ ⊢ ξ : L ⇝ B]]) (τke : [[Γc; Γ �
         rw [List.get!_cons_zero]
       ), this,
       List.length_singleton, List.length_singleton]
-  apply row (ξ := fun _ => ξ) (τ := fun _ => τ) (A := fun _ => A) (B := fun _ => B) _ _ _ <|
+  let ⟨_, κe⟩ := κ.Elaboration_total
+  apply row (ξ := fun _ => ξ) (τ := fun _ => τ) (A := fun _ => A) _ _ _ κe <|
     .inl Nat.one_ne_zero
+  · exact fun _ => B
   · intros
     exact ξke
   · rw [Range.map, Range.toList, if_pos (Nat.succ_pos _), Range.toList, Nat.zero_add,
         if_neg (Nat.not_lt_of_le Nat.le.refl), List.map_singleton]
-    exact .var
+    exact .singleton
   · intros
     exact τke
 
-theorem empty_row_inversion (rowke : [[Γc; Γ ⊢ ⟨ : κ'⟩ : κ ⇝ A]]) : κ = [[R κ']] ∧ A = [[{ }]] := by
+theorem empty_row_inversion (rowke : [[Γc; Γ ⊢ ⟨ : κ'⟩ : κ ⇝ A]])
+  : ∃ K', κ = [[R κ']] ∧ [[⊢ κ' ⇝ K']] ∧ A = [[{ : K' }]] := by
   generalize ξτseq : [] = ξτs, κ?eq : some κ' = κ? at rowke
-  let .row .. := rowke
+  let .row _ _ _ κ'e h := rowke
   rw [Option.someIf] at κ?eq
   split at κ?eq
   case isFalse => nomatch κ?eq
   cases κ?eq
   cases Nat.eq_zero_of_le_zero <| Range.toList_eq_nil_iff.mp <| List.map_eq_nil_iff.mp ξτseq.symm
   rw [Range.map, Range.toList_eq_nil_iff.mpr (Nat.le_refl _), List.map_nil]
-  exact ⟨rfl, rfl⟩
+  cases h
+  case inl h' => nomatch h'
+  case inr h' =>
+  rw [BoolId, id] at h'
+  rw [h']
+  exact ⟨_, rfl, κ'e, rfl⟩
 
 theorem singleton_row_inversion (rowke : [[Γc; Γ ⊢ ⟨ξ ▹ τ⟩ : κ ⇝ A]])
   : (∃ B, [[Γc; Γ ⊢ ξ : L ⇝ B]]) ∧
     ∃ κ', κ = [[R κ']] ∧ ∃ A', A = [[{A'}]] ∧ [[Γc; Γ ⊢ τ : κ' ⇝ A']] := by
   generalize ξτseq : [_] = ξτs, κ?eq : none = κ? at rowke
-  let .row ξ'ke _ τ'ke _ := rowke
+  let .row ξ'ke _ τ'ke _ _ (b := b) := rowke
   let length_eq : List.length [_] = List.length _ := by rw [ξτseq]
   rw [List.length_map, Range.length_toList, List.length_singleton] at length_eq
   cases length_eq
@@ -722,16 +730,21 @@ theorem singleton_row_inversion (rowke : [[Γc; Γ ⊢ ⟨ξ ▹ τ⟩ : κ ⇝ 
   rw [← ξeq] at ξ'ke'
   rw [← τeq] at τ'ke'
   rw [Range.toList, Nat.zero_add, if_neg (Nat.not_lt_of_le Nat.le.refl), List.map_nil]
+  cases b
+  case true =>
+    rw [Option.someIf_true] at κ?eq
+    nomatch κ?eq
   exact ⟨⟨_, ξ'ke'⟩, _, rfl, _, rfl, τ'ke'⟩
 
 theorem row_inversion
   (rowke : [[Γc; Γ ⊢ ⟨</ ξ@i ▹ τ@i // i in [:n] /> </ : κ' // b />⟩ : κ ⇝ A]])
   : (∃ B, ∀ i ∈ [:n], [[Γc; Γ ⊢ ξ@i : L ⇝ B@i]]) ∧ [[unique(</ ξ@i // i in [:n] />)]] ∧
-    (∃ B κ'', A = [[{</ B@i // i in [:n] />}]] ∧ κ = [[R κ'']] ∧ (n ≠ 0 ∨ b) ∧ (b → κ' = κ'') ∧
+    (∃ B K'' κ'', A = [[{</ B@i // i in [:n] /> </ : K'' // b />}]] ∧ κ = [[R κ'']] ∧
+      [[⊢ κ'' ⇝ K'']] ∧ (n ≠ 0 ∨ b) ∧ (b → κ' = κ'') ∧
       ∀ i ∈ [:n], [[Γc; Γ ⊢ τ@i : κ'' ⇝ B@i]]) := by
   generalize ξτseq : ([:n].map fun i => (ξ i, τ i)) = ξτs at rowke
-  generalize κ''eq : Option.someIf κ' b = κ'' at rowke
-  let .row ξke uni τke h := rowke
+  generalize κ?eq : Option.someIf κ' b = κ'' at rowke
+  let .row ξke uni τke κ'e h (b := b') := rowke
   rename Nat => n'
   let length_eq : List.length (Range.map ..) = List.length _ := by rw [ξτseq]
   let neqn' : n = n' := by
@@ -740,6 +753,18 @@ theorem row_inversion
   cases neqn'
   let ξτeqs := Std.Range.eq_of_mem_of_map_eq ξτseq
   rw [Range.map_eq_of_eq_of_mem'' (by rw [← And.left <| Prod.mk.inj <| ξτeqs · ·])] at uni
+  let beq : b = b' := by
+    rw [Option.someIf] at κ?eq
+    split at κ?eq
+    · case isTrue h =>
+      cases h
+      exact Option.eq_of_someIf_eq_some κ?eq.symm |>.right.symm
+    · case isFalse h =>
+      rw [Bool.not_eq_true _ |>.mp h]
+      cases b'
+      · case false => rfl
+      · case true => nomatch κ?eq
+  cases beq
   exact ⟨
     ⟨
       _,
@@ -751,19 +776,20 @@ theorem row_inversion
     ⟨
       _,
       _,
+      _,
       rfl,
       rfl,
+      κ'e,
       match h with
       | .inl h => .inl h
       | .inr h => by
         rw [BoolId, id] at h
-        rw [h, Option.someIf_true] at κ''eq
-        exact .inr <| And.right <| Option.eq_of_someIf_eq_some κ''eq,
+        exact .inr h,
       by
         intro beq
-        rw [beq, Option.someIf_true] at κ''eq
-        symm at κ''eq ⊢
-        exact And.left <| Option.eq_of_someIf_eq_some κ''eq,
+        rw [beq, Option.someIf_true] at κ?eq
+        symm at κ?eq ⊢
+        exact And.left <| Option.eq_of_someIf_eq_some κ?eq,
       by
         intro i imem
         rw [And.right <| Prod.mk.inj <| ξτeqs i imem]
@@ -887,9 +913,9 @@ def Monotype_open_preservation (uni : Uniqueness (List.map (TypeVar_open · a n)
       all_goals nomatch this
     )]
     exact concrete ne
-  | var =>
+  | singleton =>
     let [_] := ξ
-    exact var
+    exact singleton
 
 def Perm_preservation {ξ' : Nat → Monotype} (uni : [[unique(</ ξ@i // i in [:n] />)]])
   (perm : List.Perm p [:n]) (eq : ∀ i, ξ' i = ξ (p.get! i))
@@ -930,19 +956,19 @@ def Perm_preservation {ξ' : Nat → Monotype} (uni : [[unique(</ ξ@i // i in [
       apply Ne.symm
       exact ne _ ⟨Nat.zero_le _, pjmem.right⟩ _
         ⟨Nat.succ_le_of_lt pjltpi, pimem.upper, Nat.mod_one _⟩
-  | var =>
+  | singleton =>
     let lengths_eq : List.length (Range.map ..) = List.length _ := by rw [ξseq]
     rw [List.length_map, Std.Range.length_toList, List.length_singleton, Nat.sub_zero] at lengths_eq
     cases lengths_eq
     rw [Range.map, Range.toList, if_pos Nat.one_pos, Range.toList, Nat.zero_add,
         if_neg (Nat.not_lt_of_le (Nat.le_refl _)), List.map_singleton]
-    exact var
+    exact singleton
 
 def of_les (uni : [[unique(</ ξ@i // i in [m₀:n₀] />)]]) (le₀ : m₀ ≤ n₀) (le₁ : m₀ ≤ m₁)
   (le₂ : n₁ ≤ n₀) (le₃ : m₁ ≤ n₁) : [[unique(</ ξ@i // i in [m₁:n₁] />)]] := by
   generalize ξseq : [m₀:n₀].map ξ = ξs at uni
   cases uni
-  case var =>
+  case singleton =>
     let lengths_eq : List.length (Range.map ..) = List.length _ := by rw [ξseq]
     rw [List.length_singleton, List.length_map, Range.length_toList] at lengths_eq
     cases Nat.eq_add_of_sub_eq le₀ lengths_eq
@@ -963,7 +989,7 @@ def of_les (uni : [[unique(</ ξ@i // i in [m₀:n₀] />)]]) (le₀ : m₀ ≤ 
     | 1 =>
       cases Nat.eq_add_of_sub_eq le₃ leq
       rw [Nat.add_comm, Range.map_eq_cons_of_lt Nat.le.refl, Range.map_same_eq_nil]
-      exact var
+      exact singleton
     | _ + 2 => nomatch this
   case _ n' ℓ h =>
   let lengths_eq : List.length (Range.map ..) = List.length _ := by rw [ξseq]
@@ -1016,7 +1042,7 @@ theorem weakening (σke : [[Γc; Γ, Γ'' ⊢ σ : κ ⇝ A]])
     | .inr aκinΓ'' => aκinΓ''.append_inr.append_inr
   | app ϕke τke => exact app (ϕke.weakening ΓΓ'Γ''we) (τke.weakening ΓΓ'Γ''we)
   | arr τ₀ke τ₁ke => exact arr (τ₀ke.weakening ΓΓ'Γ''we) (τ₁ke.weakening ΓΓ'Γ''we)
-  | qual ψke γke κe => exact qual (ψke.weakening ΓΓ'Γ''we) (γke.weakening ΓΓ'Γ''we) κe
+  | qual ψke γke => exact qual (ψke.weakening ΓΓ'Γ''we) (γke.weakening ΓΓ'Γ''we)
   | scheme I σ'ke κ₀e =>
     apply scheme (I ++ [[(Γ, Γ', Γ'')]].typeVarDom) _ κ₀e
     intro a anin
@@ -1026,8 +1052,8 @@ theorem weakening (σke : [[Γc; Γ, Γ'' ⊢ σ : κ ⇝ A]])
   | label => exact label
   | floor ξke => exact floor <| ξke.weakening ΓΓ'Γ''we
   | comm => exact comm
-  | row ξke uni τke h =>
-    exact row (ξke · · |>.weakening ΓΓ'Γ''we) uni (τke · · |>.weakening ΓΓ'Γ''we) h
+  | row ξke uni τke κ'e h =>
+    exact row (ξke · · |>.weakening ΓΓ'Γ''we) uni (τke · · |>.weakening ΓΓ'Γ''we) κ'e h
   | prod μke ρke => exact prod (μke.weakening ΓΓ'Γ''we) (ρke.weakening ΓΓ'Γ''we)
   | sum μke ρke => exact sum (μke.weakening ΓΓ'Γ''we) (ρke.weakening ΓΓ'Γ''we)
   | lift I τke κ₀e ρke =>
@@ -1051,7 +1077,7 @@ theorem weakening (σke : [[Γc; Γ, Γ'' ⊢ σ : κ ⇝ A]])
   | «ind» I₀ I₁ ρke κe keBₗ keBᵣ =>
     apply «ind» (I₀ ++ [[(Γ, Γ', Γ'')]].typeVarDom) (I₁ ++ [[(Γ, Γ', Γ'')]].typeVarDom)
       (ρke.weakening ΓΓ'Γ''we) κe
-    · intro aₗ aₗnin aₜ aₜnin aₚ aₚnin aᵢ aᵢnin aₙ aₙnin
+    · intro aₗ aₗnin aₜ aₜnin aₚ aₚnin aᵢ aᵢnin
       let ⟨aₗninI₀, aₗninΓΓ'Γ''⟩ := List.not_mem_append'.mp aₗnin
       rw [← List.cons_append] at aₜnin
       let ⟨aₜninI₀, aₜninΓΓ'Γ''⟩ := List.not_mem_append'.mp aₜnin
@@ -1078,28 +1104,10 @@ theorem weakening (σke : [[Γc; Γ, Γ'' ⊢ σ : κ ⇝ A]])
           ⟩
         ⟩
       ⟩
-      rw [← List.cons_append, ← List.cons_append, ← List.cons_append, ← List.cons_append] at aₙnin
-      let ⟨aₙninI₀, aₙninΓΓ'Γ''⟩ := List.not_mem_append'.mp aₙnin
-      let aₙninΓΓ'Γ''aₗaₜaₚᵢ := List.not_mem_cons.mpr ⟨
-        List.ne_of_not_mem_cons aₙninI₀,
-        List.not_mem_cons.mpr ⟨
-          List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons aₙninI₀,
-          List.not_mem_cons.mpr ⟨
-            List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
-              List.not_mem_of_not_mem_cons aₙninI₀,
-            List.not_mem_cons.mpr ⟨
-              List.ne_of_not_mem_cons <| List.not_mem_of_not_mem_cons <|
-                List.not_mem_of_not_mem_cons <| List.not_mem_of_not_mem_cons aₙninI₀,
-              aₙninΓΓ'Γ''
-            ⟩
-          ⟩
-        ⟩
-      ⟩
       repeat rw [← TypeEnvironment.append]
-      exact keBₗ aₗ aₗninI₀ aₜ aₜninI₀ aₚ aₚninI₀ aᵢ aᵢninI₀ aₙ aₙninI₀ |>.weakening <|
+      exact keBₗ aₗ aₗninI₀ aₜ aₜninI₀ aₚ aₚninI₀ aᵢ aᵢninI₀ |>.weakening <|
         ΓΓ'Γ''we.typeExt aₗninΓΓ'Γ'' .label |>.typeExt aₜninΓΓ'Γ''aₗ κe
           |>.typeExt aₚninΓΓ'Γ''aₗaₜ κe.row |>.typeExt aᵢninΓΓ'Γ''aₗaₜaₚ κe.row
-          |>.typeExt aₙninΓΓ'Γ''aₗaₜaₚᵢ κe.row
     · intro aᵢ aᵢnin aₙ aₙnin
       let ⟨aᵢninI₁, aᵢninΓΓ'Γ''⟩ := List.not_mem_append'.mp aᵢnin
       rw [← List.cons_append] at aₙnin
@@ -1112,7 +1120,7 @@ theorem weakening (σke : [[Γc; Γ, Γ'' ⊢ σ : κ ⇝ A]])
 termination_by σ.sizeOf'
 decreasing_by
   all_goals simp_arith
-  · case _ ξ _ τ _ _ _ _ i mem =>
+  · case _ ξ τ _ _ _ _ _ i mem =>
     apply Nat.le_of_add_right_le (k := (τ i).sizeOf')
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'
@@ -1122,7 +1130,7 @@ decreasing_by
       simp only [Function.comp]
     )]
     exact Range.mem_map_of_mem mem
-  · case _ ξ _ τ _ _ _ _ i mem =>
+  · case _ ξ τ _ _ _ _ _ i mem =>
     apply Nat.le_trans <| Nat.le_add_left (τ i).sizeOf' (ξ i).sizeOf'
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'
@@ -1141,7 +1149,7 @@ theorem TermVar_drop (σke : [[Γc; Γ, x : σ₁, Γ' ⊢ σ₀ : κ ⇝ A]])
     | .inr aκinΓ' => aκinΓ'.append_inr
   | app ϕke τke => app ϕke.TermVar_drop τke.TermVar_drop
   | arr τ₀ke τ₁ke => arr τ₀ke.TermVar_drop τ₁ke.TermVar_drop
-  | qual ψke γke κe => qual ψke.TermVar_drop γke.TermVar_drop κe
+  | qual ψke γke => qual ψke.TermVar_drop γke.TermVar_drop
   | scheme I σ'ke κ₀e => by
     apply scheme I _ κ₀e
     intro a anin
@@ -1150,7 +1158,7 @@ theorem TermVar_drop (σke : [[Γc; Γ, x : σ₁, Γ' ⊢ σ₀ : κ ⇝ A]])
   | label => label
   | floor ξke => floor ξke.TermVar_drop
   | comm => comm
-  | row ξke uni τke h => row (ξke · · |>.TermVar_drop) uni (τke · · |>.TermVar_drop) h
+  | row ξke uni τke κ'e h => row (ξke · · |>.TermVar_drop) uni (τke · · |>.TermVar_drop) κ'e h
   | prod μke ρke => prod μke.TermVar_drop ρke.TermVar_drop
   | sum μke ρke => sum μke.TermVar_drop ρke.TermVar_drop
   | lift I τke κ₀e ρke => by
@@ -1170,9 +1178,9 @@ theorem TermVar_drop (σke : [[Γc; Γ, x : σ₁, Γ' ⊢ σ₀ : κ ⇝ A]])
     exact ψke a anin |>.TermVar_drop
   | «ind» I₀ I₁ ρke κe keBₗ keBᵣ => by
     apply «ind» I₀ I₁ ρke.TermVar_drop κe
-    · intro _ aₗnin _ aₜnin _ aₚnin _ aᵢnin _ aₙnin
+    · intro _ aₗnin _ aₜnin _ aₚnin _ aᵢnin
       repeat rw [← TypeEnvironment.append]
-      exact keBₗ _ aₗnin _ aₜnin _ aₚnin _ aᵢnin _ aₙnin |>.TermVar_drop
+      exact keBₗ _ aₗnin _ aₜnin _ aₚnin _ aᵢnin |>.TermVar_drop
     · intro _ aᵢnin _ aₙnin
       repeat rw [← TypeEnvironment.append]
       exact keBᵣ _ aᵢnin _ aₙnin |>.TermVar_drop
@@ -1180,7 +1188,7 @@ theorem TermVar_drop (σke : [[Γc; Γ, x : σ₁, Γ' ⊢ σ₀ : κ ⇝ A]])
 termination_by σ₀.sizeOf'
 decreasing_by
   all_goals simp_arith
-  · case _ ξ _ τ _ _ _ _ i mem =>
+  · case _ ξ τ _ _ _ _ _ i mem =>
     apply Nat.le_of_add_right_le (k := (τ i).sizeOf')
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'
@@ -1190,7 +1198,7 @@ decreasing_by
       simp only [Function.comp]
     )]
     exact Range.mem_map_of_mem mem
-  · case _ ξ _ τ _ _ _ _ i mem =>
+  · case _ ξ τ _ _ _ _ _ i mem =>
     apply Nat.le_trans <| Nat.le_add_left (τ i).sizeOf' (ξ i).sizeOf'
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'
@@ -1209,7 +1217,7 @@ theorem Constr_drop (σke : [[Γc; Γ, ψ ⇝ x, Γ' ⊢ σ : κ ⇝ A]])
     | .inr aκinΓ' => aκinΓ'.append_inr
   | app ϕke τke => app ϕke.Constr_drop τke.Constr_drop
   | arr τ₀ke τ₁ke => arr τ₀ke.Constr_drop τ₁ke.Constr_drop
-  | qual ψke γke κe => qual ψke.Constr_drop γke.Constr_drop κe
+  | qual ψke γke => qual ψke.Constr_drop γke.Constr_drop
   | scheme I σ'ke κ₀e => by
     apply scheme I _ κ₀e
     intro a anin
@@ -1218,7 +1226,7 @@ theorem Constr_drop (σke : [[Γc; Γ, ψ ⇝ x, Γ' ⊢ σ : κ ⇝ A]])
   | label => label
   | floor ξke => floor ξke.Constr_drop
   | comm => comm
-  | row ξke uni τke h => row (ξke · · |>.Constr_drop) uni (τke · · |>.Constr_drop) h
+  | row ξke uni τke κ'e h => row (ξke · · |>.Constr_drop) uni (τke · · |>.Constr_drop) κ'e h
   | prod μke ρke => prod μke.Constr_drop ρke.Constr_drop
   | sum μke ρke => sum μke.Constr_drop ρke.Constr_drop
   | lift I τke κ₀e ρke => by
@@ -1238,9 +1246,9 @@ theorem Constr_drop (σke : [[Γc; Γ, ψ ⇝ x, Γ' ⊢ σ : κ ⇝ A]])
     exact ψke a anin |>.Constr_drop
   | «ind» I₀ I₁ ρke κe keBₗ keBᵣ => by
     apply «ind» I₀ I₁ ρke.Constr_drop κe
-    · intro _ aₗnin _ aₜnin _ aₚnin _ aᵢnin _ aₙnin
+    · intro _ aₗnin _ aₜnin _ aₚnin _ aᵢnin
       repeat rw [← TypeEnvironment.append]
-      exact keBₗ _ aₗnin _ aₜnin _ aₚnin _ aᵢnin _ aₙnin |>.Constr_drop
+      exact keBₗ _ aₗnin _ aₜnin _ aₚnin _ aᵢnin |>.Constr_drop
     · intro _ aᵢnin _ aₙnin
       repeat rw [← TypeEnvironment.append]
       exact keBᵣ _ aᵢnin _ aₙnin |>.Constr_drop
@@ -1248,7 +1256,7 @@ theorem Constr_drop (σke : [[Γc; Γ, ψ ⇝ x, Γ' ⊢ σ : κ ⇝ A]])
 termination_by σ.sizeOf'
 decreasing_by
   all_goals simp_arith
-  · case _ ξ _ τ _ _ _ _ i mem =>
+  · case _ ξ τ _ _ _ _ _ i mem =>
     apply Nat.le_of_add_right_le (k := (τ i).sizeOf')
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'
@@ -1258,7 +1266,7 @@ decreasing_by
       simp only [Function.comp]
     )]
     exact Range.mem_map_of_mem mem
-  · case _ ξ _ τ _ _ _ _ i mem =>
+  · case _ ξ τ _ _ _ _ _ i mem =>
     apply Nat.le_trans <| Nat.le_add_left (τ i).sizeOf' (ξ i).sizeOf'
     apply Nat.le_trans _ <| Nat.le_add_right ..
     apply List.le_sum_of_mem'
