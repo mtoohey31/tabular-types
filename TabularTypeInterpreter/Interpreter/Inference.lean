@@ -655,10 +655,10 @@ partial def infer (Γ : Context) (e : Term) : InferM ((Γ' : Context) × (σ : T
     let ⟨Γ, c⟩ ← constraint Γ <| (.concat ρₘ μ ρₙ ρ)
     return ⟨Γ, _, tₘ.elim tₙ c⟩
   | .member m =>
-    let { TC, κ, .. } ← getClass m
+    let { TC := tc, κ, .. } ← getClass m
     let (Γout, τ) ← freshType Γ κ
     -- TODO: push the constraint into the environment and get a proof for it.
-    let s : ((Monotype.tc TC).app τ).ConstraintSolution := sorry
+    let s : ((Monotype.tc tc).app τ).ConstraintSolution := sorry
     let σ' : TypeScheme := sorry
     return ⟨Γout, σ', Term.Typing.member s⟩
   | .ind ϕ ρ l t rp ri rn M N =>
@@ -717,35 +717,39 @@ partial def inferApp (Γ : Context) (σ : TypeScheme) (e : Term) : InferM (Infer
   match σ with
   | TypeScheme.quant α κ σ =>
     let ᾱ ← fresh;
-    let Γ := (.xunivar ᾱ κ)::Γ
-    let ⟨Γ', σ', myfun⟩ ← inferApp Γ (σ.subst (.uvar ᾱ) α) e
-    return ⟨Γ', σ', fun e' (t : e'.Typing (TypeScheme.quant α κ σ)) =>
-      sorry
+    let ⟨Γout, σ', gen⟩ ← inferApp ((.xunivar ᾱ κ)::Γ) (σ.subst (.uvar ᾱ) α) e
+    return ⟨Γout, σ', fun e' (t' : e'.Typing (TypeScheme.quant α κ σ)) =>
+      gen e' (t'.sub (
+        sorry
+      ))
     ⟩
   | Monotype.uvar ᾱ =>
     let .some item := lookupUniVar ᾱ Γ
-      | throw $ .panic "found unknown unification variable"
-    let .xunivar ᾱ (.arr κ₁ κ₂) := item
-      | throw $ .panic "bad unification variable"
+      | panic! "found unknown unification variable"
+    let .xunivar ᾱ' .star := item
+      | throw $ .panic "expected function of kind star"
+    if h : ᾱ = ᾱ' then
     let (before, after) ← split Γ item
-    let ᾱ₁ ← fresh; let ᾱ₂ ← fresh;
+    let ᾱ₁ ← fresh
+    let ᾱ₂ ← fresh
     -- RECALL: newers entries appear to the "left" of the Context
     -- if regarded as a stack, this term should make sense
     let injection : List ContextItem := [
       .sunivar ᾱ (.arr (.uvar ᾱ₁) (.uvar ᾱ₂)),
-      .xunivar ᾱ₁ κ₁,
-      .xunivar ᾱ₂ κ₂,
+      .xunivar ᾱ₁ .star,
+      .xunivar ᾱ₂ .star,
     ]
     let Γ := after++injection++before
-    let ⟨Γout, _t⟩ ← check Γ e (Monotype.uvar ᾱ₁)
-    return ⟨Γout, Monotype.uvar ᾱ₂, fun e' t' =>
-      sorry
+    let ⟨Γout, t⟩ ← check Γ e (Monotype.uvar ᾱ₁)
+    return ⟨Γout, Monotype.uvar ᾱ₂, fun e' (t' : e'.Typing (Monotype.uvar ᾱ)) =>
+      (t'.sub (
+        sorry
+      )).app t
     ⟩
+    else panic! "bad lookup"
   | Monotype.arr τ₁ τ₂ =>
-    let ⟨Γout, _t⟩ ← check Γ e τ₁
-    return ⟨Γout, τ₂, fun e' t' =>
-      sorry
-    ⟩
+    let ⟨Γout, t⟩ ← check Γ e τ₁
+    return ⟨Γout, τ₂, fun e' t' => t'.app t⟩
   | _ => throw $ .panic "can only infer applications for functions"
 
 partial def check (Γ : Context) (e : Term) (σ : TypeScheme) : InferM ((Γ' : Context) × e.Typing σ) := do
