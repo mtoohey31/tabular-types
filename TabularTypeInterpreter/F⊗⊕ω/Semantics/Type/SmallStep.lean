@@ -138,16 +138,29 @@ lc_ A₀
 ─────────────── sum
 Δ ⊢ ⊕ A -> ⊕ A'
 
+judgement_syntax Δ " ⊢ " A " ->* " B : MultiSmallStep
+
+abbrev MultiSmallStep := fun Δ => Relation.ReflTransGen (SmallStep Δ)
+
+judgement_syntax Δ " ⊢ " A " <->* " B : EqSmallStep (tex := s!"{Δ} \\, \\lottsym\{⊢} \\, {A} \\, \\lottsym\{↔^*} \\, {B}")
+
+abbrev EqSmallStep := fun Δ => Relation.EqvGen (SmallStep Δ)
+
 judgement_syntax Δ " ⊢ " "SN" "(" A ")" : StronglyNormalizing
 
 abbrev StronglyNormalizing := fun Δ => Acc (Rel.inv (SmallStep Δ))
 
-judgement_syntax Δ " ⊢ " "SN" K "(" A ")" : IndexedStronglyNormalizing
+judgement_syntax Δ " ⊢ " "SN" K "(" A ")" : IndexedStronglyNormalizing (tex := s!"{Δ} \\, \\lottsym\{⊢} \\, \\lottkw\{SN}_\{{K}} \\lottsym\{(} {A} \\lottsym\{)}")
 
 abbrev IndexedStronglyNormalizing : Environment → Kind → «Type» → Prop
   | Δ, [[*]], A => [[Δ ⊢ A : *]] ∧ [[Δ ⊢ SN(A)]]
-  | Δ, [[K₁ ↦ K₂]], A => [[Δ ⊢ A : K₁ ↦ K₂]] ∧ ∀ B, [[Δ ⊢ SN K₁ (B)]] → [[Δ ⊢ SN K₂ (A B)]]
-  | Δ, [[L K]], A => [[Δ ⊢ A : L K]] ∧ [[Δ ⊢ SN(A)]] ∧ sorry
+  | Δ, [[K₁ ↦ K₂]], A =>
+    [[Δ ⊢ A : K₁ ↦ K₂]] ∧ ∀ B Δ', Δ ≤ Δ' → [[Δ' ⊢ SN K₁ (B)]] → [[Δ' ⊢ SN K₂ (A B)]]
+  | Δ, [[L K]], A =>
+    [[Δ ⊢ A : L K]] ∧ [[Δ ⊢ SN(A)]]
+      ∧ sorry
+      -- ∧ (∃ A' n, [[Δ ⊢ A ->* {</ A'@i // i in [:n] />}]] → ∀ i ∈ [:n], [[Δ ⊢ SN K (A'@i)]])
+      -- ∧ ∃ A' B, [[Δ ⊢ A ->* A' ⟦B⟧]] → ∃ K', [[Δ ⊢ SN K' ↦ K (A')]] ∧ [[Δ ⊢ SN L K' (B)]]
 
 nosubst
 nonterminal Subst, δ :=
@@ -183,19 +196,15 @@ def «dom» : Subst → List TypeVarId
   | .empty => []
   | .ext δ _ a => a :: δ.dom
 
+def freeTypeVars : Subst → List TypeVarId
+  | .empty => []
+  | .ext δ A _ => A.freeTypeVars ++ δ.freeTypeVars
+
 end Subst
 
 judgement_syntax δ " ⊨ " Δ : SubstSatisfies
 
 judgement SubstSatisfies := fun (δ : Subst) Δ =>
   δ.dom.Unique ∧ ∀ a K, [[a : K ∈ Δ]] → IndexedStronglyNormalizing Δ K (δ (Type.var a))
-
-judgement_syntax Δ " ⊢ " A " ->* " B : MultiSmallStep
-
-abbrev MultiSmallStep := fun Δ => Relation.ReflTransGen (SmallStep Δ)
-
-judgement_syntax Δ " ⊢ " A " <->* " B : EqSmallStep (tex := s!"{Δ} \\, \\lottsym\{⊢} \\, {A} \\, \\lottsym\{↔^*} \\, {B}")
-
-abbrev EqSmallStep := fun Δ => Relation.EqvGen (SmallStep Δ)
 
 end TabularTypeInterpreter.«F⊗⊕ω»

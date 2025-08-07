@@ -108,6 +108,13 @@ theorem weakening_r (kT: [[ Δ ⊢ T: K ]]) (fresh: ∀ a ∈ Δ'.typeVarDom, a 
 theorem weakening : [[Δ, Δ'' ⊢ A : K]] → [[⊢ Δ, Δ', Δ'']] → [[Δ, Δ', Δ'' ⊢ A : K]] :=
   λ h wf => .weakening_r' h <| Environment.append_assoc.subst wf |>.weakening.append_typeVar_fresh_l
 
+theorem LE_weakening (Aki : [[Δ ⊢ A : K]]) (le : Δ ≤ Δ') : [[Δ' ⊢ A : K]] := by
+  induction Aki generalizing Δ'
+  case var ain => exact .var <| le.TypeVarIn_preservation ain
+  case lam I _ ih => exact lam I (ih · · le.extExt)
+  case scheme I _ ih => exact scheme I (ih · · le.extExt)
+  all_goals aesop (add safe constructors Kinding)
+
 open Environment TypeVarInEnvironment in
 theorem TermVar_drop (kT: [[ Δ, x: T', Δ'' ⊢ T: K ]]): [[ Δ, Δ'' ⊢ T: K ]] := by
   generalize Δ_eq: [[ (Δ, x: T', Δ'') ]] = Δ_ at kT

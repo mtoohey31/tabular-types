@@ -549,4 +549,47 @@ theorem append_typeVar_fresh_l : [[ ⊢τ Δ, Δ' ]] → ∀a ∈ Δ'.typeVarDom
 
 end EnvironmentTypeWellFormedness
 
+namespace Environment.LE
+
+theorem TypeVarNotInDom_preservation (le : [[Δ ≤ Δ']]) (anin : [[a ∉ dom(Δ')]])
+  : [[a ∉ dom(Δ)]] := by
+  induction le with
+  | refl => exact anin
+  | extExt _ ih =>
+    let ⟨ane, anin'⟩ := List.not_mem_cons.mp anin
+    exact List.not_mem_cons.mpr ⟨ane, ih anin'⟩
+  | ext _ a'nin ih => exact ih <| List.not_mem_of_not_mem_cons anin
+
+@[trans]
+theorem trans (le₀ : [[Δ ≤ Δ']]) (le₁ : [[Δ' ≤ Δ'']]) : [[Δ ≤ Δ'']] := by
+  induction le₁ generalizing Δ with
+  | refl => exact le₀
+  | extExt le₁' ih =>
+    cases le₀ with
+    | refl => exact extExt le₁'
+    | extExt le₀' =>
+      specialize ih le₀'
+      exact extExt ih
+    | ext le₀' anin =>
+      specialize ih le₀'
+      exact ext ih anin
+  | ext le₁' anin ih => exact ext (ih le₀) <| TypeVarNotInDom_preservation le₀ anin
+
+instance : IsTrans Environment LE.le := ⟨fun _ _ _ => trans⟩
+
+theorem TypeVarIn_preservation (le : [[Δ ≤ Δ']]) (ain : [[a : K ∈ Δ]]) : [[a : K ∈ Δ']] := by
+  induction le with
+  | refl => exact ain
+  | extExt _ ih =>
+    match ain with
+    | .head => exact .head
+    | .typeVarExt ain' ne => exact ih ain' |>.typeVarExt ne
+  | ext _ a'nin ih =>
+    specialize ih ain
+    apply ih.typeVarExt
+    rintro rfl
+    exact a'nin ain.TypeVarInDom_of
+
+end Environment.LE
+
 end TabularTypeInterpreter.«F⊗⊕ω»

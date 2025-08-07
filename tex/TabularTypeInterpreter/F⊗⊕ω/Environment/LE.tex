@@ -1,0 +1,13 @@
+\lottjudgement{L E}{\targetpre Δ \targetpost \, \lottsym{≤} \, \targetpre Δ' \targetpost}{
+\lottinferencerule{refl}{
+}{\targetpre Δ \targetpost \, \lottsym{≤} \, \targetpre Δ \targetpost}
+\lottinferencerulesep
+\lottinferencerule{extExt}{
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{≤} \, \targetpre Δ' \targetpost}
+}{\targetpre \targetpre Δ \targetpost \lottsym{,} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \targetpost \, \lottsym{≤} \, \targetpre \targetpre Δ' \targetpost \lottsym{,} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \targetpost}
+\lottinferencerulesep
+\lottinferencerule{ext}{
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{≤} \, \targetpre Δ' \targetpost}\\
+\lotthypothesis{\targetpre a \targetpost \, \lottsym{∉} \, \lottkw{dom} \lottsym{(} \targetpre Δ \targetpost \lottsym{)}}
+}{\targetpre Δ \targetpost \, \lottsym{≤} \, \targetpre \targetpre Δ' \targetpost \lottsym{,} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K \targetpost \targetpost}
+}
