@@ -3088,77 +3088,39 @@ end IndexedStronglyNormalizing
 
 namespace SubstSatisfies
 
-theorem ext (δsat : [[δ ⊨ Δ]]) (aninδd : a ∉ δ.dom) (aninδfv : a ∉ δ.freeTypeVars)
-  (aninΔ : [[a ∉ dom(Δ)]]) (Aisn : [[Δ ⊢ SN K (A)]]) : [[δ, A / a ⊨ Δ, a : K]] := by
+theorem ext (δsat : [[δ ⊨ Δ ≤ Δ']]) (aninδd : a ∉ δ.dom) (aninδfv : a ∉ δ.freeTypeVars)
+  (Aisn : [[Δ' ⊢ SN K (A)]]) : [[δ, A / a ⊨ Δ, a : K ≤ Δ']] := by
   refine ⟨δsat.left.cons aninδd, ?_⟩
   intro a' K' a'K'inΔa
   cases a'K'inΔa with
   | head =>
     rw [Subst.apply, Subst.find?, if_pos rfl]
     conv => simp_match
-    exact Aisn.weakening <| .ext .refl aninΔ
+    exact Aisn
   | typeVarExt a'K'inΔ ane =>
     rw [Subst.apply_ext_eq_TypeVar_subst_apply (.cons aninδd δsat.left) aninδfv,
         Type.TypeVar_subst_id_of_not_mem_freeTypeVars <| Subst.not_mem_freeTypeVars_apply _ aninδfv]
-    · exact δsat.right a' K' a'K'inΔ |>.weakening (Δ' := [[Δ, a : K]]) <| .ext .refl aninΔ
+    · exact δsat.right a' K' a'K'inΔ
     · rw [Type.freeTypeVars]
       exact List.not_mem_singleton.mpr ane.symm
 
-theorem TypeVar_ext (δsat : [[δ ⊨ Δ]]) (aninδ : a ∉ δ.dom) (aninΔ : [[a ∉ dom(Δ)]])
-  : [[δ ⊨ Δ, a : K]] := by
+theorem TypeVar_ext (δsat : [[δ ⊨ Δ ≤ Δ']]) (aninδ : a ∉ δ.dom) (aninΔ' : [[a ∉ dom(Δ')]])
+  : [[δ ⊨ Δ, a : K ≤ Δ', a : K]] := by
   refine ⟨δsat.left, ?_⟩
   intro a' K' a'K'inΔa
   cases a'K'inΔa with
   | head =>
     rw [Subst.apply_var_id_of_not_mem aninδ]
     exact .var .head
-  | typeVarExt a'K'inΔ ane => exact δsat.right a' K' a'K'inΔ |>.weakening <| .ext .refl aninΔ
+  | typeVarExt a'K'inΔ ane => exact δsat.right a' K' a'K'inΔ |>.weakening <| .ext .refl aninΔ'
 
-theorem ext_drop (δsat : [[δ, A / a ⊨ Δ]]) : [[δ ⊨ Δ]] := by
-  constructor
-  · let .cons _ u := δsat.left
-    exact u
-  · intro a' K a'KinΔ
-    have := δsat.right a' K a'KinΔ
-    rw [Subst.apply] at this
-    split at this
-    · case _ h =>
-      rw [Subst.find?] at h
-      split at h
-      · case isTrue h' =>
-        cases h'
-        let .cons anin _ := δsat.left
-        rw [Subst.apply_var_id_of_not_mem anin]
-        exact .var a'KinΔ
-      · case isFalse h' =>
-        rw [Subst.apply, h]
-        exact this
-    · case _ h =>
-      rw [Subst.find?] at h
-      split at h
-      · case isTrue h' => nomatch h A
-      · case isFalse =>
-        rw [Subst.apply]
-        split
-        · case _ h' =>
-          rename «Type» => A
-          nomatch h A h'
-        · case _ h' =>
-          exact .var a'KinΔ
-
--- theorem weakening (δsat : [[δ ⊨ Δ]]) (le : Δ ≤ Δ') : [[δ ⊨ Δ']] := by
---   induction le generalizing δ with
---   | refl => exact δsat
---   | extExt _ ih =>
---     -- apply TypeVar_ext (ih)
---     sorry
---   | ext _ aninΔ ih =>
---     apply ih δsat |>.TypeVar_ext _ aninΔ
---     sorry
+theorem weakening (δsat : [[δ ⊨ Δ ≤ Δ']]) (le : Δ' ≤ Δ'') : [[δ ⊨ Δ ≤ Δ'']] where
+  left := δsat.left
+  right a K aKin := δsat.right a K aKin |>.weakening le
 
 mutual
 
-theorem apply_TypeVar_open_comm (δsat : [[δ ⊨ Δ]]) (anin : a ∉ δ.dom)
+theorem apply_TypeVar_open_comm' (δsat : [[δ ⊨ Δ ≤ Δ']]) (anin : a ∉ δ.dom)
   (a'in : ∀ a' ∈ A.freeTypeVars, [[a' ∈ dom(Δ)]])
   : δ (A.TypeVar_open a n) = (δ A).TypeVar_open a n := by
   induction A using Type.rec_uniform generalizing n
@@ -3185,42 +3147,42 @@ theorem apply_TypeVar_open_comm (δsat : [[δ ⊨ Δ]]) (anin : a ∉ δ.dom)
       | .bound _ => rw [Subst.apply, Type.TypeVar_open, if_neg h]
   all_goals aesop (add simp [Subst.apply, Type.TypeVar_open, Type.freeTypeVars])
 where
-  of_eq {a A} (δsat : [[δ ⊨ Δ]]) (eq : δ.find? a = some A) (ain : [[a ∈ dom(Δ)]])
-    : ∃ K, [[Δ ⊢ SN K (A)]] := by
+  of_eq {a A} (δsat : [[δ ⊨ Δ ≤ Δ']]) (eq : δ.find? a = some A) (ain : [[a ∈ dom(Δ)]])
+    : ∃ K, [[Δ' ⊢ SN K (A)]] := by
     let ⟨_, aKin⟩ := TypeVarInDom.TypeVarInEnvironment_of ain
     have := δsat.right _ _ aKin
     rw [Subst.apply, eq] at this
     exact ⟨_, this⟩
 
-theorem preservation (δsat : [[δ ⊨ Δ]]) (Aki : [[Δ ⊢ A : K]]) : Kinding Δ (δ A) K := by
-  induction Aki
+theorem preservation (δsat : [[δ ⊨ Δ ≤ Δ']]) (Aki : [[Δ ⊢ A : K]]) : Kinding Δ' (δ A) K := by
+  induction Aki generalizing Δ'
   case var ain => exact δsat.right _ _ ain |>.to_Kinding
-  case lam K₁ _ _ I Aki ih =>
-    rename Environment => Δ
+  case lam Δ K₁ _ _ I Aki ih =>
     rw [Subst.apply]
-    apply Kinding.lam <| I ++ δ.dom ++ Δ.typeVarDom
+    apply Kinding.lam <| I ++ δ.dom ++ Δ.typeVarDom ++ Δ'.typeVarDom
     intro a anin
-    let ⟨aninIδ, aninΔ⟩ := List.not_mem_append'.mp anin
+    let ⟨aninIδΔ, aninΔ'⟩ := List.not_mem_append'.mp anin
+    let ⟨aninIδ, aninΔ⟩ := List.not_mem_append'.mp aninIδΔ
     let ⟨aninI, aninδ⟩ := List.not_mem_append'.mp aninIδ
-    let δsat' := δsat.TypeVar_ext aninδ aninΔ (K := K₁)
-    rw [← apply_TypeVar_open_comm δsat' aninδ]
-    · exact ih a aninI δsat'
+    let δsat' := δsat.TypeVar_ext aninδ aninΔ' (K := K₁)
+    rw [← apply_TypeVar_open_comm' δsat' aninδ]
+    · exact ih a aninI δsat' |>.LE_weakening <| .extExt .refl
     · intro a' a'inA'
       apply not_not.mp
       intro a'nin
       apply Type.not_mem_freeTypeVars_TypeVar_open_drop <|
         Aki a aninI |>.not_mem_freeTypeVars_of a'nin
       exact a'inA'
-  case scheme K _ I Aki ih =>
-    rename Environment => Δ
+  case scheme Δ K _ I Aki ih =>
     rw [Subst.apply]
-    apply Kinding.scheme <| I ++ δ.dom ++ Δ.typeVarDom
+    apply Kinding.scheme <| I ++ δ.dom ++ Δ.typeVarDom ++ Δ'.typeVarDom
     intro a anin
-    let ⟨aninIδ, aninΔ⟩ := List.not_mem_append'.mp anin
+    let ⟨aninIδΔ, aninΔ'⟩ := List.not_mem_append'.mp anin
+    let ⟨aninIδ, aninΔ⟩ := List.not_mem_append'.mp aninIδΔ
     let ⟨aninI, aninδ⟩ := List.not_mem_append'.mp aninIδ
-    let δsat' := δsat.TypeVar_ext aninδ aninΔ (K := K)
-    rw [← apply_TypeVar_open_comm δsat' aninδ]
-    · exact ih a aninI δsat'
+    let δsat' := δsat.TypeVar_ext aninδ aninΔ' (K := K)
+    rw [← apply_TypeVar_open_comm' δsat' aninδ]
+    · exact ih a aninI δsat' |>.LE_weakening <| .extExt .refl
     · intro a' a'inA'
       apply not_not.mp
       intro a'nin
@@ -3230,6 +3192,31 @@ theorem preservation (δsat : [[δ ⊨ Δ]]) (Aki : [[Δ ⊢ A : K]]) : Kinding 
   all_goals aesop (add simp Subst.apply, safe constructors Kinding)
 
 end
+
+theorem apply_TypeVar_open_comm (δsat : [[δ ⊨ Δ ≤ Δ']]) (anin : a ∉ δ.dom)
+  (Aki : [[Δ ⊢ A^a : K]]) : δ (A.TypeVar_open a n) = (δ A).TypeVar_open a n := by
+  apply apply_TypeVar_open_comm' δsat anin
+  intro a' a'inA
+  apply not_not.mp
+  intro a'nin
+  apply Type.not_mem_freeTypeVars_TypeVar_open_drop <| Aki.not_mem_freeTypeVars_of a'nin
+  exact a'inA
+
+theorem apply_TypeVar_open_comm'' (δsat : [[δ ⊨ Δ ≤ Δ']]) (aninδ : a ∉ δ.dom)
+  (Aki : [[Δ, a : K' ⊢ A^a : K]]) (aninA : a ∉ A.freeTypeVars)
+  : δ (A.TypeVar_open a n) = (δ A).TypeVar_open a n := by
+  apply apply_TypeVar_open_comm' δsat aninδ
+  intro a' a'inA
+  apply not_not.mp
+  intro a'nin
+  by_cases a = a'
+  · case pos h =>
+    cases h
+    nomatch aninA a'inA
+  · case neg h =>
+    apply Type.not_mem_freeTypeVars_TypeVar_open_drop <| Aki.not_mem_freeTypeVars_of <|
+      List.not_mem_cons.mpr ⟨Ne.symm h, a'nin⟩
+    exact a'inA
 
 end SubstSatisfies
 
@@ -3257,26 +3244,30 @@ theorem MultiStep_preservation (Aisn : [[Δ ⊢ SN K (A)]]) (Ast : [[Δ ⊢ A ->
   | refl => exact Aisn
   | tail _ st ih => exact preservation ih st
 
--- this and StrongNormalization.of_Indexed might have to be shown by mutual induction
-theorem preservation_rev (h : ∀ B, [[Δ ⊢ A -> B]] → [[Δ ⊢ SN K (B)]]) (Aki : [[Δ ⊢ A : K]])
-  : [[Δ ⊢ SN K (A)]] := by
-  induction K <;> rw [IndexedStronglyNormalizing]
+theorem preservation_rev (An : A.Neutral) (h : ∀ B, [[Δ ⊢ A -> B]] → [[Δ ⊢ SN K (B)]])
+  (Aki : [[Δ ⊢ A : K]]) : [[Δ ⊢ SN K (A)]] := by
+  induction K generalizing A Δ <;> rw [IndexedStronglyNormalizing]
   case star =>
     refine ⟨Aki, ?_⟩
     apply StronglyNormalizing.preservation_rev
     intro A' st
     exact .of_Indexed <| h A' st
-  case arr =>
+  case arr ih₀ ih₁ =>
     refine ⟨Aki, ?_⟩
     intro B' Δ' le B'isn
-    sorry
-    -- specialize h B' B'isn
-    -- exact h.preservation <| .appl Ast
+    induction StronglyNormalizing.of_Indexed B'isn with
+    | intro _ _ ih =>
+      apply ih₁ (by nofun) _ <| .app (Aki.LE_weakening le) B'isn.to_Kinding
+      intro _ st
+      cases st with
+      | lamApp => nomatch An _ _
+      | appl A'st => exact h _ (A'st.LE_strengthening le Aki) |>.right _ _ le B'isn
+      | appr B'st => exact ih _ B'st <| preservation B'isn B'st
   case list => sorry
 
 theorem lam_app (I : List TypeVarId) (Aki : ∀ a ∉ I, [[Δ, a : K₁ ⊢ A^a : K₂]])
   (Asn : ∀ a ∉ I, [[Δ, a : K₁ ⊢ SN(A^a)]]) (Bisn : [[Δ ⊢ SN K₁ (B)]])
-  (AopBisn : [[Δ ⊢ SN K₂ (A^^B)]]) : [[Δ ⊢ SN K₂ ((λ a : K₁. A) B)]] := by
+  (AopBisn : [[Δ ⊢ SN K₂ (A^^B)]]) (Δwf : [[⊢ Δ]]) : [[Δ ⊢ SN K₂ ((λ a : K₁. A) B)]] := by
   let Bsn : [[Δ ⊢ SN(B)]] := .of_Indexed Bisn
   let ⟨a, anin⟩ := A.freeTypeVars ++ I ++ Δ.typeVarDom |>.exists_fresh
   let ⟨aninAI, aninΔ⟩ := List.not_mem_append'.mp anin
@@ -3292,7 +3283,7 @@ theorem lam_app (I : List TypeVarId) (Aki : ∀ a ∉ I, [[Δ, a : K₁ ⊢ A^a 
       cases A'eq
       let Alc := Aki.TypeVarLocallyClosed_of.TypeVar_close_inc (a := a)
       rw [Type.TypeVar_close_TypeVar_open_eq_of_not_mem_freeTypeVars aninA] at Alc
-      apply preservation_rev _ <| by
+      apply preservation_rev (by nofun) _ <| by
         refine .app (.lam (a :: Δ.typeVarDom) ?_) Bisn.to_Kinding
         intro a' a'nin
         sorry
@@ -3326,7 +3317,7 @@ theorem lam_app (I : List TypeVarId) (Aki : ∀ a ∉ I, [[Δ, a : K₁ ⊢ A^a 
         apply MultiStep_preservation AopBisn
         exact Bst.Type_open_out Alc Bisn.to_Kinding
 
-theorem of_Kinding' (δsat : [[δ ⊨ Δ]]) (Aki : [[Δ ⊢ A : K]])
+theorem of_Kinding' (δsat : [[δ ⊨ Δ ≤ Δ']]) (Aki : [[Δ ⊢ A : K]]) (Δwf : [[⊢ Δ]])
   : IndexedStronglyNormalizing Δ' K (δ A) := by
   open StronglyNormalizing in
   induction Aki generalizing δ Δ' with
@@ -3337,35 +3328,37 @@ theorem of_Kinding' (δsat : [[δ ⊨ Δ]]) (Aki : [[Δ ⊢ A : K]])
     let Aki := δsat.preservation <| .lam I A'ki
     rw [Subst.apply] at Aki
     refine ⟨Aki, ?_⟩
-    intro B Δ' le Bisn
+    intro B Δ'' le Bisn
     let .lam I' A'ki' := Aki
-    apply lam_app (δ.dom ++ δ.freeTypeVars ++ I ++ I' ++ Δ.typeVarDom) _ _ Bisn _
+    apply lam_app
+      (A'.freeTypeVars ++ δ.dom ++ δ.freeTypeVars ++ I ++ I' ++ Δ.typeVarDom ++ Δ'.typeVarDom) _ _ Bisn _ Δwf
     · intro a anin
-      let ⟨aninδdδfvII', aninΔ⟩ := List.not_mem_append'.mp anin
-      let ⟨_, aninI'⟩ := List.not_mem_append'.mp aninδdδfvII'
+      let ⟨aninA'δdδfvII'Δ, aninΔ'⟩ := List.not_mem_append'.mp anin
+      let ⟨aninA'δdδfvII', aninΔ⟩ := List.not_mem_append'.mp aninA'δdδfvII'Δ
+      let ⟨_, aninI'⟩ := List.not_mem_append'.mp aninA'δdδfvII'
       exact A'ki' a aninI' |>.LE_weakening le.extExt
     · intro a anin
-      let ⟨aninδdδfvII', aninΔ⟩ := List.not_mem_append'.mp anin
-      let ⟨aninδdδfvI, aninI'⟩ := List.not_mem_append'.mp aninδdδfvII'
-      let ⟨aninδdδfv, aninI⟩ := List.not_mem_append'.mp aninδdδfvI
-      let ⟨aninδd, aninδfv⟩ := List.not_mem_append'.mp aninδdδfv
-      rw [← SubstSatisfies.apply_TypeVar_open_comm δsat aninδd]
-      let δsat' := δsat.TypeVar_ext aninδd aninΔ (K := K₁)
-      apply StronglyNormalizing.LE_weakening (.of_Indexed <| ih _ aninI δsat') le.extExt <|
-        δsat'.preservation <| A'ki a aninI
-      sorry
-    · let ⟨a, anin⟩ := (δ A').freeTypeVars ++ δ.dom ++ δ.freeTypeVars ++ I ++ Δ.typeVarDom
-        |>.exists_fresh
-      let ⟨aninA'δdδfvI, aninΔ⟩ := List.not_mem_append'.mp anin
+      let ⟨aninA'δdδfvII'Δ, aninΔ'⟩ := List.not_mem_append'.mp anin
+      let ⟨aninA'δdδfvII', aninΔ⟩ := List.not_mem_append'.mp aninA'δdδfvII'Δ
+      let ⟨aninA'δdδfvI, aninI'⟩ := List.not_mem_append'.mp aninA'δdδfvII'
       let ⟨aninA'δdδfv, aninI⟩ := List.not_mem_append'.mp aninA'δdδfvI
       let ⟨aninA'δd, aninδfv⟩ := List.not_mem_append'.mp aninA'δdδfv
       let ⟨aninA', aninδd⟩ := List.not_mem_append'.mp aninA'δd
-      rw [← Type.TypeVar_open_TypeVar_subst_eq_Type_open_of_not_mem_freeTypeVars aninA',
-          ← SubstSatisfies.apply_TypeVar_open_comm δsat aninδd,
+      rw [← SubstSatisfies.apply_TypeVar_open_comm'' δsat aninδd (A'ki a aninI) aninA']
+      let δsat' := δsat.TypeVar_ext aninδd aninΔ' (K := K₁)
+      exact .LE_weakening (.of_Indexed <| ih _ aninI δsat') le.extExt <|
+        δsat'.preservation <| A'ki a aninI
+    · let ⟨a, anin⟩ := A'.freeTypeVars ++ (δ A').freeTypeVars ++ δ.dom ++ δ.freeTypeVars ++ I ++
+        Δ.typeVarDom |>.exists_fresh
+      let ⟨aninA'δA'δdδfvI, aninΔ⟩ := List.not_mem_append'.mp anin
+      let ⟨aninA'δA'δdδfv, aninI⟩ := List.not_mem_append'.mp aninA'δA'δdδfvI
+      let ⟨aninA'δA'δd, aninδfv⟩ := List.not_mem_append'.mp aninA'δA'δdδfv
+      let ⟨aninA'δA', aninδd⟩ := List.not_mem_append'.mp aninA'δA'δd
+      let ⟨aninA', aninδA'⟩ := List.not_mem_append'.mp aninA'δA'
+      rw [← Type.TypeVar_open_TypeVar_subst_eq_Type_open_of_not_mem_freeTypeVars aninδA',
+          ← SubstSatisfies.apply_TypeVar_open_comm'' δsat aninδd (A'ki a aninI) aninA',
           ← Subst.apply_ext_eq_TypeVar_subst_apply (.cons aninδd δsat.left) aninδfv]
-      apply ih
-      have := ih a aninI (δ := δ.ext B a) (δsat.ext aninδd aninδfv aninΔ sorry)
-      all_goals sorry
+      exact ih a aninI (δ := δ.ext B a) (δsat.weakening le |>.ext aninδd aninδfv Bisn)
   | app A'ki Bki ih₀ ih₁ =>
     specialize ih₀ δsat
     specialize ih₁ δsat
@@ -3374,27 +3367,22 @@ theorem of_Kinding' (δsat : [[δ ⊨ Δ]]) (Aki : [[Δ ⊢ A : K]])
     let ⟨_, h⟩ := ih₀
     exact h _ _ .refl ih₁
   | scheme I A'ki ih =>
+    rename_i Δ _ _
     rename «Type» => A'
     rename Kind => K
-    rename Environment => Δ
     rw [Subst.apply, IndexedStronglyNormalizing]
     let Aki := δsat.preservation <| .scheme I A'ki
     rw [Subst.apply] at Aki
     refine ⟨Aki, ?_⟩
-    apply StronglyNormalizing.forall <| I ++ δ.dom ++ Δ.typeVarDom
+    apply StronglyNormalizing.forall <| I ++ δ.dom ++ Δ.typeVarDom ++ Δ'.typeVarDom
     intro a anin
-    let ⟨aninIδ, aninΔ⟩ := List.not_mem_append'.mp anin
+    let ⟨aninIδΔ, aninΔ'⟩ := List.not_mem_append'.mp anin
+    let ⟨aninIδ, aninΔ⟩ := List.not_mem_append'.mp aninIδΔ
     let ⟨aninI, aninδ⟩ := List.not_mem_append'.mp aninIδ
-    let δsat' := δsat.TypeVar_ext aninδ aninΔ (K := K)
+    let δsat' := δsat.TypeVar_ext aninδ aninΔ' (K := K)
     replace ih := of_Indexed <| ih a aninI δsat'
-    rw [SubstSatisfies.apply_TypeVar_open_comm δsat' aninδ] at ih
-    · exact ih
-    · intro a' a'inA'
-      apply not_not.mp
-      intro a'nin
-      apply Type.not_mem_freeTypeVars_TypeVar_open_drop <|
-        A'ki a aninI |>.not_mem_freeTypeVars_of a'nin
-      exact a'inA'
+    rw [SubstSatisfies.apply_TypeVar_open_comm δsat' aninδ (A'ki a aninI)] at ih
+    exact ih
   | arr A'ki Bki ih₀ ih₁ =>
     rw [IndexedStronglyNormalizing, Subst.apply]
     refine ⟨.arr (δsat.preservation A'ki) (δsat.preservation Bki), ?_⟩

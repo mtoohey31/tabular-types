@@ -202,9 +202,13 @@ def freeTypeVars : Subst → List TypeVarId
 
 end Subst
 
-judgement_syntax δ " ⊨ " Δ : SubstSatisfies
+judgement_syntax δ " ⊨ " Δ " ≤ " Δ' : SubstSatisfies
 
-judgement SubstSatisfies := fun (δ : Subst) Δ =>
-  δ.dom.Unique ∧ ∀ a K, [[a : K ∈ Δ]] → IndexedStronglyNormalizing Δ K (δ (Type.var a))
+judgement SubstSatisfies := fun (δ : Subst) Δ Δ' =>
+  δ.dom.Unique ∧ ∀ a K, [[a : K ∈ Δ]] → IndexedStronglyNormalizing Δ' K (δ (Type.var a))
+
+judgement_syntax "neutral " A : Type.Neutral
+
+judgement Type.Neutral := fun A => ∀ K A', A ≠ [[λ a : K. A']]
 
 end TabularTypeInterpreter.«F⊗⊕ω»
