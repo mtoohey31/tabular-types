@@ -111,8 +111,14 @@ theorem weakening : [[Δ, Δ'' ⊢ A : K]] → [[⊢ Δ, Δ', Δ'']] → [[Δ, �
 theorem LE_weakening (Aki : [[Δ ⊢ A : K]]) (le : Δ ≤ Δ') : [[Δ' ⊢ A : K]] := by
   induction Aki generalizing Δ'
   case var ain => exact .var <| le.TypeVarIn_preservation ain
-  case lam I _ ih => exact lam I (ih · · le.extExt)
-  case scheme I _ ih => exact scheme I (ih · · le.extExt)
+  case lam I _ ih =>
+    exact lam (I ++ Δ'.typeVarDom) (fun a anin =>
+      let ⟨aninI, aninΔ'⟩ := List.not_mem_append'.mp anin
+      ih a aninI <| le.extExt aninΔ')
+  case scheme I _ ih =>
+    exact scheme (I ++ Δ'.typeVarDom) (fun a anin =>
+      let ⟨aninI, aninΔ'⟩ := List.not_mem_append'.mp anin
+      ih a aninI <| le.extExt aninΔ')
   all_goals aesop (add safe constructors Kinding)
 
 open Environment TypeVarInEnvironment in

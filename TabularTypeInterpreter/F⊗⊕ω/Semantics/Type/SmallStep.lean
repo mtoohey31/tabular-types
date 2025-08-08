@@ -3,6 +3,7 @@ import Lott.Elab.NotJudgement
 import Mathlib.Data.Rel
 import Mathlib.Logic.Relation
 import TabularTypeInterpreter.Data.List
+import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Kind
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Type
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
@@ -155,12 +156,12 @@ judgement_syntax Δ " ⊢ " "SN" K "(" A ")" : IndexedStronglyNormalizing (tex :
 abbrev IndexedStronglyNormalizing : Environment → Kind → «Type» → Prop
   | Δ, [[*]], A => [[Δ ⊢ A : *]] ∧ [[Δ ⊢ SN(A)]]
   | Δ, [[K₁ ↦ K₂]], A =>
-    [[Δ ⊢ A : K₁ ↦ K₂]] ∧ ∀ B Δ', Δ ≤ Δ' → [[Δ' ⊢ SN K₁ (B)]] → [[Δ' ⊢ SN K₂ (A B)]]
+    [[Δ ⊢ A : K₁ ↦ K₂]] ∧ ∀ B Δ', Δ ≤ Δ' →
+      ([[Δ' ⊢ SN K₁ (B)]] → [[Δ' ⊢ SN K₂ (A B)]]) ∧
+      ([[Δ' ⊢ SN L K₁ (B)]] → [[Δ' ⊢ SN L K₂ (A ⟦B⟧)]])
   | Δ, [[L K]], A =>
-    [[Δ ⊢ A : L K]] ∧ [[Δ ⊢ SN(A)]]
-      ∧ sorry
-      -- ∧ (∃ A' n, [[Δ ⊢ A ->* {</ A'@i // i in [:n] />}]] → ∀ i ∈ [:n], [[Δ ⊢ SN K (A'@i)]])
-      -- ∧ ∃ A' B, [[Δ ⊢ A ->* A' ⟦B⟧]] → ∃ K', [[Δ ⊢ SN K' ↦ K (A')]] ∧ [[Δ ⊢ SN L K' (B)]]
+    [[Δ ⊢ A : L K]] ∧ [[Δ ⊢ SN(A)]] ∧ ∀ A' n b,
+      [[Δ ⊢ A ->* {</ A'@i // i in [:n] /> </ : K // b />}]] → ∀ i ∈ [:n], [[Δ ⊢ SN K (A'@i)]]
 
 nosubst
 nonterminal Subst, δ :=

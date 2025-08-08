@@ -496,6 +496,15 @@ theorem weakening (wf: [[ ⊢ Δ, Δ' ]]): [[ ⊢ Δ ]] := by
   . case typeExt Δ' a K ih => cases wf; simp_all
   . case termExt Δ' x' T' ih => cases wf; simp_all
 
+theorem LE_weakening (Δwf : [[⊢ Δ]]) (le : Δ ≤ Δ') : [[⊢ Δ']] := by
+  induction le with
+  | refl => exact Δwf
+  | extExt _ anin ih =>
+    let .typeVarExt Δ''wf _ := Δwf
+    exact ih Δ''wf |>.typeVarExt anin
+  | ext _ anin ih =>
+    exact ih Δwf |>.typeVarExt anin
+
 end EnvironmentWellFormedness
 
 namespace EnvironmentTypeWellFormedness
@@ -555,7 +564,7 @@ theorem TypeVarNotInDom_preservation (le : [[Δ ≤ Δ']]) (anin : [[a ∉ dom(�
   : [[a ∉ dom(Δ)]] := by
   induction le with
   | refl => exact anin
-  | extExt _ ih =>
+  | extExt _ _ ih =>
     let ⟨ane, anin'⟩ := List.not_mem_cons.mp anin
     exact List.not_mem_cons.mpr ⟨ane, ih anin'⟩
   | ext _ a'nin ih => exact ih <| List.not_mem_of_not_mem_cons anin
@@ -564,23 +573,23 @@ theorem TypeVarNotInDom_preservation (le : [[Δ ≤ Δ']]) (anin : [[a ∉ dom(�
 theorem trans (le₀ : [[Δ ≤ Δ']]) (le₁ : [[Δ' ≤ Δ'']]) : [[Δ ≤ Δ'']] := by
   induction le₁ generalizing Δ with
   | refl => exact le₀
-  | extExt le₁' ih =>
+  | extExt le₁' anin ih =>
     cases le₀ with
-    | refl => exact extExt le₁'
+    | refl => exact extExt le₁' anin
     | extExt le₀' =>
       specialize ih le₀'
-      exact extExt ih
-    | ext le₀' anin =>
+      exact extExt ih anin
+    | ext le₀' =>
       specialize ih le₀'
       exact ext ih anin
-  | ext le₁' anin ih => exact ext (ih le₀) <| TypeVarNotInDom_preservation le₀ anin
+  | ext le₁' anin ih => exact ext (ih le₀) anin
 
 instance : IsTrans Environment LE.le := ⟨fun _ _ _ => trans⟩
 
 theorem TypeVarIn_preservation (le : [[Δ ≤ Δ']]) (ain : [[a : K ∈ Δ]]) : [[a : K ∈ Δ']] := by
   induction le with
   | refl => exact ain
-  | extExt _ ih =>
+  | extExt _ _ ih =>
     match ain with
     | .head => exact .head
     | .typeVarExt ain' ne => exact ih ain' |>.typeVarExt ne
@@ -588,7 +597,7 @@ theorem TypeVarIn_preservation (le : [[Δ ≤ Δ']]) (ain : [[a : K ∈ Δ]]) : 
     specialize ih ain
     apply ih.typeVarExt
     rintro rfl
-    exact a'nin ain.TypeVarInDom_of
+    exact a'nin ih.TypeVarInDom_of
 
 end Environment.LE
 

@@ -147,11 +147,12 @@ judgement LE where
 Δ ≤ Δ
 
 Δ ≤ Δ'
+a ∉ dom(Δ')
 ──────────────────── extExt
 Δ, a : K ≤ Δ', a : K
 
 Δ ≤ Δ'
-a ∉ dom(Δ)
+a ∉ dom(Δ')
 ───────────── ext
 Δ ≤ Δ', a : K
 
