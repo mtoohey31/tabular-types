@@ -210,6 +210,17 @@ judgement SubstSatisfies := fun (δ : Subst) Δ Δ' =>
 
 judgement_syntax "neutral " A : Type.Neutral
 
-judgement Type.Neutral := fun A => ∀ K A', A ≠ [[λ a : K. A']]
+abbrev Type.Neutral A :=
+  (∀ K A', A ≠ [[λ a : K. A']]) ∧
+    ∀ A' n K b, A = [[{</ A'@i // i in [:n] /> </ : K // b />}]] → ∀ i ∈ [:n], Neutral (A' i)
+termination_by sizeOf A
+decreasing_by
+  rename A = _ => eq
+  simp_arith [eq]
+  apply Nat.le_add_right_of_le
+  apply Nat.le_of_lt
+  apply List.sizeOf_lt_of_mem
+  apply Std.Range.mem_map_of_mem
+  assumption
 
 end TabularTypeInterpreter.«F⊗⊕ω»
