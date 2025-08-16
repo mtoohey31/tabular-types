@@ -156,9 +156,7 @@ judgement_syntax Δ " ⊢ " "SN" K "(" A ")" : IndexedStronglyNormalizing (tex :
 abbrev IndexedStronglyNormalizing : Environment → Kind → «Type» → Prop
   | Δ, [[*]], A => [[Δ ⊢ A : *]] ∧ [[Δ ⊢ SN(A)]]
   | Δ, [[K₁ ↦ K₂]], A =>
-    [[Δ ⊢ A : K₁ ↦ K₂]] ∧ ∀ B Δ', Δ ≤ Δ' →
-      ([[Δ' ⊢ SN K₁ (B)]] → [[Δ' ⊢ SN K₂ (A B)]]) ∧
-      ([[Δ' ⊢ SN L K₁ (B)]] → [[Δ' ⊢ SN L K₂ (A ⟦B⟧)]])
+    [[Δ ⊢ A : K₁ ↦ K₂]] ∧ ∀ B Δ', Δ ≤ Δ' → [[Δ' ⊢ SN K₁ (B)]] → [[Δ' ⊢ SN K₂ (A B)]]
   | Δ, [[L K]], A =>
     [[Δ ⊢ A : L K]] ∧ [[Δ ⊢ SN(A)]] ∧ ∀ A' n b,
       [[Δ ⊢ A ->* {</ A'@i // i in [:n] /> </ : K // b />}]] → ∀ i ∈ [:n], [[Δ ⊢ SN K (A'@i)]]
