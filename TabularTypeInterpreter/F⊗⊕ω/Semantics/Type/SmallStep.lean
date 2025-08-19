@@ -3,6 +3,7 @@ import Lott.Elab.NotJudgement
 import Mathlib.Data.Rel
 import Mathlib.Logic.Relation
 import TabularTypeInterpreter.Data.List
+import TabularTypeInterpreter.Logic.Relation
 import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Kind
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Type
 
@@ -143,6 +144,10 @@ judgement_syntax Δ " ⊢ " A " ->* " B : MultiSmallStep
 
 abbrev MultiSmallStep := fun Δ => Relation.ReflTransGen (SmallStep Δ)
 
+judgement_syntax Δ " ⊢"n A " ->* " B : MultiSmallStepIn
+
+abbrev MultiSmallStepIn := fun Δ n => Relation.IndexedReflTransGen (SmallStep Δ) n
+
 judgement_syntax Δ " ⊢ " A " <->* " B : EqSmallStep (tex := s!"{Δ} \\, \\lottsym\{⊢} \\, {A} \\, \\lottsym\{↔^*} \\, {B}")
 
 abbrev EqSmallStep := fun Δ => Relation.EqvGen (SmallStep Δ)
@@ -150,6 +155,13 @@ abbrev EqSmallStep := fun Δ => Relation.EqvGen (SmallStep Δ)
 judgement_syntax Δ " ⊢ " "SN" "(" A ")" : StronglyNormalizing
 
 abbrev StronglyNormalizing := fun Δ => Acc (Rel.inv (SmallStep Δ))
+
+judgement_syntax Δ " ⊢" n " SN" "(" A ")" : StronglyNormalizingIn (tex := s!"{Δ} \\, \\lottsym\{⊢}_\{{n}} \\, \\lottkw\{SN} \\lottsym\{(} {A} \\lottsym\{)}")
+
+inductive StronglyNormalizingIn : Environment → Nat → «Type» → Prop where
+  | intro (Bns : List («Type» × Nat)) (eb : ∀ {B}, (∃ n, (B, n) ∈ Bns) ↔ [[Δ ⊢ A -> B]])
+    (sni : (∀ Bn ∈ Bns, StronglyNormalizingIn Δ Bn.snd Bn.fst))
+    : StronglyNormalizingIn Δ (Bns.map Prod.snd |>.max?.map (· + 1) |>.getD 0) A
 
 judgement_syntax Δ " ⊢ " "SN" K "(" A ")" : IndexedStronglyNormalizing (tex := s!"{Δ} \\, \\lottsym\{⊢} \\, \\lottkw\{SN}_\{{K}} \\lottsym\{(} {A} \\lottsym\{)}")
 

@@ -1,0 +1,40 @@
+\lottjudgement{Divisible Indexed Strongly Normalizing}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \lottkw{SN}'_{\targetpre K \targetpost} \lottsym{(} \targetpre A \targetpost \lottsym{)}}{
+\lottinferencerule{var}{
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \lottkw{SN}_{\targetpre K \targetpost} \lottsym{(} \targetpre \targetpre a \targetpost \targetpost \lottsym{)}}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \lottkw{SN}'_{\targetpre K \targetpost} \lottsym{(} \targetpre \targetpre a \targetpost \targetpost \lottsym{)}}
+\lottinferencerulesep
+\lottinferencerule{lam}{
+\lotthypothesis{\targetpre \targetpre Δ \targetpost \lottsym{,} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K₁ \targetpost \targetpost \, \lottsym{⊢} \, \lottkw{SN}'_{\targetpre K₂ \targetpost} \lottsym{(} \targetpre \targetpre A \targetpost \targetpost \lottsym{)}}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \lottkw{SN}'_{\targetpre \targetpre K₁ \targetpost \, \lottsym{↦} \, \targetpre K₂ \targetpost \targetpost} \lottsym{(} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K₁ \targetpost \lottsym{.} \, \targetpre A \targetpost \targetpost \lottsym{)}}
+\lottinferencerulesep
+\lottinferencerule{app}{
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \lottkw{SN}'_{\targetpre \targetpre K₁ \targetpost \, \lottsym{↦} \, \targetpre K₂ \targetpost \targetpost} \lottsym{(} \targetpre A \targetpost \lottsym{)}}\\
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \lottkw{SN}'_{\targetpre K₁ \targetpost} \lottsym{(} \targetpre B \targetpost \lottsym{)}}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \lottkw{SN}'_{\targetpre K₂ \targetpost} \lottsym{(} \targetpre \targetpre A \targetpost \, \targetpre B \targetpost \targetpost \lottsym{)}}
+\lottinferencerulesep
+\lottinferencerule{forall}{
+\lotthypothesis{\targetpre \targetpre Δ \targetpost \lottsym{,} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K₁ \targetpost \targetpost \, \lottsym{⊢} \, \lottkw{SN}'_{\targetpre K₂ \targetpost} \lottsym{(} \targetpre \targetpre A \targetpost \targetpost \lottsym{)}}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \lottkw{SN}'_{\targetpre \targetpre K₁ \targetpost \, \lottsym{↦} \, \targetpre K₂ \targetpost \targetpost} \lottsym{(} \targetpre \lottsym{∀} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre K₁ \targetpost \lottsym{.} \, \targetpre A \targetpost \targetpost \lottsym{)}}
+\lottinferencerulesep
+\lottinferencerule{arr}{
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \lottkw{SN}'_{\targetpre \lottsym{\star} \targetpost} \lottsym{(} \targetpre A \targetpost \lottsym{)}}\\
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \lottkw{SN}'_{\targetpre \lottsym{\star} \targetpost} \lottsym{(} \targetpre B \targetpost \lottsym{)}}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \lottkw{SN}'_{\targetpre \lottsym{\star} \targetpost} \lottsym{(} \targetpre \targetpre A \targetpost \, \lottsym{→} \, \targetpre B \targetpost \targetpost \lottsym{)}}
+\lottinferencerulesep
+\lottinferencerule{list}{
+\lotthypothesis{\lottsym{∀} \, i \, \lottsym{∈} \, [:n], \targetpre Δ \targetpost \, \lottsym{⊢} \, \lottkw{SN}'_{\targetpre K \targetpost} \lottsym{(} \targetpre A_{i} \targetpost \lottsym{)}}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \lottkw{SN}'_{\targetpre \lottkw{L}^{\targetpre K \targetpost} \targetpost} \lottsym{(} \targetpre \lottsym{\{} \lottsepbycomprehensionpatcollection{\targetpre A_{i} \targetpost}{i}{[:n]} \lottsym{\}} \targetpost \lottsym{)}}
+\lottinferencerulesep
+\lottinferencerule{listApp}{
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \lottkw{SN}'_{\targetpre \targetpre K₁ \targetpost \, \lottsym{↦} \, \targetpre K₂ \targetpost \targetpost} \lottsym{(} \targetpre A \targetpost \lottsym{)}}\\
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \lottkw{SN}'_{\targetpre \lottkw{L}^{\targetpre K₁ \targetpost} \targetpost} \lottsym{(} \targetpre B \targetpost \lottsym{)}}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \lottkw{SN}'_{\targetpre \lottkw{L}^{\targetpre K₂ \targetpost} \targetpost} \lottsym{(} \targetpre \targetpre A \targetpost \, \lottsym{⟦} \targetpre B \targetpost \lottsym{⟧} \targetpost \lottsym{)}}
+\lottinferencerulesep
+\lottinferencerule{prod}{
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \lottkw{SN}'_{\targetpre \lottkw{L}^{\targetpre \lottsym{\star} \targetpost} \targetpost} \lottsym{(} \targetpre A \targetpost \lottsym{)}}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \lottkw{SN}'_{\targetpre \lottsym{\star} \targetpost} \lottsym{(} \targetpre \lottsym{⊗} \, \targetpre A \targetpost \targetpost \lottsym{)}}
+\lottinferencerulesep
+\lottinferencerule{sum}{
+\lotthypothesis{\targetpre Δ \targetpost \, \lottsym{⊢} \, \lottkw{SN}'_{\targetpre \lottkw{L}^{\targetpre \lottsym{\star} \targetpost} \targetpost} \lottsym{(} \targetpre A \targetpost \lottsym{)}}
+}{\targetpre Δ \targetpost \, \lottsym{⊢} \, \lottkw{SN}'_{\targetpre \lottsym{\star} \targetpost} \lottsym{(} \targetpre \lottsym{⊕} \, \targetpre A \targetpost \targetpost \lottsym{)}}
+}

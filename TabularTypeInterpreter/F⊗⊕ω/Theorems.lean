@@ -296,7 +296,7 @@ theorem term_subst' (EtyA: [[ Δ, x: T, Δ' ⊢ E: A ]]) (FtyT : [[ Δ ⊢ F: T 
     exact .equiv (ih rfl) equiv.TermVar_drop
 
 theorem term_subst (EtyA: [[ Δ, x: T ⊢ E: A ]]) (FtyT : [[ Δ ⊢ F: T ]]): [[ Δ ⊢ E[F/x] : A ]] :=
-  Typing.term_subst' (Δ' := [[ ε ]]) EtyA FtyT
+  Typing.term_subst' (Δ' := [[(ε)]]) EtyA FtyT
 
 theorem Term_open (EtyA : Typing [[(Δ, x : B, Δ')]] (.TermVar_open E x n) A)
   (xnin : x ∉ E.freeTermVars) (FtyB : [[Δ ⊢ F : B]]) : Typing [[(Δ, Δ')]] (.Term_open E F n) A := by
@@ -400,7 +400,7 @@ theorem type_subst' (EtyA: [[ Δ, a: K, Δ' ⊢ E: A ]]) (BkiK : [[ Δ ⊢ B: K 
     refine .equiv (ih rfl) (equiv.subst' EtyA.TypeVarLocallyClosed_of EtyA.WellFormedness_of BkiK)
 
 theorem type_subst (EtyA: [[ Δ, a: K ⊢ E: A ]]) (BkiK : [[ Δ ⊢ B: K ]]): [[ Δ ⊢ E[B/a] : A[B/a] ]] :=
-  Typing.type_subst' (Δ' := [[ ε ]]) EtyA BkiK
+  Typing.type_subst' (Δ' := [[(ε)]]) EtyA BkiK
 
 theorem Type_open
   (EtyA : Typing [[(Δ, a : K, Δ')]] (.TypeVar_open E a n) (.TypeVar_open A a n))
