@@ -4205,7 +4205,7 @@ theorem StronglyNormalizing.listApp (Asni : [[Δ ⊢m SN(A)]]) (Aki : [[Δ ⊢ A
   | listAppr Bst =>
     let ⟨_, Bsni', _⟩ := Bsni.preservation Bst
     exact .listApp Asni Aki Bsni' (Bst.preservation Bki) Δwf
-termination_by (0, 0, n, B.right_nested_listApps, m)
+termination_by (0, n, B.right_nested_listApps, m, 0)
 decreasing_by
   · sorry
   · sorry
@@ -4213,20 +4213,21 @@ decreasing_by
   · sorry
   · rename B = _ => eq
     cases eq
-    apply Prod.Lex.right _ <| Prod.Lex.right _ <|
-      Prod.Lex.right' _ (Nat.le_trans (Nat.le_add_left ..) le) <| Prod.Lex.left ..
+    apply Prod.Lex.right _ <| Prod.Lex.right' _ (Nat.le_trans (Nat.le_add_left ..) le) <|
+      Prod.Lex.left ..
     simp [Type.right_nested_listApps]
-  · apply Prod.Lex.right _ <| Prod.Lex.right _ <| Prod.Lex.right _ <| Prod.Lex.right ..
+  · apply Prod.Lex.right _ <| Prod.Lex.right _ <| Prod.Lex.right _ <| Prod.Lex.left ..
     assumption
-  · apply Prod.Lex.right _ <| Prod.Lex.right _ <| Prod.Lex.left ..
+  · apply Prod.Lex.right _ <| Prod.Lex.left ..
     assumption
 
 theorem IndexedStronglyNormalizing.of_Kinding' (δsat : [[δ ⊨ Δ ≤ Δ']]) (Aki : [[Δ ⊢ A : K]])
   (Δwf : [[⊢ Δ]]) (Δ'wf : [[⊢ Δ']]) : IndexedStronglyNormalizing Δ' K (δ A) := by
   open StronglyNormalizing in
-  match A, Aki with
-  | _, .var ain => exact δsat.right _ _ ain
-  | [[λ a : K₁. A']], .lam I A'ki =>
+  induction Aki generalizing δ Δ' with
+  | var ain => exact δsat.right _ _ ain
+  | lam I A'ki ih =>
+    rename_i Δ K₁ A' _
     rw [Subst.apply, IndexedStronglyNormalizing]
     let Aki := δsat.preservation <| .lam I A'ki
     rw [Subst.apply] at Aki
@@ -4254,7 +4255,7 @@ theorem IndexedStronglyNormalizing.of_Kinding' (δsat : [[δ ⊨ Δ ≤ Δ']]) (
       let δsat' := δsat.TypeVar_ext aninδd aninΔ' (K := K₁)
       exact LE_weakening
         (of_Indexed <|
-          .of_Kinding' δsat' (A'ki a aninI) (Δwf.typeVarExt aninΔ) (Δ'wf.typeVarExt aninΔ'))
+          ih a aninI δsat' (Δwf.typeVarExt aninΔ) (Δ'wf.typeVarExt aninΔ'))
         (le.extExt aninΔ'') <| δsat'.preservation <| A'ki a aninI
     · let ⟨a, anin⟩ := A'.freeTypeVars ++ (δ A').freeTypeVars ++ δ.dom ++ δ.freeTypeVars ++ I ++
         Δ.typeVarDom |>.exists_fresh
@@ -4266,14 +4267,15 @@ theorem IndexedStronglyNormalizing.of_Kinding' (δsat : [[δ ⊨ Δ ≤ Δ']]) (
       rw [← Type.TypeVar_open_TypeVar_subst_eq_Type_open_of_not_mem_freeTypeVars aninδA',
           ← SubstSatisfies.apply_TypeVar_open_comm'' δsat aninδd (A'ki a aninI) aninA',
           ← Subst.apply_ext_eq_TypeVar_subst_apply (.cons aninδd δsat.left) aninδfv]
-      exact .of_Kinding' (δsat.weakening le |>.ext aninδd aninδfv Bisn) (A'ki a aninI)
-        (Δwf.typeVarExt aninΔ) (Δ'wf.LE_weakening le)
-  | [[A' B]], .app A'ki Bki =>
+      exact ih a aninI (δsat.weakening le |>.ext aninδd aninδfv Bisn) (Δwf.typeVarExt aninΔ)
+        (Δ'wf.LE_weakening le)
+  | app A'ki Bki ih₀ ih₁ =>
     rw [Subst.apply]
-    let A'isn := IndexedStronglyNormalizing.of_Kinding' δsat A'ki Δwf Δ'wf
+    let A'isn := ih₀ δsat Δwf Δ'wf
     rw [IndexedStronglyNormalizing] at A'isn
-    exact A'isn.right _ _ .refl <| .of_Kinding' δsat Bki Δwf Δ'wf
-  | [[∀ a : K'. A']], .scheme I A'ki =>
+    exact A'isn.right _ _ .refl <| ih₁ δsat Δwf Δ'wf
+  | scheme I A'ki ih =>
+    rename_i Δ K' _
     rw [Subst.apply, IndexedStronglyNormalizing]
     let Aki := δsat.preservation <| .scheme I A'ki
     rw [Subst.apply] at Aki
@@ -4284,19 +4286,18 @@ theorem IndexedStronglyNormalizing.of_Kinding' (δsat : [[δ ⊨ Δ ≤ Δ']]) (
     let ⟨aninIδ, aninΔ⟩ := List.not_mem_append'.mp aninIδΔ
     let ⟨aninI, aninδ⟩ := List.not_mem_append'.mp aninIδ
     let δsat' := δsat.TypeVar_ext aninδ aninΔ' (K := K')
-    let A'isn := of_Indexed <| .of_Kinding' δsat' (A'ki a aninI) (Δwf.typeVarExt aninΔ)
-      (Δ'wf.typeVarExt aninΔ')
+    let A'isn := of_Indexed <| ih a aninI δsat' (Δwf.typeVarExt aninΔ) (Δ'wf.typeVarExt aninΔ')
     rw [SubstSatisfies.apply_TypeVar_open_comm δsat' aninδ (A'ki a aninI)] at A'isn
     exact A'isn
-  | [[A' → B]], .arr A'ki Bki =>
+  | arr A'ki Bki ih₀ ih₁ =>
     rw [Subst.apply]
-    exact .arr (.of_Kinding' δsat A'ki Δwf Δ'wf) (.of_Kinding' δsat Bki Δwf Δ'wf)
-  | _, .list A'ki h =>
+    exact .arr (ih₀ δsat Δwf Δ'wf) (ih₁ δsat Δwf Δ'wf)
+  | list A'ki h ih =>
     rename Nat → «Type» => A'
     rw [IndexedStronglyNormalizing]
     refine ⟨δsat.preservation <| .list (A'ki · ·) h, ?_, ?_⟩
     · rw [Subst.apply, List.mapMem_eq_map, Range.map, List.map_map, ← Range.map]
-      exact list fun i mem => of_Indexed <| .of_Kinding' δsat (A'ki i mem) Δwf Δ'wf
+      exact list fun i mem => of_Indexed <| ih i mem δsat Δwf Δ'wf
     · intro A'' n b mst i mem
       rw [Subst.apply, List.mapMem_eq_map, Range.map, List.map_map, ← Range.map] at mst
       let ⟨A''', eq, mst'⟩ := mst.preserve_shape_list
@@ -4305,19 +4306,24 @@ theorem IndexedStronglyNormalizing.of_Kinding' (δsat : [[δ ⊨ Δ ≤ Δ']]) (
       simp [Range.length_toList] at neq
       cases neq
       rw [Range.eq_of_mem_of_map_eq Aseq i mem]
-      exact .MultiStep_preservation (.of_Kinding' δsat (A'ki i mem) Δwf Δ'wf) <| mst' i mem
-  | [[A' ⟦B'⟧]], .listApp A'ki B'ki (K₁ := K₁) =>
+      exact .MultiStep_preservation (ih i mem δsat Δwf Δ'wf) <| mst' i mem
+  | listApp A'ki B'ki ih₀ ih₁ =>
+    rename_i Δ A' K₁ _ B'
     rw [Subst.apply, IndexedStronglyNormalizing]
     replace A'ki := δsat.preservation A'ki
     replace B'ki := δsat.preservation B'ki
+    replace ih₀ := of_Indexed <| ih₀ δsat Δwf Δ'wf
+    rename' ih₀ => A'sn
+    replace ih₁ := of_Indexed <| ih₁ δsat Δwf Δ'wf
+    rename' ih₁ => B'sn
     generalize δ.apply A' = A', δ.apply B' = B' at *
-    clear δsat Aki Δwf
+    clear δsat Δwf
     rename' Δ' => Δ
     rename' Δ'wf => Δwf
-    let ⟨_, A'sni⟩ := of_Indexed (IndexedStronglyNormalizing.of_Kinding A'ki Δwf) |>.to_In A'ki
-    let ⟨_, B'sni⟩ := of_Indexed (IndexedStronglyNormalizing.of_Kinding B'ki Δwf) |>.to_In B'ki
+    let ⟨_, A'sni⟩ := A'sn.to_In A'ki
+    let ⟨_, B'sni⟩ := B'sn.to_In B'ki
     refine ⟨.listApp A'ki B'ki, .listApp A'sni A'ki B'sni B'ki Δwf, ?_⟩
-    clear A'sni B'sni
+    clear A'sn B'sn A'sni B'sni
     intro AB n b mst i mem
     generalize Ceq : [[A' ⟦B'⟧]] = C at mst
     induction mst using Relation.ReflTransGen.head_induction_on generalizing A' B' K₁ with
@@ -4346,23 +4352,24 @@ theorem IndexedStronglyNormalizing.of_Kinding' (δsat : [[δ ⊨ Δ ≤ Δ']]) (
       | listAppComp _ A₁ki =>
         let .listApp A₁ki' B''ki := B'ki
         cases A₁ki.deterministic A₁ki'
-        apply ih _ _ _ _ B''ki rfl
+        apply ih _ _ _ B''ki rfl
         apply Kinding.lam Δ.typeVarDom
         intro a anin
         simp [Type.TypeVar_open, A'ki.TypeVarLocallyClosed_of.TypeVar_open_id,
               A₁ki.TypeVarLocallyClosed_of.TypeVar_open_id]
         exact A'ki.LE_weakening (.ext .refl anin) |>.app <|
           A₁ki.LE_weakening (.ext .refl anin) |>.app <| .var .head
-      | listAppl A'st => exact ih _ _ _ (A'st.preservation A'ki) B'ki rfl
-      | listAppr B'st => exact ih _ _ _ A'ki (B'st.preservation B'ki) rfl
-  | [[⊗ A']], .prod A'ki =>
+      | listAppl A'st => exact ih _ _ (A'st.preservation A'ki) B'ki rfl
+      | listAppr B'st => exact ih _ _ A'ki (B'st.preservation B'ki) rfl
+  | prod A'ki ih =>
     rw [Subst.apply]
-    exact .prod <| .of_Kinding' δsat A'ki Δwf Δ'wf
-  | [[⊕ A']], .sum A'ki =>
+    exact .prod <| ih δsat Δwf Δ'wf
+  | sum A'ki ih =>
     rw [Subst.apply]
-    exact .sum <| .of_Kinding' δsat A'ki Δwf Δ'wf
+    exact .sum <| ih δsat Δwf Δ'wf
 termination_by (0, 0, 0, 0, 0)
-decreasing_by all_goals sorry
+decreasing_by
+  all_goals sorry
 
 theorem IndexedStronglyNormalizing.of_Kinding (Aki : [[Δ ⊢ A : K]]) (Δwf : [[⊢ Δ]])
   : IndexedStronglyNormalizing Δ K A := by
@@ -4372,8 +4379,9 @@ theorem IndexedStronglyNormalizing.of_Kinding (Aki : [[Δ ⊢ A : K]]) (Δwf : [
   intro a K' aK'inΔ
   rw [Subst.apply_empty_id]
   exact .var aK'inΔ
-termination_by (0, 1, 0, 0, 0)
-decreasing_by exact Prod.Lex.right _ <| Prod.Lex.left _ _ Nat.one_pos
+termination_by (0, 0, 0, 0, 1)
+decreasing_by
+  exact Prod.Lex.right _ <| Prod.Lex.right _ <| Prod.Lex.right _ <| Prod.Lex.right _ Nat.one_pos
 
 end
 
