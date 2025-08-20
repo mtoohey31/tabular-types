@@ -3885,6 +3885,12 @@ theorem weakening (δsat : [[δ ⊨ Δ ≤ Δ']]) (le : Δ' ≤ Δ'') : [[δ ⊨
   left := δsat.left
   right a K aKin := δsat.right a K aKin |>.weakening le
 
+theorem empty : [[ε ⊨ Δ ≤ Δ]] where
+  left := .nil
+  right a K' aK'inΔ := by
+    rw [Subst.apply_empty_id]
+    exact .var aK'inΔ
+
 mutual
 
 theorem apply_TypeVar_open_comm' (δsat : [[δ ⊨ Δ ≤ Δ']]) (anin : a ∉ δ.dom)
@@ -4229,8 +4235,10 @@ theorem StronglyNormalizing.listApp (Aisn : [[Δ ⊢ SN K₁ ↦ K₂ (A)]]) (As
             A₁ki'.TypeVarLocallyClosed_of.TypeVar_open_id]
       exact Aki.LE_weakening (.ext .refl anin) |>.app <|
         A₁ki.LE_weakening (.ext .refl anin) |>.app <| .var .head
-    let AA₁isn := Aisn.comp (.of_Kinding A₁ki Δwf) Δwf
-    let B'isn := IndexedStronglyNormalizing.of_Kinding B'ki Δwf
+    let A₁isn := IndexedStronglyNormalizing.of_Kinding' .empty A₁ki Δwf Δwf
+    let B'isn := IndexedStronglyNormalizing.of_Kinding' .empty B'ki Δwf Δwf
+    rw [Subst.apply_empty_id] at A₁isn B'isn
+    let AA₁isn := Aisn.comp A₁isn Δwf
     let ⟨_, AA₁sni⟩ := StronglyNormalizing.of_Indexed AA₁isn |>.to_In AA₁ki
     let ⟨_, _, _, B'sni, le⟩ := Bsni.listApp A₁ki B'ki
     exact .listApp AA₁isn AA₁sni B'isn B'sni Δwf
@@ -4240,7 +4248,7 @@ theorem StronglyNormalizing.listApp (Aisn : [[Δ ⊢ SN K₁ ↦ K₂ (A)]]) (As
   | listAppr Bst =>
     let ⟨_, Bsni', _⟩ := Bsni.preservation Bst
     exact .listApp Aisn Asni (Bisn.preservation Bst) Bsni' Δwf
-termination_by (0, n, B.right_nested_listApps, m, 0)
+termination_by (0, n, B.right_nested_listApps, m)
 decreasing_by
   · sorry
   · sorry
@@ -4249,7 +4257,7 @@ decreasing_by
     apply Prod.Lex.right _ <| Prod.Lex.right' _ (Nat.le_trans (Nat.le_add_left ..) le) <|
       Prod.Lex.left ..
     simp [Type.right_nested_listApps]
-  · apply Prod.Lex.right _ <| Prod.Lex.right _ <| Prod.Lex.right _ <| Prod.Lex.left ..
+  · apply Prod.Lex.right _ <| Prod.Lex.right _ <| Prod.Lex.right ..
     assumption
   · apply Prod.Lex.right _ <| Prod.Lex.left ..
     assumption
@@ -4362,15 +4370,21 @@ theorem IndexedStronglyNormalizing.of_Kinding' (δsat : [[δ ⊨ Δ ≤ Δ']]) (
         cases lengths_eq
         rw [Range.eq_of_mem_of_map_eq A'seq i mem]
         refine .MultiStep_preservation ?_ <| mst'' i mem
-        exact (IndexedStronglyNormalizing.of_Kinding A'ki Δwf).right _ _ .refl <|
-          .of_Kinding (B'ki.inv_list.left i mem) Δwf
+        let A'isn := IndexedStronglyNormalizing.of_Kinding' .empty A'ki Δwf Δwf
+        let B'isn :=
+          IndexedStronglyNormalizing.of_Kinding' .empty (B'ki.inv_list.left i mem) Δwf Δwf
+        rw [Subst.apply_empty_id] at A'isn B'isn
+        exact A'isn.right _ _ .refl B'isn
       | listAppId =>
         let .lam I aki := A'ki
         let ⟨a, anin⟩ := I.exists_fresh
         specialize aki a anin
         simp [Type.TypeVar_open] at aki
         let .var .head := aki
-        exact IndexedStronglyNormalizing.of_Kinding B'ki Δwf |>.right.right _ _ _ mst' i mem
+        let B'isn :=
+          IndexedStronglyNormalizing.of_Kinding' .empty B'ki Δwf Δwf
+        rw [Subst.apply_empty_id] at B'isn
+        exact B'isn.right.right _ _ _ mst' i mem
       | listAppComp _ A₁ki =>
         let .listApp A₁ki' B''ki := B'ki
         cases A₁ki.deterministic A₁ki'
@@ -4389,23 +4403,17 @@ theorem IndexedStronglyNormalizing.of_Kinding' (δsat : [[δ ⊨ Δ ≤ Δ']]) (
   | sum A'ki ih =>
     rw [Subst.apply]
     exact .sum <| ih δsat Δwf Δ'wf
-termination_by (0, 0, 0, 0, 0)
+termination_by (1, 0, 0, 0)
 decreasing_by
+  all_goals simp_arith
   all_goals sorry
+
+end
 
 theorem IndexedStronglyNormalizing.of_Kinding (Aki : [[Δ ⊢ A : K]]) (Δwf : [[⊢ Δ]])
   : IndexedStronglyNormalizing Δ K A := by
   rw [← Subst.apply_empty_id (A := A)]
-  refine .of_Kinding' ?_ Aki Δwf Δwf
-  refine ⟨.nil, ?_⟩
-  intro a K' aK'inΔ
-  rw [Subst.apply_empty_id]
-  exact .var aK'inΔ
-termination_by (0, 0, 0, 0, 1)
-decreasing_by
-  exact Prod.Lex.right _ <| Prod.Lex.right _ <| Prod.Lex.right _ <| Prod.Lex.right _ Nat.one_pos
-
-end
+  exact .of_Kinding' .empty Aki Δwf Δwf
 
 theorem StronglyNormalizing.of_Kinding (Aki : [[Δ ⊢ A : K]]) (Δwf : [[⊢ Δ]]) : [[Δ ⊢ SN(A)]] :=
   of_Indexed <| .of_Kinding Aki Δwf
