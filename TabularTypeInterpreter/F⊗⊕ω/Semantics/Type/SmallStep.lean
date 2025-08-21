@@ -5,6 +5,7 @@ import Mathlib.Logic.Relation
 import TabularTypeInterpreter.Data.List
 import TabularTypeInterpreter.Logic.Relation
 import TabularTypeInterpreter.«F⊗⊕ω».Lemmas.Kind
+import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Environment
 import TabularTypeInterpreter.«F⊗⊕ω».Semantics.Type
 
 namespace TabularTypeInterpreter.«F⊗⊕ω»
@@ -216,7 +217,8 @@ end Subst
 judgement_syntax δ " ⊨ " Δ " ≤ " Δ' : SubstSatisfies
 
 judgement SubstSatisfies := fun (δ : Subst) Δ Δ' =>
-  δ.dom.Unique ∧ ∀ a K, [[a : K ∈ Δ]] → IndexedStronglyNormalizing Δ' K (δ (Type.var a))
+  δ.dom.Unique ∧ δ.dom ⊆ Δ.typeVarDom ∧ Δ ≤ Δ' ∧
+    ∀ a K, [[a : K ∈ Δ]] → IndexedStronglyNormalizing Δ' K (δ (Type.var a))
 
 judgement_syntax "neutral " A : Type.Neutral
 

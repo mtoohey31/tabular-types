@@ -599,6 +599,12 @@ theorem TypeVarIn_preservation (le : [[Δ ≤ Δ']]) (ain : [[a : K ∈ Δ]]) : 
     rintro rfl
     exact a'nin ih.TypeVarInDom_of
 
+theorem subset_dom (le : [[Δ ≤ Δ']]) : Δ.typeVarDom ⊆ Δ'.typeVarDom := by
+  induction le with
+  | refl => exact .refl _
+  | extExt _ _ ih => exact List.cons_subset_cons _ ih
+  | ext _ _ ih => exact List.subset_cons_of_subset _ ih
+
 end Environment.LE
 
 end TabularTypeInterpreter.«F⊗⊕ω»
