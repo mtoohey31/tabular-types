@@ -214,10 +214,9 @@ def freeTypeVars : Subst → List TypeVarId
 
 end Subst
 
-judgement_syntax δ " ⊨ " Δ " ≤ " Δ' : SubstSatisfies
+judgement_syntax δ " ⊨ " Δ " ⊣ " Δ' : SubstSatisfies
 
-judgement SubstSatisfies := fun (δ : Subst) Δ Δ' =>
-  δ.dom.Unique ∧ δ.dom ⊆ Δ.typeVarDom ∧ Δ ≤ Δ' ∧
+judgement SubstSatisfies := fun (δ : Subst) Δ Δ' => δ.dom.Unique ∧ δ.dom ⊆ Δ.typeVarDom ∧
     ∀ a K, [[a : K ∈ Δ]] → IndexedStronglyNormalizing Δ' K (δ (Type.var a))
 
 judgement_syntax "neutral " A : Type.Neutral

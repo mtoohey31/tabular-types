@@ -3851,31 +3851,8 @@ theorem apply_ext_eq_TypeVar_subst_apply (uni : (ext δ A a).dom.Unique) (anin :
 
 end Subst
 
-namespace IndexedStronglyNormalizing
-
-theorem strengthening (Aisn : [[Δ' ⊢ SN K (A)]]) (le : Δ ≤ Δ') (Aki : [[Δ ⊢ A : K]])
-  : [[Δ ⊢ SN K (A)]] := by
-  match K with
-  | [[*]] => exact ⟨Aki, Aisn.right.LE_strengthening le⟩
-  | [[K₁ ↦ K₂]] =>
-    rw [IndexedStronglyNormalizing] at Aisn ⊢
-    refine ⟨Aki, ?_⟩
-    intro B _ le' Bisn
-    -- could maybe make this work by making the quantification over Δ' cofinitely quantified over a
-    -- list of things, then when we introduce it here we can add the extra stuff in our Δ' here to
-    -- that so we're guaranteed no conflicts, then we can take the max of the two extended
-    -- environments, use the implication, then strengthen back down? this would allow us to fix the
-    -- relationships between satisfying environments and such
-
-    -- exact Aisn.right _ _ (Trans.trans le le') Bisn
-  | [[L K']] =>
-    rw [IndexedStronglyNormalizing] at Aisn ⊢
-    refine ⟨Aki, Aisn.right.left.LE_strengthening le, ?_⟩
-    intro A' n b mst i mem
-    exact Aisn.right.right A' n b (mst.LE_weakening le) i mem |>.strengthening le <|
-      mst.preservation Aki |>.inv_list.left i mem
-
-theorem weakening (Aisn : [[Δ ⊢ SN K (A)]]) (le : Δ ≤ Δ') : [[Δ' ⊢ SN K (A)]] := by
+theorem IndexedStronglyNormalizing.weakening (Aisn : [[Δ ⊢ SN K (A)]]) (le : Δ ≤ Δ')
+  : [[Δ' ⊢ SN K (A)]] := by
   match K with
   | [[*]] => exact ⟨Aisn.left.LE_weakening le, Aisn.right.LE_weakening le Aisn.left⟩
   | [[K₁ ↦ K₂]] =>
@@ -3889,17 +3866,13 @@ theorem weakening (Aisn : [[Δ ⊢ SN K (A)]]) (le : Δ ≤ Δ') : [[Δ' ⊢ SN 
     intro A' n b mst i mem
     exact Aisn.right.right _ _ _ (mst.LE_strengthening le Aisn.left) i mem |>.weakening le
 
-end IndexedStronglyNormalizing
-
 namespace SubstSatisfies
 
-theorem ext (δsat : [[δ ⊨ Δ ≤ Δ']]) (aninΔ' : [[a ∉ dom(Δ')]]) (aninδfv : a ∉ δ.freeTypeVars)
-  (Aisn : [[Δ' ⊢ SN K (A)]]) : [[δ, A / a ⊨ Δ ≤ Δ', a : K]] := by
-  let aninδd := (aninΔ' <| δsat.right.left ·)
+theorem ext (δsat : [[δ ⊨ Δ ⊣ Δ']]) (aninδd : a ∉ δ.dom) (aninδfv : a ∉ δ.freeTypeVars)
+  (Aisn : [[Δ' ⊢ SN K (A)]]) : [[δ, A / a ⊨ Δ, a : K ⊣ Δ']] := by
   refine ⟨
-    δsat.left.cons (aninΔ <| δsat.right.left ·),
+    δsat.left.cons aninδd,
     List.cons_subset_cons _ δsat.right.left,
-    δsat.right.right.left.ext aninΔ',
     ?_
   ⟩
   intro a' K' a'K'inΔa
@@ -3911,16 +3884,15 @@ theorem ext (δsat : [[δ ⊨ Δ ≤ Δ']]) (aninΔ' : [[a ∉ dom(Δ')]]) (anin
   | typeVarExt a'K'inΔ ane =>
     rw [Subst.apply_ext_eq_TypeVar_subst_apply (.cons aninδd δsat.left) aninδfv,
         Type.TypeVar_subst_id_of_not_mem_freeTypeVars <| Subst.not_mem_freeTypeVars_apply _ aninδfv]
-    · exact δsat.right.right.right a' K' a'K'inΔ
+    · exact δsat.right.right a' K' a'K'inΔ
     · rw [Type.freeTypeVars]
       exact List.not_mem_singleton.mpr ane.symm
 
-theorem TypeVar_ext (δsat : [[δ ⊨ Δ ≤ Δ']]) (aninδ : a ∉ δ.dom) (aninΔ' : [[a ∉ dom(Δ')]])
-  : [[δ ⊨ Δ, a : K ≤ Δ', a : K]] := by
+theorem TypeVar_ext (δsat : [[δ ⊨ Δ ⊣ Δ']]) (aninδ : a ∉ δ.dom) (aninΔ' : [[a ∉ dom(Δ')]])
+  : [[δ ⊨ Δ, a : K ⊣ Δ', a : K]] := by
   refine ⟨
     δsat.left,
     List.subset_cons_of_subset _ δsat.right.left,
-    δsat.right.right.left.extExt aninΔ',
     ?_
   ⟩
   intro a' K' a'K'inΔa
@@ -3929,19 +3901,17 @@ theorem TypeVar_ext (δsat : [[δ ⊨ Δ ≤ Δ']]) (aninδ : a ∉ δ.dom) (ani
     rw [Subst.apply_var_id_of_not_mem aninδ]
     exact .var .head
   | typeVarExt a'K'inΔ ane =>
-    exact δsat.right.right.right a' K' a'K'inΔ |>.weakening <| .ext .refl aninΔ'
+    exact δsat.right.right a' K' a'K'inΔ |>.weakening <| .ext .refl aninΔ'
 
-theorem weakening (δsat : [[δ ⊨ Δ ≤ Δ']]) (le : Δ' ≤ Δ'') : [[δ ⊨ Δ ≤ Δ'']] := ⟨
+theorem weakening (δsat : [[δ ⊨ Δ ⊣ Δ']]) (le : Δ' ≤ Δ'') : [[δ ⊨ Δ ⊣ Δ'']] := ⟨
     δsat.left,
     δsat.right.left,
-    Trans.trans δsat.right.right.left le,
-    fun a K aKin => δsat.right.right.right a K aKin |>.weakening le
+    fun a K aKin => δsat.right.right a K aKin |>.weakening le
   ⟩
 
-theorem empty : [[ε ⊨ Δ ≤ Δ]] := ⟨
+theorem empty : [[ε ⊨ Δ ⊣ Δ]] := ⟨
     .nil,
     List.nil_subset _,
-    .refl,
     by
       intro a K' aK'inΔ
       rw [Subst.apply_empty_id]
@@ -3950,7 +3920,7 @@ theorem empty : [[ε ⊨ Δ ≤ Δ]] := ⟨
 
 mutual
 
-theorem apply_TypeVar_open_comm' (δsat : [[δ ⊨ Δ ≤ Δ']]) (anin : a ∉ δ.dom)
+theorem apply_TypeVar_open_comm' (δsat : [[δ ⊨ Δ ⊣ Δ']]) (anin : a ∉ δ.dom)
   (a'in : ∀ a' ∈ A.freeTypeVars, [[a' ∈ dom(Δ)]])
   : δ (A.TypeVar_open a n) = (δ A).TypeVar_open a n := by
   induction A using Type.rec_uniform generalizing n
@@ -3980,13 +3950,13 @@ where
   of_eq {a A} (eq : δ.find? a = some A) (ain : [[a ∈ dom(Δ)]])
     : ∃ K, [[Δ' ⊢ SN K (A)]] := by
     let ⟨_, aKin⟩ := TypeVarInDom.TypeVarInEnvironment_of ain
-    have := δsat.right.right.right _ _ aKin
+    have := δsat.right.right _ _ aKin
     rw [Subst.apply, eq] at this
     exact ⟨_, this⟩
 
-theorem preservation (δsat : [[δ ⊨ Δ ≤ Δ']]) (Aki : [[Δ ⊢ A : K]]) : Kinding Δ' (δ A) K := by
+theorem preservation (δsat : [[δ ⊨ Δ ⊣ Δ']]) (Aki : [[Δ ⊢ A : K]]) : Kinding Δ' (δ A) K := by
   induction Aki generalizing Δ'
-  case var ain => exact δsat.right.right.right _ _ ain |>.to_Kinding
+  case var ain => exact δsat.right.right _ _ ain |>.to_Kinding
   case lam Δ K₁ _ _ I Aki ih =>
     rw [Subst.apply]
     apply Kinding.lam <| I ++ δ.dom ++ Δ.typeVarDom ++ Δ'.typeVarDom
@@ -4023,7 +3993,7 @@ theorem preservation (δsat : [[δ ⊨ Δ ≤ Δ']]) (Aki : [[Δ ⊢ A : K]]) : 
 
 end
 
-theorem apply_TypeVar_open_comm (δsat : [[δ ⊨ Δ ≤ Δ']]) (anin : a ∉ δ.dom)
+theorem apply_TypeVar_open_comm (δsat : [[δ ⊨ Δ ⊣ Δ']]) (anin : a ∉ δ.dom)
   (Aki : [[Δ ⊢ A^a : K]]) : δ (A.TypeVar_open a n) = (δ A).TypeVar_open a n := by
   apply apply_TypeVar_open_comm' δsat anin
   intro a' a'inA
@@ -4032,7 +4002,7 @@ theorem apply_TypeVar_open_comm (δsat : [[δ ⊨ Δ ≤ Δ']]) (anin : a ∉ δ
   apply Type.not_mem_freeTypeVars_TypeVar_open_drop <| Aki.not_mem_freeTypeVars_of a'nin
   exact a'inA
 
-theorem apply_TypeVar_open_comm'' (δsat : [[δ ⊨ Δ ≤ Δ']]) (aninδ : a ∉ δ.dom)
+theorem apply_TypeVar_open_comm'' (δsat : [[δ ⊨ Δ ⊣ Δ']]) (aninδ : a ∉ δ.dom)
   (Aki : [[Δ, a : K' ⊢ A^a : K]]) (aninA : a ∉ A.freeTypeVars)
   : δ (A.TypeVar_open a n) = (δ A).TypeVar_open a n := by
   apply apply_TypeVar_open_comm' δsat aninδ
@@ -4048,7 +4018,7 @@ theorem apply_TypeVar_open_comm'' (δsat : [[δ ⊨ Δ ≤ Δ']]) (aninδ : a �
       List.not_mem_cons.mpr ⟨Ne.symm h, a'nin⟩
     exact a'inA
 
-theorem preservation_rev (δsat : [[δ ⊨ Δ ≤ Δ]]) (Aki : Kinding Δ (δ A) K) : [[Δ ⊢ A : K]] := by
+theorem preservation_rev (δsat : [[δ ⊨ Δ ⊣ Δ]]) (Aki : Kinding Δ (δ A) K) : [[Δ ⊢ A : K]] := by
   cases A
   case var a =>
     cases a with
@@ -4058,7 +4028,7 @@ theorem preservation_rev (δsat : [[δ ⊨ Δ ≤ Δ]]) (Aki : Kinding Δ (δ A)
       · case _ h =>
         let ⟨_, ain⟩ := TypeVarInDom.TypeVarInEnvironment_of <| δsat.right.left <|
           Subst.mem_of_find?_eq_some h
-        let isn := δsat.right.right.right _ _ ain
+        let isn := δsat.right.right _ _ ain
         rw [Subst.apply, h] at isn
         conv at isn => simp_match
         cases Aki.deterministic isn.to_Kinding
@@ -4106,8 +4076,8 @@ namespace MultiSmallStepIn
 mutual
 
 theorem lam_inversion (I : List TypeVarId) (Amsti : MultiSmallStepIn Δ n (δ A) [[λ a : K. B]])
-  (δsat : [[δ ⊨ Δ ≤ Δ]])
-  : ∃ B' δ', ∃ a ∉ I, sizeOf B' < sizeOf A ∧ [[δ' ⊨ Δ, a : K ≤ Δ, a : K]] ∧
+  (δsat : [[δ ⊨ Δ ⊣ Δ]])
+  : ∃ B' δ', ∃ a ∉ I, sizeOf B' < sizeOf A ∧ [[δ' ⊨ Δ, a : K ⊣ Δ, a : K]] ∧
     MultiSmallStep [[Δ, a : K]] ((δ' B').TypeVar_open a) (B.TypeVar_open a) := by
   generalize Ceq : [[λ a : K. B]] = C at Amsti
   cases Amsti with
@@ -4146,8 +4116,8 @@ theorem lam_inversion (I : List TypeVarId) (Amsti : MultiSmallStepIn Δ n (δ A)
       let ⟨aninI, aninI'⟩ := List.not_mem_append'.mp anin
       exact ⟨_, _, _, aninI, lt, δ'sat, mst.tail <| Bst _ aninI'⟩
 
-theorem app_inversionl (Amsti : MultiSmallStepIn Δ n (δ A) [[B C]]) (δsat : [[δ ⊨ Δ ≤ Δ]])
-  : ∃ B' δ', sizeOf B' < sizeOf A ∧ [[δ' ⊨ Δ ≤ Δ]] ∧ MultiSmallStep Δ (δ' B') B := by
+theorem app_inversionl (Amsti : MultiSmallStepIn Δ n (δ A) [[B C]]) (δsat : [[δ ⊨ Δ ⊣ Δ]])
+  : ∃ B' δ', sizeOf B' < sizeOf A ∧ [[δ' ⊨ Δ ⊣ Δ]] ∧ MultiSmallStep Δ (δ' B') B := by
   generalize BCeq : [[B C]] = BC at Amsti
   cases Amsti with
   | refl =>
@@ -4201,8 +4171,8 @@ theorem app_inversionl (Amsti : MultiSmallStepIn Δ n (δ A) [[B C]]) (δsat : [
       exact ⟨_, _, lt, δ'sat, mst'.tail Cst⟩
     · exact app_inversionl Amsti' δsat
 
-theorem app_inversionr (Amsti : MultiSmallStepIn Δ n (δ A) [[B C]]) (δsat : [[δ ⊨ Δ ≤ Δ]])
-  : ∃ C' δ', sizeOf C' < sizeOf A ∧ [[δ' ⊨ Δ ≤ Δ]] ∧ MultiSmallStep Δ (δ' C') C := by
+theorem app_inversionr (Amsti : MultiSmallStepIn Δ n (δ A) [[B C]]) (δsat : [[δ ⊨ Δ ⊣ Δ]])
+  : ∃ C' δ', sizeOf C' < sizeOf A ∧ [[δ' ⊨ Δ ⊣ Δ]] ∧ MultiSmallStep Δ (δ' C') C := by
   generalize BCeq : [[B C]] = BC at Amsti
   cases Amsti with
   | refl =>
@@ -4237,8 +4207,8 @@ theorem app_inversionr (Amsti : MultiSmallStepIn Δ n (δ A) [[B C]]) (δsat : [
       let ⟨_, _, lt, δ'sat, mst'⟩ := app_inversionr Amsti' δsat
       exact ⟨_, _, lt, δ'sat, mst'.tail Cst⟩
 
-theorem listApp_inversionl (Amsti : MultiSmallStepIn Δ n (δ A) [[B ⟦C⟧]]) (δsat : [[δ ⊨ Δ ≤ Δ]])
-  : ∃ B' δ', sizeOf B' < sizeOf A ∧ [[δ' ⊨ Δ ≤ Δ]] ∧ MultiSmallStep Δ (δ' B') B := by
+theorem listApp_inversionl (Amsti : MultiSmallStepIn Δ n (δ A) [[B ⟦C⟧]]) (δsat : [[δ ⊨ Δ ⊣ Δ]])
+  : ∃ B' δ', sizeOf B' < sizeOf A ∧ [[δ' ⊨ Δ ⊣ Δ]] ∧ MultiSmallStep Δ (δ' B') B := by
   generalize BCeq : [[B ⟦C⟧]] = BC at Amsti
   cases Amsti with
   | refl =>
@@ -4306,8 +4276,8 @@ theorem listApp_inversionl (Amsti : MultiSmallStepIn Δ n (δ A) [[B ⟦C⟧]]) 
       exact ⟨_, _, lt, δ'sat, mst'.tail Bst⟩
     · exact listApp_inversionl Amsti' δsat
 
-theorem listApp_inversionr (Amsti : MultiSmallStepIn Δ n (δ A) [[B ⟦C⟧]]) (δsat : [[δ ⊨ Δ ≤ Δ]])
-  : ∃ C' δ', sizeOf C' < sizeOf A ∧ [[δ' ⊨ Δ ≤ Δ]] ∧ MultiSmallStep Δ (δ' C') C := by
+theorem listApp_inversionr (Amsti : MultiSmallStepIn Δ n (δ A) [[B ⟦C⟧]]) (δsat : [[δ ⊨ Δ ⊣ Δ]])
+  : ∃ C' δ', sizeOf C' < sizeOf A ∧ [[δ' ⊨ Δ ⊣ Δ]] ∧ MultiSmallStep Δ (δ' C') C := by
   generalize BCeq : [[B ⟦C⟧]] = BC at Amsti
   cases Amsti with
   | refl =>
@@ -4595,8 +4565,8 @@ def Type.right_nested_listApps : «Type» → Nat
 theorem StronglyNormalizing.listApp (Aisn : [[Δ ⊢ SN K₁ ↦ K₂ (A)]])
   (Asni : [[Δ ⊢m SN(A)]]) (Bki : [[Δ ⊢ B : L K₁]]) (Bsni : [[Δ ⊢n SN(B)]])
   (C : «Type»)
-  (h : ∀ {A' B' K δ}, sizeOf A' < sizeOf C → [[δ ⊨ Δ ≤ Δ]] → [[Δ ⊢ B' : K]] → MultiSmallStep Δ (δ A') B' → [[Δ ⊢ SN K (B')]])
-  (δsat : [[δ ⊨ Δ ≤ Δ]]) (C' : «Type») (lt : sizeOf C' < sizeOf C)
+  (h : ∀ {A' B' K δ}, sizeOf A' < sizeOf C → [[δ ⊨ Δ ⊣ Δ]] → [[Δ ⊢ B' : K]] → MultiSmallStep Δ (δ A') B' → [[Δ ⊢ SN K (B')]])
+  (δsat : [[δ ⊨ Δ ⊣ Δ]]) (C' : «Type») (lt : sizeOf C' < sizeOf C)
   (Bmst : MultiSmallStep Δ (δ C') B) (Δwf : [[⊢ Δ]]) : [[Δ ⊢ SN(A ⟦B⟧)]] := by
   refine .preservation_rev ?_
   intro C st
@@ -4644,11 +4614,11 @@ decreasing_by
   · apply Prod.Lex.left ..
     assumption
 
-theorem IndexedStronglyNormalizing.of_Kinding' (δsat : [[δ ⊨ Δ ≤ Δ']]) (Aki : [[Δ ⊢ A : K]])
+theorem IndexedStronglyNormalizing.of_Kinding' (δsat : [[δ ⊨ Δ ⊣ Δ']]) (Aki : [[Δ ⊢ A : K]])
   (Δ'wf : [[⊢ Δ']]) : IndexedStronglyNormalizing Δ' K (δ A) := by
   open StronglyNormalizing in
   induction Aki generalizing δ Δ' with
-  | var ain => exact δsat.right.right.right _ _ ain
+  | var ain => exact δsat.right.right _ _ ain
   | lam I A'ki ih =>
     rename_i Δ K₁ A' _
     rw [Subst.apply, IndexedStronglyNormalizing]
@@ -4688,8 +4658,7 @@ theorem IndexedStronglyNormalizing.of_Kinding' (δsat : [[δ ⊨ Δ ≤ Δ']]) (
       rw [← Type.TypeVar_open_TypeVar_subst_eq_Type_open_of_not_mem_freeTypeVars aninδA',
           ← SubstSatisfies.apply_TypeVar_open_comm'' δsat aninδd (A'ki a aninI) aninA',
           ← Subst.apply_ext_eq_TypeVar_subst_apply (.cons aninδd δsat.left) aninδfv]
-      apply ih a aninI _ /- (δsat.weakening le |>.ext aninΔ aninδfv Bisn) -/ (Δ'wf.LE_weakening le)
-
+      exact ih a aninI (δsat.weakening le |>.ext aninδd aninδfv Bisn) (Δ'wf.LE_weakening le)
   | app A'ki Bki ih₀ ih₁ =>
     rw [Subst.apply]
     let A'isn := ih₀ δsat Δ'wf
