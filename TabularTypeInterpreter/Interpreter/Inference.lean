@@ -118,7 +118,7 @@ def lookupUniVar (ᾱ : UId) : Context → Option ContextItem
   | .cons item@(.sunivar ᾱ' _τ) Γ => if ᾱ == ᾱ' then .some item else lookupUniVar ᾱ Γ
   | .cons _ Γ => lookupUniVar ᾱ Γ
 
-/-- split the context into (before, after) based on the item's position. -/
+/-- split the context into (before, after) based on the item's position. panics if the item does not exist. -/
 def split (Γ : Context) (item : ContextItem) : InferM (Context × Context) := do
   let index ← Γ.idxOf? item |>.getDM (throw $ .panic s!"I was trying to find {item} in the context but it wasn't there; I could have sworn I put it there though!")
   if let (after, _::before) := Γ.splitAt index then
@@ -441,9 +441,85 @@ def rowEquivalence (Γ : Context) (ρ₀ μ ρ₁ : Monotype) : InferM (Context 
 
 attribute [refl] TypeScheme.Subtyping.refl
 
-def instantiateLeft (ᾱ : UniVar) (σ : TypeScheme) : InferM Unit := sorry
+mutual
+partial def instantiateLeft (Γ : Context) (ᾱ : UId) (σ : TypeScheme) : InferM (Context × TypeScheme.Subtyping (Monotype.uvar ᾱ) σ) := do
+  match σ with
+  | .quant β κ σ =>
+    let item : ContextItem := .typevar β κ
+    let ⟨Γ, _⟩ ← instantiateLeft (item::Γ) ᾱ σ
+    let (before, after) ← split Γ item
+    return ⟨before, sorry⟩
+  | Monotype.uvar β => -- NOTE: I sadly couldn't find unicode for β with macron :(
+    let .some itemᾱ@(.xunivar _ κᾱ) := lookupUniVar ᾱ Γ
+      | panic! "unknown unification variable"
+    let (beforeᾱ, afterᾱ) ← split Γ itemᾱ
+    -- β needs to occur after ᾱ.
+    let .some itemβ@(.xunivar _ κβ) := lookupUniVar β afterᾱ
+      | panic! "unknown unification variable"
+    if κᾱ = κβ then
+      let (beforeβ, afterβ) ← split afterᾱ itemβ
+      let Γout : Context := afterβ++(.sunivar β (.uvar ᾱ))::beforeβ++beforeᾱ -- same as Γ but with β solved to ᾱ
+      return ⟨Γout, sorry⟩
+    else
+      throw $ .fail "attempted co-instantiate unification variables of different kinds"
+  | Monotype.arr τ₁ τ₂ =>
+    let .some item@(.xunivar _ κ) := lookupUniVar ᾱ Γ
+      | panic! "unknown unification variable"
+    let (before, after) ← split Γ item
+    let α₁ ← fresh; let α₂ ← fresh
+    let κ₁ ← inferKind Γ τ₁; let κ₂ ← inferKind Γ τ₂
+    let ⟨Γ', _⟩ ← instantiateRight (after++(.sunivar ᾱ (.arr (.uvar α₁) (.uvar α₂)))::(.xunivar α₁ κ₁)::(.xunivar α₂ κ₂)::before) τ₁ α₁
+    -- TODO: solve τ₂ with Γ before the next instantiation
+    let ⟨Γout, _⟩ ← instantiateLeft Γ' α₂ τ₂
+    return ⟨Γout, sorry⟩
+  | QualifiedType.mono τ =>
+    let .some item@(.xunivar _ κ) := lookupUniVar ᾱ Γ
+      | panic! "unknown unification variable"
+    let (before, after) ← split Γ item
+    checkKind before τ κ
+    return ⟨after++(.sunivar ᾱ τ)::before, sorry⟩
+  | QualifiedType.qual ψ γ => panic! "unimplemented"
 
-def instantiateRight (σ : TypeScheme) (ᾱ : UniVar) : InferM Unit := sorry
+
+partial def instantiateRight (Γ : Context) (σ : TypeScheme) (ᾱ : UId) : InferM (Context × TypeScheme.Subtyping σ (Monotype.uvar ᾱ)) := do
+  match σ with
+  | .quant β κ σ =>
+    let βhat ← fresh
+    let marker : ContextItem := .mark βhat
+    let ⟨Γ, _⟩ ← instantiateRight ((.xunivar βhat κ)::Γ) (σ.subst (.uvar βhat) β) ᾱ
+    let (before, after) ← split Γ marker
+    return ⟨before, sorry⟩
+  | Monotype.uvar β => -- NOTE: I sadly couldn't find unicode for β with macron :(
+    let .some itemᾱ@(.xunivar _ κᾱ) := lookupUniVar ᾱ Γ
+      | panic! "unknown unification variable"
+    let (beforeᾱ, afterᾱ) ← split Γ itemᾱ
+    -- β needs to occur after ᾱ.
+    let .some itemβ@(.xunivar _ κβ) := lookupUniVar β afterᾱ
+      | panic! "unknown unification variable"
+    if κᾱ = κβ then
+      let (beforeβ, afterβ) ← split afterᾱ itemβ
+      let Γout : Context := afterβ++(.sunivar β (.uvar ᾱ))::beforeβ++beforeᾱ -- same as Γ but with β solved to ᾱ
+      return ⟨Γout, sorry⟩
+    else
+      throw $ .fail "attempted co-instantiate unification variables of different kinds"
+  | Monotype.arr τ₁ τ₂ =>
+    let .some item@(.xunivar _ κ) := lookupUniVar ᾱ Γ
+      | panic! "unknown unification variable"
+    let (before, after) ← split Γ item
+    let α₁ ← fresh; let α₂ ← fresh
+    let κ₁ ← inferKind Γ τ₁; let κ₂ ← inferKind Γ τ₂
+    let ⟨Γ', _⟩ ← instantiateLeft (after++(.sunivar ᾱ (.arr (.uvar α₁) (.uvar α₂)))::(.xunivar α₁ κ₁)::(.xunivar α₂ κ₂)::before) α₁ τ₁
+    -- TODO: solve τ₂ with Γ before the next instantiation
+    let ⟨Γout, _⟩ ← instantiateRight Γ' τ₂ α₂
+    return ⟨Γout, sorry⟩
+  | QualifiedType.mono τ =>
+    let .some item@(.xunivar _ κ) := lookupUniVar ᾱ Γ
+      | panic! "unknown unification variable"
+    let (before, after) ← split Γ item
+    checkKind before τ κ
+    return ⟨after++(.sunivar ᾱ τ)::before, sorry⟩
+  | QualifiedType.qual ψ γ => panic! "unimplemented"
+end
 
 mutual
 
@@ -453,7 +529,7 @@ def rowEquivalenceAndSubtyping (Γ : Context) (ρ₀ μ ρ₁ : Monotype)
       (Monotype.app (Monotype.prodOrSum Ξ μ) ρ₁))) := sorry
 
 partial
-def subtype (Γ : Context) (σ₀ σ₁ : TypeScheme) : InferM ((Γout : Context) × σ₀.Subtyping σ₁) :=
+def subtype (Γ : Context) (σ₀ σ₁ : TypeScheme) : InferM (Context × σ₀.Subtyping σ₁) :=
   open TypeScheme in open Monotype in do
   if h : σ₀ = σ₁ then
     return ⟨Γ, by rw [h]⟩
@@ -466,12 +542,15 @@ def subtype (Γ : Context) (σ₀ σ₁ : TypeScheme) : InferM ((Γout : Context
     let ⟨Γout, st⟩ ← subtype ((.typevar i κ)::Γ) σ₀ σ₁'
     return ⟨Γout, st.schemeR⟩
   | uvar ᾱ, σ₁ =>
-    -- TODO: Account for substitutions in the return type or something so that these can work?
-    instantiateLeft ᾱ σ₁
-    sorry
+    let .some _ := lookupUniVar ᾱ Γ
+      | panic! "found unknown unification variable"
+    -- TODO: check that σ₁ does not know about ᾱ.
+    instantiateLeft Γ ᾱ σ₁
   | σ₀, uvar ᾱ =>
-    instantiateRight σ₁ ᾱ
-    sorry
+    let .some _ := lookupUniVar ᾱ Γ
+      | panic! "found unknown unification variable"
+    -- TODO: check that σ₀ does not know about ᾱ.
+    instantiateRight Γ σ₀ ᾱ
   | arr τ₀ τ₁, arr τ₂ τ₃ =>
     let ⟨Γ', sₗ⟩ ← subtype Γ τ₂ τ₀
     let ⟨Γout, sᵣ⟩ ← subtype Γ' τ₁ τ₃
@@ -655,12 +734,11 @@ partial def infer (Γ : Context) (e : Term) : InferM ((Γ' : Context) × (σ : T
     let ⟨Γ, c⟩ ← constraint Γ <| (.concat ρₘ μ ρₙ ρ)
     return ⟨Γ, _, tₘ.elim tₙ c⟩
   | .member m =>
-    let { TC := tc, κ, .. } ← getClass m
+    let { TC := tc, κ, σ, .. } ← getClass m
     let (Γout, τ) ← freshType Γ κ
     -- TODO: push the constraint into the environment and get a proof for it.
     let s : ((Monotype.tc tc).app τ).ConstraintSolution := sorry
-    let σ' : TypeScheme := sorry
-    return ⟨Γout, σ', Term.Typing.member s⟩
+    return ⟨Γout, σ, Term.Typing.member s⟩
   | .ind ϕ ρ l t rp ri rn M N =>
     let .arr κ κ' ← inferKind Γ ϕ | throw <| .panic "ind function with non-arrow kind"
     if κ' ≠ .star then
@@ -719,9 +797,7 @@ partial def inferApp (Γ : Context) (σ : TypeScheme) (e : Term) : InferM (Infer
     let ᾱ ← fresh;
     let ⟨Γout, σ', gen⟩ ← inferApp ((.xunivar ᾱ κ)::Γ) (σ.subst (.uvar ᾱ) α) e
     return ⟨Γout, σ', fun e' (t' : e'.Typing (TypeScheme.quant α κ σ)) =>
-      gen e' (t'.sub (
-        sorry
-      ))
+      gen e' (t'.sub (.schemeL .refl))
     ⟩
   | Monotype.uvar ᾱ =>
     let .some item := lookupUniVar ᾱ Γ

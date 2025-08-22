@@ -24,7 +24,7 @@ namespace Monotype
 
 def subst (τ τ' : Monotype) (i : TId) : Monotype := match τ with
   | var i' => if i == i' then τ' else var i'
-  | uvar _ => panic! "Encountered unexpected unification variable."
+  | uvar x => uvar x
   | lam i' κ τ'' => lam i' κ <| if i == i' then τ'' else subst τ'' τ' i
   | app ϕ τ'' => app (subst ϕ τ' i) (subst τ'' τ' i)
   | arr τ₀ τ₁ => app (subst τ₀ τ' i) (subst τ₁ τ' i)
@@ -40,6 +40,38 @@ def subst (τ τ' : Monotype) (i : TId) : Monotype := match τ with
   | all ϕ => all <| subst ϕ τ' i
   | ind ρ => ind <| subst ρ τ' i
   | split ϕ ρ₀ ρ₁ ρ₂ => split (subst ϕ τ' i) (subst ρ₀ τ' i) (subst ρ₁ τ' i) (subst ρ₂ τ' i)
+  | list => list
+  | int => int
+  | str => str
+  | «alias» s => «alias» s
+termination_by sizeOf τ
+decreasing_by
+  all_goals simp_arith
+  all_goals (
+    apply Nat.le_add_right_of_le
+    apply Nat.le_of_lt <| Nat.lt_of_le_of_lt (m := sizeOf (ξ, τ'')) _ <| List.sizeOf_lt_of_mem ..
+    · simp_arith
+    · assumption
+  )
+
+def solve (τ τ' : Monotype) (x : UId) : Monotype := match τ with
+  | var i => var i
+  | uvar x' => if x == x' then τ' else uvar x'
+  | lam i κ τ'' => lam i κ <| solve τ'' τ' x
+  | app ϕ τ'' => app (solve ϕ τ' x) (solve τ'' τ' x)
+  | arr τ₀ τ₁ => app (solve τ₀ τ' x) (solve τ₁ τ' x)
+  | label s => label s
+  | floor ξ => floor <| solve ξ τ' x
+  | comm u => comm u
+  | row ξτ''s κ? => row (ξτ''s.mapMem fun (ξ, τ'') _ => (solve ξ τ' x, solve τ'' τ' x)) κ?
+  | prodOrSum Ξ μ => prodOrSum Ξ <| solve μ τ' x
+  | lift ϕ => lift <| solve ϕ τ' x
+  | contain ρ₀ μ ρ₁ => contain (solve ρ₀ τ' x) (solve μ τ' x) (solve ρ₁ τ' x)
+  | concat ρ₀ μ ρ₁ ρ₂ => concat (solve ρ₀ τ' x) (solve μ τ' x) (solve ρ₁ τ' x) (solve ρ₂ τ' x)
+  | tc s => tc s
+  | all ϕ => all <| solve ϕ τ' x
+  | ind ρ => ind <| solve ρ τ' x
+  | split ϕ ρ₀ ρ₁ ρ₂ => split (solve ϕ τ' x) (solve ρ₀ τ' x) (solve ρ₁ τ' x) (solve ρ₂ τ' x)
   | list => list
   | int => int
   | str => str
@@ -424,6 +456,10 @@ def subst (γ : QualifiedType) (τ : Monotype) (i : TId) : QualifiedType := matc
   | .mono τ' => τ'.subst τ i
   | .qual ψ γ' => subst γ' τ i |>.qual <| ψ.subst τ i
 
+def solve (γ : QualifiedType) (τ : Monotype) (x : UId) : QualifiedType := match γ with
+  | .mono τ' => τ'.solve τ x
+  | .qual ψ γ' => solve γ' τ x |>.qual <| ψ.solve τ x
+
 end QualifiedType
 
 open QualifiedType
@@ -434,6 +470,10 @@ def subst (σ : TypeScheme) (τ : Monotype) (i : TId) : TypeScheme := match σ w
   | .qual γ => γ.subst τ i
   | .quant i' κ σ' =>
     .quant i' κ <| if i == i' then σ' else subst σ' τ i
+
+def solve (σ : TypeScheme) (τ : Monotype) (x : UId) : TypeScheme := match σ with
+  | .qual γ => γ.solve τ x
+  | .quant i κ σ' => .quant i κ <| solve σ' τ x
 
 inductive Subtyping : TypeScheme → TypeScheme → Type where
   | refl : Subtyping σ σ
