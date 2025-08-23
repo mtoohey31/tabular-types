@@ -171,8 +171,13 @@ abbrev IndexedStronglyNormalizing : Environment → Kind → «Type» → Prop
   | Δ, [[K₁ ↦ K₂]], A =>
     [[Δ ⊢ A : K₁ ↦ K₂]] ∧ ∀ B Δ', Δ ≤ Δ' → [[Δ' ⊢ SN K₁ (B)]] → [[Δ' ⊢ SN K₂ (A B)]]
   | Δ, [[L K]], A =>
-    [[Δ ⊢ A : L K]] ∧ [[Δ ⊢ SN(A)]] ∧ ∀ A' n b,
-      [[Δ ⊢ A ->* {</ A'@i // i in [:n] /> </ : K // b />}]] → ∀ i ∈ [:n], [[Δ ⊢ SN K (A'@i)]]
+    [[Δ ⊢ A : L K]] ∧ [[Δ ⊢ SN(A)]] ∧
+      (∀ A' n b,
+        [[Δ ⊢ A ->* {</ A'@i // i in [:n] /> </ : K // b />}]] → ∀ i ∈ [:n], [[Δ ⊢ SN K (A'@i)]]) ∧
+      (∀ A' B K',
+        [[Δ ⊢ A ->* A' ⟦B⟧]] → [[Δ ⊢ B : L K']] → [[Δ ⊢ SN K' ↦ K (A')]] ∧ [[Δ ⊢ SN L K' (B)]])
+termination_by 0
+decreasing_by all_goals sorry
 
 nosubst
 nonterminal Subst, δ :=
@@ -223,11 +228,14 @@ judgement_syntax "neutral " A : Type.Neutral
 
 abbrev Type.Neutral A :=
   (∀ K A', A ≠ [[λ a : K. A']]) ∧
-    ∀ A' n K b, A = [[{</ A'@i // i in [:n] /> </ : K // b />}]] → ∀ i ∈ [:n], Neutral (A' i)
+    (∀ A' n K b, A = [[{</ A'@i // i in [:n] /> </ : K // b />}]] → ∀ i ∈ [:n], Neutral (A' i)) ∧
+    ∀ A' B, A = [[A' ⟦B⟧]] → Neutral A' ∧ Neutral B
 termination_by sizeOf A
 decreasing_by
-  rename A = _ => eq
-  simp_arith [eq]
+  all_goals (
+    rename A = _ => eq
+    simp_arith [eq]
+  )
   apply Nat.le_add_right_of_le
   apply Nat.le_of_lt
   apply List.sizeOf_lt_of_mem
