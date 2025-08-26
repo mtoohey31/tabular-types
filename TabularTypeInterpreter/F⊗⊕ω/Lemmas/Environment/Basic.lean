@@ -281,6 +281,24 @@ theorem append_elim : [[ a: K ∈ Δ, Δ' ]] → ([[ a ∉ dom(Δ') ]] ∧ [[ a:
       specialize @ih (by simp_all [typeVarDom]) (by cases hIn; simp_all)
       cases ih <;> aesop (add safe constructors TypeVarInEnvironment)
 
+theorem append_inl (aKin : [[a : K ∈ Δ]]) (anin : [[a ∉ dom(Δ')]]) : [[a : K ∈ Δ, Δ']] := by
+  match Δ' with
+  | [[ε]] => exact aKin
+  | [[Δ'', a' : K']] =>
+    let ⟨ane, anin'⟩ := List.not_mem_cons.mp anin
+    exact .typeVarExt (append_inl aKin anin') ane
+  | [[Δ'', x : A]] => exact .termVarExt <| append_inl aKin anin
+
+theorem append_inr (aKin : [[a : K ∈ Δ']]) : [[a : K ∈ Δ, Δ']] := by
+  match Δ' with
+  | [[ε]] => nomatch aKin
+  | [[Δ'', a' : K']] => cases aKin with
+    | head => exact .head
+    | typeVarExt aKin' ane => exact .typeVarExt (append_inr aKin') ane
+  | [[Δ'', x : A]] =>
+    let .termVarExt aKin' := aKin
+    exact .termVarExt <| append_inr aKin'
+
 open Environment in
 theorem weakening (h: [[ a: K ∈ Δ, Δ'' ]]) (fresh: ∀a ∈ Δ'.typeVarDom, a ∉ Δ.typeVarDom): [[ a: K ∈ Δ, Δ', Δ'' ]] := by
   induction Δ' generalizing Δ Δ''

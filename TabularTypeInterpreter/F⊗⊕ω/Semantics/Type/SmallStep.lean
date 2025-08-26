@@ -153,31 +153,27 @@ judgement_syntax Δ " ⊢ " A " <->* " B : EqSmallStep (tex := s!"{Δ} \\, \\lot
 
 abbrev EqSmallStep := fun Δ => Relation.EqvGen (SmallStep Δ)
 
-judgement_syntax Δ " ⊢ " "SN" "(" A ")" : StronglyNormalizing
+judgement_syntax Δ " ⊢ " "SN" "(" A ")" : StronglyNormalizing'
 
-abbrev StronglyNormalizing := fun Δ => Acc (Rel.inv (SmallStep Δ))
+abbrev StronglyNormalizing' Δ := Acc <| Rel.inv <| SmallStep Δ
 
-judgement_syntax Δ " ⊢" n " SN" "(" A ")" : StronglyNormalizingIn (tex := s!"{Δ} \\, \\lottsym\{⊢}_\{{n}} \\, \\lottkw\{SN} \\lottsym\{(} {A} \\lottsym\{)}")
+judgement_syntax "SN" "(" A ")" : StronglyNormalizing
 
-inductive StronglyNormalizingIn : Environment → Nat → «Type» → Prop where
-  | intro (Bns : List («Type» × Nat)) (eb : ∀ {B}, (∃ n, (B, n) ∈ Bns) ↔ [[Δ ⊢ A -> B]])
-    (sni : (∀ Bn ∈ Bns, StronglyNormalizingIn Δ Bn.snd Bn.fst))
-    : StronglyNormalizingIn Δ (Bns.map Prod.snd |>.max?.map (· + 1) |>.getD 0) A
+abbrev StronglyNormalizing := StronglyNormalizing' .empty
 
-judgement_syntax Δ " ⊢ " "SN" K "(" A ")" : IndexedStronglyNormalizing (tex := s!"{Δ} \\, \\lottsym\{⊢} \\, \\lottkw\{SN}_\{{K}} \\lottsym\{(} {A} \\lottsym\{)}")
+judgement_syntax "SN" n "(" A ")" : StronglyNormalizingIn
 
-abbrev IndexedStronglyNormalizing : Environment → Kind → «Type» → Prop
-  | Δ, [[*]], A => [[Δ ⊢ A : *]] ∧ [[Δ ⊢ SN(A)]]
-  | Δ, [[K₁ ↦ K₂]], A =>
-    [[Δ ⊢ A : K₁ ↦ K₂]] ∧ ∀ B Δ', Δ ≤ Δ' → [[Δ' ⊢ SN K₁ (B)]] → [[Δ' ⊢ SN K₂ (A B)]]
-  | Δ, [[L K]], A =>
-    [[Δ ⊢ A : L K]] ∧ [[Δ ⊢ SN(A)]] ∧
-      (∀ A' n b,
-        [[Δ ⊢ A ->* {</ A'@i // i in [:n] /> </ : K // b />}]] → ∀ i ∈ [:n], [[Δ ⊢ SN K (A'@i)]]) ∧
-      (∀ A' B K',
-        [[Δ ⊢ A ->* A' ⟦B⟧]] → [[Δ ⊢ B : L K']] → [[Δ ⊢ SN K' ↦ K (A')]] ∧ [[Δ ⊢ SN L K' (B)]])
-termination_by 0
-decreasing_by all_goals sorry
+inductive StronglyNormalizingIn : Nat → «Type» → Prop where
+  | intro (Bns : List («Type» × Nat)) (eb : ∀ {B}, (∃ n, (B, n) ∈ Bns) ↔ [[ε ⊢ A -> B]])
+    (sni : (∀ Bn ∈ Bns, StronglyNormalizingIn Bn.snd Bn.fst))
+    : StronglyNormalizingIn (Bns.map Prod.snd |>.max?.map (· + 1) |>.getD 0) A
+
+judgement_syntax "SN" K "(" A ")" : IndexedStronglyNormalizing
+
+abbrev IndexedStronglyNormalizing : Kind → «Type» → Prop
+  | [[*]], A => [[ε ⊢ A : *]] ∧ [[SN(A)]]
+  | [[K₁ ↦ K₂]], A => [[ε ⊢ A : K₁ ↦ K₂]] ∧ ∀ B, [[SN K₁ (B)]] → [[SN K₂ (A B)]]
+  | [[L K]], A => [[ε ⊢ A : L K]]
 
 nosubst
 nonterminal Subst, δ :=
@@ -219,10 +215,10 @@ def freeTypeVars : Subst → List TypeVarId
 
 end Subst
 
-judgement_syntax δ " ⊨ " Δ " ⊣ " Δ' : SubstSatisfies
+judgement_syntax δ " ⊨ " Δ : SubstSatisfies
 
-judgement SubstSatisfies := fun (δ : Subst) Δ Δ' => δ.dom.Unique ∧ δ.dom ⊆ Δ.typeVarDom ∧
-    ∀ a K, [[a : K ∈ Δ]] → IndexedStronglyNormalizing Δ' K (δ (Type.var a))
+judgement SubstSatisfies := fun (δ : Subst) Δ => δ.dom.Unique ∧ δ.dom = Δ.typeVarDom ∧
+    ∀ a K, [[a : K ∈ Δ]] → IndexedStronglyNormalizing K (δ (Type.var a))
 
 judgement_syntax "neutral " A : Type.Neutral
 
