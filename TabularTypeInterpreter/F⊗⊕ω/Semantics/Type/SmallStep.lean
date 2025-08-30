@@ -173,6 +173,60 @@ inductive StronglyNormalizingToList (P : «Type» → Prop) : «Type» → Prop 
   | step : (∀ B, [[ε ⊢ A -> B]] → StronglyNormalizingToList P B) → (∀ As K?, A ≠ Type.list As K?) →
       StronglyNormalizingToList P A
 
+judgement_syntax "SN" K "(" A ")" : IndexedStronglyNormalizing
+
+abbrev IndexedStronglyNormalizing : Kind → «Type» → Prop
+  | [[*]], A => [[ε ⊢ A : *]] ∧ [[SN(A)]]
+  | [[K₁ ↦ K₂]], A => [[ε ⊢ A : K₁ ↦ K₂]] ∧ ∀ B, [[SN K₁ (B)]] → [[SN K₂ (A B)]]
+  | [[L K]], A =>
+    [[ε ⊢ A : L K]] ∧ StronglyNormalizingToList (fun B => [[SN K (B)]]) A ∧
+      ∀ A' B', [[ε ⊢ A ->* A' ⟦B'⟧]] → ∃ C, [[SN K (A' C)]]
+
+nosubst
+nonterminal Subst, δ :=
+  | "ε"              : empty
+  | δ ", " A " / " a : ext (id a)
+
+namespace Subst
+
+def find? (δ : Subst) (a : TypeVarId) : Option «Type» := match δ with
+  | .empty => none
+  | .ext δ' A a' => if a = a' then A else find? δ' a
+
+def apply (δ : Subst) : «Type» → «Type»
+  | .var a => match a with
+    | .bound n => .var <| .bound n
+    | .free a => if let some A := δ.find? a then
+        A
+      else
+        .var <| .free a
+  | .lam K A => .lam K <| apply δ A
+  | .app A B => .app (apply δ A) (apply δ B)
+  | .forall K A => .forall K <| apply δ A
+  | .arr A B => .arr (apply δ A) (apply δ B)
+  | .list As K? => .list (As.mapMem fun A _ => apply δ A) K?
+  | .listApp A B => .listApp (apply δ A) (apply δ B)
+  | .prod A => .prod <| apply δ A
+  | .sum A => .sum <| apply δ A
+
+instance : CoeFun Subst (fun _ => «Type» → «Type») where
+  coe := Subst.apply
+
+def «dom» : Subst → List TypeVarId
+  | .empty => []
+  | .ext δ _ a => a :: δ.dom
+
+def freeTypeVars : Subst → List TypeVarId
+  | .empty => []
+  | .ext δ A _ => A.freeTypeVars ++ δ.freeTypeVars
+
+end Subst
+
+judgement_syntax δ " ⊨ " Δ : SubstSatisfies
+
+judgement SubstSatisfies := fun (δ : Subst) Δ => δ.dom.Unique ∧ δ.dom = Δ.typeVarDom ∧
+    ∀ a K, [[a : K ∈ Δ]] → IndexedStronglyNormalizing K (δ (Type.var a))
+
 judgement_syntax "neutral " A : Type.Neutral
 
 abbrev Type.Neutral A :=
