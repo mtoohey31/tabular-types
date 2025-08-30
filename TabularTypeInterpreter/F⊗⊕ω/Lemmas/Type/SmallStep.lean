@@ -1874,6 +1874,11 @@ theorem preserve_lc (st : [[Δ ⊢ A ->* B]]) (Alc : A.TypeVarLocallyClosed) : B
   | refl => exact Alc
   | tail _ st ih => exact st.preserve_lc ih
 
+theorem preserve_lc_rev (st : [[Δ ⊢ A ->* B]]) (Blc : B.TypeVarLocallyClosed) : A.TypeVarLocallyClosed := by
+  induction st with
+  | refl => exact Blc
+  | tail _ st ih => exact ih <| st.preserve_lc_rev Blc
+
 open «Type» in
 theorem TypeVar_subst_var (Amst : [[Δ, a : K ⊢ A ->* B]]) (a'ninΔ : [[a' ∉ dom(Δ)]])
   : [[Δ, a' : K ⊢ A[a' / a] ->* B[a' / a] ]] := by
@@ -3733,17 +3738,12 @@ end StronglyNormalizingIn
 
 judgement_syntax "SN" K "(" A ")" : IndexedStronglyNormalizing
 
-mutual
-
 abbrev IndexedStronglyNormalizing : Kind → «Type» → Prop
   | [[*]], A => [[ε ⊢ A : *]] ∧ [[SN(A)]]
   | [[K₁ ↦ K₂]], A => [[ε ⊢ A : K₁ ↦ K₂]] ∧ ∀ B, [[SN K₁ (B)]] → [[SN K₂ (A B)]]
   | [[L K]], A =>
-    [[ε ⊢ A : L K]] ∧ (StronglyNormalizingToList (fun B => [[SN K (B)]])) A ∧
-      ∀ A' B' K', [[ε ⊢ A ->* A' ⟦B'⟧]] → [[ε ⊢ A' : K' ↦ K]] →
-        ∃ C, [[ε ⊢ C : K']] ∧ [[SN(C)]] ∧ [[SN K (A' C)]]
-
-end
+    [[ε ⊢ A : L K]] ∧ StronglyNormalizingToList (fun B => [[SN K (B)]]) A ∧
+      ∀ A' B', [[ε ⊢ A ->* A' ⟦B'⟧]] → ∃ C, [[SN K (A' C)]]
 
 nosubst
 nonterminal Subst, δ :=
@@ -3924,8 +3924,8 @@ theorem preservation (Aisn : [[SN K (A)]]) (Ast : [[ε ⊢ A -> B]]) : [[SN K (B
   case list =>
     let ⟨Aki, h₀, h₁⟩ := Aisn
     refine ⟨Ast.preservation Aki, StronglyNormalizingToList.preservation h₀ Ast preservation, ?_⟩
-    intro _ _ _ mst
-    exact h₁ _ _ _ <| .head Ast mst
+    intro _ _ mst
+    exact h₁ _ _ <| .head Ast mst
 
 theorem MultiStep_preservation (Aisn : [[SN K (A)]]) (Ast : [[ε ⊢ A ->* B]]) : [[SN K (B)]] := by
   induction Ast with
@@ -3964,7 +3964,7 @@ theorem Type.with_Kind.IndexedStronglyNormalizing
   | [[L K']] =>
     rw [IndexedStronglyNormalizing]
     refine ⟨with_Kind.Kinding, .refl nofun, ?_⟩
-    intro _ _ _ mst
+    intro _ _ mst
     nomatch mst.eq_of_IsValue with_Kind.IsValue
 termination_by (sizeOf K, 0)
 decreasing_by
@@ -4020,10 +4020,10 @@ theorem IndexedStronglyNormalizing.preservation_rev (An : A.Neutral)
         | refl h => exact h _ <| List.mem_append.mpr <| .inr <| .head ..
         | step _ ne => nomatch ne _ _
       · case neg ne => exact .step (h · · |>.right.left) (not_exists.mp <| not_exists.mp ne ·)
-    · intro A' B K'' mst
+    · intro A' B mst
       rcases Relation.ReflTransGen.cases_head mst with rfl | ⟨_, st, mst'⟩
       · nomatch An.right.right _ _
-      · exact h _ st |>.right.right _ _ _ mst'
+      · exact h _ st |>.right.right _ _ mst'
 termination_by (sizeOf K, 1)
 decreasing_by
   · exact Prod.Lex.right _ Nat.one_pos
@@ -4526,7 +4526,7 @@ theorem list {b : Bool} (Aisn : ∀ i ∈ [:n], [[SN K (A@i)]]) (h : n ≠ 0 ∨
     intro A mem
     rcases Range.mem_of_mem_map mem with ⟨_, mem', rfl⟩
     exact Aisn _ mem'
-  · intro _ _ _ mst
+  · intro _ _ mst
     let ⟨_, eq, _⟩ := mst.preserve_shape_list
     nomatch eq
 
@@ -4560,61 +4560,39 @@ theorem comp (Aisn : [[SN K₂ ↦ K₃ (A)]]) (Bisn : [[SN K₁ ↦ K₂ (B)]])
 
 end IndexedStronglyNormalizing
 
+namespace «Type»
+
 @[simp]
-def Type.right_nested_listApps : «Type» → Nat
+def right_nested_listApps : «Type» → Nat
   | .listApp _ A => A.right_nested_listApps + 1
   | _ => 0
 
+@[simp]
+abbrev comp (K : Kind) (A B : «Type») : «Type» := [[λ a : K. A (B a$0)]]
+
+end «Type»
+
 namespace IndexedStronglyNormalizing
 
-theorem listApp (Aisn : [[SN K₁ ↦ K₂ (A)]]) (Bisn : [[SN L K₁ (B)]])
-  : [[SN L K₂ (A ⟦B⟧)]] := by
+theorem listApp (Aisn : [[SN K₁ ↦ K₂ (A)]]) (Bisn : [[SN L K₁ (B)]]) : [[SN L K₂ (A ⟦B⟧)]] := by
   rw [IndexedStronglyNormalizing]
   refine ⟨.listApp Aisn.to_Kinding Bisn.to_Kinding, ?_, ?_⟩
   · let ⟨_, Asni⟩ := Aisn.to_In
     let ⟨_, Bsni⟩ := Bisn.to_In
     apply go₀ Asni Aisn.to_Kinding (Bisn.right.left.imp (Aisn.right _ ·)) Bsni Bisn.to_Kinding
-    intro B₀ B₁ K' mst B₀ki
-    let ⟨C, Cki, Csn, B₀Cisn⟩ := Bisn.right.right _ _ _ mst B₀ki
-    exact ⟨_, Cki, Csn, Aisn.right _ B₀Cisn⟩
-  · intro A' B' K' mst A'ki
+    intro B₀ B₁ mst
+    let ⟨C, B₀Cisn⟩ := Bisn.right.right _ _ mst
+    exact ⟨_, Aisn.right _ B₀Cisn⟩
+  · intro A' B' mst
     let ⟨_, msti⟩ := mst.to_In
-    apply go₁ Aisn Bisn msti A'ki
-    -- generalize Ceq : [[A ⟦B⟧]] = C, C'eq : [[A' ⟦B'⟧]] = C' at mst
-    -- induction mst using Relation.ReflTransGen.head_induction_on generalizing A B with
-    -- | refl =>
-    --   cases Ceq
-    --   cases C'eq
-    --   cases Aisn.to_Kinding.deterministic B'ki
-    --   exact ⟨
-    --     _,
-    --     Type.with_Kind.Kinding,
-    --     Type.with_Kind.StronglyNormalizing,
-    --     Aisn.right _ Type.with_Kind.IndexedStronglyNormalizing
-    --   ⟩
-    -- | head st mst' ih =>
-    --   cases Ceq
-    --   cases C'eq
-    --   cases st with
-    --   | listAppList =>
-    --     let ⟨_, eq, _⟩ := MultiSmallStep.preserve_shape_list mst'
-    --     nomatch eq
-    --   | listAppId => sorry
-    --   | listAppComp _ A₁ki =>
-    --     let .listApp A₁ki' _ := Bisn.to_Kinding
-    --     cases A₁ki.deterministic A₁ki'
-    --     let ⟨C, Cki, Csn, isn⟩ := Bisn.right.right _ _ _ .refl A₁ki
-    --     apply ih _ _ rfl
-    --     -- exact ⟨_, Aisn.right _ A₁B''isn⟩
-    --   | listAppl Ast => exact ih (Aisn.preservation Ast) Bisn rfl
-    --   | listAppr Bst => exact ih Aisn (Bisn.preservation Bst) rfl
-where
-  go₁ {A B A' B' n K'} (Aisn : [[SN K₁ ↦ K₂ (A)]]) (Bisn : [[SN L K₁ (B)]])
-    (msti : [[ε ⊢n A ⟦B⟧ ->* A' ⟦B'⟧]]) (A'ki : [[ε ⊢ A' : K' ↦ K₂]])
-    : ∃ C, [[ε ⊢ C : K']] ∧ [[SN(C)]] ∧ [[SN K₂ (A' C)]] := by
-    rcases msti.cases_head with ⟨rfl, eq⟩ | ⟨_, _, rfl, st, msti'⟩
-    -- cases Relation.IndexedReflTransGen.cases_head msti with
-    · cases eq
+    exact go₁ (A₁Ks := []) Aisn Bisn.to_Kinding .refl msti Bisn.right.right Bisn.right.right <|
+      Aisn.right _ Type.with_Kind.IndexedStronglyNormalizing
+    /-
+    generalize Ceq : [[A ⟦B⟧]] = C, C'eq : [[A' ⟦B'⟧]] = C' at mst
+    induction mst using Relation.ReflTransGen.head_induction_on generalizing A B with
+    | refl =>
+      cases Ceq
+      cases C'eq
       cases Aisn.to_Kinding.deterministic A'ki
       exact ⟨
         _,
@@ -4622,25 +4600,110 @@ where
         Type.with_Kind.StronglyNormalizing,
         Aisn.right _ Type.with_Kind.IndexedStronglyNormalizing
       ⟩
-    · cases st with
+    | head st mst' ih =>
+      cases Ceq
+      cases C'eq
+      cases st with
       | listAppList =>
-        let ⟨_, eq, _⟩ := MultiSmallStep.preserve_shape_list <| .of_In msti'
+        let ⟨_, eq, _⟩ := MultiSmallStep.preserve_shape_list mst'
         nomatch eq
-      | listAppId => sorry
+      | listAppId =>
+        let .lam I aki := Aisn.to_Kinding
+        let ⟨a, anin⟩ := I.exists_fresh
+        specialize aki a anin
+        simp [Type.TypeVar_open] at aki
+        let .var .head := aki
+        exact Bisn.right.right _ _ _ mst' A'ki
       | listAppComp _ A₁ki =>
-        let .listApp A₁ki' _ := Bisn.to_Kinding
+        let .listApp A₁ki' _ (A := A₁) := Bisn.to_Kinding
         cases A₁ki.deterministic A₁ki'
-        let ⟨C, Cki, Csn, isn⟩ := Bisn.right.right _ _ _ .refl A₁ki
-        apply go₁
-        -- refine ⟨_, ?_, ?_, Aisn.right _ isn⟩
+        clear ih
+        have := Bisn.right.right
+        -- apply go₁ Aisn Bisn.to_Kinding
+        -- let ⟨C, Cki, Csn, isn⟩ := Bisn.right.right _ _ _ .refl A₁ki
+        -- have := Aisn.right _ isn
+        -- refine ⟨[[A₁ C]], .app sorry Cki, sorry, this⟩
         -- apply ih _ _ rfl
         -- exact ⟨_, Aisn.right _ A₁B''isn⟩
       | listAppl Ast => exact ih (Aisn.preservation Ast) Bisn rfl
       | listAppr Bst => exact ih Aisn (Bisn.preservation Bst) rfl
+  -/
+where
+  go₁ {A A₁Ks AA₁ B A' B' n K₀ C} (Aisn : [[SN K₁ ↦ K₂ (A)]]) (Bki : [[ε ⊢ B : L K₀]])
+    (mst : MultiSmallStep .empty (List.foldr (fun (A₁, K) acc => acc.comp K A₁) A A₁Ks) AA₁)
+    (msti : [[ε ⊢n AA₁ ⟦B⟧ ->* A' ⟦B'⟧]])
+    (h₀ : ∀ B₀ B₁, [[ε ⊢ B ->* B₀ ⟦B₁⟧]] → ∃ C, IndexedStronglyNormalizing K₁ (A₁Ks.foldr (fun (A₁, _) acc => A₁.app acc) [[B₀ C]]))
+    (h₁ : ∀ B₀ B₁, [[ε ⊢ B ->* B₀ ⟦B₁⟧]] → ∃ C, IndexedStronglyNormalizing K₀ [[B₀ C]])
+    (isn : [[SN K₂ (AA₁ C)]]) : ∃ C, [[SN K₂ (A' C)]] := by
+    rcases msti.cases_head with ⟨rfl, eq⟩ | ⟨_, _, rfl, st, msti'⟩
+    · cases eq
+      exact ⟨_, isn⟩
+    · cases st with
+      | listAppList =>
+        let ⟨_, eq, _⟩ := MultiSmallStep.preserve_shape_list <| .of_In msti'
+        nomatch eq
+      | listAppId =>
+        let ⟨C, isn⟩ := h₁ _ _ <| .of_In msti'
+        -- let .app A'ki _ := isn.to_Kinding
+        -- let f := MultiSmallStep.of_In msti' |>.preservation Bki
+        sorry
+      | listAppComp _ A₁ki =>
+        rename_i A₁ K₁' _ B' _
+        let .listApp A₁ki' B'ki := Bki
+        cases A₁ki.deterministic A₁ki'
+        let .app AA₁lc _ := isn.to_Kinding.TypeVarLocallyClosed_of
+        let A₁lc := A₁ki.TypeVarLocallyClosed_of
+        let ⟨C, isn⟩ := h₀ _ _ .refl
+        apply Aisn.right _ at isn
+        apply go₁ (A₁Ks := (A₁, K₁') :: A₁Ks) Aisn B'ki _ msti' _ _ _ (C := C)
+        · simp
+          apply MultiSmallStep.lam [] <| mst.preserve_lc_rev AA₁lc |>.weaken (n := 1).app <|
+            A₁lc.weaken (n := 1).app <| .var_bound Nat.one_pos
+          intro a anin
+          simp [Type.TypeVar_open]
+          refine .app ?_ .refl
+          rw [AA₁lc.TypeVar_open_id, mst.preserve_lc_rev AA₁lc |>.TypeVar_open_id]
+          exact mst.LE_weakening <| .ext .refl nofun
+        · intro B₀ B₁ mst'
+          let .listApp B₀ki _ := mst'.preservation B'ki
+          simp
+          let ⟨C, isn⟩ := h₀ _ _
+            (MultiSmallStep.listApp (A := A₁) .refl mst' |>.tail <| .listAppComp A₁lc B₀ki)
+          refine ⟨C, ?_⟩
+          apply isn.preservation
+          clear * - A₁ki B₀ki A₁lc
+          -- TODO: Need to do snoc induction
+          induction A₁Ks with
+          | nil =>
+            simp
+            let B₀lc := B₀ki.TypeVarLocallyClosed_of
+            have : [[A₁ (B₀ C)]] = [[((A₁ (B₀ a$0))^^C)]] := by
+              simp [Type.Type_open, A₁lc.Type_open_id, B₀lc.Type_open_id]
+            rw [this]
+            apply SmallStep.lamApp _ sorry -- Cki
+            swap
+            apply Kinding.lam []
+            intro a anin
+            simp [Type.TypeVar_open, A₁lc.TypeVar_open_id, B₀lc.TypeVar_open_id]
+            exact A₁ki.LE_weakening (.ext .refl nofun) |>.app <|
+              B₀ki.LE_weakening (.ext .refl nofun) |>.app <| .var .head
+          | cons _ _ ih =>
+            simp
+            sorry
+        · sorry
+
+        -- refine ⟨_, ?_, ?_, Aisn.right _ isn⟩
+        -- apply ih _ _ rfl
+        -- exact ⟨_, Aisn.right _ A₁B''isn⟩
+      | listAppl AA₁st =>
+        exact go₁ Aisn Bki (mst.tail AA₁st) msti' h₀ h₁ <| isn.preservation <| .appl AA₁st
+      | listAppr Bst =>
+        exact go₁ Aisn (Bst.preservation Bki) mst msti' (h₀ · · <| .head Bst ·)
+          (h₁ · · <| .head Bst ·) isn
+
   go₀ {A B m n K₁} (Asni : [[SN m (A)]]) (Aki : [[ε ⊢ A : K₁ ↦ K₂]])
     (Bsntl : StronglyNormalizingToList (fun B' => [[SN K₂ (A B')]]) B) (Bsni : [[SN n (B)]])
-    (Bki : [[ε ⊢ B : L K₁]])
-    (h : ∀ B₀ B₁ K', [[ε ⊢ B ->* B₀ ⟦B₁⟧]] → [[ε ⊢ B₀ : K' ↦ K₁]] → ∃ C, [[ε ⊢ C : K']] ∧ [[SN(C)]] ∧ [[SN K₂ (A (B₀ C))]])
+    (Bki : [[ε ⊢ B : L K₁]]) (h : ∀ B₀ B₁, [[ε ⊢ B ->* B₀ ⟦B₁⟧]] → ∃ C, [[SN K₂ (A (B₀ C))]])
     : StronglyNormalizingToList (fun B => [[SN K₂ (B)]]) [[A ⟦B⟧]] := by
     refine .step ?_ nofun
     intro _ st
@@ -4671,7 +4734,10 @@ where
       let .listApp A₁ki' B'ki (A := A₁) := Bki
       cases A₁ki.deterministic A₁ki'
       let ⟨_, _, _, B'isn, _⟩ := Bsni.listApp_inversion A₁ki B'ki
-      let ⟨C, Cki, Csn, AA₁Cisn⟩ := h _ _ _ .refl A₁ki
+      let ⟨C, AA₁Cisn⟩ := h _ _ .refl
+      let .app Aki' (.app A₁ki'' Cki) := AA₁Cisn.to_Kinding
+      cases Aki.deterministic Aki'
+      cases A₁ki.deterministic A₁ki''
       apply StronglyNormalizing.of_Indexed at AA₁Cisn
       let Alc := Aki.TypeVarLocallyClosed_of
       let A₁lc := A₁ki.TypeVarLocallyClosed_of
@@ -4727,7 +4793,8 @@ where
             refine .step ?_ (not_exists.mp <| not_exists.mp ne ·)
             intro _ st
             exact ih _ (.listAppr st)  (st.preservation B'ki) rfl
-      · intro B₀ B₁ K' mst B₀ki
+      · intro B₀ B₁ mst
+        let .listApp B₀ki _ (K₁ := K') := mst.preservation B'ki
         let B₀lc := B₀ki.TypeVarLocallyClosed_of
         let A₁B₀ki : [[ε ⊢ λ a : K'. A₁ (B₀ a$0) : K' ↦ K₁]] := by
           apply Kinding.lam []
@@ -4735,9 +4802,11 @@ where
           simp [Type.TypeVar_open, A₁lc.TypeVar_open_id, B₀lc.TypeVar_open_id]
           exact A₁ki.LE_weakening (.ext .refl nofun) |>.app <|
             B₀ki.LE_weakening (.ext .refl nofun) |>.app <| .var .head
-        let ⟨C, Cki, Csn, isn⟩ := h _ _ _
-          (MultiSmallStep.listApp .refl mst |>.tail <| .listAppComp A₁lc B₀ki) A₁B₀ki
-        refine ⟨C, Cki, Csn, ?_⟩
+        let ⟨C, isn⟩ := h _ _ <| MultiSmallStep.listApp .refl mst |>.tail <| .listAppComp A₁lc B₀ki
+        refine ⟨C, ?_⟩
+        let .app Aki' (.app A₁B₀ki' Cki) := isn.to_Kinding
+        cases Aki.deterministic Aki'
+        cases A₁B₀ki.deterministic A₁B₀ki'
         replace isn := isn.preservation <| .appr <| .lamApp A₁B₀ki Cki
         simp [Type.Type_open, A₁lc.Type_open_id, B₀lc.Type_open_id] at isn
         apply lam_app _ (.app B₀ki Cki) <| StronglyNormalizing.of_Indexed isn
@@ -4746,13 +4815,11 @@ where
         exact isn
     | listAppl Ast =>
       let ⟨_, Asni', _⟩ := Asni.preservation Ast
-      apply go₀ Asni' (Ast.preservation Aki) (Bsntl.imp (·.preservation <| .appl Ast)) Bsni Bki
-      intro _ _ _ mst ki
-      let ⟨C, Cki, Csn, isn⟩ := h _ _ _ mst ki
-      exact ⟨_, Cki, Csn, isn.preservation <| .appl Ast⟩
+      exact go₀ Asni' (Ast.preservation Aki) (Bsntl.imp (·.preservation <| .appl Ast)) Bsni Bki
+        (h · · · |>.imp (fun _ isn => isn.preservation <| .appl Ast))
     | listAppr Bst =>
       let ⟨_, Bsni', _⟩ := Bsni.preservation Bst
-      apply go₀ Asni Aki _ Bsni' (Bst.preservation Bki) (h · · · <| .head Bst ·)
+      apply go₀ Asni Aki _ Bsni' (Bst.preservation Bki) (h · · <| .head Bst ·)
       apply StronglyNormalizingToList.preservation Bsntl Bst
       intro _ _ isn st
       exact isn.preservation <| .appr st
