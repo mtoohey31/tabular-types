@@ -91,18 +91,31 @@ def multiSubst (τ : Monotype) : List (Monotype × TId) → Monotype
 | (τ', i) :: iτ's => τ.subst τ' i |>.multiSubst iτ's
 
 inductive CommutativityPartialOrdering : Monotype → Monotype → Prop where
+  | refl : CommutativityPartialOrdering μ μ
   | non : CommutativityPartialOrdering (comm .non) μ
   | comm : CommutativityPartialOrdering μ (comm .comm)
 
 instance : Decidable (CommutativityPartialOrdering μ₀ μ₁) :=
-  if hnon : μ₀ = .comm .non then by cases hnon; exact isTrue .non
+  if heq : μ₀ = μ₁ then  by cases heq; exact isTrue .refl
+  else if hnon : μ₀ = .comm .non then by cases hnon; exact isTrue .non
   else if hcomm : μ₁ = .comm .comm then by cases hcomm; exact isTrue .comm
   else by
     apply isFalse
     intro ordering
-    cases ordering
-    nomatch hnon
-    nomatch hcomm
+    cases ordering with
+    | refl => nomatch heq
+    | non => nomatch hnon
+    | comm => nomatch hcomm
+
+theorem CommutativityPartialOrdering.solve
+  : CommutativityPartialOrdering μ₀ μ₁ → CommutativityPartialOrdering (μ₀.solve x τ) (μ₁.solve x τ)
+  | .refl => .refl
+  | .non => by
+    rw [Monotype.solve]
+    exact .non
+  | .comm => by
+    rw [Monotype.solve]
+    exact .comm
 
 inductive RowEquivalence : Monotype → Monotype → Monotype → Type where
   | refl : RowEquivalence ρ μ ρ
@@ -146,6 +159,33 @@ def sumElab : RowEquivalence ρ₀ μ ρ₁ → ElabM «λπι».Term
     return .lam i <| .sumElim (.var i) <| ← ξτs₀.mapM fun (ξ₀, _) => do
       let i ← freshId
       return .lam i <| .sumIntro (ξτs₁.findIdx (·.fst == ξ₀)) <| .var i
+
+def solve : RowEquivalence ρ₀ μ ρ₁ → RowEquivalence (ρ₀.solve x τ) (μ.solve x τ) (ρ₁.solve x τ)
+  | .refl => .refl
+  | .trans re₀₁ re₁₂ => re₀₁.solve.trans re₁₂.solve
+  | .comm perm => by
+    rw [Monotype.solve, Monotype.solve, List.mapMem_eq_map, Monotype.solve, List.mapMem_eq_map]
+    exact .comm <| perm.map _
+  | .liftL (ϕ := ϕ) (ξτs := ξτs) => by
+    rw [Monotype.solve, Monotype.solve, List.mapMem_eq_map, Monotype.solve, List.mapMem_eq_map,
+        Monotype.solve, List.map_map,
+        List.map_eq_map_iff (f := _ ∘ _)
+          (g := (fun (ξ, τ') => (ξ, ((ϕ.solve x τ).app τ'))) ∘
+            (fun (ξ, τ') => (ξ.solve x τ, τ'.solve x τ))) (l := ξτs).mpr (by
+          intros
+          simp [Monotype.solve]
+        ), ← List.map_map]
+    exact .liftL
+  | .liftR (ϕ := ϕ) (ξτs := ξτs) => by
+    rw [Monotype.solve, Monotype.solve, List.mapMem_eq_map, Monotype.solve, List.mapMem_eq_map,
+        Monotype.solve, List.map_map,
+        List.map_eq_map_iff (f := _ ∘ _)
+          (g := (fun (ξ, τ') => (ξ, ((ϕ.solve x τ).app τ'))) ∘
+            (fun (ξ, τ') => (ξ.solve x τ, τ'.solve x τ))) (l := ξτs).mpr (by
+          intros
+          simp [Monotype.solve]
+        ), ← List.map_map]
+    exact .liftR
 
 end RowEquivalence
 
