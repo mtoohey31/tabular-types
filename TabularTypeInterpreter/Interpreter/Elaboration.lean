@@ -1,3 +1,4 @@
+import Aesop
 import Lott.Data.Option
 import TabularTypeInterpreter.Interpreter.«λπι»
 import TabularTypeInterpreter.Interpreter.Basic
@@ -23,11 +24,11 @@ open Std
 namespace Monotype
 
 def subst (τ τ' : Monotype) (i : TId) : Monotype := match τ with
-  | var i' => if i == i' then τ' else var i'
+  | var i' => if i = i' then τ' else var i'
   | uvar x => uvar x
-  | lam i' κ τ'' => lam i' κ <| if i == i' then τ'' else subst τ'' τ' i
+  | lam i' κ τ'' => lam i' κ <| if i = i' then τ'' else subst τ'' τ' i
   | app ϕ τ'' => app (subst ϕ τ' i) (subst τ'' τ' i)
-  | arr τ₀ τ₁ => app (subst τ₀ τ' i) (subst τ₁ τ' i)
+  | arr τ₀ τ₁ => arr (subst τ₀ τ' i) (subst τ₁ τ' i)
   | label s => label s
   | floor ξ => floor <| subst ξ τ' i
   | comm u => comm u
@@ -54,12 +55,13 @@ decreasing_by
     · assumption
   )
 
+@[simp]
 def solve (τ τ' : Monotype) (x : UId) : Monotype := match τ with
   | var i => var i
-  | uvar x' => if x == x' then τ' else uvar x'
+  | uvar x' => if x = x' then τ' else uvar x'
   | lam i κ τ'' => lam i κ <| solve τ'' τ' x
   | app ϕ τ'' => app (solve ϕ τ' x) (solve τ'' τ' x)
-  | arr τ₀ τ₁ => app (solve τ₀ τ' x) (solve τ₁ τ' x)
+  | arr τ₀ τ₁ => arr (solve τ₀ τ' x) (solve τ₁ τ' x)
   | label s => label s
   | floor ξ => floor <| solve ξ τ' x
   | comm u => comm u
@@ -86,9 +88,114 @@ decreasing_by
     · assumption
   )
 
+theorem subst_id_of_not_mem (nmem : i ∉ τ) : subst τ τ' i = τ := by
+  induction τ using rec (motive_2 := fun ξτs => ∀ ξτ ∈ ξτs, let (ξ, τ) := ξτ;
+      (i ∉ ξ → subst ξ τ' i = ξ) ∧ (i ∉ τ → subst τ τ' i = τ))
+    (motive_3 := fun (ξ, τ) => (i ∉ ξ → subst ξ τ' i = ξ) ∧ (i ∉ τ → subst τ τ' i = τ))
+  case lam ih =>
+    dsimp [Membership.mem.eq_def (self := instMembershipTId), instMembershipTId] at nmem
+    rw [freeTIds] at nmem
+    rw [subst]
+    split
+    · case isTrue h => rfl
+    · case isFalse h =>
+      congr
+      exact ih <| List.not_mem_of_not_mem_eraseAll nmem h
+  case cons ih₀ ih₁ ξτ mem =>
+    let ⟨_, _⟩ := ξτ
+    constructor
+    · intro nmem
+      cases mem with
+      | head =>
+        exact ih₀ |>.left nmem
+      | tail _ mem => exact ih₁ _ mem |>.left nmem
+    · intro nmem
+      cases mem with
+      | head =>
+        exact ih₀ |>.right nmem
+      | tail _ mem => exact ih₁ _ mem |>.right nmem
+  case row ih =>
+    rw [subst, List.mapMem_eq_map]
+    apply Monotype.row.injEq .. |>.mpr ⟨_, rfl⟩
+    apply List.map_eq_id_of_eq_id_of_mem
+    rintro ⟨ξ, τ⟩ mem
+    congr
+    · apply ih _ mem |>.left
+      dsimp [Membership.mem.eq_def (self := instMembershipTId), instMembershipTId] at nmem
+      rw [freeTIds, List.mapMem_eq_map] at nmem
+      apply List.not_mem_append' (ys := τ.freeTIds).mp .. |>.left
+      exact List.not_mem_flatten.mp nmem _ <| List.mem_map.mpr ⟨_, mem, rfl⟩
+    · apply ih _ mem |>.right
+      dsimp [Membership.mem.eq_def (self := instMembershipTId), instMembershipTId] at nmem
+      rw [freeTIds, List.mapMem_eq_map] at nmem
+      apply List.not_mem_append' (xs := ξ.freeTIds).mp .. |>.right
+      exact List.not_mem_flatten.mp nmem _ <| List.mem_map.mpr ⟨_, mem, rfl⟩
+  all_goals aesop (add simp
+    [subst, (Membership.mem.eq_def (self := instMembershipTId)), instMembershipTId, freeTIds])
+
+theorem solve_subst_distrib (nmem : i ∉ τ'')
+  : solve (subst τ τ' i) τ'' x = subst (solve τ τ'' x) (solve τ' τ'' x) i := by
+  induction τ using rec (motive_2 := fun ξτs => ∀ ξτ ∈ ξτs, let (ξ, τ) := ξτ;
+    solve (subst ξ τ' i) τ'' x = subst (solve ξ τ'' x) (solve τ' τ'' x) i ∧
+    solve (subst τ τ' i) τ'' x = subst (solve τ τ'' x) (solve τ' τ'' x) i)
+    (motive_3 := fun (ξ, τ) =>
+      solve (subst ξ τ' i) τ'' x = subst (solve ξ τ'' x) (solve τ' τ'' x) i ∧
+      solve (subst τ τ' i) τ'' x = subst (solve τ τ'' x) (solve τ' τ'' x) i)
+  case var =>
+    rw [subst]
+    split
+    · case isTrue h => rw [solve, subst, if_pos h]
+    · case isFalse h => rw [solve, subst, if_neg h]
+  case uvar =>
+    rw [subst, solve]
+    split
+    · case isTrue h => rw [subst_id_of_not_mem nmem]
+    · case isFalse h => rw [subst]
+  case row ih =>
+    simp [subst, solve]
+    intro _ _ mem
+    exact ih _ mem
+  case cons ih₀ ih₁ _ mem =>
+    cases mem with
+    | head =>
+      exact ih₀
+    | tail =>
+      apply ih₁
+      assumption
+  all_goals aesop (add simp [solve, subst])
+
 def multiSubst (τ : Monotype) : List (Monotype × TId) → Monotype
-| [] => τ
-| (τ', i) :: iτ's => τ.subst τ' i |>.multiSubst iτ's
+  | [] => τ
+  | (τ', i) :: τ'is => τ.subst τ' i |>.multiSubst τ'is
+
+theorem multiSubst_append
+  : multiSubst (multiSubst τ τ'is) τ''is = multiSubst τ (τ'is ++ τ''is) := by
+  cases τ'is with
+  | nil => rw [multiSubst, List.nil_append]
+  | cons => rw [multiSubst, List.cons_append, multiSubst, multiSubst_append]
+
+theorem solve_multiSubst_distrib
+  (dj : τis.map Prod.snd |>.Disjoint τ'.freeTIds)
+  : solve (multiSubst τ τis) τ' x =
+    multiSubst (solve τ τ' x) (τis.map fun (τ, i) => (solve τ τ' x, i)) := by
+  rcases τis.cases_snoc with rfl | ⟨_, _, rfl⟩
+  · rw [multiSubst, List.map_nil, multiSubst]
+  · rw [← multiSubst_append, List.map_append, List.map_singleton, ← multiSubst_append, multiSubst,
+         multiSubst, solve_subst_distrib, solve_multiSubst_distrib, multiSubst, multiSubst]
+    swap
+    apply dj
+    rw [List.map_append, List.map_singleton]
+    exact List.mem_append.mpr <| .inr <| .head _
+    intro _ mem
+    apply dj
+    rw [List.map_append]
+    exact List.mem_append.mpr <| .inl mem
+termination_by sizeOf τis
+decreasing_by
+  rename τis = _ => eq
+  subst eq
+  apply List.sizeOf_lt_sizeOf_append_right
+  simp_arith
 
 inductive CommutativityPartialOrdering : Monotype → Monotype → Prop where
   | refl : CommutativityPartialOrdering μ μ
@@ -108,7 +215,7 @@ instance : Decidable (CommutativityPartialOrdering μ₀ μ₁) :=
     | comm => nomatch hcomm
 
 theorem CommutativityPartialOrdering.solve
-  : CommutativityPartialOrdering μ₀ μ₁ → CommutativityPartialOrdering (μ₀.solve x τ) (μ₁.solve x τ)
+  : CommutativityPartialOrdering μ₀ μ₁ → CommutativityPartialOrdering (μ₀.solve τ x) (μ₁.solve τ x)
   | .refl => .refl
   | .non => by
     rw [Monotype.solve]
@@ -160,7 +267,7 @@ def sumElab : RowEquivalence ρ₀ μ ρ₁ → ElabM «λπι».Term
       let i ← freshId
       return .lam i <| .sumIntro (ξτs₁.findIdx (·.fst == ξ₀)) <| .var i
 
-def solve : RowEquivalence ρ₀ μ ρ₁ → RowEquivalence (ρ₀.solve x τ) (μ.solve x τ) (ρ₁.solve x τ)
+def solve : RowEquivalence ρ₀ μ ρ₁ → RowEquivalence (ρ₀.solve τ x) (μ.solve τ x) (ρ₁.solve τ x)
   | .refl => .refl
   | .trans re₀₁ re₁₂ => re₀₁.solve.trans re₁₂.solve
   | .comm perm => by
@@ -170,20 +277,20 @@ def solve : RowEquivalence ρ₀ μ ρ₁ → RowEquivalence (ρ₀.solve x τ) 
     rw [Monotype.solve, Monotype.solve, List.mapMem_eq_map, Monotype.solve, List.mapMem_eq_map,
         Monotype.solve, List.map_map,
         List.map_eq_map_iff (f := _ ∘ _)
-          (g := (fun (ξ, τ') => (ξ, ((ϕ.solve x τ).app τ'))) ∘
-            (fun (ξ, τ') => (ξ.solve x τ, τ'.solve x τ))) (l := ξτs).mpr (by
+          (g := (fun (ξ, τ') => (ξ, ((ϕ.solve τ x).app τ'))) ∘
+            (fun (ξ, τ') => (ξ.solve τ x, τ'.solve τ x))) (l := ξτs).mpr (by
           intros
-          simp [Monotype.solve]
+          simp
         ), ← List.map_map]
     exact .liftL
   | .liftR (ϕ := ϕ) (ξτs := ξτs) => by
     rw [Monotype.solve, Monotype.solve, List.mapMem_eq_map, Monotype.solve, List.mapMem_eq_map,
         Monotype.solve, List.map_map,
         List.map_eq_map_iff (f := _ ∘ _)
-          (g := (fun (ξ, τ') => (ξ, ((ϕ.solve x τ).app τ'))) ∘
-            (fun (ξ, τ') => (ξ.solve x τ, τ'.solve x τ))) (l := ξτs).mpr (by
+          (g := (fun (ξ, τ') => (ξ, ((ϕ.solve τ x).app τ'))) ∘
+            (fun (ξ, τ') => (ξ.solve τ x, τ'.solve τ x))) (l := ξτs).mpr (by
           intros
-          simp [Monotype.solve]
+          simp
         ), ← List.map_map]
     exact .liftR
 
@@ -267,22 +374,24 @@ def _root_.Nat.mapM [Monad m] : Nat → (Nat → m α) → m (List α)
 
 variable (TC)
 
-def ConstraintSolution.elab : ConstraintSolution τ → ElabM «λπι».Term
+namespace ConstraintSolution
+
+def «elab» : ConstraintSolution τ → ElabM «λπι».Term
   | «local» i => return .var i
-  | containTrans contain₀₁ce contain₁₂ce => do
-    let E ← contain₀₁ce.elab
-    let F ← contain₁₂ce.elab
+  | containTrans contain₀₁cs contain₁₂cs => do
+    let E ← contain₀₁cs.elab
+    let F ← contain₁₂cs.elab
     let i₀ ← freshId
     let i₁ ← freshId
     return .prodIntro [
       .lam i₀ <| (E.prodElim 0).app <| (F.prodElim 0).app <| .var i₀,
       .lam i₁ <| (F.prodElim 1).app <| (E.prodElim 1).app <| .var i₁,
     ]
-  | containConcat concat₂ce concat₅ce containₗce containᵣce => do
-    let E₂ ← concat₂ce.elab
-    let E₅ ← concat₅ce.elab
-    let Fₗ ← containₗce.elab
-    let Fᵣ ← containᵣce.elab
+  | containConcat concat₂cs concat₅cs containₗcs containᵣcs => do
+    let E₂ ← concat₂cs.elab
+    let E₅ ← concat₅cs.elab
+    let Fₗ ← containₗcs.elab
+    let Fᵣ ← containᵣcs.elab
     let i₀ ← freshId
     let i₁ ← freshId
     let i₂ ← freshId
@@ -327,10 +436,10 @@ def ConstraintSolution.elab : ConstraintSolution τ → ElabM «λπι».Term
         .lam i₅ <| .sumElim (.var i₅) [],
       ],
     ]
-  | concatAssocL concat₀₁ce concat₁₂ce concat₀₄ce => do
-    let E₀₁ ← concat₀₁ce.elab
-    let E₁₂ ← concat₁₂ce.elab
-    let E₀₄ ← concat₀₄ce.elab
+  | concatAssocL concat₀₁cs concat₁₂cs concat₀₄cs => do
+    let E₀₁ ← concat₀₁cs.elab
+    let E₁₂ ← concat₁₂cs.elab
+    let E₀₄ ← concat₀₄cs.elab
     let i₀ ← freshId
     let i₁ ← freshId
     let i₂ ← freshId
@@ -363,10 +472,10 @@ def ConstraintSolution.elab : ConstraintSolution τ → ElabM «λπι».Term
           ((E₁₂.prodElim 3).prodElim 1).app <| .var i₉,
       ],
     ]
-  | concatAssocR concat₀₁ce concat₁₂ce concat₃₂ce => do
-    let E₀₁ ← concat₀₁ce.elab
-    let E₁₂ ← concat₁₂ce.elab
-    let E₃₂ ← concat₃₂ce.elab
+  | concatAssocR concat₀₁cs concat₁₂cs concat₃₂cs => do
+    let E₀₁ ← concat₀₁cs.elab
+    let E₁₂ ← concat₁₂cs.elab
+    let E₃₂ ← concat₃₂cs.elab
     let i₀ ← freshId
     let i₁ ← freshId
     let i₂ ← freshId
@@ -404,8 +513,8 @@ def ConstraintSolution.elab : ConstraintSolution τ → ElabM «λπι».Term
           (E₃₂.prodElim 3).prodElim 1,
       ],
     ]
-  | concatSwap concatce => do
-    let E ← concatce.elab
+  | concatSwap concatcs => do
+    let E ← concatcs.elab
     let i₀ ← freshId
     let i₁ ← freshId
     let i₂ ← freshId
@@ -416,28 +525,28 @@ def ConstraintSolution.elab : ConstraintSolution τ → ElabM «λπι».Term
       E.prodElim 3,
       E.prodElim 2,
     ]
-  | concatContainL concatce => return .prodElim 2 <| ← concatce.elab
-  | concatContainR concatce => return .prodElim 3 <| ← concatce.elab
-  | containDecay containce _ => containce.elab
-  | concatDecay concatce _ => concatce.elab
-  | liftContain containce => containce.elab
-  | liftConcat concatce => concatce.elab
-  | tcInst { prereqs, mids, memberElab, superclassElab, .. } τ's ψsce => do
-    let Fs ← prereqs.mapMemM fun _ mem => ψsce _ mem |>.elab
+  | concatContainL concatcs => return .prodElim 2 <| ← concatcs.elab
+  | concatContainR concatcs => return .prodElim 3 <| ← concatcs.elab
+  | containDecay containcs _ => containcs.elab
+  | concatDecay concatcs _ => concatcs.elab
+  | liftContain containcs => containcs.elab
+  | liftConcat concatcs => concatcs.elab
+  | tcInst { prereqs, mids, memberElab, superclassElab, .. } τ's ψscs => do
+    let Fs ← prereqs.mapMemM fun _ mem => ψscs _ mem |>.elab
     return .prodIntro <| (memberElab.multiSubst (Fs.zip (mids.map (fun | { val } => { val })))) ::
       superclassElab.map fun Eₛ => Eₛ.multiSubst <| Fs.zip <| mids.map fun | { val } => { val }
-  | tcSuper tcτce n => return .prodElim n.succ <| ← tcτce.elab
+  | tcSuper tcτcs n => return .prodElim n.succ <| ← tcτcs.elab
   | allEmpty => return .unit
-  | allSingletonIntro ϕτce => return .prodIntro [← ϕτce.elab]
-  | allSingletonElim allce => return .prodElim 0 <| ← allce.elab
-  | allContain containce allce => do
-    let F ← containce.elab
-    let E ← allce.elab
+  | allSingletonIntro ϕτcs => return .prodIntro [← ϕτcs.elab]
+  | allSingletonElim allcs => return .prodElim 0 <| ← allcs.elab
+  | allContain containcs allcs => do
+    let F ← containcs.elab
+    let E ← allcs.elab
     return F.prodElim 0 |>.app E
-  | allConcat concatce all₀ce all₁ce => do
-    let F ← concatce.elab
-    let E₀ ← all₀ce.elab
-    let E₁ ← all₁ce.elab
+  | allConcat concatcs all₀cs all₁cs => do
+    let F ← concatcs.elab
+    let E₀ ← all₀cs.elab
+    let E₁ ← all₁cs.elab
     return F.prodElim 0 |>.app E₀ |>.app E₁
   | ind (ξτs := ξτs) => do
     let i₀ ← freshId
@@ -449,8 +558,8 @@ def ConstraintSolution.elab : ConstraintSolution τ → ElabM «λπι».Term
   | splitEmpty => concatConcrete 0 0
   | splitSingletonMatch => concatConcrete 1 0
   | splitSingletonRest => concatConcrete 0 1
-  | splitPiecewise _ _ _ _ _ concatce => concatce.elab
-  | splitConcat splitce => splitce.elab
+  | splitPiecewise _ _ _ _ _ concatcs => concatcs.elab
+  | splitConcat splitcs => splitcs.elab
 where
   concatConcrete (m n : Nat) : ElabM «λπι».Term := do
     let i₀ ← freshId
@@ -486,6 +595,150 @@ where
       ],
     ]
 
+def solve (cs : ConstraintSolution ψ) : ConstraintSolution (ψ.solve τ x) := by
+  cases cs with
+  | «local» i => exact .local i
+  | containTrans contain₀₁cs contain₁₂cs =>
+    replace contain₀₁cs := contain₀₁cs.solve (τ := τ) (x := x)
+    replace contain₁₂cs := contain₁₂cs.solve (τ := τ) (x := x)
+    rw [Monotype.solve] at contain₀₁cs contain₁₂cs ⊢
+    exact containTrans contain₀₁cs contain₁₂cs
+  | containConcat concat₂cs concat₅cs containₗcs containᵣcs =>
+    replace concat₂cs := concat₂cs.solve (τ := τ) (x := x)
+    replace concat₅cs := concat₅cs.solve (τ := τ) (x := x)
+    replace containₗcs := containₗcs.solve (τ := τ) (x := x)
+    replace containᵣcs := containᵣcs.solve (τ := τ) (x := x)
+    rw [Monotype.solve] at concat₂cs concat₅cs
+    rw [Monotype.solve] at containₗcs containᵣcs ⊢
+    exact containConcat concat₂cs concat₅cs containₗcs containᵣcs
+  | concatConcrete =>
+    simp
+    exact concatConcrete
+  | concatEmptyL =>
+    simp
+    exact concatEmptyL
+  | concatEmptyR =>
+    simp
+    exact concatEmptyR
+  | concatAssocL concat₀₁cs concat₁₂cs concat₀₄cs =>
+    replace concat₀₁cs := concat₀₁cs.solve (τ := τ) (x := x)
+    replace concat₁₂cs := concat₁₂cs.solve (τ := τ) (x := x)
+    replace concat₀₄cs := concat₀₄cs.solve (τ := τ) (x := x)
+    rw [Monotype.solve] at concat₀₁cs concat₁₂cs concat₀₄cs ⊢
+    exact concatAssocL concat₀₁cs concat₁₂cs concat₀₄cs
+  | concatAssocR concat₀₁cs concat₁₂cs concat₃₂cs =>
+    replace concat₀₁cs := concat₀₁cs.solve (τ := τ) (x := x)
+    replace concat₁₂cs := concat₁₂cs.solve (τ := τ) (x := x)
+    replace concat₃₂cs := concat₃₂cs.solve (τ := τ) (x := x)
+    rw [Monotype.solve] at concat₀₁cs concat₁₂cs concat₃₂cs ⊢
+    exact concatAssocR concat₀₁cs concat₁₂cs concat₃₂cs
+  | concatSwap concatcs =>
+    replace concatcs := concatcs.solve (τ := τ) (x := x)
+    simp at concatcs ⊢
+    exact concatSwap concatcs
+  | concatContainL concatcs =>
+    replace concatcs := concatcs.solve (τ := τ) (x := x)
+    simp at concatcs ⊢
+    exact concatContainL concatcs
+  | concatContainR concatcs =>
+    replace concatcs := concatcs.solve (τ := τ) (x := x)
+    simp at concatcs ⊢
+    exact concatContainR concatcs
+  | containDecay containcs po =>
+    replace containcs := containcs.solve (τ := τ) (x := x)
+    replace po := po.solve (τ := τ) (x := x)
+    simp at containcs po ⊢
+    exact containDecay containcs po
+  | concatDecay concatcs po =>
+    replace concatcs := concatcs.solve (τ := τ) (x := x)
+    replace po := po.solve (τ := τ) (x := x)
+    simp at concatcs po ⊢
+    exact concatDecay concatcs po
+  | liftContain containcs =>
+    replace containcs := containcs.solve (τ := τ) (x := x)
+    simp at containcs ⊢
+    exact liftContain containcs
+  | liftConcat concatcs =>
+    replace concatcs := concatcs.solve (τ := τ) (x := x)
+    simp at concatcs ⊢
+    exact liftConcat concatcs
+  | tcInst inst τ's ψscs =>
+    let { tids, prereqs, mids, name, target, memberElab, superclassElab } := inst
+    simp
+    rw [Monotype.solve_multiSubst_distrib sorry]
+    rw [List.zip_eq_zipWith, List.map_zipWith,
+        ← List.zipWith_map_left (f := fun τ' => Monotype.solve τ' τ x)]
+    apply tcInst {
+      prereqs := prereqs.map (·.solve τ x)
+      mids
+      target := _
+      memberElab
+      superclassElab
+      ..
+    } _
+    intro ψ mem
+    rcases List.mem_of_mem_map mem with ⟨_, mem', rfl⟩
+    let ψcs := ψscs _ mem' |>.solve (τ := τ) (x := x)
+    rw [solve_multiSubst_distrib sorry] at ψcs
+    simp at ψcs ⊢
+    rw [List.zip_eq_zipWith, List.map_zipWith,
+        ← List.zipWith_map_left (f := fun τ' => Monotype.solve τ' τ x),
+        ← List.zip_eq_zipWith] at ψcs
+    exact ψcs
+  | tcSuper tcτcs n =>
+    replace tcτcs := tcτcs.solve (τ := τ) (x := x)
+    rw [Monotype.solve, Monotype.solve] at tcτcs ⊢
+    exact tcSuper tcτcs n
+  | allEmpty =>
+    simp
+    exact allEmpty
+  | allSingletonIntro ϕτcs =>
+    replace ϕτcs := ϕτcs.solve (τ := τ) (x := x)
+    simp at ϕτcs ⊢
+    exact allSingletonIntro ϕτcs
+  | allSingletonElim allcs =>
+    replace allcs := allcs.solve (τ := τ) (x := x)
+    simp at allcs ⊢
+    exact allSingletonElim allcs
+  | allContain containcs allcs =>
+    replace containcs := containcs.solve (τ := τ) (x := x)
+    replace allcs := allcs.solve (τ := τ) (x := x)
+    simp at containcs allcs ⊢
+    exact allContain containcs allcs
+  | allConcat concatcs all₀cs all₁cs =>
+    replace concatcs := concatcs.solve (τ := τ) (x := x)
+    replace all₀cs := all₀cs.solve (τ := τ) (x := x)
+    replace all₁cs := all₁cs.solve (τ := τ) (x := x)
+    simp at concatcs all₀cs all₁cs ⊢
+    exact allConcat concatcs all₀cs all₁cs
+  | ind =>
+    rw [Monotype.solve]
+    exact ind
+  | splitEmpty =>
+    simp
+    exact splitEmpty
+  | splitSingletonMatch =>
+    simp
+    exact splitSingletonMatch
+  | splitSingletonRest =>
+    simp
+    exact splitSingletonRest
+  | splitPiecewise split₂cs split₅cs concat₆cs concat₇cs concat₈cs concatcs =>
+    replace split₂cs := split₂cs.solve (τ := τ) (x := x)
+    replace split₅cs := split₅cs.solve (τ := τ) (x := x)
+    replace concat₆cs := concat₆cs.solve (τ := τ) (x := x)
+    replace concat₇cs := concat₇cs.solve (τ := τ) (x := x)
+    replace concat₈cs := concat₈cs.solve (τ := τ) (x := x)
+    replace concatcs := concatcs.solve (τ := τ) (x := x)
+    simp at split₂cs split₅cs concat₆cs concat₇cs concat₈cs concatcs ⊢
+    exact splitPiecewise split₂cs split₅cs concat₆cs concat₇cs concat₈cs concatcs
+  | splitConcat concatcs =>
+    replace concatcs := concatcs.solve (τ := τ) (x := x)
+    simp at concatcs ⊢
+    exact splitConcat concatcs
+
+end ConstraintSolution
+
 end Monotype
 
 open Monotype
@@ -496,9 +749,15 @@ def subst (γ : QualifiedType) (τ : Monotype) (i : TId) : QualifiedType := matc
   | .mono τ' => τ'.subst τ i
   | .qual ψ γ' => subst γ' τ i |>.qual <| ψ.subst τ i
 
+@[simp]
 def solve (γ : QualifiedType) (τ : Monotype) (x : UId) : QualifiedType := match γ with
   | .mono τ' => τ'.solve τ x
   | .qual ψ γ' => solve γ' τ x |>.qual <| ψ.solve τ x
+
+theorem solve_subst_distrib (nmem : i ∉ τ')
+  : solve (subst γ τ i) τ' x = subst (solve γ τ' x) (τ.solve τ' x) i := by
+  induction γ
+  all_goals aesop (add simp [subst, solve], apply safe Monotype.solve_subst_distrib)
 
 end QualifiedType
 
@@ -511,9 +770,15 @@ def subst (σ : TypeScheme) (τ : Monotype) (i : TId) : TypeScheme := match σ w
   | .quant i' κ σ' =>
     .quant i' κ <| if i == i' then σ' else subst σ' τ i
 
+@[simp]
 def solve (σ : TypeScheme) (τ : Monotype) (x : UId) : TypeScheme := match σ with
   | .qual γ => γ.solve τ x
   | .quant i κ σ' => .quant i κ <| solve σ' τ x
+
+theorem solve_subst_distrib (nmem : i ∉ τ')
+  : solve (subst σ τ i) τ' x = subst (solve σ τ' x) (τ.solve τ' x) i := by
+  induction σ
+  all_goals aesop (add simp [subst, solve], apply safe QualifiedType.solve_subst_distrib)
 
 inductive Subtyping : TypeScheme → TypeScheme → Type where
   | refl : Subtyping σ σ
@@ -544,7 +809,9 @@ inductive Subtyping : TypeScheme → TypeScheme → Type where
   | list {τ₀ τ₁ : Monotype} : Subtyping τ₀ τ₁ →
     Subtyping (list.app τ₀) (list.app τ₁)
 
-def Subtyping.elab : Subtyping σ₀ σ₁ → ElabM «λπι».Term
+namespace Subtyping
+
+def «elab» : Subtyping σ₀ σ₁ → ElabM «λπι».Term
   | refl | decay _ => return .id
   | trans σ₀₁'st σ₁'₂st => do
     let i ← freshId
@@ -610,6 +877,77 @@ where
         .lam i'' <| (← ρ₁₃re.sumElab).app <| .app (.var i) <| (← ρ₀₂re.symm.sumElab).app <| .var i''
       ]
 
+def solve (st : Subtyping σ₀ σ₁) : Subtyping (σ₀.solve τ x) (σ₁.solve τ x) := by
+  cases st with
+  | refl => exact refl
+  | trans σ₀₁'st σ₁'₂st => exact trans σ₀₁'st.solve σ₁'₂st.solve
+  | arr st st' =>
+    replace st := st.solve (τ := τ) (x := x)
+    replace st' := st'.solve (τ := τ) (x := x)
+    simp at st st' ⊢
+    exact arr st st'
+  | qual st st' =>
+    replace st := st.solve (τ := τ) (x := x)
+    replace st' := st'.solve (τ := τ) (x := x)
+    simp at st st' ⊢
+    exact qual st st'
+  | schemeL st' =>
+    rename Monotype => τ'
+    simp
+    replace st' := st'.solve (τ := τ) (x := x)
+    apply schemeL (τ := τ'.solve τ x)
+    rw [← solve_subst_distrib sorry]
+    exact st'
+  | schemeR st' =>
+    simp
+    exact schemeR <| st'.solve
+  | prodOrSum τ₀₁sst =>
+    simp
+    rw [List.map_eq_map_iff (f := fun a => (Monotype.solve a.fst τ x, Monotype.solve a.snd τ x))
+          (g := Prod.map (Monotype.solve · τ x) (Monotype.solve · τ x)).mpr (by simp),
+        List.map_eq_map_iff (f := fun a => (Monotype.solve a.fst τ x, Monotype.solve a.snd τ x))
+          (g := Prod.map (Monotype.solve · τ x) (Monotype.solve · τ x)).mpr (by simp),
+        ← List.zip_map, ← List.zip_map]
+    apply prodOrSum
+    rintro ⟨_, _⟩ mem
+    rw [List.zip_map] at mem
+    rcases List.mem_of_mem_map mem with ⟨⟨_, _⟩, mem', eq⟩
+    rw [Prod.map] at eq
+    rcases eq with ⟨rfl, rfl⟩
+    exact τ₀₁sst _ mem' |>.solve
+  | prodOrSumRow ρ₀₁re =>
+    simp
+    apply prodOrSumRow ρ₀₁re.solve
+  | decay po =>
+    simp
+    exact decay <| po.solve
+  | never =>
+    simp
+    exact never
+  | contain ρ₀₂re ρ₁₃re =>
+    simp
+    exact contain ρ₀₂re.solve ρ₁₃re.solve
+  | concat ρ₀₃re ρ₁₄re ρ₂₅re =>
+    simp
+    exact concat ρ₀₃re.solve ρ₁₄re.solve ρ₂₅re.solve
+  | all ρ₀₁re =>
+    replace ρ₀₁re := ρ₀₁re.solve (τ := τ) (x := x)
+    simp at ρ₀₁re ⊢
+    exact all ρ₀₁re
+  | split concatst =>
+    replace concatst := concatst.solve (τ := τ) (x := x)
+    simp at concatst ⊢
+    exact split concatst
+  | list τ₀₁st =>
+    simp
+    exact list τ₀₁st.solve
+termination_by sizeOf st
+decreasing_by
+  all_goals simp_arith
+  all_goals sorry
+
+end Subtyping
+
 end TypeScheme
 
 open TypeScheme
@@ -618,7 +956,76 @@ def «λπι».Op.result : «λπι».Op → Monotype
   | .add | .sub | .mul | .div => .int
   | .eq | .lt | .le | .gt | .ge => .bool
 
+@[simp]
+theorem Monotype.solve_Op_result : solve («λπι».Op.result o) τ x = «λπι».Op.result o := by
+  cases o <;> simp [«λπι».Op.result, bool, unit]
+
 namespace Term
+
+-- TODO: Check for shadowing?
+@[simp]
+def subst (M : Term) (τ : Monotype) (i : TId) : Term := match M with
+  | var i' => var i'
+  | member s => member s
+  | lam i' M' => lam i' <| subst M' τ i
+  | app M' N => app (subst M' τ i) (subst N τ i)
+  | «let» i' σ? M' N => «let» i' (σ?.map (·.subst τ i)) (subst M' τ i) (subst N τ i)
+  | annot M' σ => annot (subst M' τ i) (σ.subst τ i)
+  | label s => label s
+  | prod M'Ns => prod <| M'Ns.mapMem fun (M', N) _ => (subst M' τ i, subst N τ i)
+  | sum M' N => sum (subst M' τ i) (subst N τ i)
+  | unlabel M' N => unlabel (subst M' τ i) (subst N τ i)
+  | prj M' => prj <| subst M' τ i
+  | concat M' N => concat (subst M' τ i) (subst N τ i)
+  | inj M' => inj <| subst M' τ i
+  | elim M' N => elim (subst M' τ i) (subst N τ i)
+  | ind ϕ ρ l t rn ri rp M' N =>
+    ind (ϕ.subst τ i) (ρ.subst τ i) l t rn ri rp (subst M' τ i) (subst N τ i)
+  | splitₚ ϕ M' => splitₚ (ϕ.subst τ i) (subst M' τ i)
+  | splitₛ ϕ M' N => splitₛ (ϕ.subst τ i) (subst M' τ i) (subst N τ i)
+  | nil => nil
+  | cons M' N => cons (subst M' τ i) (subst N τ i)
+  | fold i iₐ => fold i iₐ
+  | int i => int i
+  | op o M' N => op o (subst M' τ i) (subst N τ i)
+  | range => range
+  | str s => str s
+  | throw => throw
+  | «def» s => «def» s
+
+@[simp]
+def solve (M : Term) (τ : Monotype) (x : UId) : Term := match M with
+  | var i => var i
+  | member s => member s
+  | lam i M' => lam i <| solve M' τ x
+  | app M' N => app (solve M' τ x) (solve N τ x)
+  | «let» i σ? M' N => «let» i (σ?.map (·.solve τ x)) (solve M' τ x) (solve N τ x)
+  | annot M' σ => annot (solve M' τ x) (σ.solve τ x)
+  | label s => label s
+  | prod M'Ns => prod <| M'Ns.mapMem fun (M', N) _ => (solve M' τ x, solve N τ x)
+  | sum M' N => sum (solve M' τ x) (solve N τ x)
+  | unlabel M' N => unlabel (solve M' τ x) (solve N τ x)
+  | prj M' => prj <| solve M' τ x
+  | concat M' N => concat (solve M' τ x) (solve N τ x)
+  | inj M' => inj <| solve M' τ x
+  | elim M' N => elim (solve M' τ x) (solve N τ x)
+  | ind ϕ ρ l t rn ri rp M' N =>
+    ind (ϕ.solve τ x) (ρ.solve τ x) l t rn ri rp (solve M' τ x) (solve N τ x)
+  | splitₚ ϕ M' => splitₚ (ϕ.solve τ x) (solve M' τ x)
+  | splitₛ ϕ M' N => splitₛ (ϕ.solve τ x) (solve M' τ x) (solve N τ x)
+  | nil => nil
+  | cons M' N => cons (solve M' τ x) (solve N τ x)
+  | fold i iₐ => fold i iₐ
+  | int i => int i
+  | op o M' N => op o (solve M' τ x) (solve N τ x)
+  | range => range
+  | str s => str s
+  | throw => throw
+  | «def» s => «def» s
+
+theorem solve_subst_distrib (nmem : i ∉ τ')
+  : solve (subst M τ i) τ' x = subst (solve M τ' x) (τ.solve τ' x) i := by
+  sorry
 
 -- Existence of this Typing term doesn't actually prove the Term has this type; this is only used to
 -- guide elaboration, so it is up to the function producing this to ensure it is constructed
@@ -630,7 +1037,7 @@ inductive Typing : Term → TypeScheme → Type where
   | qualI {γ : QualifiedType} : (ConstraintSolution ψ → Typing M γ) → Typing M (γ.qual ψ)
   | qualE {γ : QualifiedType} : ConstraintSolution ψ → (Typing M (γ.qual ψ)) → Typing M γ
   | schemeI : Typing M σ → Typing M (quant i κ σ)
-  | schemeE : Typing M (quant i κ σ) → Typing M (subst σ τ i)
+  | schemeE : Typing M (quant i κ σ) → Typing (subst M τ i) (σ.subst τ i)
   | let : Typing M σ₀ → Typing N σ₁ → Typing (M.let i (Option.someIf σ₀ b) N) σ₁
   | annot : Typing M σ → Typing (M.annot σ) σ
   | label : Typing (label s) (floor (.label s))
@@ -682,14 +1089,16 @@ inductive Typing : Term → TypeScheme → Type where
 instance [Inhabited α] : Inhabited (Thunk α) where
   default := .mk fun _ => default
 
-def Typing.elab : Typing M σ → ReaderT (HashMap String «λπι».Term) ElabM «λπι».Term
+namespace Typing
+
+def «elab» : Typing M σ → ReaderT (HashMap String «λπι».Term) ElabM «λπι».Term
   | var (n := n) => return .var n
   | lam (i := i) M'ty => M'ty.elab <&> .lam i
   | app M'ty Nty => return (← M'ty.elab).app <| ← Nty.elab
-  | qualI Mty'_of_so => do
+  | qualI Mty'_of_cs => do
     let i ← freshId
-    «elab» (Mty'_of_so <| .local i) <&> .lam i
-  | qualE ψso Mty' => return (← Mty'.elab).app <| ← ψso.elab
+    «elab» (Mty'_of_cs <| .local i) <&> .lam i
+  | qualE ψcs Mty' => return (← Mty'.elab).app <| ← ψcs.elab
   | schemeI Mty' => Mty'.elab
   | schemeE Mty' => Mty'.elab
   | .let (i := i) M'ty Nty => return (← Nty.elab).lam i |>.app <| ← M'ty.elab
@@ -701,22 +1110,22 @@ def Typing.elab : Typing M σ → ReaderT (HashMap String «λπι».Term) ElabM
   | unlabel M'ty (Ξ := Ξ) => match Ξ with
     | .prod => M'ty.elab <&> .prodElim 0
     | .sum => return (← M'ty.elab).sumElim [.id]
-  | prj M'ty containso => return (← containso.elab).prodElim 0 |>.app <| ← M'ty.elab
-  | concat M'ty Nty concatso =>
-    return (← concatso.elab).prodElim 0 |>.app (← M'ty.elab) |>.app <| ← Nty.elab
-  | inj M'ty containso => return (← containso.elab).prodElim 1 |>.app <| ← M'ty.elab
-  | elim M'ty Nty concatso =>
-    return (← concatso.elab).prodElim 1 |>.app (← M'ty.elab) |>.app <| ← Nty.elab
+  | prj M'ty containcs => return (← containcs.elab).prodElim 0 |>.app <| ← M'ty.elab
+  | concat M'ty Nty concatcs =>
+    return (← concatcs.elab).prodElim 0 |>.app (← M'ty.elab) |>.app <| ← Nty.elab
+  | inj M'ty containcs => return (← containcs.elab).prodElim 1 |>.app <| ← M'ty.elab
+  | elim M'ty Nty concatcs =>
+    return (← concatcs.elab).prodElim 1 |>.app (← M'ty.elab) |>.app <| ← Nty.elab
   | sub Mty' .refl => Mty'.elab
   | sub Mty' σ₀st => return (← σ₀st.elab).app <| ← Mty'.elab
-  | member TCτso => return (← TCτso.elab).prodElim 0
-  | ind M'ty Nty indso => return (← indso.elab).app (← M'ty.elab) |>.app <| ← Nty.elab
-  | splitₚ M'ty splitso => do
+  | member TCτcs => return (← TCτcs.elab).prodElim 0
+  | ind M'ty Nty indcs => return (← indcs.elab).app (← M'ty.elab) |>.app <| ← Nty.elab
+  | splitₚ M'ty splitcs => do
     let E ← M'ty.elab
-    let F ← splitso.elab
+    let F ← splitcs.elab
     return .prodIntro [F.prodElim 2 |>.prodElim 0 |>.app E, F.prodElim 3 |>.prodElim 0 |>.app E]
-  | splitₛ M'ty Nty splitso =>
-    return (← splitso.elab).prodElim 1 |>.app (← M'ty.elab) |>.app <| ← Nty.elab
+  | splitₛ M'ty Nty splitcs =>
+    return (← splitcs.elab).prodElim 1 |>.app (← M'ty.elab) |>.app <| ← Nty.elab
   | nil => return .nil
   | cons M'ty Nty => return .cons (← M'ty.elab) (← Nty.elab)
   | fold .. => return .fold
@@ -726,6 +1135,144 @@ def Typing.elab : Typing M σ → ReaderT (HashMap String «λπι».Term) ElabM
   | str (s := s) => return .str s
   | throw => return .throw
   | «def» (s := s) => return (← read)[s]!
+
+def solve (ty : Typing M σ) : Typing (M.solve τ x) (σ.solve τ x) := by
+  cases ty
+  · case var =>
+    simp
+    exact var
+  · case lam M'ty =>
+    replace M'ty := solve M'ty (τ := τ) (x := x)
+    simp at M'ty ⊢
+    exact lam M'ty
+  · case app M'ty Nty =>
+    replace M'ty := solve M'ty (τ := τ) (x := x)
+    replace Nty := solve Nty (τ := τ) (x := x)
+    simp at M'ty Nty ⊢
+    exact app M'ty Nty
+  · case qualI Mty'_of_cs => sorry
+  · case qualE ψce Mty' =>
+    replace Mty' := solve Mty' (τ := τ) (x := x)
+    simp at Mty'
+    exact qualE ψce.solve Mty'
+  · case schemeI M'ty =>
+    simp
+    exact schemeI M'ty.solve
+  · case schemeE M'ty =>
+    rw [Term.solve_subst_distrib sorry, TypeScheme.solve_subst_distrib sorry]
+    exact schemeE M'ty.solve
+  · case «let» M'ty Nty =>
+    simp [Option.map_someIf]
+    exact «let» M'ty.solve Nty.solve
+  · case annot M'ty =>
+    simp
+    exact annot M'ty.solve
+  · case label =>
+    simp
+    exact label
+  · case prod Nsty =>
+    replace Nsty MNξτ mem := solve (Nsty MNξτ mem) (τ := τ) (x := x)
+    simp at Nsty ⊢
+    apply prod
+    rintro ⟨⟨_, _⟩, _, _⟩ mem
+    simp
+    rw [List.zip_map] at mem
+    rcases List.mem_of_mem_map mem with ⟨_, mem', eq⟩
+    simp [Prod.map] at eq
+    rcases eq with ⟨⟨rfl, rfl⟩, rfl, rfl⟩
+    exact Nsty _ mem'
+  · case sum Nty =>
+    simp
+    exact sum Nty.solve
+  · case unlabel M'ty =>
+    replace M'ty := solve M'ty (τ := τ) (x := x)
+    simp at M'ty ⊢
+    exact unlabel M'ty
+  · case prj M'ty containcs =>
+    replace M'ty := solve M'ty (τ := τ) (x := x)
+    replace containcs := containcs.solve (τ := τ) (x := x)
+    simp at M'ty containcs ⊢
+    exact prj M'ty containcs
+  · case concat M'ty Nty concatcs =>
+    replace M'ty := solve M'ty (τ := τ) (x := x)
+    replace Nty := solve Nty (τ := τ) (x := x)
+    replace concatcs := concatcs.solve (τ := τ) (x := x)
+    simp at M'ty Nty concatcs ⊢
+    exact concat M'ty Nty concatcs
+  · case inj M'ty containcs =>
+    replace M'ty := solve M'ty (τ := τ) (x := x)
+    replace containcs := containcs.solve (τ := τ) (x := x)
+    simp at M'ty containcs ⊢
+    exact inj M'ty containcs
+  · case elim M'ty Nty concatcs =>
+    replace M'ty := solve M'ty (τ := τ) (x := x)
+    replace Nty := solve Nty (τ := τ) (x := x)
+    replace concatcs := concatcs.solve (τ := τ) (x := x)
+    simp at M'ty Nty concatcs ⊢
+    exact elim M'ty Nty concatcs
+  · case sub Mty' σ₀st =>
+    replace Mty' := solve Mty' (τ := τ) (x := x)
+    replace σ₀st := σ₀st.solve (τ := τ) (x := x)
+    simp at Mty' σ₀st ⊢
+    exact sub Mty' σ₀st
+  · case member TCτcs =>
+    replace TCτcs := TCτcs.solve (τ := τ) (x := x)
+    simp at TCτcs ⊢
+    exact member TCτcs
+  · case ind M'ty Nty indcs =>
+    replace M'ty := solve M'ty (τ := τ) (x := x)
+    replace Nty := solve Nty (τ := τ) (x := x)
+    replace indcs := indcs.solve (τ := τ) (x := x)
+    simp at M'ty Nty indcs ⊢
+    exact ind M'ty Nty indcs
+  · case splitₚ M'ty splitcs =>
+    replace M'ty := solve M'ty (τ := τ) (x := x)
+    replace splitcs := splitcs.solve (τ := τ) (x := x)
+    simp at M'ty splitcs ⊢
+    exact splitₚ M'ty splitcs
+  · case splitₛ M'ty Nty splitcs =>
+    replace M'ty := solve M'ty (τ := τ) (x := x)
+    replace Nty := solve Nty (τ := τ) (x := x)
+    replace splitcs := splitcs.solve (τ := τ) (x := x)
+    simp at M'ty Nty splitcs ⊢
+    exact splitₛ M'ty Nty splitcs
+  · case nil =>
+    simp
+    exact nil
+  · case cons M'ty Nty =>
+    replace M'ty := solve M'ty (τ := τ) (x := x)
+    replace Nty := solve Nty (τ := τ) (x := x)
+    simp at M'ty Nty ⊢
+    exact cons M'ty Nty
+  · case fold =>
+    simp
+    exact fold
+  · case int =>
+    simp
+    exact int
+  · case op M'ty Nty =>
+    replace M'ty := solve M'ty (τ := τ) (x := x)
+    replace Nty := solve Nty (τ := τ) (x := x)
+    simp at M'ty Nty ⊢
+    exact op M'ty Nty
+  · case range =>
+    simp
+    exact range
+  · case str =>
+    simp
+    exact str
+  · case throw =>
+    simp
+    exact throw
+  · case «def» =>
+    simp
+    exact «def»
+termination_by sizeOf ty
+decreasing_by
+  all_goals simp_arith
+  all_goals sorry
+
+end Typing
 
 end Term
 

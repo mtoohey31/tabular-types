@@ -4,7 +4,7 @@ namespace TabularTypeInterpreter.Interpreter
 
 structure Id (n : Name) where
   private val : Nat
-deriving Hashable, BEq, DecidableEq, Inhabited, Ord
+deriving Hashable, DecidableEq, Inhabited, Ord
 
 instance {n : Name} : ToString (Id n) where toString x := toString x.val
 

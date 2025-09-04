@@ -3,13 +3,13 @@ import TabularTypeInterpreter.Data.Range
 
 namespace List
 
-def combinations {α : Type} (l : List α) : List (List α)  :=
+def combinations {α : Type} (l : List α) : List (List α) :=
   l.foldl (fun acc a => acc ++ acc.map (fun l => a :: l)) [nil]
 
-def append_eq_append {α : Type} {l₀ l₁ l₀' l₁' : List α} (eql: l₀ = l₁) (eqr: l₀' = l₁') :
+theorem append_eq_append {α : Type} {l₀ l₁ l₀' l₁' : List α} (eql: l₀ = l₁) (eqr: l₀' = l₁') :
   l₀ ++ l₀' = l₁ ++ l₁' := append_eq_append_iff.mpr (.inl ⟨[], by simp_all, eqr⟩)
 
-def of_length_eq_of_append_eq_append {l₀ l₁ l₀' l₁' : List α} (length_eq : l₀.length = l₁.length)
+theorem of_length_eq_of_append_eq_append {l₀ l₁ l₀' l₁' : List α} (length_eq : l₀.length = l₁.length)
   (eq : l₀ ++ l₀' = l₁ ++ l₁') : l₀ = l₁ ∧ l₀' = l₁' := by
   match l₀ with
   | [] =>
@@ -24,7 +24,7 @@ def of_length_eq_of_append_eq_append {l₀ l₁ l₀' l₁' : List α} (length_e
     rcases of_length_eq_of_append_eq_append (Nat.add_one_inj.mp length_eq) eq' with ⟨rfl, rfl⟩
     exact ⟨rfl, rfl⟩
 
-def of_length_lt_of_append_eq_append {l₀ l₁ l₀' l₁' : List α} (length_lt : l₀.length < l₁.length)
+theorem of_length_lt_of_append_eq_append {l₀ l₁ l₀' l₁' : List α} (length_lt : l₀.length < l₁.length)
   (eq : l₀ ++ l₀' = l₁ ++ l₁') : ∃ h l₂, l₁ = l₀ ++ h :: l₂ ∧ l₀' = h :: l₂ ++ l₁' := by
   match append_eq_append_iff.mp eq with
   | .inl h =>
@@ -40,5 +40,63 @@ def of_length_lt_of_append_eq_append {l₀ l₁ l₀' l₁' : List α} (length_l
     let length_eq := congrArg length eq₀
     rw [length_append] at length_eq
     nomatch Nat.not_le_of_lt length_lt <| Nat.le_of_add_right_le <| Nat.le_of_eq length_eq.symm
+
+theorem cases_snoc (l : List α) : l = [] ∨ ∃ l' a, l = l' ++ [a] := by
+  cases l with
+  | nil => exact .inl rfl
+  | cons _ l' =>
+    rcases cases_snoc l' with rfl | ⟨_, _, rfl⟩
+    · exact .inr ⟨[], _, rfl⟩
+    · exact .inr ⟨_, _, .symm <| List.cons_append ..⟩
+
+theorem sizeOf_lt_sizeOf_append_right [SizeOf α] {l₀ l₁ : List α} (lt : 1 < sizeOf l₁)
+  : sizeOf l₀ < sizeOf (l₀ ++ l₁) := by
+  cases l₀ with
+  | nil =>
+    rw [List.nil.sizeOf_spec, List.nil_append]
+    exact lt
+  | cons =>
+    rw [List.cons.sizeOf_spec, List.cons_append, List.cons.sizeOf_spec]
+    simp_arith
+    exact sizeOf_lt_sizeOf_append_right lt
+
+def mem_of_mem_map [DecidableEq β] {f : α → β} (mem : b ∈ map f l)
+  : (a : α) ×' a ∈ l ∧ f a = b := by match l with
+  | [] =>
+    rw [map] at mem
+    nomatch mem
+  | a :: l' =>
+    rw [map] at mem
+    if h : f a = b then
+      exact ⟨_, .head .., h⟩
+    else
+      have : b ∈ map f l' := by cases mem <;> trivial
+      let ⟨_, mem', eq⟩ := mem_of_mem_map this
+      exact ⟨_, mem'.tail _, eq⟩
+
+def eraseAll [DecidableEq α] (l : List α) (a : α) : List α := match l with
+  | [] => []
+  | b :: l' => if a = b then eraseAll l' a else b :: eraseAll l' a
+
+theorem mem_eraseAll [DecidableEq α] {a : α} (mem : a ∈ l) (ne : a ≠ b) : a ∈ eraseAll l b := by
+  induction l with
+  | nil => nomatch mem
+  | cons _ _ ih =>
+    rw [eraseAll]
+    split
+    · case isTrue h =>
+      subst h
+      apply ih
+      cases mem <;> trivial
+    · case isFalse h =>
+      cases mem
+      · exact .head _
+      · refine .tail _ ?_
+        apply ih
+        assumption
+
+theorem not_mem_of_not_mem_eraseAll [DecidableEq α] {a : α} (nmem : a ∉ eraseAll l b) (ne : a ≠ b)
+  : a ∉ l := (nmem <| mem_eraseAll · ne)
+
 
 end List

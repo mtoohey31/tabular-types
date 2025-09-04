@@ -1,6 +1,7 @@
 import Batteries.Data.List.Basic
 import Lott.Tactic.Termination
 import Mathlib.Data.String.Defs
+import TabularTypeInterpreter.Data.List
 import TabularTypeInterpreter.Interpreter.«λπι»
 
 namespace TabularTypeInterpreter
@@ -323,6 +324,29 @@ def unit : Monotype := row .nil <| some .star
 def bool : Monotype := prodOrSum .sum (comm .non) |>.app <|
   row [(label "false", unit), (label "true", unit)] none
 
+def freeTIds : Monotype → List TId
+  | var i => [i]
+  | uvar _ | label _ | comm _ | tc _ | list | int | str | «alias» _ => []
+  | lam i _ τ => τ.freeTIds.eraseAll i
+  | app τ₀ τ₁ | arr τ₀ τ₁ => freeTIds τ₀ ++ freeTIds τ₁
+  | floor τ | prodOrSum _ τ | lift τ | all τ | ind τ => freeTIds τ
+  | row ξτs _ => ξτs.mapMem (fun (ξ, τ) _ => freeTIds ξ ++ freeTIds τ) |>.flatten
+  | contain τ₀ τ₁ τ₂ => freeTIds τ₀ ++ freeTIds τ₁ ++ freeTIds τ₂
+  | concat τ₀ τ₁ τ₂ τ₃ | split τ₀ τ₁ τ₂ τ₃ =>
+    freeTIds τ₀ ++ freeTIds τ₁ ++ freeTIds τ₂ ++ freeTIds τ₃
+
+def UIds : Monotype → List UId
+  | uvar x => [x]
+  | var _ | label _ | comm _ | tc _ | list | int | str | «alias» _ => []
+  | lam _ _ τ | floor τ | prodOrSum _ τ | lift τ | all τ | ind τ => UIds τ
+  | app τ₀ τ₁ | arr τ₀ τ₁ => UIds τ₀ ++ UIds τ₁
+  | row ξτs _ => ξτs.mapMem (fun (ξ, τ) _ => UIds ξ ++ UIds τ) |>.flatten
+  | contain τ₀ τ₁ τ₂ => UIds τ₀ ++ UIds τ₁ ++ UIds τ₂
+  | concat τ₀ τ₁ τ₂ τ₃ | split τ₀ τ₁ τ₂ τ₃ =>
+    UIds τ₀ ++ UIds τ₁ ++ UIds τ₂ ++ UIds τ₃
+
+instance : Membership TId Monotype where mem τ i := i ∈ τ.freeTIds
+
 end Monotype
 
 inductive QualifiedType where
@@ -341,6 +365,10 @@ def toString [ToString TId] : QualifiedType → String
 
 instance [ToString TId] : ToString QualifiedType where
   toString := QualifiedType.toString
+
+def UIds : QualifiedType → List UId
+  | mono τ => τ.UIds
+  | qual ψ γ => ψ.UIds ++ UIds γ
 
 end QualifiedType
 
@@ -362,6 +390,10 @@ def toString [ToString TId] : TypeScheme → String
 
 instance [ToString TId] : ToString TypeScheme where
   toString := toString
+
+def UIds : TypeScheme → List UId
+  | qual γ => γ.UIds
+  | quant _ _ σ => UIds σ
 
 end TypeScheme
 

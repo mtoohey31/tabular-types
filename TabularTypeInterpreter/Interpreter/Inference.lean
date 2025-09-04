@@ -157,7 +157,7 @@ def inferKind (Γ : Context) (σ : TypeScheme) : InferM Kind := open Monotype in
   | floor ξ =>
     checkKind Γ ξ .label
     return .star
-  | comm _ => return .comm
+  | Monotype.comm _ => return .comm
   | row ξτs κ? =>
     let κs ← ξτs.mapMemM fun (ξ, τ) _ => do
       checkKind Γ ξ .label
