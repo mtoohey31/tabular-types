@@ -29,7 +29,7 @@ jobs:
     - if: ${{ !steps.restore-lean.outputs.cache-matched-key }}
       run: lake exe cache get
       continue-on-error: true
-    - run: lake build TabularTypeInterpreter tti
+    - run: lake build TabularTypeInterpreter λ⇒ρi
     - run: git diff --exit-code tex
     - env:
         GH_TOKEN: ${{ github.token }}

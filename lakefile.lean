@@ -11,7 +11,7 @@ require Thesis from git "https://github.com/mtoohey31/svkampen-msc-thesis" @ "ma
 package «tabular-type-interpreter» where
   moreGlobalServerArgs := #[
     s!"-Dweak.lott.tex.output.dir={__dir__}/tex",
-    s!"-Dweak.tti.corePath={__dir__}/examples/core",
+    s!"-Dweak.λ⇒ρi.corePath={__dir__}/examples/core",
     "-DmaxHeartbeats=4000000"
   ]
 
@@ -25,6 +25,6 @@ lean_lib TabularTypeInterpreter where
   ] ++ if get_config? noterm |>.isSome then #[⟨`weak.lott.term, false⟩] else #[]
   weakLeanArgs := #[s!"-Dweak.lott.tex.output.dir={__dir__}/tex"]
 
-lean_exe tti where
+lean_exe «λ⇒ρi» where
   root := `Main
-  moreLeanArgs := #[s!"-Dweak.tti.corePath={__dir__}/examples/core"]
+  moreLeanArgs := #[s!"-Dweak.λ⇒ρi.corePath={__dir__}/examples/core"]

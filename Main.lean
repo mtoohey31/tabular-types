@@ -34,22 +34,22 @@ structure Args where
 
 def corePath := by_elab do
   let opts ← Lean.MonadOptions.getOptions
-  let some (path : String) := opts.get? tti.corePath.name | throwError "'tti.corePath' variable should be set"
+  let some (path : String) := opts.get? «λ⇒ρi».corePath.name | throwError "'λ⇒ρi.corePath' variable should be set"
   return Lean.mkStrLit <| ← FilePath.toString <$> realPath path
 
 def coreFiles : List FilePath := List.map (FilePath.join corePath) [
-    "And.tt",
-    "Unit.tt",
-    "Bool.tt",
-    "Const.tt",
-    "Eq.tt",
-    "flip.tt",
-    "is.tt",
-    "Labels.tt",
-    "LabelsMatch.tt",
-    "LE.tt",
-    "Option.tt",
-    "List.tt"
+    "And.λ⇒ρ",
+    "Unit.λ⇒ρ",
+    "Bool.λ⇒ρ",
+    "Const.λ⇒ρ",
+    "Eq.λ⇒ρ",
+    "flip.λ⇒ρ",
+    "is.λ⇒ρ",
+    "Labels.λ⇒ρ",
+    "LabelsMatch.λ⇒ρ",
+    "LE.λ⇒ρ",
+    "Option.λ⇒ρ",
+    "List.λ⇒ρ"
   ]
 
 def Args.allFiles (args : Args) := (if args.core then coreFiles else []) ++ args.files
@@ -64,7 +64,7 @@ def Args.parse : List String → (optParam Args { }) → IO Args
   | file :: args, acc@{ files, .. } => do
     if file.get? 0 == some '-' then
       let stderr ← getStderr
-      stderr.putStrLn "Usage: tti [--table] [<file>...] [-e <term>]"
+      stderr.putStrLn "Usage: λ⇒ρi [--table] [<file>...] [-e <term>]"
       Process.exit cliError
 
     parse args { acc with files := files ++ [↑file] }
@@ -210,7 +210,7 @@ def main' (args : Args) : MainM Status := do
   | some s => evalTerm s
   | none =>
     repeat
-      stdout.putStr "tti > "
+      stdout.putStr "λ⇒ρi > "
       let s ← stdin.getLine
       if s == "" then
         stdout.putStrLn ""
