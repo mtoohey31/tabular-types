@@ -35,7 +35,7 @@
 \lottinferencerulesep
 \lottinferencerule{let}{
 \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, M \, \typingsym \, σ₀ \, \lottsym{⇝} \, \targetpre E \targetpost}\\
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, σ₀ \, \kindingsym \, \lottsym{\star} \, \lottsym{⇝} \, \targetpre A \targetpost}\\
+\lotthypothesis{\elabrelated{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, σ₀ \, \kindingsym \, \lottsym{\star} \, \lottsym{⇝} \, \targetpre A \targetpost}}\\
 \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \lottsym{,} \, x \, \lottsym{:} \, σ₀ \, \lottsym{⊢} \, N \, \typingsym \, σ₁ \, \lottsym{⇝} \, \targetpre \targetpre F \targetpost \targetpost}
 }{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, \lottkw{let} \, x \, \lottsym{:} \, σ₀ \, \lottsym{=} \, M \, \lottkw{in} \, N \, \typingsym \, σ₁ \, \lottsym{⇝} \, \targetpre \targetpre \lottsym{(} \targetpre \lottsym{λ} \, \targetpre x \targetpost \, \lottsym{:} \, \targetpre A \targetpost \lottsym{.} \, \targetpre F \targetpost \targetpost \lottsym{)} \targetpost \, \targetpre E \targetpost \targetpost}
 \lottinferencerulesep
@@ -87,7 +87,7 @@
 \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, M \, \typingsym \, \lottsym{(} {\lottsym{Σ}}_{μ} \, ρ₀ \lottsym{)} \, \lottsym{→} \, τ \, \lottsym{⇝} \, \targetpre E₀ \targetpost}\\
 \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, N \, \typingsym \, \lottsym{(} {\lottsym{Σ}}_{μ} \, ρ₁ \lottsym{)} \, \lottsym{→} \, τ \, \lottsym{⇝} \, \targetpre E₁ \targetpost}\\
 \lotthypothesis{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \solvingsym \, ρ₀ \, \lottsym{⊙}_{μ} \, ρ₁ \, \lottsym{\sim} \, ρ₂ \, \lottsym{⇝} \, \targetpre F \targetpost}\\
-\lotthypothesis{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ \, \kindingsym \, \lottsym{\star} \, \lottsym{⇝} \, \targetpre A \targetpost}
+\lotthypothesis{\elabrelated{Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, τ \, \kindingsym \, \lottsym{\star} \, \lottsym{⇝} \, \targetpre A \targetpost}}
 }{Γ_{I} \lottsym{;} \, Γ_{C} \lottsym{;} \, Γ \, \lottsym{⊢} \, M \, \lottsym{▿} \, N \, \typingsym \, \lottsym{(} {\lottsym{Σ}}_{μ} \, ρ₂ \lottsym{)} \, \lottsym{→} \, τ \, \lottsym{⇝} \, \targetpre \targetpre \lottsym{(} \targetpre \targetpre \targetpre \targetpre \lottsym{(} \targetpre \lottsym{π}_{1} \, \targetpre F \targetpost \targetpost \lottsym{)} \targetpost \, \lottsym{[} \targetpre \lottsym{λ} \, \targetpre a \targetpost \, \lottsym{:} \, \targetpre \lottsym{\star} \targetpost \lottsym{.} \, \targetpre \targetpre a \targetpost \targetpost \targetpost \lottsym{]} \targetpost \, \lottsym{[} \targetpre A \targetpost \lottsym{]} \targetpost \, \targetpre E₀ \targetpost \targetpost \lottsym{)} \targetpost \, \targetpre E₁ \targetpost \targetpost}
 \lottinferencerulesep
 \lottinferencerule{sub}{
