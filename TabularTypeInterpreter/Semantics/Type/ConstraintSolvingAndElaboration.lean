@@ -7,10 +7,6 @@ namespace TabularTypeInterpreter
 
 open «F⊗⊕ω»
 
--- TODO: Maybe try to simplify last remaining judgements which explicitly name irrelevant
--- elaborations (the remaining few in constraint solving and program typing are currently necessary
--- because we don't want the unnamed term to depend on the cofinitely quantified variables).
-
 syntax (name := constraintSolving) Lott.Symbol.TabularTypeInterpreter.InstanceEnvironment "; " Lott.Symbol.TabularTypeInterpreter.ClassEnvironment "; " Lott.Symbol.TabularTypeInterpreter.TypeEnvironment " ⊨ " Lott.Symbol.TabularTypeInterpreter.Monotype : Lott.Judgement
 
 judgement_syntax Γᵢ "; " Γc "; " Γ " ⊨ " ψ " ⇝ " E : Monotype.ConstraintSolvingAndElaboration (tex := s!"{Γᵢ} \\lottsym\{;} \\, {Γc} \\lottsym\{;} \\, {Γ} \\, \\solvingsym \\, {ψ} \\, \\lottsym\{⇝} \\, {E}") (tex noelab := s!"{Γᵢ} \\lottsym\{;} \\, {Γc} \\lottsym\{;} \\, {Γ} \\, \\solvingsym \\, {ψ}")
@@ -242,10 +238,6 @@ notex for noelab ⊢ κ ⇝ K
 ────────────────────────────────────────────────────────────── allConcat (I  : List TypeVarId)
 Γᵢ; Γc; Γ ⊨ All (λ a : κ. ψ) ρ₂ ⇝ ⦅⦅π 0 F⦆ [λ a : K. A] E₀⦆ E₁
 
--- TODO: Mention that indConcat and such were omitted since it would require total type list concat
--- in the target and should become obsolete after future work figures out how to deal with
--- constraint totality properly.
-
 </ Γc; Γ ⊢ τ@i : κ ⇝ A@i // i in [:n] />
 notex for noelab ⊢ κ ⇝ K
 notex for noelab ∀ aₗ ∉ I₀, ∀ aₜ ∉ aₗ :: I₀, ∀ aₚ ∉ aₜ :: aₗ :: I₀, ∀ aᵢ ∉ aₚ :: aₜ :: aₗ :: I₀, Γc; Γ, aₗ : L, aₜ : κ, aₚ : R κ, aᵢ : R κ ⊢ aₚ ⊙(N) ⟨aₗ ▹ aₜ⟩ ~ aᵢ : C ⇝ Bₗ^aₗ#4^aₜ#3^aₚ#2^aᵢ#1
@@ -264,8 +256,6 @@ notex for noelab Eₑ := Λ a' : * ↦ *. Λ aₜ : *. λ xₗ : (⊕ { : * }) �
 notex for noelab Eₗᵣ := (Λ a' : * ↦ *. λ x : ⊗ { : * }. (), Λ a' : * ↦ *. λ x : ⊕ { : * }. x$0)
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────── splitEmpty (I : List TypeVarId)
 Γᵢ; Γc; Γ ⊨ Split (λ a : κ. τ) ⟨ : κ ⟩ ⊙' ⟨ : * ⟩ ~ ⟨ : * ⟩ ⇝ (Eₙ, Eₑ, Eₗᵣ, Eₗᵣ)
-
--- TODO: Talk about subtyping considerations in the paper.
 
 ∀ a ∉ I, Γc; Γ, a : κ ⊢ τ₀^a : * ⇝ A^a
 Γc; Γ ⊢ τ₁ : κ ⇝ B

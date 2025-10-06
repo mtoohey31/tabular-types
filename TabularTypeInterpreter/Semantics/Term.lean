@@ -15,8 +15,6 @@ def Term.TermVar_multi_open (M : Term) (x : Nat → TermVarId) : Nat → Term
 
 open «F⊗⊕ω»
 
--- TODO: How should we make it clear that these are fixed values in the latex presentation?
-
 abbrev ℓₘ := 0
 
 abbrev ℓᵣ := 1

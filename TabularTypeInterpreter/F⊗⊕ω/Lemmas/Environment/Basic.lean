@@ -314,7 +314,6 @@ theorem weakening (h: [[ a: K ∈ Δ, Δ'' ]]) (fresh: ∀a ∈ Δ'.typeVarDom, 
       . simp_all
       . by_cases (a = a')
         . case pos eq =>
-          -- contradiction
           aesop (add norm typeVarDom, norm TypeVarInDom, safe forward TypeVarInDom_of)
         . case neg neq =>
           constructor <;> simp_all [TypeVarNe]
@@ -446,7 +445,6 @@ theorem weakening (h: [[ x: T ∈ Δ, Δ'' ]]) (fresh: ∀x ∈ Δ'.termVarDom, 
       . simp_all
       . by_cases (x = x')
         . case pos eq =>
-          -- contradiction
           aesop (add norm termVarDom, norm TermVarInDom, safe forward TermVarInDom_of)
         . case neg neq =>
           constructor <;> simp_all [TermVarNe]
@@ -472,13 +470,8 @@ theorem append_intro_r (xinΔ': [[ x: T ∈ Δ' ]]): [[ x: T ∈ Δ, Δ' ]] := b
   | typeVarExt _ ih => exact .typeVarExt ih
   | termVarExt _ neq ih => exact .termVarExt ih neq
 
--- theorem TypeVar_subst: [[ a: K ∈ Δ[A/a'] ]] ↔ [[ a: K ∈ Δ ]] := by
---   induction Δ <;>
---     aesop (add norm Environment.TypeVar_subst, unsafe cases TypeVarInEnvironment, unsafe constructors TypeVarInEnvironment)
-
 end TermVarInEnvironment
 
--- TODO I need these definitions to prove Type lemma
 namespace EnvironmentWellFormedness
 open Environment in
 theorem append_typeVar_fresh_r: [[ ⊢ Δ, Δ' ]] → ∀a ∈ Δ.typeVarDom, a ∉ Δ'.typeVarDom := by

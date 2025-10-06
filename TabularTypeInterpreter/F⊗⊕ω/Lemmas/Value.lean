@@ -10,7 +10,6 @@ theorem TypeEquivalence.common_reduct_of (eq: [[Δ ⊢ A ≡ B]]) (wf: [[ ⊢ Δ
   EqSmallStep.of_Equivalence eq (K := [[ * ]]) AkiStar wf |>.common_reduct AkiStar wf
 namespace Value
 
--- TODO rename, and will be affected by equiv definition change
 private
 theorem TypeEq_forall_of_scheme (Ety: [[Δ ⊢ Λ a : K. E: T]]) : ∃ T', [[Δ ⊢ T ≡ ∀ a : K. T']] := by
   generalize SchemeEeq : [[Λ a : K. E]] = SchemeE at Ety

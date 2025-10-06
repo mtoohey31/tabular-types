@@ -88,7 +88,7 @@ theorem subst_rename' {a': TypeVarId}
       refine wf.strengthen_type (by simp_all [typeVarDom, typeVarDom_append])
     exact AkiLK'.subst' wf' (.var .head)
   . case listAppComp A₁ K₁ K₂ _ A₀lc A₁ki =>
-    refine .listAppComp (A₀lc.TypeVar_subst a'lc) ?_ (K₁ := K₁) (K₂ := K₂) -- (A₁ki. a'lc)
+    refine .listAppComp (A₀lc.TypeVar_subst a'lc) ?_ (K₁ := K₁) (K₂ := K₂)
     have A₁ki': [[((Δ, a': K , a : K) , Δ') ⊢ A₁ : K₁ ↦ K₂]] := by
       rw [← Environment.append_type_assoc] at A₁ki
       have := A₁ki.weakening_r' (Δ' := [[ ε, a': K ]]) (by simp_all [typeVarDom_append, typeVarDom])

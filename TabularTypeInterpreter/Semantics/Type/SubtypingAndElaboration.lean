@@ -48,8 +48,6 @@ judgement TypeScheme.SubtypingAndElaboration where
 ───────────────────────────────────── trans
 Γc; Γ ⊢ σ₀ <: σ₂ ⇝ λ x : A. F ⦅E x$0⦆
 
--- TODO: Explain why we don't have an app rule here in the paper.
-
 Γc; Γ ⊢ τ₂ <: τ₀ ⇝ E
 Γc; Γ ⊢ τ₁ <: τ₃ ⇝ F
 Γc; Γ ⊢ τ₀ → τ₁ : * ⇝ A
