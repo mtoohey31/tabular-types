@@ -1,7 +1,7 @@
 import Lake
 open Lake DSL
 
-require lott from "vendor/lott"
+require lott from git "https://github.com/mtoohey31/lott" @ "main"
 require mathlib from git "https://github.com/leanprover-community/mathlib4.git" @ "v4.17.0"
 require Thesis from git "https://github.com/mtoohey31/svkampen-msc-thesis" @ "main"
 

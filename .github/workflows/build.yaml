@@ -17,14 +17,6 @@ jobs:
           ${{ runner.os }}-lean-${{ hashFiles('lean-toolchain', 'lakefile.lean', 'lake-manifest.json') }}-
           ${{ runner.os }}-lean-
         path: .lake
-    - id: restore-lean-lott
-      uses: actions/cache/restore@v4
-      with:
-        key: ${{ runner.os }}-lean-lott-${{ hashFiles('vendor/lott/lean-toolchain', 'vendor/lott/lakefile.lean', 'vendor/lott/lake-manifest.json') }}-${{ github.ref }}
-        restore-keys: |
-          ${{ runner.os }}-lean-lott-${{ hashFiles('vendor/lott/lean-toolchain', 'vendor/lott/lakefile.lean', 'vendor/lott/lake-manifest.json') }}-
-          ${{ runner.os }}-lean-lott-
-        path: vendor/lott/.lake
     - uses: Julian/setup-lean@v1
     - if: ${{ !steps.restore-lean.outputs.cache-matched-key }}
       run: lake exe cache get
@@ -40,12 +32,3 @@ jobs:
       with:
         key: ${{ steps.restore-lean.outputs.cache-primary-key }}
         path: .lake
-    - env:
-        GH_TOKEN: ${{ github.token }}
-      if: "!cancelled() && steps.restore-lean-lott.outputs.cache-hit == 'true'"
-      run: gh cache delete --repo ${{ github.repository }} ${{ steps.restore-lean-lott.outputs.cache-primary-key }}
-    - uses: actions/cache/save@v4
-      if: "!cancelled()"
-      with:
-        key: ${{ steps.restore-lean-lott.outputs.cache-primary-key }}
-        path: vendor/lott/.lake
