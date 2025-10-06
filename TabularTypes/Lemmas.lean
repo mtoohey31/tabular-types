@@ -1,0 +1,3 @@
+import TabularTypes.Lemmas.ClassEnvironment
+import TabularTypes.Lemmas.Type
+import TabularTypes.Lemmas.TypeEnvironment

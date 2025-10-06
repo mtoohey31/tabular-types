@@ -10,7 +10,7 @@ shopt -s nullglob
 
 CLASSIFICATIONS=("Syntax" "Semantics" "Lemmas" "Theorems")
 LANGUAGES=("F⊗⊕ω" "")
-ROOT_DIR=$(dirname "$(realpath "$0")")/TabularTypeInterpreter
+ROOT_DIR=$(dirname "$(realpath "$0")")/TabularTypes
 
 function append_files() {
     local -n result_array=$1
