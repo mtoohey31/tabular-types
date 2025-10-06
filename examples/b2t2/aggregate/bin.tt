@@ -1,0 +1,19 @@
+def bin : ∀ r : R *, l : L. ⟨l ▹ Int⟩ ≲(C) r ⇒ List (Π(C) r) → ⌊l⌋ → Int →
+    List (Π(N) ⟨'lower' ▹ Int, 'upper' ▹ Int, 'count' ▹ Int⟩) =
+  \tb l n.
+    if n == 0 then
+      nil
+    else
+      let values = map (\r. (prj r)/l) tb in
+      let count = \lower upper. lcount (\v. and (lower <= v) (v < upper)) values
+      in
+      let lower = min values in
+      let upper = max values + 1 in
+      let diff = max - min in
+      let preBins = map
+        (\i. {'lower' ▹ min + diff * i, 'upper' ▹ min + diff * (i + 1)})
+        (range (n - 1))
+      in
+      let bins = snoc preBins {'lower' ▹ min + diff * (n - 1), 'upper' ▹ upper}
+      in
+      map (\b. b ++ {'count' ▹ count (prj b)/'lower' (prj b)/'upper'}) bins

@@ -1,0 +1,4 @@
+def renameColumn :
+  ∀ r rr r' : R *, l l' : L, t : *. rr ⊙(C) ⟨l ▹ t⟩ ~ r, rr ⊙(C) ⟨l' ▹ t⟩ ~ r' ⇒
+    List (Π(C) r) → ⌊l⌋ → ⌊l'⌋ → List (Π(C) r') =
+  \tb l l'. map (\r. prj r ++ {l' ▹ (prj r)/l}) tb

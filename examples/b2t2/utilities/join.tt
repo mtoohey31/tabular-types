@@ -1,0 +1,8 @@
+def join : ∀ r0 r1 r : R *, t : *, u0 u1 u : U. Eq t ⇒
+    List (Π(u0) r0) → List (Π(u1) r1) → (Π(u0) r0 → t) → (Π(u1) r1 → t) →
+    (Π(u0) r0 → Π(u1) r1 → Π(u) r) → List (Π(u) r) =
+  \tb0 tb1 k0f k1f cf.
+    map (\r0.
+      let k0 : t = k0f r0 in
+      filterMap (\r1. if eq k0 (k1f r1) then some (cf r0 r1) else none) tb1
+    ) tb0

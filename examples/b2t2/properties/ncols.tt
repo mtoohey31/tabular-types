@@ -1,0 +1,2 @@
+def ncols : ∀ r : R *. List (Π(C) r) → Int =
+  ind (Const Int) r (\_ acc. acc + 1) 0

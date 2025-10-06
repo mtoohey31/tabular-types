@@ -1,0 +1,7 @@
+def tsort : ∀ r : R *, l : L, t : *, u : U.
+    ⟨l ▹ t⟩ ≲(C) r, LE t ⇒ List (Π(u) r) → ⌊l⌋ → Bool → List (Π(u) r) =
+  \tb l asc.
+    if asc then
+      sortBy (\r0 r1. le (prj (r0 : Π(C) r))/l (prj (r1 : Π(C) r))/l) tb
+    else
+      sortBy (\r0 r1. le (prj (r1 : Π(C) r))/l (prj (r0 : Π(C) r))/l) tb

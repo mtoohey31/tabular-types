@@ -1,0 +1,14 @@
+def sortByColumns : ∀ r r' : R *, u : U. r' ≲(u) r, All LE r' ⇒
+    List (Π(u) r) → LabelList r' → List (Π(u) r) =
+  \tb _.
+    let rowLe : Π(N) r' → Π(N) r' → Bool =
+      \r0 r1. ogetD (ind (Const (Option Bool)) r' (\l acc.
+        if isSome acc then
+          acc
+        else if and (le (prj r0)/l (prj r1)/l) (le (prj r1)/l (prj r0)/l) then
+          none
+        else
+          some (le (prj r0)/l (prj r1)/l)
+      ) none) true
+    in
+    sortBy (\r0 r1. rowLe (prj r0) (prj r1)) tb
