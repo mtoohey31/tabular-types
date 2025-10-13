@@ -1,0 +1,276 @@
+import Aesop
+import TabularTypes.Semantics.TypeEnvironment
+import TabularTypes.Theorems.Kind
+
+namespace TabularTypes.TypeEnvironment
+
+open «F⊗⊕ω»
+open Std
+
+theorem multiTypeExt_snoc
+  : multiTypeExt Γ (aκs ++ [(a, κ)]) = (multiTypeExt Γ aκs).typeExt a κ := by match aκs with
+  | [] => rw [List.nil_append, multiTypeExt, multiTypeExt, multiTypeExt]
+  | (_, _) :: _ => rw [List.cons_append, multiTypeExt, multiTypeExt, multiTypeExt_snoc]
+
+theorem multiConstrExt_snoc
+  : multiConstrExt Γ (ψxs ++ [ψx]) = (multiConstrExt Γ ψxs).constrExt ψx := by
+  match ψxs with
+  | [] => rw [List.nil_append, multiConstrExt, multiConstrExt, multiConstrExt]
+  | _ :: _ => rw [List.cons_append, multiConstrExt, multiConstrExt, multiConstrExt_snoc]
+
+theorem append_empty (Γ : TypeEnvironment) : Γ.append empty = Γ := rfl
+
+theorem empty_append (Γ : TypeEnvironment) : append empty Γ = Γ := by
+  match Γ with
+  | empty => rfl
+  | typeExt Γ' .. | termExt Γ' .. | constrExt Γ' .. => rw [append, Γ'.empty_append]
+
+theorem typeExt_append_assoc : [[(Γ, a : κ), Γ']] = [[Γ, (ε, a : κ, Γ')]] := by
+  match Γ' with
+  | empty => rw [append, append, append, append]
+  | [[Γ', a' : κ']]
+  | [[Γ', x : σ]]
+  | [[Γ', ψ ⇝ x]] => rw [append, typeExt_append_assoc, ← append, ← append]
+
+theorem constrExt_append_assoc : [[(Γ, ψ ⇝ x), Γ']] = [[Γ, (ε, ψ ⇝ x, Γ')]] := by
+  match Γ' with
+  | empty => rw [append, append, append, append]
+  | [[Γ', a' : κ']]
+  | [[Γ', x : σ]]
+  | [[Γ', ψ ⇝ x]] => rw [append, constrExt_append_assoc, ← append, ← append]
+
+theorem multiTypeExt_eq_append
+  : [[Γ,, </ a@i : κ@i // i in [:n] />, Γ']] = [[Γ, ε,, </ a@i : κ@i // i in [:n] />, Γ']] := by
+  match n with
+  | 0 => rw [Range.map_same_eq_nil, multiTypeExt, multiTypeExt, empty_append]
+  | n' + 1 =>
+    rw [Range.map_eq_snoc_of_lt (Nat.zero_lt_succ _), Nat.succ_sub_one, multiTypeExt_snoc,
+        multiTypeExt_snoc, typeExt_append_assoc, typeExt_append_assoc (Γ := .multiTypeExt ..),
+        multiTypeExt_eq_append]
+
+theorem multiConstrExt_eq_append
+  : [[Γ,,, </ ψ@i ⇝ x@i // i in [:n] />, Γ']] = [[Γ, ε,,, </ ψ@i ⇝ x@i // i in [:n] />, Γ']] := by
+  match n with
+  | 0 => rw [Range.map_same_eq_nil, multiConstrExt, multiConstrExt, empty_append]
+  | n' + 1 =>
+    rw [Range.map_eq_snoc_of_lt (Nat.zero_lt_succ _), Nat.succ_sub_one, multiConstrExt_snoc,
+        multiConstrExt_snoc, constrExt_append_assoc,
+        constrExt_append_assoc (Γ := .multiConstrExt ..), multiConstrExt_eq_append]
+
+theorem termVarDom_multiTypeExt
+  : [[(Γ,, </ a@i : κ@i// i in [:n] />)]].termVarDom = Γ.termVarDom := by
+  match n with
+  | 0 => rw [Range.map_same_eq_nil, multiTypeExt]
+  | n' + 1 =>
+    rw [Range.map_eq_cons_of_lt (Nat.zero_lt_succ _), multiTypeExt,
+        ← Range.map_shift Nat.le.refl (j := 1), Nat.sub_self, Nat.succ_sub_one,
+        termVarDom_multiTypeExt, termVarDom]
+
+theorem typeVarDom_append : (append Γ Γ').typeVarDom = Γ'.typeVarDom ++ Γ.typeVarDom := by
+  match Γ' with
+  | empty => rw [append, typeVarDom, List.nil_append]
+  | typeExt .. => rw [append, typeVarDom, typeVarDom_append, typeVarDom, List.cons_append]
+  | termExt .. | constrExt .. => rw [append, typeVarDom, typeVarDom_append, typeVarDom]
+
+theorem termVarDom_append : (append Γ Γ').termVarDom = Γ'.termVarDom ++ Γ.termVarDom := by
+  match Γ' with
+  | empty => rw [append, termVarDom, List.nil_append]
+  | typeExt .. => rw [append, termVarDom, termVarDom_append, termVarDom]
+  | termExt ..
+  | constrExt .. => rw [append, termVarDom, termVarDom_append, termVarDom, List.cons_append]
+
+theorem sizeOf'_pos : 0 < sizeOf' Γ := by
+  match Γ with
+  | empty =>
+    rw [sizeOf']
+    exact Nat.one_pos
+  | typeExt .. =>
+    rw [sizeOf', Nat.add_comm]
+    exact Nat.succ_pos _
+  | termExt .. =>
+    rw [sizeOf', Nat.add_comm 1, Nat.add_assoc, Nat.add_comm 1, ← Nat.add_assoc]
+    exact Nat.succ_pos _
+  | constrExt .. =>
+    rw [sizeOf', Nat.add_comm 3, Nat.add_assoc, Nat.add_comm 3, ← Nat.add_assoc]
+    exact Nat.succ_pos _
+
+theorem sizeOf'_append : (append Γ Γ').sizeOf' = Γ.sizeOf' + Γ'.sizeOf' - 1 := by
+  match Γ' with
+  | empty => rw [append, sizeOf', Nat.add_sub_cancel]
+  | typeExt .. =>
+    rw [append, sizeOf', sizeOf', sizeOf'_append, ← Nat.add_assoc, ← Nat.add_sub_assoc, ← Nat.add_assoc, Nat.add_comm 1]
+    exact Nat.le_add_right_of_le <| sizeOf'_pos
+  | termExt .. =>
+    rw [append, sizeOf', sizeOf', sizeOf'_append, ← Nat.add_sub_assoc, ← Nat.add_assoc,
+        ← Nat.add_assoc, ← Nat.add_assoc, Nat.add_comm _ 1, ← Nat.sub_add_comm]
+    exact Nat.le_add_right_of_le <| Nat.le_add_right _ _
+    exact Nat.le_add_right_of_le <| sizeOf'_pos
+  | constrExt .. =>
+    rw [append, sizeOf', sizeOf', sizeOf'_append, ← Nat.add_sub_assoc, ← Nat.add_assoc,
+        ← Nat.add_assoc, ← Nat.add_assoc, Nat.add_comm _ 3, ← Nat.sub_add_comm]
+    exact Nat.le_add_right_of_le <| Nat.le_add_right_of_le <| .step <| .step <| .refl
+    exact Nat.le_add_right_of_le <| sizeOf'_pos
+
+namespace WellFormednessAndElaboration
+
+theorem TypeVarIn_preservation (Γwe : [[Γc ⊢ Γ ⇝ Δ]])
+  (aκinΓ : [[a : κ ∈ Γ]]) (κe : [[⊢ κ ⇝ K]]) : [[a : K ∈ Δ]] :=
+  match Γwe, aκinΓ with
+  | .typeExt _ _ κe' (K := K'), .head => let .refl _ := κe.deterministic κe'; .head
+  | .typeExt Γ'we _ _ (a := a') , .typeExt anea'' aκinΓ' =>
+    Γ'we.TypeVarIn_preservation aκinΓ' κe |>.typeVarExt anea''
+  | .termExt Γ'we .., .termExt aκinΓ' => Γ'we.TypeVarIn_preservation aκinΓ' κe |>.termVarExt
+  | .constrExt Γ'we .., .constrExt aκinΓ' => Γ'we.TypeVarIn_preservation aκinΓ' κe |>.termVarExt
+
+theorem TypeVarNotInDom_preservation (Γwe : [[Γc ⊢ Γ ⇝ Δ]]) (anin : [[a ∉ dom(Γ)]])
+  : [[a ∉ dom(Δ)]] := fun ainΔ => match Γwe with
+  | .empty => nomatch ainΔ
+  | .typeExt Γ'we .. => match List.mem_cons.mp ainΔ with
+    | .inl (.refl _) => anin <| .head _
+    | .inr ainΔ' => Γ'we.TypeVarNotInDom_preservation (List.not_mem_of_not_mem_cons anin) ainΔ'
+  | .termExt Γ'we .. | .constrExt Γ'we .. => Γ'we.TypeVarNotInDom_preservation anin ainΔ
+
+theorem TermVarNotInDom_preservation (Γwe : [[Γc ⊢ Γ ⇝ Δ]]) (xnin : [[x ∉ dom'(Γ)]])
+  : [[x ∉ dom(Δ)]] := fun xinΔ => match Γwe with
+  | .empty => nomatch xinΔ
+  | .typeExt Γ'we .. => Γ'we.TermVarNotInDom_preservation xnin xinΔ
+  | .termExt Γ'we .. | .constrExt Γ'we .. => match List.mem_cons.mp xinΔ with
+    | .inl (.refl _) => xnin <| .head _
+    | .inr xinΔ' => Γ'we.TermVarNotInDom_preservation (List.not_mem_of_not_mem_cons xnin) xinΔ'
+
+theorem append_left_elim (ΓΓ'we : [[Γc ⊢ Γ, Γ' ⇝ Δ]]) : ∃ Δ', [[Γc ⊢ Γ ⇝ Δ']] := match Γ' with
+  | .empty => ⟨_, ΓΓ'we⟩
+  | .termExt .. => let .termExt ΓΓ''we .. := ΓΓ'we; ΓΓ''we.append_left_elim
+  | .typeExt .. => let .typeExt ΓΓ''we .. := ΓΓ'we; ΓΓ''we.append_left_elim
+  | .constrExt .. => let .constrExt ΓΓ''we .. := ΓΓ'we; ΓΓ''we.append_left_elim
+
+theorem multiTypeExt (Γwe : [[Γc ⊢ Γ ⇝ Δ]]) (aninΓ : ∀ i, [[a@i ∉ dom(Γ)]]) (ainj : a.Injective')
+  (κe : ∀ i ∈ [:n], [[⊢ κ@i ⇝ K@i]])
+  : [[Γc ⊢ Γ,, </ a@i : κ@i // i in [:n] /> ⇝ Δ,, </ a@i : K@i // i in [:n] />]] := by
+  match n with
+  | 0 => rwa [Range.map_same_eq_nil, Range.map_same_eq_nil, TypeEnvironment.multiTypeExt,
+              Environment.multiTypeExt]
+  | n' + 1 =>
+    rw [Range.map_eq_cons_of_lt (Nat.zero_lt_succ _), Range.map_eq_cons_of_lt (Nat.zero_lt_succ _),
+        TypeEnvironment.multiTypeExt, Environment.multiTypeExt,
+        ← Range.map_shift Nat.le.refl (j := 1), Nat.sub_self, Nat.succ_sub_one,
+        ← Range.map_shift Nat.le.refl (j := 1), Nat.sub_self, Nat.succ_sub_one]
+    apply Γwe.typeExt (aninΓ 0) (κe 0 ⟨Nat.zero_le _, Nat.zero_lt_succ _, Nat.mod_one _⟩)
+      |>.multiTypeExt _ (fun _ _ eq => Nat.add_left_inj.mp <| ainj _ _ eq)
+        (fun i mem => κe (i + 1) ⟨Nat.zero_le _, Nat.add_lt_add_right mem.upper _, Nat.mod_one _⟩)
+    intro i
+    rw [TypeVarNotInDom, typeVarDom]
+    exact List.not_mem_cons.mpr ⟨(Nat.succ_ne_zero _ <| ainj _ _ ·), aninΓ (i + 1)⟩
+
+end WellFormednessAndElaboration
+
+namespace TypeVarIn
+
+theorem append_elim (aκin : [[a : κ ∈ Γ, Γ']])
+  : ([[a : κ ∈ Γ]] ∧ [[a ∉ dom(Γ')]]) ∨ [[a : κ ∈ Γ']] := match Γ' with
+  | .empty => .inl ⟨aκin, nofun⟩
+  | .typeExt .. => match aκin with
+    | head => .inr head
+    | typeExt ne aκin' => match aκin'.append_elim with
+      | .inl ⟨aκinΓ, aκninΓ''⟩ =>
+        .inl <| ⟨aκinΓ, fun | .head _ => nomatch ne | .tail _ mem => aκninΓ'' mem⟩
+      | .inr aκinΓ'' => .inr <| aκinΓ''.typeExt ne
+  | .termExt .. => let .termExt aκin' .. := aκin; aκin'.append_elim.imp_right termExt
+  | .constrExt .. => let .constrExt aκin' .. := aκin; aκin'.append_elim.imp_right constrExt
+
+theorem append_inl (aκin : [[a : κ ∈ Γ]]) (anin : [[a ∉ dom(Γ')]]) : [[a : κ ∈ Γ, Γ']] := by
+  match Γ' with
+  | .empty => exact aκin
+  | .typeExt .. =>
+    let ⟨ne, anin'⟩ := List.not_mem_cons.mp anin
+    exact aκin.append_inl anin' |>.typeExt ne
+  | .termExt .. =>
+    rw [TypeVarNotInDom, typeVarDom] at anin
+    exact aκin.append_inl anin |>.termExt
+  | .constrExt .. =>
+    rw [TypeVarNotInDom, typeVarDom] at anin
+    exact aκin.append_inl anin |>.constrExt
+
+theorem append_inr : [[a : κ ∈ Γ]] → [[a : κ ∈ Γ', Γ]]
+  | head => .head
+  | typeExt ne aκin' => aκin'.append_inr.typeExt ne
+  | termExt aκin' => aκin'.append_inr.termExt
+  | constrExt aκin' => aκin'.append_inr.constrExt
+
+theorem not_of_NotInDom (anin : [[a ∉ dom(Γ)]]) (aκin : [[a : κ ∈ Γ]]) : False := by match Γ with
+  | .empty => nomatch aκin
+  | .typeExt .. => match aκin with
+    | .head => nomatch List.ne_of_not_mem_cons anin
+    | .typeExt ne aκin' => exact aκin'.not_of_NotInDom <| List.not_mem_of_not_mem_cons anin
+  | .termExt .. =>
+    let .termExt aκin' := aκin
+    rw [TypeVarNotInDom, typeVarDom] at anin
+    exact aκin'.not_of_NotInDom anin
+  | .constrExt .. =>
+    let .constrExt aκin' := aκin
+    rw [TypeVarNotInDom, typeVarDom] at anin
+    exact aκin'.not_of_NotInDom anin
+
+theorem append_elim_left (aκin : [[a : κ ∈ Γ, Γ']]) (anin : [[a ∉ dom(Γ')]]) : [[a : κ ∈ Γ]] :=
+  match aκin.append_elim with
+  | .inl ⟨aκinΓ, _⟩ => aκinΓ
+  | .inr aκinΓ' => nomatch aκinΓ'.not_of_NotInDom anin
+
+theorem deterministic (aκ₀in : [[a : κ₀ ∈ Γ]]) (aκ₁in : [[a : κ₁ ∈ Γ]])
+  : κ₀ = κ₁ := match Γ with
+  | .empty => nomatch aκ₀in
+  | .typeExt .. => by
+    cases aκ₀in
+    · case head =>
+      cases aκ₁in
+      · case head => rfl
+      · case typeExt => contradiction
+    · case typeExt aκ₀in' _ =>
+      cases aκ₁in
+      · case head => contradiction
+      · case typeExt aκ₁in' _ => exact aκ₀in'.deterministic aκ₁in'
+  | .termExt .. =>
+    let .termExt aκ₀in' := aκ₀in
+    let .termExt aκ₁in' := aκ₁in
+    aκ₀in'.deterministic aκ₁in'
+  | .constrExt .. =>
+    let .constrExt aκ₀in' := aκ₀in
+    let .constrExt aκ₁in' := aκ₁in
+    aκ₀in'.deterministic aκ₁in'
+
+theorem TypeVar_subst_preservation : [[a : κ ∈ Γ]] → [[a : κ ∈ Γ [τ / a'] ]]
+  | .head => .head
+  | .typeExt ne aκin' => aκin'.TypeVar_subst_preservation.typeExt ne
+  | .termExt aκin' => aκin'.TypeVar_subst_preservation.termExt
+  | .constrExt aκin' => aκin'.TypeVar_subst_preservation.constrExt
+
+end TypeVarIn
+
+theorem TypeVarNotInDom.TypeVar_subst_preservation : [[a ∉ dom(Γ)]] → [[a ∉ dom(Γ [τ / a'])]] := by
+  induction Γ <;> aesop (add simp [TypeVarNotInDom, typeVarDom, TypeVar_subst])
+
+theorem TermVarNotInDom.TypeVar_subst_preservation : [[x ∉ dom'(Γ)]] → [[x ∉ dom'(Γ [τ / a])]] := by
+  induction Γ <;> aesop (add simp [TermVarNotInDom, termVarDom, TypeVar_subst])
+
+theorem WellFormednessAndElaboration.TypeVarIn_weakening (ΓΓ'we : [[Γc ⊢ Γ, Γ' ⇝ Δ]]) (aκinΓ : [[a : κ ∈ Γ]]) : [[a : κ ∈ Γ, Γ']] := by
+  match Γ' with
+  | .empty => exact aκinΓ
+  | .typeExt _ a' _ =>
+    let .typeExt ΓΓ''we a'nin _ := ΓΓ'we
+    by_cases a = a'
+    · case pos aeqa' =>
+      cases aeqa'
+      rw [TypeVarNotInDom, typeVarDom_append] at a'nin
+      let ⟨_, aninΓ⟩ := List.not_mem_append'.mp a'nin
+      rw [← TypeVarNotInDom] at aninΓ
+      nomatch TypeVarIn.not_of_NotInDom aninΓ aκinΓ
+    · case neg anea' =>
+      exact ΓΓ''we.TypeVarIn_weakening aκinΓ |>.typeExt anea'
+  | .termExt .. =>
+    let .termExt ΓΓ''we .. := ΓΓ'we
+    exact ΓΓ''we.TypeVarIn_weakening aκinΓ |>.termExt
+  | .constrExt .. =>
+    let .constrExt ΓΓ''we .. := ΓΓ'we
+    exact ΓΓ''we.TypeVarIn_weakening aκinΓ |>.constrExt
+
+end TabularTypes.TypeEnvironment

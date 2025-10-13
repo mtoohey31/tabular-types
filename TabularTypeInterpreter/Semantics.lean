@@ -1,8 +1,0 @@
-import TabularTypeInterpreter.Semantics.Basic
-import TabularTypeInterpreter.Semantics.ClassEnvironment
-import TabularTypeInterpreter.Semantics.InstanceEnvironment
-import TabularTypeInterpreter.Semantics.Kind
-import TabularTypeInterpreter.Semantics.Program
-import TabularTypeInterpreter.Semantics.Term
-import TabularTypeInterpreter.Semantics.Type
-import TabularTypeInterpreter.Semantics.TypeEnvironment

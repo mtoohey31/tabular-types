@@ -1,0 +1,11 @@
+import Lott
+
+namespace TabularTypes.«F⊗⊕ω»
+
+nonterminal (tex pre := "\\targetpre", post := "\\targetpost") Kind, K :=
+  | "*"         : star (tex := "\\lottsym{\\star}")
+  | K₁ " ↦ " K₂ : arr
+  | "L " K      : list (tex := s!"\\lottkw\{L}^\{{K}}")
+  | "(" K ")"   : paren notex (expand := return K)
+
+end TabularTypes.«F⊗⊕ω»

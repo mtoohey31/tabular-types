@@ -1,20 +1,15 @@
 import Lake
 open Lake DSL
 
--- TODO: Use lib leanOptions for everything instead of args once string escaping is fixed.
-
-require lott from "vendor/lott"
+require lott from git "https://github.com/mtoohey31/lott" @ "main"
 require mathlib from git "https://github.com/leanprover-community/mathlib4.git" @ "v4.17.0"
--- TODO: Don't just put the URL to my github here...
 require Thesis from git "https://github.com/mtoohey31/svkampen-msc-thesis" @ "main"
 
-package «tabular-type-interpreter» where
+package «tabular-types» where
   moreGlobalServerArgs := #[s!"-Dweak.lott.tex.output.dir={__dir__}/tex", "-DmaxHeartbeats=4000000"]
 
--- TODO: Figure out how to enable makeDeps without breaking build.
-
 @[default_target]
-lean_lib TabularTypeInterpreter where
+lean_lib TabularTypes where
   leanOptions := #[
     ⟨`weak.lott.tex.locallyNameless, false⟩,
     ⟨`weak.lott.tex.output.sourceRelative, false⟩
