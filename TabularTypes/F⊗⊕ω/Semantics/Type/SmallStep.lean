@@ -71,7 +71,7 @@ value B₀ B₁
 ───────────────────── listAppApp
 value A ⟦B₀ B₁⟧
 
-judgement_syntax Δ " ⊢ " A " -> " B : SmallStep
+judgement_syntax Δ " ⊢ " A " -> " B : SmallStep (tex := s!"{Δ} \\, \\lottsym\{⊢} \\, {A} \\, \\lottkw\{⟶} \\, {B}")
 
 judgement SmallStep where
 
@@ -85,8 +85,8 @@ judgement SmallStep where
 Δ ⊢ (λ a : K₁. A) B -> A^^B/a
 
 Δ ⊢ A : K₁ ↦ K₂
-────────────────────────────────────────────────────────────────────────────────────────────── listAppList
-Δ ⊢ A ⟦{</ B@i // i in [:n] /> </ : K₁ // b />}⟧ -> {</ A B@i // i in [:n] /> </ : K₂ // b />}
+────────────────────────────────────────────────────────────────────────────────────────────────────────── listAppList
+Δ ⊢ A ⟦{</ B@i // i in [:n] notex /> </ : K₁ // b />}⟧ -> {</ A B@i // i in [:n] notex /> </ : K₂ // b />}
 
 Δ ⊢ A : L K
 ─────────────────────────── listAppId
@@ -141,7 +141,7 @@ lc_ A₀
 ─────────────── sum
 Δ ⊢ ⊕ A -> ⊕ A'
 
-judgement_syntax Δ " ⊢ " A " ->* " B : MultiSmallStep
+judgement_syntax Δ " ⊢ " A " ->* " B : MultiSmallStep (tex := s!"{Δ} \\, \\lottsym\{⊢} \\, {A} \\, \\lottkw\{⟶^*} \\, {B}")
 
 abbrev MultiSmallStep := fun Δ => Relation.ReflTransGen (SmallStep Δ)
 
