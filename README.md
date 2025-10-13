@@ -6,8 +6,10 @@ This repository contains the proofs for _Extensible Data Types with Ad-Hoc Polym
 
 The numbered theorems from the paper correspond to the following Lean theorems:
 
-- Theorem 4.1: [`TabularTypes.«F⊗⊕ω».progress`](TabularTypes/F⊗⊕ω/Theorems.lean)
-- Theorem 4.2: [`TabularTypes.«F⊗⊕ω».preservation`](TabularTypes/F⊗⊕ω/Theorems.lean)
+- Theorem 4.1: [`TabularTypes.«F⊗⊕ω».SmallStep.local_confluence`](TabularTypes/F⊗⊕ω/Lemmas/Type/SmallStep.lean)
+- Theorem 4.2: [`TabularTypes.«F⊗⊕ω».IndexedStronglyNormalizing.of_Kinding`](TabularTypes/F⊗⊕ω/Lemmas/Type/SmallStep.lean)
+- Theorem 4.3: [`TabularTypes.«F⊗⊕ω».progress`](TabularTypes/F⊗⊕ω/Theorems.lean)
+- Theorem 4.4: [`TabularTypes.«F⊗⊕ω».preservation`](TabularTypes/F⊗⊕ω/Theorems.lean)
 - Theorem 5.1:
   - Kinding: [`TabularTypes.TypeScheme.KindingAndElaboration.soundness`](TabularTypes/Theorems/Type/KindingAndElaboration.lean)
   - Row Equivalence: [`TabularTypes.Monotype.RowEquivalenceAndElaboration.soundness`](TabularTypes/Theorems/Type/Basic.lean)
@@ -57,6 +59,4 @@ In addition to the theorems listed in the first section of this README, the foll
 - [`TabularTypes.Program.TypingAndElaboration.soundness`](TabularTypes/Theorems/Program.lean)
 - [`TabularTypes.TypeEnvironment.WellFormednessAndElaboration.soundness`](TabularTypes/Theorems/Type/KindingAndElaboration.lean)
 - [`TabularTypes.TypeScheme.KindingAndElaboration.Monotype_open_preservation`](TabularTypes/Lemmas/Type/MonotypeOpenPreservation.lean)
-- [`TabularTypes.«F⊗⊕ω».SmallStep.local_confluence`](TabularTypes/F⊗⊕ω/Lemmas/Type/SmallStep.lean)
-- [`TabularTypes.«F⊗⊕ω».IndexedStronglyNormalizing.of_Kinding`](TabularTypes/F⊗⊕ω/Lemmas/Type/SmallStep.lean)
 - [`TabularTypes.«F⊗⊕ω».MultiSmallStep.confluence`](TabularTypes/F⊗⊕ω/Lemmas/Type/SmallStep.lean)
