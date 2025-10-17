@@ -10,7 +10,7 @@ run_cmd Lott.addNatAlias `j
 locally_nameless
 metavar (tex pre := "\\targetpre", post := "\\targetpost") TypeVar, a
 
-nonterminal (tex pre := "\\targetpre", post := "\\targetpost") «Type», A, B, C, T :=
+nonterminal (tex pre := "\\targetpre", post := "\\targetpost") «Type», A, B, C, T notex :=
   | a                                          : var
   | "λ " a " : " K ". " A                      : lam (bind a in A)
   | A B                                        : app
