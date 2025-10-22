@@ -3,6 +3,7 @@ import TabularTypes.Semantics.Type.KindingAndElaboration
 namespace TabularTypes
 
 open «F⊗⊕ω»
+open TabularTypes.TypeScheme
 
 judgement_syntax Γc "; " Γ " ⊢ " ρ₀ " ≡" "(" μ ") " ρ₁ " ⇝ " Fₚ ", " Fₛ : Monotype.RowEquivalenceAndElaboration (tex := s!"{Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {ρ₀} \\, \\rowequivsym_\{{μ}} \\, {ρ₁} \\, \\lottsym\{⇝} \\, {Fₚ} \\lottsym\{,} \\, {Fₛ}") (tex noelab := s!"{Γc} \\lottsym\{;} \\, {Γ} \\, \\lottsym\{⊢} \\, {ρ₀} \\, \\rowequivsym_\{{μ}} \\, {ρ₁}")
 
@@ -37,6 +38,16 @@ notex for noelab Fₚ := Λ a : K ↦ *. λ x : ⊗ (a$0 ⟦{</ A@i // i in [:n]
 notex for noelab Fₛ := Λ a : K ↦ *. λ x : ⊕ (a$0 ⟦{</ A@i // i in [:n] /> </ : K // b />}⟧). case x$0 {</ λ x' : a$0 A@i. ι j x'$0 // (tex := "i \\in [:n], j \\in p'") (i, j) in [:n].toList.zip p_' />}
 ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── comm
 Γc; Γ ⊢ ⟨</ ξ@i ▹ τ@i // i in [:n] /> </ : κ // b />⟩ ≡(C) ⟨</ ξ@i ▹ τ@i // (tex := "i \\in p") i in p_ /> </ : κ // b />⟩ ⇝ Fₚ, Fₛ
+
+Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ', Fₛ'
+Γc; Γ ⊢ ρ₀ : R κ₀
+∀ a ∉ I, Γc; Γ, a : κ₀ ⊢ τ^a : κ₁ ⇝ A^a
+notex for noelab ⊢ κ₀ ⇝ K₀
+notex for noelab ⊢ κ₁ ⇝ K₁
+notex for noelab Fₚ := Λ a' : K₁ ↦ *. Fₚ' [λ a : K₀. a'$1 A]
+notex for noelab Fₛ := Λ a' : K₁ ↦ *. Fₛ' [λ a : K₀. a'$1 A]
+───────────────────────────────────────────────────────────────── lift (I : List TypeVarId)
+Γc; Γ ⊢ Lift (λ a : κ₀. τ) ρ₀ ≡(μ) Lift (λ a : κ₀. τ) ρ₁ ⇝ Fₚ, Fₛ
 
 Γc; Γ ⊢ Lift (λ a : κ₀. τ') ⟨</ ξ@i ▹ τ@i // i in [:n] notex /> </ : κ₀ // b notex />⟩ : R κ₁ ⇝ A
 notex for noelab ⊢ κ₁ ⇝ K
