@@ -589,6 +589,9 @@ open Environment in
 theorem TypeEquivalence.TypeEquivalenceS_of (h: [[Δ ⊢ A ≡ B]]) (Alc: A.TypeVarLocallyClosed) (wf: [[ ⊢ Δ ]]) : [[Δ ⊢ A ≡ₛ B]] := by
   induction h
   . case refl => exact .base .refl
+  . case symm _ _ _ h ih => exact ih (h.preserve_lc.2 Alc) wf |>.sym
+  . case trans _ _ _ _ AB BC ih1 ih2 =>
+    exact ih1 Alc wf |>.trans <| ih2 (AB.preserve_lc.1 Alc) wf
   · case eta A'ki => exact .base <| .eta A'ki
   . case lamApp Aki BkiK => exact .base (.lamApp Aki BkiK)
   . case listAppList Aki_ => exact .base (.listAppList Aki_)
@@ -679,9 +682,6 @@ theorem TypeEquivalence.TypeEquivalenceS_of (h: [[Δ ⊢ A ≡ B]]) (Alc: A.Type
     match Alc with | .listApp A1lc B1lc => exact ih1 A1lc wf |>.listApp <| ih2 B1lc wf
   . case prod Δ A B h ih => match Alc with | .prod Alc => exact ih Alc wf |>.prod
   . case sum ih => match Alc with | .sum Alc => exact ih Alc wf |>.sum
-  . case symm _ _ _ h ih => exact ih (h.preserve_lc.2 Alc) wf |>.sym
-  . case trans _ _ _ _ AB BC ih1 ih2 =>
-    exact ih1 Alc wf |>.trans <| ih2 (AB.preserve_lc.1 Alc) wf
 
 namespace TypeEquivalence
 
@@ -786,6 +786,12 @@ theorem subst' {A T T' : «Type»} (equiv : [[ Δ, a: K, Δ' ⊢ T ≡ T' ]]) (T
   generalize Δ_eq: [[ (Δ, a: K, Δ') ]] = Δ_ at equiv
   induction equiv generalizing Δ Δ' <;> subst Δ_eq <;> (try simp_all [Type.TypeVar_subst])
   . case refl => exact .refl
+  . case symm T T' TT' ih =>
+    have Tlc := TT'.preserve_lc.2 Tlc
+    refine .symm <| ih Tlc wf AkiK rfl
+  . case trans T₁ T₂ T₃ T₁T₂ T₂T₃ ih1 ih2 =>
+    have T₂lc := T₁T₂.preserve_lc.1 Tlc
+    exact .trans (ih1 wf AkiK rfl) (ih2 T₂lc wf AkiK rfl)
   . case eta A'ki => exact .eta <| A'ki.subst' wf AkiK
   . case lamApp A'ki B'ki =>
     rw [AkiK.TypeVarLocallyClosed_of.Type_open_TypeVar_subst_dist]
@@ -832,12 +838,6 @@ theorem subst' {A T T' : «Type»} (equiv : [[ Δ, a: K, Δ' ⊢ T ≡ T' ]]) (T
   . case sum T T' TT' ih =>
     let .sum Tlc := Tlc
     refine .sum (ih Tlc wf AkiK rfl)
-  . case symm T T' TT' ih =>
-    have Tlc := TT'.preserve_lc.2 Tlc
-    refine .symm <| ih Tlc wf AkiK rfl
-  . case trans T₁ T₂ T₃ T₁T₂ T₂T₃ ih1 ih2 =>
-    have T₂lc := T₁T₂.preserve_lc.1 Tlc
-    exact .trans (ih1 wf AkiK rfl) (ih2 T₂lc wf AkiK rfl)
 
 theorem TermVar_drop (equiv: [[ Δ, x: T, Δ'' ⊢ A ≡ B ]]): [[ Δ, Δ'' ⊢ A ≡ B ]] := by
   generalize Δ_eq : [[ (Δ, x: T, Δ'') ]] = Δ' at equiv
