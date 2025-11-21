@@ -93,6 +93,15 @@ judgement TypeEquivalence where
 ───────── refl
 Δ ⊢ A ≡ A
 
+Δ ⊢ A ≡ B
+───────── symm
+Δ ⊢ B ≡ A
+
+Δ ⊢ A ≡ B
+Δ ⊢ B ≡ C
+───────── trans
+Δ ⊢ A ≡ C
+
 Δ ⊢ A : K₁ ↦ K₂
 ─────────────────────── eta
 Δ ⊢ λ a : K₁. A a$0 ≡ A
@@ -149,15 +158,6 @@ notex lc_ A₀
 Δ ⊢ A ≡ B
 ───────────── sum
 Δ ⊢ ⊕ A ≡ ⊕ B
-
-Δ ⊢ A ≡ B
-───────── symm
-Δ ⊢ B ≡ A
-
-Δ ⊢ A ≡ B
-Δ ⊢ B ≡ C
-───────── trans
-Δ ⊢ A ≡ C
 
 judgement_syntax Δ " ⊢ " A " ≢ " B : TypeInequivalence
 
