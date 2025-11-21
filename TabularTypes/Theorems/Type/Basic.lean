@@ -52,6 +52,11 @@ theorem symm (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (Γcw :
     let ⟨κ', _, _, _, ρ₂ke⟩ := ρ₁₂ee.to_Kinding Γcw Γwe
     let ⟨_, κ'e⟩ := κ'.Elaboration_total
     ⟨_, _, trans ρ₂ke κ'e ρ₂₁ee ρ₁₀ee⟩
+  | lift I ρ₀₁ee ρ₀ke τke κ₀e κ₁e => by
+    let ⟨_, _, ρ₁₀ee⟩ := ρ₀₁ee.symm Γcw Γwe
+    let ⟨_, _, _, ρ₀ke', ρ₁ke⟩ := ρ₀₁ee.to_Kinding Γcw Γwe
+    cases ρ₀ke.deterministic ρ₀ke' |>.left
+    exact ⟨_, _, lift I ρ₁₀ee ρ₁ke τke κ₀e κ₁e⟩
   | liftL μ liftke κe => ⟨_, _, liftR μ liftke κe⟩
   | liftR μ liftke κe => ⟨_, _, liftL μ liftke κe⟩
 
@@ -343,6 +348,114 @@ theorem soundness (ρee : [[Γc; Γ ⊢ ρ₀ ≡(μ) ρ₁ ⇝ Fₚ, Fₛ]]) (�
           cases eq
           simp only [Function.comp]
           exact .lam (.app (.var_bound Nat.one_pos) <| A'slc' i mem') <| .sumIntro .var
+    ⟩
+  | lift I ρ₀₁'ee ρ₀'ke τke κ₀e κ₁e (A := A') (K₀ := K₀) =>
+    let ⟨_, _, _, ρ₀'ke', ρ₁'ke⟩ := ρ₀₁'ee.to_Kinding Γcw Γwe
+    rcases ρ₀'ke.deterministic ρ₀'ke' with ⟨κ₀eq, rfl⟩
+    cases κ₀eq
+
+    let .lift I' τke' κ₀e' ρ₀'ke'' (A := A'') := ρ₀ke
+    let .lift I'' τke'' κ₀e'' ρ₁'ke' (A := A''') := ρ₁ke
+
+    rcases ρ₀'ke.deterministic ρ₀'ke'' with ⟨κ₀eq, rfl⟩
+    cases κ₀eq
+    cases κ₀e.deterministic κ₀e'
+    cases κ₀e.deterministic κ₀e''
+
+    let ⟨a, anin⟩ := Γ.typeVarDom ++ ↑A'.freeTypeVars ++ ↑A''.freeTypeVars ++ ↑A'''.freeTypeVars ++
+      I ++ I' ++ I'' |>.exists_fresh
+    let ⟨aninΓA'A''A'''II', aninI''⟩ := List.not_mem_append'.mp anin
+    let ⟨aninΓA'A''A'''I, aninI'⟩ := List.not_mem_append'.mp aninΓA'A''A'''II'
+    let ⟨aninΓA'A''A''', aninI⟩ := List.not_mem_append'.mp aninΓA'A''A'''I
+    let ⟨aninΓA'A'', aninA'''⟩ := List.not_mem_append'.mp aninΓA'A''A'''
+    let ⟨aninΓA', aninA''⟩ := List.not_mem_append'.mp aninΓA'A''
+    let ⟨aninΓ, aninA'⟩ := List.not_mem_append'.mp aninΓA'
+
+    rcases τke a aninI |>.deterministic <| τke' a aninI' with ⟨rfl, A'eq⟩
+    cases Type.TypeVar_open_inj_of_not_mem_freeTypeVars aninA' aninA'' A'eq
+    rcases τke a aninI |>.deterministic <| τke'' a aninI'' with ⟨_, A''eq⟩
+    cases Type.TypeVar_open_inj_of_not_mem_freeTypeVars aninA' aninA''' A''eq
+    cases κe.deterministic κ₁e
+
+    rcases ρ₁'ke.deterministic ρ₁'ke' with ⟨_, rfl⟩
+
+    let Alc := τke a aninI |>.soundness Γcw (Γwe.typeExt aninΓ κ₀e) κ₁e
+      |>.TypeVarLocallyClosed_of.weaken (n := 1).TypeVar_open_drop Nat.one_pos
+    let B₀ki := ρ₀'ke.soundness Γcw Γwe κ₀e.row
+    let B₀lc := B₀ki.TypeVarLocallyClosed_of
+    let B₁ki := ρ₁'ke.soundness Γcw Γwe κ₀e.row
+    let B₁lc := B₁ki.TypeVarLocallyClosed_of
+    let ⟨Fₚ'ty, Fₛ'ty, Fₚ'lc, Fₛ'lc⟩ := ρ₀₁'ee.soundness Γcw Γwe ρ₀'ke ρ₁'ke κ₀e
+    let Δwf := Γwe.soundness Γcw
+    exact ⟨
+      .typeLam Γ.typeVarDom fun a' a'nin => by
+        let a'ninΔ := Γwe.TypeVarNotInDom_preservation a'nin
+        simp [Type.TypeVar_open, Term.TypeVar_open, Fₚ'lc.TypeVar_open_id, Alc.TypeVar_open_id,
+              B₀lc.TypeVar_open_id, B₁lc.TypeVar_open_id]
+        let Γa'we := Γwe.typeExt a'nin <| κ₁e.arr .star
+        let Δa'wf := Γa'we.soundness Γcw
+        let Fₚ'ty' := Fₚ'ty.weakening (Γa'we.soundness Γcw) (Δ' := .typeExt .empty ..) (Δ'' := .empty)
+          |>.typeApp (B := [[λ a : K₀. a' A']]) <| .lam ((a' :: Γ.typeVarDom) ++ ↑I) <|
+            fun a'' a''nin => by
+              simp [Type.TypeVar_open, Environment.append]
+              let ⟨a''ninΓa', a''ninI⟩ := List.not_mem_append'.mp a''nin
+              let ⟨a''ne, _⟩ := List.not_mem_cons.mp a''ninΓa'
+              refine .app (.var (.typeVarExt .head (.symm a''ne))) ?_
+              let Γa'a''we := Γa'we.typeExt a''ninΓa' κ₀e
+              exact τke _ a''ninI |>.weakening (Γ' := .typeExt .empty ..)
+                (Γ'' := .typeExt .empty ..) Γa'a''we |>.soundness Γcw Γa'a''we κ₁e
+        apply Fₚ'ty'.equiv
+        simp [Type.Type_open, B₀lc.Type_open_id, B₁lc.Type_open_id]
+        let A'ki : [[Δ ⊢ λ a : K₀. A' : K₀ ↦ K]] := .lam (Γ.typeVarDom ++ I) fun a anin => by
+          let ⟨aninΓ, aninI⟩ := List.not_mem_append'.mp anin
+          exact τke _ aninI |>.soundness Γcw (Γwe.typeExt aninΓ κ₀e) κ₁e
+        refine .arr (.prod (.symm ?_)) (.prod (.symm ?_))
+        all_goals (
+          replace A'ki := A'ki.weakening (Δ' := .typeExt .empty ..) (Δ'' := .empty) Δa'wf
+          refine .trans (.listAppComp .var_free A'ki) ?_
+          refine .listApp (.lam (a' :: Δ.typeVarDom) ?_) .refl
+          intro a'' a''nin
+          simp [Type.TypeVar_open, Alc.TypeVar_open_id]
+          rw [Type.Type_open_var]
+          exact .app .refl <| .lamApp
+            (A'ki.weakening (Δ' := .typeExt .empty ..) (Δ'' := .empty) (Δa'wf.typeVarExt a''nin)) <|
+            .var .head
+        ),
+      .typeLam Γ.typeVarDom fun a' a'nin => by
+        let a'ninΔ := Γwe.TypeVarNotInDom_preservation a'nin
+        simp [Type.TypeVar_open, Term.TypeVar_open, Fₛ'lc.TypeVar_open_id, Alc.TypeVar_open_id,
+              B₀lc.TypeVar_open_id, B₁lc.TypeVar_open_id]
+        let Γa'we := Γwe.typeExt a'nin <| κ₁e.arr .star
+        let Δa'wf := Γa'we.soundness Γcw
+        let Fₛ'ty' := Fₛ'ty.weakening (Γa'we.soundness Γcw) (Δ' := .typeExt .empty ..) (Δ'' := .empty)
+          |>.typeApp (B := [[λ a : K₀. a' A']]) <| .lam ((a' :: Γ.typeVarDom) ++ ↑I) <|
+            fun a'' a''nin => by
+              simp [Type.TypeVar_open, Environment.append]
+              let ⟨a''ninΓa', a''ninI⟩ := List.not_mem_append'.mp a''nin
+              let ⟨a''ne, _⟩ := List.not_mem_cons.mp a''ninΓa'
+              refine .app (.var (.typeVarExt .head (.symm a''ne))) ?_
+              let Γa'a''we := Γa'we.typeExt a''ninΓa' κ₀e
+              exact τke _ a''ninI |>.weakening (Γ' := .typeExt .empty ..)
+                (Γ'' := .typeExt .empty ..) Γa'a''we |>.soundness Γcw Γa'a''we κ₁e
+        apply Fₛ'ty'.equiv
+        simp [Type.Type_open, B₀lc.Type_open_id, B₁lc.Type_open_id]
+        let A'ki : [[Δ ⊢ λ a : K₀. A' : K₀ ↦ K]] := .lam (Γ.typeVarDom ++ I) fun a anin => by
+          let ⟨aninΓ, aninI⟩ := List.not_mem_append'.mp anin
+          exact τke _ aninI |>.soundness Γcw (Γwe.typeExt aninΓ κ₀e) κ₁e
+        refine .arr (.sum (.symm ?_)) (.sum (.symm ?_))
+        all_goals (
+          replace A'ki := A'ki.weakening (Δ' := .typeExt .empty ..) (Δ'' := .empty) Δa'wf
+          refine .trans (.listAppComp .var_free A'ki) ?_
+          refine .listApp (.lam (a' :: Δ.typeVarDom) ?_) .refl
+          intro a'' a''nin
+          simp [Type.TypeVar_open, Alc.TypeVar_open_id]
+          rw [Type.Type_open_var]
+          exact .app .refl <| .lamApp
+            (A'ki.weakening (Δ' := .typeExt .empty ..) (Δ'' := .empty) (Δa'wf.typeVarExt a''nin)) <|
+            .var .head
+        ),
+      .typeLam <| .typeApp Fₚ'lc.weaken <| .lam <| .app (.var_bound Nat.le.refl) Alc.weaken,
+      .typeLam <| .typeApp Fₛ'lc.weaken <| .lam <| .app (.var_bound Nat.le.refl) Alc.weaken
     ⟩
   | liftL μ liftke@(.lift I τ'ke κ₀e ξτke) κe' (τ := τ) (τ' := τ') =>
     rename_i A' _ _

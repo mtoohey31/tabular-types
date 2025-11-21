@@ -31,6 +31,10 @@ theorem Monotype.RowEquivalenceAndElaboration.to_Kinding (ρee : [[Γc; Γ ⊢ �
     let ⟨_, _, _, ρ₁ke', ρ₂ke⟩ := ρ₁₂ee.to_Kinding Γcw Γwe
     cases ρ₁ke.deterministic ρ₁ke' |>.left
     exact ⟨_, _, _, ρ₀ke, ρ₂ke⟩
+  | lift I ρ₀₁ee ρ₀ke τke κ₀e _ (κ₀ := κ₀) (κ₁ := κ₁) =>
+    let ⟨_, _, _, ρ₀ke', ρ₁ke⟩ := ρ₀₁ee.to_Kinding Γcw Γwe
+    cases ρ₀ke.deterministic ρ₀ke' |>.left
+    exact ⟨_, _, _, .lift I τke κ₀e ρ₀ke, .lift I τke κ₀e ρ₁ke⟩
   | liftL _ liftke@(.lift I τ'ke κ₀e ξτke) _ (τ' := τ') (κ₁ := κ₁) =>
     let ⟨⟨_, ξke⟩, uni, ⟨_, _, _, eq, κeq, _, h, _, τke⟩⟩ := ξτke.row_inversion
     let ⟨_, κ₁e⟩ := κ₁.Elaboration_total

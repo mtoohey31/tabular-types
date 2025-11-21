@@ -173,7 +173,7 @@ inductive StronglyNormalizingToList (P : «Type» → Prop) : «Type» → Prop 
   | step : (∀ B, [[ε ⊢ A -> B]] → StronglyNormalizingToList P B) → (∀ As K?, A ≠ Type.list As K?) →
       StronglyNormalizingToList P A
 
-judgement_syntax "SN" K "(" A ")" : IndexedStronglyNormalizing
+judgement_syntax "SN" K "(" A ")" : IndexedStronglyNormalizing (tex := s!"\\lottkw\{SN}_\{{K}}({A})")
 
 abbrev IndexedStronglyNormalizing : Kind → «Type» → Prop
   | [[*]], A => [[ε ⊢ A : *]] ∧ [[SN(A)]]
