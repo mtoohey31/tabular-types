@@ -1,0 +1,25 @@
+type Compare =
+  \r : R *, u : U, a : *. Π(N) ⟨'getKey' ▹ Π(u) r → a, 'compare' ▹ a → a → Bool⟩
+
+def orderBy : ∀ r rk : R *, u : U.
+    List (Π(u) r) → Π(N) (Lift (Compare r u)) rk → List (Π(u) r) =
+  \tb cs.
+    let rowsAndKeys = map (\r. {
+      'row' ▹ r,
+      'keys' ▹ ind Π(N) rk (\l acc. acc ++ {l ▹ (prj (prj cs)/l)/'getKey' r}) {}
+    }) tb in
+    let cs' = ind (\a : R *. Π(N) (Lift (\a : *. a → a → Bool) a)) rk
+      (\l acc. acc ++ {l ▹ (prj (prj cs)/l)/'compare'}) {} in
+    let rowLe : Π(N) rk → Π(N) rk → Bool =
+      \r0 r1. ogetD (ind (Const (Option Bool)) rk (\l acc.
+        if isSome acc then
+          acc
+        else if and ((prj cs')/l (prj r0)/l (prj r1)/l)
+                  (le (prj r1)/l (prj r0)/l) then
+          none
+        else
+          some (le (prj r0)/l (prj r1)/l)
+      ) none) true
+    in
+    map (\rk. (prj rk)/'row')
+      (sortBy (\r0 r1. rowLe (prj r0) (prj r1)) tb)

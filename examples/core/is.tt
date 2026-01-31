@@ -1,0 +1,3 @@
+def is : ∀ r r' : R *, l : L, t : *, u : U.
+    ⟨l ▹ t⟩ ⊙(C) r' ~ r ⇒ ⌊l⌋ → Σ(u) r → Bool =
+  \_. ((\_. true) : Σ(C) ⟨l ▹ t⟩ → Bool) ▿ ((\_. false) : Σ(C) r' → Bool)

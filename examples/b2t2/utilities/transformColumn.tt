@@ -1,0 +1,4 @@
+def transformColumn :
+  ∀ r rr r' : R *, l : L, t t' : *. rr ⊙(C) ⟨l ▹ t⟩ ~ r, rr ⊙(C) ⟨l ▹ t'⟩ ~ r' ⇒
+    List (Π(C) r) → ⌊l⌋ → (t → t') → List (Π(C) r') =
+  \tb l f. map (\r. prj r ++ {l ▹ f (prj r)/l}) tb

@@ -1,0 +1,8 @@
+class Eq a : * where
+  eq : a → a → Bool
+
+instance Eq Int where
+  eq = \x y. x == y
+
+def rowEq : ∀ r : R *. All Eq r ⇒ Π(C) r → Π(C) r → Bool =
+  \x y. ind (\_ : R *. Bool) r (\l acc. and acc (eq (prj x)/l (prj y)/l)) true

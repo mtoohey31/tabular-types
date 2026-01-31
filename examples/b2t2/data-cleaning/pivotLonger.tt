@@ -1,0 +1,7 @@
+def pivotLonger : ∀ r rk rr r' : R *, lk lv : L, t : *.
+    rr ⊙(C) Lift (Const t) rk ~ r,
+    rr ⊙(C) ⟨lk ▹ Σ(C) (Lift (Const Unit) rk), lv ▹ t⟩ ~ r' ⇒
+    List (Π(C) r) → LabelSet rk → ⌊lk⌋ → ⌊lv⌋ → List (Π(C) r') =
+  \tb _ lk lv. lflatten (map (\r. map (\kv. (prj r : Π(C) rr) ++ kv)
+    (ind (\_ : *. List (Π(N) ⟨lk ▹ Σ(C) (Lift (Const Unit) rk), lv ▹ t⟩)) rk
+      (\l acc. {lk ▹ inj [l ▹ {}], lv ▹ (prj r)/l} :: acc) nil)) tb)

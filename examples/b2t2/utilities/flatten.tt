@@ -1,0 +1,14 @@
+def flatten :
+  ∀ r rs rr r' : R *. Lift (\a : *. List a) rs ⊙(C) rr ~ r, rs ⊙(C) rr ~ r' ⇒
+    List (Π(C) r) → LabelSet rs → List (Π(C) r') =
+  \tb _. lflatten (map (\r.
+    let s : Π(C) (Lift List rs) = prj r in
+    let rr : Π(C) rr = prj r in
+    let s' = ind (\a : R *. Σ(N) ⟨'many' ▹ List (Π(C) rs), 'one' ▹ Π(C) rs⟩) rs
+      (\l.
+        (\x. ['many' ▹ map (\y. x/'one' ++ {l ▹ y}) s/l]) ▿
+          (\xs. ['many' ▹ zip (\v r'. r' ++ {l ▹ v}) s/l xs/'many'])
+      ) ['one' ▹ {}]
+    in
+    (\x. singleton x/'one') ▿ (\x. x/'many') s' ++ rr
+  ) tb)

@@ -1,0 +1,2 @@
+def vcat : ∀ r : R *, u : U. List (Π(u) r) → List (Π(u) r) → List (Π(u) r) =
+  append

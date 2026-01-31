@@ -1,0 +1,7 @@
+def groupBySubtractive : ∀ r r' : R *, l : L, t : *. Eq t, r' ⊙(C) ⟨l ▹ t⟩ ~ r ⇒
+    List (Π(C) r) → ⌊l⌋ → ⟨'key' ▹ t, 'groups' ▹ List (Π(C) r')⟩ =
+  \tb l.
+    let keys = unique (map (\r. (prj r)/l) tb) in
+	map (\k.
+	  {'key' ▹ k, 'groups' ▹ map (\r. prj r) (filter (\r. eq (prj r)/l k) tb)}
+	) keys

@@ -1,0 +1,5 @@
+def groupBy : ∀ r r' : R *, tk tv : *, u u' : U. Eq tk ⇒ List (Π(u) r) →
+    (Π(u) r → tk) → (Π(u) r → tv) → (tk → tv → Π(u') r') → List (Π(u') r') =
+  \tb kf pf af.
+    let ks = unique (map kf tb) in
+    map (\k. af k (map pf (filter (\r. kf r == k) tb))) ks

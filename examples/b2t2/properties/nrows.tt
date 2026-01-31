@@ -1,0 +1,1 @@
+def nrows : ∀ r : R *, u : U. List (Π(u) r) → Int = length

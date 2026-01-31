@@ -1,0 +1,2 @@
+def hcat : ∀ rl rr r : R *. rl ⊙(N) rr ~ r ⇒
+    List (Π(N) rl) → List (Π(N) rr) → List (Π(N) r) = zip (\l r. l ++ r)

@@ -1,0 +1,3 @@
+def buildColumn : ∀ r r' : R *, l : L, t : *. r ⊙(N) ⟨l ▹ t⟩ ~ r' ⇒
+    List (Π(N) r) → ⌊l⌋ → (Π(N) r → t) → List (Π(N) r') =
+  \tb l f. map (\o. o ++ {l ▹ f o}) tb

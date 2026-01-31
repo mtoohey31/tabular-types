@@ -1,0 +1,22 @@
+type Option = \a : *. Σ(N) ⟨'some' ▹ a, 'none' ▹ Unit⟩
+
+def some : ∀ t : *. t → Option t = \x. inj ['some' ▹ x]
+
+def none : ∀ t : *. Option t = inj ['none' ▹ {}]
+
+def isSome : ∀ t : *. Option t → Bool =
+  ((\_. false) : Σ(N) ⟨'none' ▹ Unit⟩) ▿ (\_. true)
+
+def isNone : ∀ t : *. Option t → Bool = \o. not (isSome o)
+
+def bind : ∀ t t' : *. (t → Option t') → Option t → Option t' =
+  \f. (\x. f x/'some') ▿ (\_. none)
+
+def ogetD : ∀ t t' : *. Option t → t → t =
+  \o default. (\x. x/'some') ▿ (\_. default) o
+
+def omap : ∀ t t' : *. (t → t') → Option t → Option t' =
+  \f. bind (\x. some (f x))
+
+def orElse : ∀ t : *. Option t → Option t → Option t =
+  \x y. ((\_. y) : Σ(N) ⟨'none' ▹ Unit⟩) ▿ (\_. x) x

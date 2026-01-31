@@ -1,0 +1,2 @@
+def distinct : ∀ r : R *, u : U. All Eq r ⇒ List (Π(u) r) → List (Π(u) r) =
+  unique

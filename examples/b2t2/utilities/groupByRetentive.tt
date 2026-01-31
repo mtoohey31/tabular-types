@@ -1,0 +1,5 @@
+def groupByRetentive : ∀ r : R *, l : L, t : *, u : U. Eq t, ⟨l ▹ t⟩ ≲(C) r ⇒
+    List (Π(u) r) → ⌊l⌋ → ⟨'key' ▹ t, 'groups' ▹ List (Π(u) r)⟩ =
+  \tb l.
+    let keys = unique (map (\r. (prj r)/l) tb) in
+	map (\k. {'key' ▹ k, 'groups' ▹ filter (\r. eq (prj r)/l k) tb}) keys

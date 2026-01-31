@@ -1,0 +1,2 @@
+def find : ∀ r : R *. All Eq r ⇒ List (Π(C) r) → Π(C) r → Option Int =
+  \tb r. foldIdx (\r' i. orElse (if rowEq r r' then some i else none)) none tb

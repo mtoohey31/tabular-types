@@ -1,0 +1,3 @@
+def getValue : ∀ r : R *, l : L, t : *.
+    ⟨l ▹ t⟩ ≲(C) r ⇒ List (Π(C) r) → Int → ⌊l⌋ → Option t =
+  \tb n l. omap (\r. (prj r)/l) (get tb n)

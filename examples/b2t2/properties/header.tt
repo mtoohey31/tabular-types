@@ -1,0 +1,2 @@
+def header : ∀ r : R *, u : U. List (Π(u) r) → Labels u r =
+  \_. ind (Labels u) r (\l acc. acc ++ {l ▹ {}}) {}

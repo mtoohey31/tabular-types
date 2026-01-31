@@ -1,0 +1,3 @@
+def getColumn :
+  ∀ r : R *, l : L, t : *. ⟨l ▹ t⟩ ≲(C) r ⇒ List (Π(C) r) → ⌊l⌋ → List t =
+  \tb l. map (\r. (prj r)/l) tb

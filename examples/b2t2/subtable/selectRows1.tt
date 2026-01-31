@@ -1,0 +1,2 @@
+def selectRows1 : ∀ r : R *, l : L, t : *, u : U.
+    List (Π(u) r) → List Int → List (Π(u) r) = \tb. map (get tb)

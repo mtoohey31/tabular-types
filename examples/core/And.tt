@@ -1,0 +1,1 @@
+type And = \r : R C. All (\c : C. c) r

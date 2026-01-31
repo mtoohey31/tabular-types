@@ -1,0 +1,1 @@
+def flip : ∀ t t' t'' : *. (t → t' → t'') → t' → t → t'' = \f y x. f x y

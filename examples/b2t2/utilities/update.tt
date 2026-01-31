@@ -1,0 +1,4 @@
+def update : ∀ r rs rd rn r' : R *, u : U.
+    rs ⊙(C) rd ~ r, rs ⊙(C) rn ~ r', LabelsMatch rs rn ⇒
+    List (Π(u) r) → (Π(u) r → Π(C) rn) → List (Π(C) r') =
+  \tb f. map (\r. (prj r : Π(C) rs) ++ (f r)) tb

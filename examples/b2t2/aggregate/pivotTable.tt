@@ -1,0 +1,9 @@
+def pivotTable : ∀ r rg r' : R *, li lo : L, ti to : *, u : U.
+    All Eq rg, rg ≲(C) r, ⟨li ▹ ti⟩ ≲(C) r, rg ⊙(u) ⟨lo ▹ to⟩ ~ r' ⇒
+    List (Π(C) r) → Labels u rg → ⌊li⌋ → ⌊lo⌋ → (List ti → to) →
+	List (Π(u) r') =
+  \tb _ li lo f.
+    let groups = unique (map (\r. prj r : Π(C) rg) tb) in
+    map (\g. orderₚ rg g ++
+          {lo ▹ f (map (\r. (prj r)/li) 5)})
+      groups

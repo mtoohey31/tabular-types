@@ -1,0 +1,5 @@
+def count : ∀ r : R *, l : L, t : *. Eq t, ⟨l ▹ t⟩ ≲(C) r ⇒
+    List (Π(C) r) → ⌊l⌋ → List (Π(N) ⟨'value' ▹ t, 'count' ▹ Int⟩) =
+  \tb l.
+    let ks = unique (map (\r. (prj r)/l) tb) in
+    map (\k. lcount (\r. eq k (prj r)/l) tb) ks

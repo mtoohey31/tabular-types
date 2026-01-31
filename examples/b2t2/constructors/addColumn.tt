@@ -1,0 +1,3 @@
+def addColumn : ∀ r r' : R *, l : L, t : *. r ⊙(N) ⟨l ▹ t⟩ ~ r' ⇒
+    List (Π(N) r) → ⌊l⌋ → List t → List (Π(N) r') =
+  \tb l col. zip (\o e. o ++ {l ▹ e}) tb col

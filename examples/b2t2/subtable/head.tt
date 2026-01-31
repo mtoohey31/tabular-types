@@ -1,0 +1,5 @@
+def head : ∀ r : R *, u : U. List (Π(u) r) → Int → List (Π(u) r) =
+  \tb i. if i >= 0 then
+    take (0 - i) tb
+  else
+    drop (length tb + i) tb

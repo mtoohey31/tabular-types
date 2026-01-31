@@ -1,0 +1,5 @@
+type Labels = \u : U, r : R *. Σ(u) (Lift (Const Unit) r)
+
+type LabelSet = Labels C
+
+type LabelList = Labels N

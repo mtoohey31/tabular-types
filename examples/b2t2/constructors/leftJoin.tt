@@ -1,0 +1,13 @@
+def leftJoin : ∀ rc rl' rr' rl rr r : R *, u : U.
+    All Eq rc, rc ⊙(u) rl' ~ rl, rc ⊙(u) rr' ~ rr, rl ⊙(u) Lift Option rr' ~ r ⇒
+    List (Π(u) rl) → List (Π(u) rr) → LabelSet rc → List (Π(u) r) =
+  \tbl tbr _. map (\r.
+    let eqr = filter (\r'. eq (prj r : Π(u) rc) (prj r' : Π(u) rc)) tbr in
+    if length eqr > 0 then
+      map (\r'. r ++ prj r') eqr
+    else
+      let nones = ind (\a : R *. Π(C) (Lift Option a)) rr' (\l acc.
+        acc ++ {l ▹ none}
+      ) {} in
+      singleton (r ++ nones)
+  ) tbl

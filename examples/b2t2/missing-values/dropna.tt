@@ -1,0 +1,10 @@
+def dropna : ∀ r rm rr r' : R *. Split Option rm rr r, rm ⊙(C) rr ~ r' ⇒
+    List (Π(C) r) → List (Π(C) r') =
+  filterMap (\r.
+    let s = splitₚ Option r in
+    let m = (prj s)/'match' in
+    omap (\unwrapped. unwrapped ++ (prj s)/'rest')
+      (ind (\a : R *. Option (Π(C) a)) rm (\l.
+        bind (\acc. map (\x. acc ++ {l ▹ x}) (prj m)/l)
+      ) (some {}))
+  )

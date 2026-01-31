@@ -1,0 +1,3 @@
+def selectRows2 :
+  ∀ r : R *, l : L, t : *, u : U. List (Π(u) r) → List Bool → List (Π(u) r) =
+  \tb bs. filter (\x. x) (zip (\r b. if b then some r else none) tb bs)
